@@ -62,25 +62,9 @@ public class Layout {
         return Math.ceil(value);
     }
 
-    private Insets            listCellInsets  = ZERO_INSETS;
-    private Insets            listInsets      = ZERO_INSETS;
-    private final LayoutModel model;
-    private List<String>      styleSheets;
-    private Insets            tableCellInsets = ZERO_INSETS;
-    private Insets            tableInsets     = ZERO_INSETS;
-    private Insets            tableRowInsets;
-    private Font              textFont        = Font.getDefault();
-    private Insets            textInsets      = ZERO_INSETS;
-    private double            textLineHeight  = 0;
-
-    public Layout(List<String> styleSheets) {
-        this(styleSheets, new LayoutModel() {
-        });
-    }
-
     @SuppressWarnings("deprecation")
     static double getLineHeight(Font font, TextBoundsType boundsType) {
-        LAYOUT.setContent("", font.impl_getNativeFont());
+        LAYOUT.setContent("W", font.impl_getNativeFont());
         LAYOUT.setWrapWidth(0);
         LAYOUT.setLineSpacing(0);
         if (boundsType == TextBoundsType.LOGICAL_VERTICAL_CENTER) {
@@ -94,8 +78,86 @@ public class Layout {
                                    .getHeight();
     }
 
-    public Layout(List<String> styleSheets, LayoutModel model) {
+    private Insets            listCellInsets = ZERO_INSETS;
+    private Insets            listInsets     = ZERO_INSETS;
+    private final LayoutModel model;
+    private List<String>      styleSheets;
+    private Insets            tableInsets    = ZERO_INSETS;
+    private Insets            tableRowInsets;
+    private Font              textFont       = Font.getDefault();
+    private Insets            textInsets     = ZERO_INSETS;
+    private double            textLineHeight = 0;
+
+    public Layout(LayoutModel model) {
         this.model = model;
+    }
+
+    public Layout(List<String> styleSheets, LayoutModel model) {
+        this(model);
+        initialize(styleSheets);
+    }
+
+    public double getListCellHorizontalInset() {
+        return listCellInsets.getLeft() + listCellInsets.getRight();
+    }
+
+    public double getListCellVerticalInset() {
+        return listCellInsets.getTop() + listCellInsets.getBottom();
+    }
+
+    public double getListHorizontalInset() {
+        return listInsets.getLeft() + listInsets.getRight();
+    }
+
+    public double getListVerticalInset() {
+        return listInsets.getTop() + listInsets.getBottom();
+    }
+
+    public LayoutModel getModel() {
+        return model;
+    }
+
+    public double getNestedInset() {
+        return getNestedLeftInset() + getNestedRightInset();
+    }
+
+    public double getNestedLeftInset() {
+        return listInsets.getLeft() + listCellInsets.getLeft();
+    }
+
+    public double getNestedRightInset() {
+        return listInsets.getRight() + listCellInsets.getRight();
+    }
+
+    public double getTableHorizontalInset() {
+        return tableInsets.getLeft() + tableInsets.getRight();
+    }
+
+    public double getTableRowHorizontalInset() {
+        return tableRowInsets.getLeft() + tableRowInsets.getRight();
+    }
+
+    public double getTableRowVerticalInset() {
+        return tableRowInsets.getTop() + tableRowInsets.getBottom();
+    }
+
+    public double getTableVerticalInset() {
+        return tableInsets.getTop() + tableInsets.getBottom();
+    }
+
+    public double getTextHorizontalInset() {
+        return textInsets.getLeft() + textInsets.getRight();
+    }
+
+    public double getTextLineHeight() {
+        return textLineHeight;
+    }
+
+    public double getTextVerticalInset() {
+        return textInsets.getTop() + textInsets.getBottom();
+    }
+
+    public void initialize(List<String> styleSheets) {
         this.styleSheets = styleSheets;
         TextArea text = new TextArea("Lorem Ipsum");
         TextArea labelText = new TextArea("Lorem Ipsum");
@@ -180,11 +242,6 @@ public class Layout {
                                 outlineList.snappedBottomInset(),
                                 outlineList.snappedLeftInset());
 
-        tableCellInsets = new Insets(tableCell.snappedTopInset(),
-                                     tableCell.snappedRightInset(),
-                                     tableCell.snappedBottomInset(),
-                                     tableCell.snappedLeftInset());
-
         tableInsets = new Insets(table.snappedTopInset(),
                                  table.snappedRightInset(),
                                  table.snappedBottomInset(),
@@ -218,74 +275,6 @@ public class Layout {
                                 content.snappedLeftInset());
     }
 
-    public double getListCellHorizontalInset() {
-        return listCellInsets.getLeft() + listCellInsets.getRight();
-    }
-
-    public double getListCellVerticalInset() {
-        return listCellInsets.getTop() + listCellInsets.getBottom();
-    }
-
-    public double getListHorizontalInset() {
-        return listInsets.getLeft() + listInsets.getRight();
-    }
-
-    public double getListVerticalInset() {
-        return listInsets.getTop() + listInsets.getBottom();
-    }
-
-    public LayoutModel getModel() {
-        return model;
-    }
-
-    public double getNestedInset() {
-        return getNestedLeftInset() + getNestedRightInset();
-    }
-
-    public double getNestedLeftInset() {
-        return listInsets.getLeft() + listCellInsets.getLeft();
-    }
-
-    public double getNestedRightInset() {
-        return listInsets.getRight() + listCellInsets.getRight();
-    }
-
-    public double getTableCellHorizontalInset() {
-        return tableCellInsets.getLeft() + tableCellInsets.getRight();
-    }
-
-    public double getTableCellVerticalInset() {
-        return tableCellInsets.getTop() + tableCellInsets.getBottom();
-    }
-
-    public double getTableHorizontalInset() {
-        return tableInsets.getLeft() + tableInsets.getRight();
-    }
-
-    public double getTableRowHorizontalInset() {
-        return tableRowInsets.getLeft() + tableRowInsets.getRight();
-    }
-
-    public double getTableRowVerticalInset() {
-        return tableRowInsets.getTop() + tableRowInsets.getBottom();
-    }
-
-    public double getTableVerticalInset() {
-        return tableInsets.getTop() + tableInsets.getBottom();
-    }
-
-    public double getTextHorizontalInset() {
-        return textInsets.getLeft() + textInsets.getRight();
-    }
-
-    public double getTextLineHeight() {
-        return textLineHeight;
-    }
-
-    public double getTextVerticalInset() {
-        return textInsets.getTop() + textInsets.getBottom();
-    }
-
     public double measureHeader(TableView<?> table) {
         Group root = new Group(table);
         Scene scene = new Scene(root);
@@ -304,6 +293,34 @@ public class Layout {
         return headerRow.getHeight();
     }
 
+    public void setListCellInsets(Insets listCellInsets) {
+        this.listCellInsets = listCellInsets;
+    }
+
+    public void setListInsets(Insets listInsets) {
+        this.listInsets = listInsets;
+    }
+
+    public void setTableInsets(Insets tableInsets) {
+        this.tableInsets = tableInsets;
+    }
+
+    public void setTableRowInsets(Insets tableRowInsets) {
+        this.tableRowInsets = tableRowInsets;
+    }
+
+    public void setTextFont(Font textFont) {
+        this.textFont = textFont;
+    }
+
+    public void setTextInsets(Insets textInsets) {
+        this.textInsets = textInsets;
+    }
+
+    public void setTextLineHeight(double textLineHeight) {
+        this.textLineHeight = textLineHeight;
+    }
+
     public double textDoubleSpaceWidth() {
         return FONT_LOADER.computeStringWidth("WW", textFont);
     }
@@ -316,9 +333,9 @@ public class Layout {
 
     @Override
     public String toString() {
-        return String.format("Layout [model=%s\n listCellInsets=%s\n listInsets=%s\n styleSheets=%s\n tableCellInsets=%s\n tableInsets=%s\n tableRowInsets=%s\n textFont=%s\n textInsets=%s\n textLineHeight=%s]",
+        return String.format("Layout [model=%s\n listCellInsets=%s\n listInsets=%s\n styleSheets=%s\n tableInsets=%s\n tableRowInsets=%s\n textFont=%s\n textInsets=%s\n textLineHeight=%s]",
                              model, listCellInsets, listInsets, styleSheets,
-                             tableCellInsets, tableInsets, tableRowInsets,
-                             textFont, textInsets, textLineHeight);
+                             tableInsets, tableRowInsets, textFont, textInsets,
+                             textLineHeight);
     }
 }

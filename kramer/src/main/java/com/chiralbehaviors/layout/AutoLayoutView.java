@@ -55,7 +55,7 @@ public class AutoLayoutView extends Control {
 
     public AutoLayoutView(Relation root, LayoutModel model) {
         this.model = model;
-        style = new Layout(getStylesheets(), this.model);
+        style = new Layout(this.model);
         this.root.set(root);
         widthProperty().addListener((o, p, c) -> resize(c.doubleValue()));
         data.addListener((o, p, c) -> setContent());
