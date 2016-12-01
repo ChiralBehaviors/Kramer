@@ -38,6 +38,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.hellblazer.utils.Utils;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -121,7 +122,8 @@ public class SinglePageApp extends Application implements LayoutModel {
         anchor = new AnchorPane();
         primaryStage.setScene(new Scene(anchor, 800, 600));
         Map<String, String> parameters = getParameters().getNamed();
-        application = new ObjectMapper(new YAMLFactory()).readValue(getClass().getResourceAsStream(parameters.get("app")),
+        application = new ObjectMapper(new YAMLFactory()).readValue(Utils.resolveResource(getClass(),
+                                                                                          parameters.get("app")),
                                                                     GraphqlApplication.class);
         endpoint = ClientBuilder.newClient()
                                 .target(application.getEndpoint()
