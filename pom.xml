@@ -38,6 +38,27 @@
 		<url>https://github.com/ChiralBehaviors/Kramer</url>
 	</scm>
 
+	<repositories>
+		<repository>
+			<id>chiralbehaviors-snapshots</id>
+			<url>http://repository-chiralbehaviors.forge.cloudbees.com/snapshot/</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>chiralbehaviors-release</id>
+			<url>http://repository-chiralbehaviors.forge.cloudbees.com/release/</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>jcenter</id>
+			<url>https://jcenter.bintray.com/</url>
+		</repository>
+	</repositories>
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
