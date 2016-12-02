@@ -14,4 +14,4 @@ Kramer is based on the system described in the paper [Automatic Layout of Struct
 
 Kramer uses JSON, via the excellent [Jackson library](https://github.com/FasterXML/jackson).  Combined with the schema that describes the JSON data, Kramer provides a simple JavaFX control that exposes the automatic layout.
 
-For more information, see the Kramer Wiki
+For more information, see the [Kramer Wiki](https://github.com/ChiralBehaviors/Kramer/wiki)

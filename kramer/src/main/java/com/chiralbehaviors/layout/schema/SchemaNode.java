@@ -25,6 +25,7 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -179,9 +180,15 @@ abstract public class SchemaNode {
         }
     }
 
-    final String field;
-    double       justifiedWidth = 0;
-    String       label;
+    @JsonProperty
+    String field;
+    @JsonProperty
+    double justifiedWidth = 0;
+    @JsonProperty
+    String label;
+
+    public SchemaNode() {
+    }
 
     public SchemaNode(String field) {
         this(field, field);
@@ -225,7 +232,8 @@ abstract public class SchemaNode {
                                                                              double inset,
                                                                              INDENT indent);
 
-    TableColumn<JsonNode, JsonNode> buildColumn(Layout layout, double inset, INDENT indent) {
+    TableColumn<JsonNode, JsonNode> buildColumn(Layout layout, double inset,
+                                                INDENT indent) {
         TableColumn<JsonNode, JsonNode> column = new TableColumn<>(label);
         column.setUserData(this);
         return column;

@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
@@ -41,12 +42,20 @@ import javafx.util.Pair;
  */
 public class Primitive extends SchemaNode {
 
+    @JsonProperty
     private double  columnWidth       = 0;
+    @JsonProperty
     private double  maxWidth          = 0;
+    @JsonProperty
     private double  valueDefaultWidth = 0;
+    @JsonProperty
     private double  valueHeight       = 0;
-
+    @JsonProperty
     private boolean variableLength    = false;
+
+    public Primitive() {
+        super();
+    }
 
     public Primitive(String label) {
         super(label);
@@ -186,7 +195,7 @@ public class Primitive extends SchemaNode {
         column.widthProperty()
               .addListener((o, prev, cur) -> {
                   double width = cur.doubleValue() - inset;
-//                  control.setMinWidth(width);
+                  //                  control.setMinWidth(width);
                   control.setPrefWidth(width);
               });
         control.setPrefWidth(column.getWidth() - inset);
@@ -203,7 +212,7 @@ public class Primitive extends SchemaNode {
     private double getValueHeight(Layout layout) {
         double rows = Math.ceil(maxWidth / justifiedWidth) + 1;
         return Layout.snap(layout.getTextLineHeight() * rows)
-                            + layout.getTextVerticalInset();
+               + layout.getTextVerticalInset();
     }
 
     private String toString(JsonNode value) {

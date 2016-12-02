@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.chiralbehaviors.layout.schema;
 
 import static com.chiralbehaviors.layout.Layout.snap;
@@ -56,15 +55,24 @@ import javafx.util.Pair;
  */
 public class Relation extends SchemaNode implements Cloneable {
 
-    private boolean                autoFold           = true;
-    private int                    averageCardinality = 1;
-    private final List<SchemaNode> children           = new ArrayList<>();
-    private double                 contentHeight      = 0;
-    private double                 elementHeight      = 0;
-    private Relation               fold;
-    private double                 rowHeight          = 0;
-    private double                 tableColumnWidth   = 0;
-    private boolean                useTable           = false;
+    @JsonProperty
+    private boolean          autoFold           = true;
+    @JsonProperty
+    private int              averageCardinality = 1;
+    @JsonProperty
+    private List<SchemaNode> children           = new ArrayList<>();
+    @JsonProperty
+    private double           contentHeight      = 0;
+    @JsonProperty
+    private double           elementHeight      = 0;
+    @JsonProperty
+    private Relation         fold;
+    @JsonProperty
+    private double           rowHeight          = 0;
+    @JsonProperty
+    private double           tableColumnWidth   = 0;
+    @JsonProperty
+    private boolean          useTable           = false;
 
     public Relation(String label) {
         super(label);
