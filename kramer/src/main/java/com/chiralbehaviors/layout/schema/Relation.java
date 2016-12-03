@@ -446,6 +446,8 @@ public class Relation extends SchemaNode implements Cloneable {
             double extended = Layout.snap(cellHeight + childDeficit);
 
             ListView<JsonNode> row = new ListView<JsonNode>();
+            layout.getModel()
+                  .apply(row, this);
             HBox.setHgrow(row, Priority.ALWAYS);
             row.setMinWidth(0);
             row.setPrefWidth(1);

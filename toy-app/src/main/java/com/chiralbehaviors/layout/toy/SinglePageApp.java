@@ -78,7 +78,7 @@ public class SinglePageApp extends Application implements LayoutModel {
             if (!list.getItems()
                      .isEmpty()
                 && event.getButton() == MouseButton.PRIMARY
-                && event.getClickCount() == 2) {
+                && event.getClickCount() >= 2) {
                 JsonNode item = list.getSelectionModel()
                                     .getSelectedItem();
                 if (item == null) {
