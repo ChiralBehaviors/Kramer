@@ -42,10 +42,15 @@ import com.hellblazer.utils.Utils;
 
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableRow;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 /**
@@ -62,10 +67,14 @@ public class SinglePageApp extends Application implements LayoutModel {
 
     private AnchorPane               anchor;
     private GraphqlApplication       application;
+    private Button                   backButton;
     private WebTarget                endpoint;
+    private final Stack<PageContext> forward = new Stack<>();
+    private Button                   forwardButton;
     private final Stack<PageContext> history = new Stack<>();
     private AutoLayoutView           layout;
     private Stage                    primaryStage;
+    private Button                   reloadButton;
 
     @Override
     public void apply(ListView<JsonNode> list, Relation relation) {
@@ -120,7 +129,8 @@ public class SinglePageApp extends Application implements LayoutModel {
                                          QueryException {
         primaryStage = ps;
         anchor = new AnchorPane();
-        primaryStage.setScene(new Scene(anchor, 800, 600));
+        VBox vbox = new VBox(locationBar(), anchor);
+        primaryStage.setScene(new Scene(vbox, 800, 600));
         Map<String, String> parameters = getParameters().getNamed();
         application = new ObjectMapper(new YAMLFactory()).readValue(Utils.resolveResource(getClass(),
                                                                                           parameters.get("app")),
@@ -147,22 +157,34 @@ public class SinglePageApp extends Application implements LayoutModel {
         return node;
     }
 
-    private void displayCurrentPage() throws QueryException {
+    private void back() {
+        forward.push(history.pop());
+        displayCurrentPage();
+    }
+
+    private Button button(String imageResource) {
+        Button button = new Button();
+        Image image = new Image(getClass().getResourceAsStream(imageResource));
+        button.graphicProperty()
+              .set(new ImageView(image));
+        return button;
+    }
+
+    private void displayCurrentPage() {
+        updateLocationBar();
         PageContext pageContext = history.peek();
-        anchor.getChildren()
-              .clear();
-        layout = layout(pageContext);
-        AnchorPane.setTopAnchor(layout, 0.0);
-        AnchorPane.setLeftAnchor(layout, 0.0);
-        AnchorPane.setBottomAnchor(layout, 0.0);
-        AnchorPane.setRightAnchor(layout, 0.0);
-        anchor.getChildren()
-              .add(layout);
-        ObjectNode data = pageContext.evaluate(endpoint);
-        layout.measure(data);
-        layout.setData(data);
         primaryStage.setTitle(pageContext.getPage()
                                          .getTitle());
+        anchor.getChildren()
+              .clear();
+        try {
+            layout = layout(pageContext);
+        } catch (QueryException e) {
+            log.error("Unable to display page", e);
+            return;
+        }
+        anchor.getChildren()
+              .add(layout);
     }
 
     private PageContext extract(Route route, JsonNode item) {
@@ -178,6 +200,11 @@ public class SinglePageApp extends Application implements LayoutModel {
         return new PageContext(target, variables);
     }
 
+    private void forward() {
+        history.push(forward.pop());
+        displayCurrentPage();
+    }
+
     private AutoLayoutView layout(PageContext pageContext) throws QueryException {
         AutoLayoutView layout = new AutoLayoutView(pageContext.getRoot(), this);
         layout.getStylesheets()
@@ -186,20 +213,42 @@ public class SinglePageApp extends Application implements LayoutModel {
         ObjectNode data = pageContext.evaluate(endpoint);
         layout.setData(data);
         layout.measure(data);
+        AnchorPane.setTopAnchor(layout, 0.0);
+        AnchorPane.setLeftAnchor(layout, 0.0);
+        AnchorPane.setBottomAnchor(layout, 0.0);
+        AnchorPane.setRightAnchor(layout, 0.0);
         return layout;
     }
 
-    @SuppressWarnings("unused")
-    private void pop() throws QueryException {
-        if (history.size() == 1) {
-            return;
-        }
-        history.pop();
-        displayCurrentPage();
+    private HBox locationBar() {
+        HBox hbox = new HBox();
+
+        backButton = button("/back.png");
+        forwardButton = button("/forward.png");
+        reloadButton = button("/reload.png");
+
+        backButton.setOnAction(e -> back());
+        forwardButton.setOnAction(e -> forward());
+        reloadButton.setOnAction(e -> reload());
+
+        hbox.getChildren()
+            .addAll(backButton, forwardButton, reloadButton);
+
+        return hbox;
     }
 
     private void push(PageContext pageContext) throws QueryException {
         history.push(pageContext);
+        forward.clear();
         displayCurrentPage();
+    }
+
+    private void reload() {
+        displayCurrentPage();
+    }
+
+    private void updateLocationBar() {
+        backButton.setDisable(history.size() <= 1);
+        forwardButton.setDisable(forward.isEmpty());
     }
 }
