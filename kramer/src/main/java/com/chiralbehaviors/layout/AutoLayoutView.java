@@ -29,7 +29,6 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
 import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
-import javafx.scene.layout.AnchorPane;
 
 /**
  * @author hhildebrand
@@ -132,10 +131,6 @@ public class AutoLayoutView extends Control {
             relation.autoLayout(width, style);
             layout = relation.buildControl(style);
             relation.setItems(layout, data.get());
-            AnchorPane.setTopAnchor(layout, 0.0);
-            AnchorPane.setLeftAnchor(layout, 0.0);
-            AnchorPane.setRightAnchor(layout, 0.0);
-            AnchorPane.setBottomAnchor(layout, 0.0);
             getChildren().add(layout);
         } catch (Throwable e) {
             log.log(Level.SEVERE,
