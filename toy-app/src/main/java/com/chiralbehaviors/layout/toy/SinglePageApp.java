@@ -67,11 +67,11 @@ public class SinglePageApp extends Application implements LayoutModel {
 
     private AnchorPane               anchor;
     private GraphqlApplication       application;
+    private final Stack<PageContext> back    = new Stack<>();
     private Button                   backButton;
     private WebTarget                endpoint;
     private final Stack<PageContext> forward = new Stack<>();
     private Button                   forwardButton;
-    private final Stack<PageContext> history = new Stack<>();
     private AutoLayoutView           layout;
     private Stage                    primaryStage;
     private Button                   reloadButton;
@@ -79,8 +79,8 @@ public class SinglePageApp extends Application implements LayoutModel {
     @Override
     public void apply(ListView<JsonNode> list, Relation relation) {
         list.setOnMouseClicked(event -> {
-            Route route = history.peek()
-                                 .getRoute(relation);
+            Route route = back.peek()
+                              .getRoute(relation);
             if (route == null) {
                 return;
             }
@@ -105,8 +105,8 @@ public class SinglePageApp extends Application implements LayoutModel {
     @Override
     public void apply(TableRow<JsonNode> row, Relation relation) {
         row.setOnMouseClicked(event -> {
-            Route route = history.peek()
-                                 .getRoute(relation);
+            Route route = back.peek()
+                              .getRoute(relation);
             if (route == null) {
                 return;
             }
@@ -158,7 +158,7 @@ public class SinglePageApp extends Application implements LayoutModel {
     }
 
     private void back() {
-        forward.push(history.pop());
+        forward.push(back.pop());
         displayCurrentPage();
     }
 
@@ -172,7 +172,7 @@ public class SinglePageApp extends Application implements LayoutModel {
 
     private void displayCurrentPage() {
         updateLocationBar();
-        PageContext pageContext = history.peek();
+        PageContext pageContext = back.peek();
         primaryStage.setTitle(pageContext.getPage()
                                          .getTitle());
         anchor.getChildren()
@@ -201,7 +201,7 @@ public class SinglePageApp extends Application implements LayoutModel {
     }
 
     private void forward() {
-        history.push(forward.pop());
+        back.push(forward.pop());
         displayCurrentPage();
     }
 
@@ -238,7 +238,7 @@ public class SinglePageApp extends Application implements LayoutModel {
     }
 
     private void push(PageContext pageContext) throws QueryException {
-        history.push(pageContext);
+        back.push(pageContext);
         forward.clear();
         displayCurrentPage();
     }
@@ -248,7 +248,7 @@ public class SinglePageApp extends Application implements LayoutModel {
     }
 
     private void updateLocationBar() {
-        backButton.setDisable(history.size() <= 1);
+        backButton.setDisable(back.size() <= 1);
         forwardButton.setDisable(forward.isEmpty());
     }
 }
