@@ -19,6 +19,9 @@ package com.chiralbehaviors.layout;
 import java.lang.reflect.Field;
 import java.util.List;
 
+import com.chiralbehaviors.layout.schema.Primitive;
+import com.chiralbehaviors.layout.schema.Relation;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.sun.javafx.scene.control.skin.TableHeaderRow;
 import com.sun.javafx.scene.control.skin.TableViewSkinBase;
 import com.sun.javafx.scene.control.skin.TextAreaSkin;
@@ -45,6 +48,24 @@ import javafx.scene.text.TextBoundsType;
 
 @SuppressWarnings("restriction")
 public class Layout {
+    public interface LayoutModel {
+
+        default void apply(ListCell<JsonNode> cell, Relation relation) {
+        }
+
+        default void apply(ListView<JsonNode> list, Relation relation) {
+        }
+
+        default void apply(TableRow<JsonNode> row, Relation relation) {
+        }
+
+        default void apply(TableView<JsonNode> table, Relation relation) {
+        }
+
+        default void apply(TextArea control, Primitive primitive) {
+        }
+    }
+
     private static final FontLoader FONT_LOADER = Toolkit.getToolkit()
                                                          .getFontLoader();
     private static final TextLayout LAYOUT      = Toolkit.getToolkit()
