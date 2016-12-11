@@ -115,10 +115,10 @@ public class AutoLayoutController {
         this.activeQuery.initializeFrom(queryState);
         this.queryState = queryState;
         load();
-        anchor.getChildren()
-              .add(layout);
         Node graphiql = constructGraphiql();
-        showLayout.setSelected(true);
+        anchor.getChildren()
+              .add(graphiql);
+        showQuery.setSelected(true);
         page.selectedToggleProperty()
             .addListener((o, p, c) -> {
                 try {
