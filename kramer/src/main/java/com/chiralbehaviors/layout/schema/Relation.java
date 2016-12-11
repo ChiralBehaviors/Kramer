@@ -219,15 +219,6 @@ public class Relation extends SchemaNode implements Cloneable {
     }
 
     @Override
-    List<Primitive> gatherLeaves() {
-        List<Primitive> leaves = new ArrayList<>();
-        for (SchemaNode child : children) {
-            leaves.addAll(child.gatherLeaves());
-        }
-        return leaves;
-    }
-
-    @Override
     double getLabelWidth(Layout layout) {
         if (isFold()) {
             return fold.getLabelWidth(layout);

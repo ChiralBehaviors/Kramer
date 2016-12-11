@@ -18,7 +18,6 @@ package com.chiralbehaviors.layout.schema;
 
 import static com.chiralbehaviors.layout.Layout.snap;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -98,11 +97,6 @@ public class Primitive extends SchemaNode {
                                                                    indent);
         column.setPrefWidth(justifiedWidth + inset);
         return column;
-    }
-
-    @Override
-    List<Primitive> gatherLeaves() {
-        return Collections.singletonList(this);
     }
 
     @Override

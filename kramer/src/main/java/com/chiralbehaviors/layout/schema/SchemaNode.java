@@ -25,8 +25,8 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -36,7 +36,6 @@ import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableColumnBase;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.util.Pair;
@@ -246,8 +245,6 @@ abstract public class SchemaNode {
         };
     }
 
-    abstract List<Primitive> gatherLeaves();
-
     double getLabelWidth(Layout layout) {
         return layout.textWidth(label);
     }
@@ -272,20 +269,4 @@ abstract public class SchemaNode {
                                                              Function<JsonNode, JsonNode> extractor,
                                                              int cardinality,
                                                              Layout layout);
-
-    void resize(TableColumnBase<JsonNode, ?> parentColumn) {
-        double _minWidth = 0.0f;
-        double _prefWidth = 0.0f;
-        double _maxWidth = 0.0f;
-
-        for (TableColumnBase<JsonNode, ?> col : parentColumn.getColumns()) {
-            _minWidth += col.getMinWidth();
-            _prefWidth += col.getPrefWidth();
-            _maxWidth += col.getMaxWidth();
-        }
-
-        parentColumn.setMinWidth(_minWidth);
-        parentColumn.setPrefWidth(_prefWidth);
-        parentColumn.setMaxWidth(_maxWidth);
-    }
 }
