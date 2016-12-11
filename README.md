@@ -1,5 +1,8 @@
 # Kramer Umbrella application
-Automatic layout of structured hierarchical data, graphQL generic single page applications, and a floor wax.
+
+It's all about levels.
+
+### Automatic layout of structured hierarchical data, graphQL generic single page applications, and a floor wax.
 
 ### Building
 Kramer requires [maven 3.3+](https://maven.apache.org), Java 1.8+.  To build Kramer, cd to the top level directory:
@@ -23,9 +26,9 @@ For more information, see the [Kramer Wiki](https://github.com/ChiralBehaviors/K
 There are currently four modules that compose Kramer:
 
  - [Kramer Core](kramer/README.md) - the core autolayout framework
- - [Kramer QL](kramer-ql/README.md) - GraphQL integration into the kramer framework
+ - [Kramer QL](kramer-ql/README.md) - [GraphQL](http://graphql.org) integration into the Kramer framework
  - [AutoLayout Explorer](explorer/README.md) - A simple application to explore GraphQL endpoints with the Kramer autolayout framework
- - [Toy Single Page UI App Framework](toy-app/README.md) - A sketch of an idea I've had for some time, using Kramer to provide the UI for a declarative single page UI application framework
+ - [Toy Single Page UI App Framework](toy-app/README.md) - A sketch of an idea I've had for some time, using Kramer to provide the UI for a declarative single page UI application framework using [GraphQL](http://graphql.org).
 
 ## Using Kramer
 
