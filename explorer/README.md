@@ -3,7 +3,7 @@
 A simple application for exploring GraphQL endpoints with the AutoLayout framework
 ___
 
-This has been my test application throughout the development of the Kramer framework.  There's probably a lot more I could have done from a testing side of Kramer, but testing UI frameworks is - frankly - the most stupidest problem in the world.  I certainlhy can't solve it.  And so I needed a quick way to iterate on the _AutoLayoutView_ and this is it.
+This has been my test application throughout the development of the [Kramer framework](../kramer/README.md).  There's probably a lot more I could have done from a testing side of Kramer, but testing UI frameworks is - frankly - the most stupidest problem in the world.  I certainlhy can't solve it.  And so I needed a quick way to iterate on the _AutoLayoutView_ and this is it.
 
 ## Running the AutoLayoutExplorer
 

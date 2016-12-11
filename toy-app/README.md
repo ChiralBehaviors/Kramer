@@ -9,7 +9,7 @@ This is a toy single page UI framework that uses GraphQL and the Kramer AutoLayo
     
 The above example assumes you're running this from the current directory.
 
-Because it's a toy, I'm not keen on providing a lot of documentation.  There's an example in the src/test/resources directory, _testApp.yml_.  Hopefully, it should be obvious that the system is basically a network of GraphQL queries.  We provide simple XPath like expressions to retrieve data and pass that into parameterized queries of the target page.  Provides a history of pages and back/forward/refresh buttons.
+Because it's a toy, I'm not keen on providing a lot of documentation.  There's an example in the src/test/resources directory, [testApp.yml](src/test/resources/testApp.yml).  Hopefully, it should be obvious that the system is basically a network of GraphQL queries.  We provide simple XPath like expressions to retrieve data and pass that into parameterized queries of the target page.  Provides a history of pages and back/forward/refresh buttons.
 
 This framework is kind of interesting in that you're not navigating a hierarchical URL space.  Rather, it's just a network of pages, linked through double click actions.  Currently just navigation is provided - double click on a given node in the view and it will replace the page with the target.  I'll add CRUD operations and such eventually.
 
