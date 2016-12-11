@@ -1,5 +1,5 @@
-# Kramer
-Automatic layout of structured hierarchical data
+# Kramer Umbrella application
+Automatic layout of structured hierarchical data, graphQL generic single page applications, and a floor wax.
 
 ### Building
 Kramer requires [maven 3.3+](https://maven.apache.org), Java 1.8+.  To build Kramer, cd to the top level directory:
