@@ -1,10 +1,13 @@
 # Kramer Umbrella application
 
-It's all about levels.
-
-### Automatic layout of structured hierarchical data, graphQL generic single page applications, and a floor wax.
+<h2 style="text-align: center;" markdown="1">Automatic layout of structured hierarchical data, graphQL generic single page applications, and a floor wax</h2>
 
 ![alt text](media/autolayout.png "Logo Title Text 1")
+
+
+
+
+It's all about levels.
 
 ### Building
 Kramer requires [maven 3.3+](https://maven.apache.org =800x600), Java 1.8+.  To build Kramer, cd to the top level directory:
