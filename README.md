@@ -12,11 +12,20 @@ Individual modules may be built independently.
 Kramer is licensed under [Apache 2.0 license](LICENSE)
 
 ## What it does
-Kramer is based on the system described in the paper [Automatic Layout of Structured Hierarchical Reports](http://people.csail.mit.edu/ebakke/research/reportlayout_infovis2013.pdf).  Kramer uses a schema to automatically layout structured JSON.  The layout is adaptive between outline and nested table views, providing multicolumn hybrids that are dense and highly usable.
+Kramer is based on the system described in the paper [Automatic Layout of Structured Hierarchical Reports](http://people.csail.mit.edu/ebakke/research/reportlayout_infovis2013.pdf).  Kramer uses a schema to automatically layout structured JSON.  The layout is adaptive between outline and nested table views, providing multicolumn hybrids that are dense and is highly usable.  One could call it the Unicorn of reactive layouts for hierarchical data (and who doesn't have that, amirite?).
 
-Kramer uses JSON, via the excellent [Jackson library](https://github.com/FasterXML/jackson).  Combined with the schema that describes the JSON data, Kramer provides a simple JavaFX control that exposes the automatic layout.
+Kramer uses JSON, via the excellent [Jackson library](https://github.com/FasterXML/jackson).  Combined with the schema that describes the JSON data, Kramer provides a simple [JavaFX](http://docs.oracle.com/javase/8/javafx/get-started-tutorial/jfx-overview.htm#JFXST784) control that exposes the automatic layout.  Kramer uses the [Jackson TreeModel](http://wiki.fasterxml.com/JacksonTreeModel), focussing on the JsonNode as the data model used by the framework.
 
 For more information, see the [Kramer Wiki](https://github.com/ChiralBehaviors/Kramer/wiki)
+
+## Guide to this build
+
+There are currently four modules that compose Kramer:
+
+ - [Kramer Core](kramer/README.md) - the core autolayout framework
+ - [Kramer QL](kramer-ql/README.md) - GraphQL integration into the kramer framework
+ - [AutoLayout Explorer](explorer/README.md) - A simple application to explore GraphQL endpoints with the Kramer autolayout framework
+ - [Toy Single Page UI App Framework](toy-app/README.md) - A sketch of an idea I've had for some time, using Kramer to provide the UI for a declarative single page UI application framework
 
 ## Using Kramer
 
