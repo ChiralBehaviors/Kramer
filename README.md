@@ -4,8 +4,10 @@ It's all about levels.
 
 ### Automatic layout of structured hierarchical data, graphQL generic single page applications, and a floor wax.
 
+![alt text](media/autolayout.png "Logo Title Text 1")
+
 ### Building
-Kramer requires [maven 3.3+](https://maven.apache.org), Java 1.8+.  To build Kramer, cd to the top level directory:
+Kramer requires [maven 3.3+](https://maven.apache.org =800x600), Java 1.8+.  To build Kramer, cd to the top level directory:
 
     mvn clean install
     
