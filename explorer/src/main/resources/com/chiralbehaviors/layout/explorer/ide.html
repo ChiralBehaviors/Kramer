@@ -32,20 +32,20 @@ html, body {
 <body>
 	<div id="graphiql">Loading...</div>
 	<script>
-	    function setApp(newApp) {
-	    	app = newApp;
-	        // Render <GraphiQL /> into the body.
-	        ReactDOM.render(React.createElement(GraphiQL, {
-	            fetcher : graphQLFetcher,
-	            query : app.getQuery(),
-	            variables : app.getVariables(),
-	            operationName : app.getOperationName(),
-	            onEditQuery : setQuery,
-	            onEditVariables : setVariables,
-	            onEditOperationName : setOperationName
-	        }), document.getElementById('graphiql'));
-	    }
-	    
+		function setApp(newApp) {
+			app = newApp;
+			// Render <GraphiQL /> into the body.
+			ReactDOM.render(React.createElement(GraphiQL, {
+				fetcher : graphQLFetcher,
+				query : app.getQuery(),
+				variables : app.getVariables(),
+				operationName : app.getOperationName(),
+				onEditQuery : setQuery,
+				onEditVariables : setVariables,
+				onEditOperationName : setOperationName
+			}), document.getElementById('graphiql'));
+		}
+
 		function setQuery(newQuery) {
 			app.setQuery(newQuery);
 		}
@@ -56,25 +56,16 @@ html, body {
 			app.setOperationName(newOperationName);
 		}
 
-		function graphQLFetcher(graphQLParams) {
-			return fetch(app.getTargetURL(), {
-				method : 'post',
-				headers : {
-					'Accept' : 'application/json',
-					'Content-Type' : 'application/json',
-				},
-				body : JSON.stringify(graphQLParams),
-				credentials : 'include',
-			}).then(function(response) {
-				return response.text();
-			}).then(function(responseBody) {
-				try {
-					app.setData(responseBody)
-					return JSON.parse(responseBody);
-				} catch (error) {
-					return responseBody;
-				}
-			});
+		function graphQLFetcher(graphQLParams) { 
+			try {
+				return new Promise(function(resolve, reject) {
+					resolve(JSON.parse(app.fetch(JSON.stringify(graphQLParams))));
+				}); 
+			} catch (error) { 
+				return new Promise(function(resolve, reject) { 
+					resolve(''); 
+				});
+			}
 		}
 	</script>
 </body>

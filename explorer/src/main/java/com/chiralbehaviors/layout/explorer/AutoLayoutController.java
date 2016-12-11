@@ -17,6 +17,13 @@
 package com.chiralbehaviors.layout.explorer;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.client.WebTarget;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,13 +58,31 @@ public class AutoLayoutController {
             super();
         }
 
+        public String fetch(String query) throws IOException {
+            setData(GraphQlUtil.evaluate(endpoint, query));
+            return getData();
+        }
+
         @Override
         public void setData(String data) {
             super.setData(data);
-            try {
-                setQueryState(new QueryState(this));
-            } catch (Exception e) {
-                log.error("unable to set query state", e);
+            setQueryState(new QueryState(this));
+        }
+
+        @Override
+        public void setTargetURL(String targetURL) {
+            String previous = getTargetURL();
+            super.setTargetURL(targetURL);
+            if (targetURL != null && !targetURL.equals(previous)) {
+                URI uri;
+                try {
+                    uri = new URL(targetURL).toURI();
+                } catch (MalformedURLException | URISyntaxException e) {
+                    e.printStackTrace();
+                    return;
+                }
+                endpoint = ClientBuilder.newClient()
+                                        .target(uri);
             }
         }
     }
@@ -69,6 +94,7 @@ public class AutoLayoutController {
     private final ActiveState   activeQuery = new ActiveState();
     @FXML
     private AnchorPane          anchor;
+    private WebTarget           endpoint;
     private AutoLayoutView      layout;
     @FXML
     private ToggleGroup         page;
@@ -80,6 +106,7 @@ public class AutoLayoutController {
     private RadioButton         showLayout;
     @FXML
     private RadioButton         showQuery;
+
     @FXML
     private RadioButton         showSchema;
 
@@ -123,12 +150,12 @@ public class AutoLayoutController {
             });
     }
 
-    public Parent getRoot() {
-        return root;
-    }
-
     public AutoLayoutView getLayout() {
         return layout;
+    }
+
+    public Parent getRoot() {
+        return root;
     }
 
     public void setQueryState(QueryState state) {
@@ -245,7 +272,7 @@ public class AutoLayoutController {
             return;
         }
         Relation schema = (Relation) GraphQlUtil.buildSchema(queryState.getQuery(),
-                                                          queryState.getSelection());
+                                                             queryState.getSelection());
         schemaView.setRoot(schema);
         layout.setRoot(schema);
         layout.measure(data);

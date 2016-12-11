@@ -129,7 +129,8 @@ public class QueryState {
         result = prime * result
                  + ((operationName == null) ? 0 : operationName.hashCode());
         result = prime * result + ((query == null) ? 0 : query.hashCode());
-        result = prime * result + ((selection == null) ? 0 : selection.hashCode());
+        result = prime * result
+                 + ((selection == null) ? 0 : selection.hashCode());
         result = prime * result
                  + ((targetURL == null) ? 0 : targetURL.hashCode());
         result = prime * result
@@ -138,12 +139,12 @@ public class QueryState {
     }
 
     public void initializeFrom(QueryState state) {
-        targetURL = state.getTargetURL();
-        query = state.getQuery();
-        variables = state.getVariables();
-        operationName = state.getOperationName();
-        selection = state.getSelection();
-        data = state.getData();
+        setTargetURL(state.getTargetURL());
+        setQuery(state.getQuery());
+        setVariables(state.getVariables());
+        setOperationName(state.getOperationName());
+        setSelection(state.getSelection());
+        this.data = state.data;
     }
 
     public void setData(String data) {

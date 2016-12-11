@@ -10,6 +10,10 @@
 	<name>Autolayout Explorer</name>
 	<description>A simple app to explore GraphQL endpoints with the auto layout framework.</description>
 
+	<properties>
+		<main.class>com.chiralbehaviors.layout.explorer.AutoLayoutExplorer</main.class>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>com.chiralbehaviors.layout</groupId>
@@ -28,4 +32,52 @@
 			<artifactId>logback-classic</artifactId>
 		</dependency>
 	</dependencies>
+	
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>2.4.3</version>
+				<configuration>
+					<createDependencyReducedPom>true</createDependencyReducedPom>
+					<filters>
+						<filter>
+							<artifact>*:*</artifact>
+							<excludes>
+								<exclude>META-INF/*.SF</exclude>
+								<exclude>META-INF/*.DSA</exclude>
+								<exclude>META-INF/*.RSA</exclude>
+							</excludes>
+						</filter>
+					</filters>
+					<artifactSet>
+						<excludes>
+							<exclude>classworlds:classworlds</exclude>
+						</excludes>
+					</artifactSet>
+					<shadedArtifactAttached>true</shadedArtifactAttached>
+					<shadedClassifierName>phat</shadedClassifierName>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<transformers>
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+								<transformer
+									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>${main.class}</mainClass>
+								</transformer>
+							</transformers>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 </project>

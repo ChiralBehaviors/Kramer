@@ -16,8 +16,20 @@
 
 package com.chiralbehaviors.layout.graphql;
 
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
+
+import javax.ws.rs.BadRequestException;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.client.Invocation.Builder;
+import javax.ws.rs.client.WebTarget;
+import javax.ws.rs.core.MediaType;
+
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import graphql.language.Definition;
 import graphql.language.Field;
@@ -34,6 +46,63 @@ import graphql.parser.Parser;
  *
  */
 public interface GraphQlUtil {
+    static class QueryException extends Exception {
+        private static final long serialVersionUID = 1L;
+        private final ArrayNode   errors;
+
+        public QueryException(ArrayNode errors) {
+            super(errors.toString());
+            this.errors = errors;
+        }
+
+        public ArrayNode getErrors() {
+            return errors;
+        }
+    }
+
+    static class QueryRequest {
+        public String              operationName;
+        public String              query;
+        public Map<String, Object> variables = Collections.emptyMap();
+
+        public QueryRequest() {
+        }
+
+        public QueryRequest(String query, Map<String, Object> variables) {
+            this.query = query;
+            this.variables = variables;
+        }
+
+        @Override
+        public String toString() {
+            return "QueryRequest [query=" + query + ", variables=" + variables
+                   + "]";
+        }
+    }
+
+    static Relation buildSchema(Field parentField) {
+        Relation parent = new Relation(parentField.getName());
+        for (Selection selection : parentField.getSelectionSet()
+                                              .getSelections()) {
+            if (selection instanceof Field) {
+                Field field = (Field) selection;
+                if (field.getSelectionSet() == null) {
+                    if (!field.getName()
+                              .equals("id")) {
+                        parent.addChild(new Primitive(field.getName()));
+                    }
+                } else {
+                    parent.addChild(buildSchema(field));
+                }
+            } else if (selection instanceof InlineFragment) {
+
+            } else if (selection instanceof FragmentSpread) {
+
+            }
+        }
+        return parent;
+    }
+
     static Relation buildSchema(String query) {
         for (Definition definition : new Parser().parseDocument(query)
                                                  .getDefinitions()) {
@@ -77,27 +146,29 @@ public interface GraphQlUtil {
                                                       source));
     }
 
-    static Relation buildSchema(Field parentField) {
-        Relation parent = new Relation(parentField.getName());
-        for (Selection selection : parentField.getSelectionSet()
-                                              .getSelections()) {
-            if (selection instanceof Field) {
-                Field field = (Field) selection;
-                if (field.getSelectionSet() == null) {
-                    if (!field.getName()
-                              .equals("id")) {
-                        parent.addChild(new Primitive(field.getName()));
-                    }
-                } else {
-                    parent.addChild(buildSchema(field));
-                }
-            } else if (selection instanceof InlineFragment) {
+    static ObjectNode evaluate(WebTarget endpoint,
+                               QueryRequest request) throws QueryException {
+        Builder invocationBuilder = endpoint.request(MediaType.APPLICATION_JSON_TYPE);
 
-            } else if (selection instanceof FragmentSpread) {
-
-            }
+        ObjectNode result = invocationBuilder.post(Entity.entity(request,
+                                                                 MediaType.APPLICATION_JSON_TYPE),
+                                                   ObjectNode.class);
+        ArrayNode errors = result.withArray("errors");
+        if (errors.size() > 0) {
+            throw new QueryException(errors);
         }
-        return parent;
+        return (ObjectNode) result.get("data");
     }
 
+    static String evaluate(WebTarget endpoint,
+                           String request) throws IOException {
+        try {
+            return endpoint.request(MediaType.APPLICATION_JSON_TYPE)
+                           .post(Entity.entity(request,
+                                               MediaType.APPLICATION_JSON_TYPE),
+                                 String.class);
+        } catch (BadRequestException e) {
+            return "{}";
+        }
+    }
 }

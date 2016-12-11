@@ -31,9 +31,9 @@ import org.slf4j.LoggerFactory;
 
 import com.chiralbehaviors.layout.AutoLayoutView;
 import com.chiralbehaviors.layout.Layout.LayoutModel;
+import com.chiralbehaviors.layout.graphql.GraphQlUtil.QueryException;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.toy.Page.Route;
-import com.chiralbehaviors.layout.toy.PageContext.QueryException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
