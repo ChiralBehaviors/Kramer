@@ -26,7 +26,7 @@ import com.chiralbehaviors.layout.graphql.GraphQlUtil.QueryException;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil.QueryRequest;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.toy.Page.Route;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * 
@@ -48,8 +48,8 @@ public class PageContext {
         this.root = GraphQlUtil.buildSchema(page.getQuery());
     }
 
-    public ObjectNode evaluate(WebTarget endpoint) throws QueryException {
-        return (ObjectNode) GraphQlUtil.evaluate(endpoint,
+    public JsonNode evaluate(WebTarget endpoint) throws QueryException {
+        return GraphQlUtil.evaluate(endpoint,
                                                  new QueryRequest(page.getQuery(),
                                                                   variables))
                                        .get(root.getField());

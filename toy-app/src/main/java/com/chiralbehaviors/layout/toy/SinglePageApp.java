@@ -36,7 +36,6 @@ import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.toy.Page.Route;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.hellblazer.utils.Utils;
 
@@ -210,7 +209,7 @@ public class SinglePageApp extends Application implements LayoutModel {
         layout.getStylesheets()
               .add(getClass().getResource("/non-nested.css")
                              .toExternalForm());
-        ObjectNode data = pageContext.evaluate(endpoint);
+        JsonNode data = pageContext.evaluate(endpoint);
         layout.setData(data);
         layout.measure(data);
         AnchorPane.setTopAnchor(layout, 0.0);
