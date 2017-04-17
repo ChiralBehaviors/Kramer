@@ -82,15 +82,11 @@ public class Relation extends SchemaNode implements Cloneable {
         children.add(child);
     }
 
-    public void autoLayout(double width, Layout layout) {
+    public void autoLayout(int cardinality, double width, Layout layout) {
         double snapped = snap(width);
         layout(snapped, layout);
-        justify(1, snapped, layout);
-        layoutOutline(1, layout);
-    }
-
-    public Control buildControl(Layout layout) {
-        return buildControl(1, layout);
+        justify(cardinality, snapped, layout);
+        layoutOutline(cardinality, layout);
     }
 
     @Override
@@ -237,7 +233,7 @@ public class Relation extends SchemaNode implements Cloneable {
     @Override
     void justify(int cardinality, double width, Layout layout) {
         if (isFold()) {
-            fold.justify(averageCardinality, width, layout);
+            fold.justify(averageCardinality * cardinality, width, layout);
             return;
         }
         if (width <= 0)
@@ -286,7 +282,7 @@ public class Relation extends SchemaNode implements Cloneable {
     @Override
     double layoutOutline(int cardinality, Layout layout) {
         if (isFold()) {
-            return fold.layoutOutline(averageCardinality, layout);
+            return fold.layoutOutline(averageCardinality * cardinality, layout);
         }
         if (isUseTable()) {
             return layoutTable(cardinality, layout, 0);
@@ -309,7 +305,7 @@ public class Relation extends SchemaNode implements Cloneable {
     @Override
     double layoutRow(int cardinality, Layout layout) {
         if (isFold()) {
-            return fold.layoutRow(averageCardinality, layout);
+            return fold.layoutRow(averageCardinality * cardinality, layout);
         }
 
         elementHeight = children.stream()
@@ -323,8 +319,7 @@ public class Relation extends SchemaNode implements Cloneable {
 
     @Override
     double measure(ArrayNode data, Layout layout, INDENT indent) {
-        if (fold == null && autoFold && children.size() == 1
-            && children.get(children.size() - 1) instanceof Relation) {
+        if (isAutoFoldable()) {
             fold = ((Relation) children.get(children.size() - 1));
         }
         if (data.isNull() || children.size() == 0) {
@@ -363,7 +358,8 @@ public class Relation extends SchemaNode implements Cloneable {
                                                     Layout layout) {
         if (isFold()) {
             return fold.outlineElement(labelWidth, extract(extractor),
-                                       averageCardinality, layout);
+                                       averageCardinality * cardinality,
+                                       layout);
         }
         Control control = useTable ? buildNestedTable(n -> n, cardinality,
                                                       layout)
@@ -411,8 +407,9 @@ public class Relation extends SchemaNode implements Cloneable {
                                                                             INDENT indent,
                                                                             boolean root) {
         if (isFold()) {
-            return fold.buildColumn(averageCardinality, extract(extractor),
-                                    columnMap, layout, inset, indent);
+            return fold.buildColumn(averageCardinality * cardinality,
+                                    extract(extractor), columnMap, layout,
+                                    inset, indent);
         }
 
         List<Function<Double, Pair<Consumer<JsonNode>, Control>>> fields = new ArrayList<>();
@@ -459,9 +456,9 @@ public class Relation extends SchemaNode implements Cloneable {
         };
     }
 
-    private Control buildControl(int cardinality, Layout layout) {
+    public Control buildControl(int cardinality, Layout layout) {
         if (isFold()) {
-            return fold.buildControl(averageCardinality, layout);
+            return fold.buildControl(averageCardinality * cardinality, layout);
         }
         return useTable ? buildNestedTable(n -> n, 1, layout)
                         : buildOutline(n -> n, 1, layout);
@@ -471,7 +468,8 @@ public class Relation extends SchemaNode implements Cloneable {
                                                  int cardinality,
                                                  Layout layout) {
         if (isFold()) {
-            return fold.buildNestedTable(extract(extractor), averageCardinality,
+            return fold.buildNestedTable(extract(extractor),
+                                         averageCardinality * cardinality,
                                          layout);
         }
         TableView<JsonNode> table = tableBase();
@@ -526,8 +524,8 @@ public class Relation extends SchemaNode implements Cloneable {
     private ListView<JsonNode> buildOutline(Function<JsonNode, JsonNode> extractor,
                                             int cardinality, Layout layout) {
         if (isFold()) {
-            return fold.buildOutline(extract(extractor), averageCardinality,
-                                     layout);
+            return fold.buildOutline(extract(extractor),
+                                     averageCardinality * cardinality, layout);
         }
 
         double outlineLabelWidth = children.stream()
@@ -611,6 +609,11 @@ public class Relation extends SchemaNode implements Cloneable {
             default:
         }
         return 0;
+    }
+
+    private boolean isAutoFoldable() {
+        return fold == null && autoFold && children.size() == 1
+               && children.get(children.size() - 1) instanceof Relation;
     }
 
     private void justifyOutline(double width, Layout layout) {

@@ -128,9 +128,10 @@ public class AutoLayoutView extends Control {
             if (relation == null) {
                 return;
             }
-            relation.autoLayout(width, style);
-            layout = relation.buildControl(style);
-            relation.setItems(layout, data.get());
+            JsonNode zeeData = data.get();
+            relation.autoLayout(zeeData.size(), width, style);
+            layout = relation.buildControl(zeeData.size(), style);
+            relation.setItems(layout, zeeData);
             getChildren().add(layout);
         } catch (Throwable e) {
             log.log(Level.SEVERE,
