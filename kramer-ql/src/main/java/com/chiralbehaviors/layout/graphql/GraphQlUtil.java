@@ -17,8 +17,11 @@
 package com.chiralbehaviors.layout.graphql;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.client.Entity;
@@ -104,23 +107,33 @@ public interface GraphQlUtil {
     }
 
     static Relation buildSchema(String query) {
-        for (Definition definition : new Parser().parseDocument(query)
-                                                 .getDefinitions()) {
-            if (definition instanceof OperationDefinition) {
-                OperationDefinition operation = (OperationDefinition) definition;
-                if (operation.getOperation()
-                             .equals(Operation.QUERY)) {
-                    for (Selection selection : operation.getSelectionSet()
-                                                        .getSelections()) {
-                        if (selection instanceof Field) {
-                            return buildSchema((Field) selection);
+        List<Relation> children = new ArrayList<Relation>();
+        AtomicReference<String> operationName = new AtomicReference<>();
+        new Parser().parseDocument(query)
+                    .getDefinitions()
+                    .stream()
+                    .filter(d -> d instanceof OperationDefinition)
+                    .map(d -> (OperationDefinition) d)
+                    .filter(d -> d.getOperation()
+                                  .equals(Operation.QUERY))
+                    .findFirst()
+                    .ifPresent(operation -> {
+                        operationName.set(operation.getName());
+                        for (Selection selection : operation.getSelectionSet()
+                                                            .getSelections()) {
+                            if (selection instanceof Field) {
+                                children.add(buildSchema((Field) selection));
+                            }
                         }
-                    }
-                }
-            }
+                    });
+        if (children.isEmpty()) {
+            throw new IllegalStateException(String.format("Invalid query: %s",
+                                                          query));
         }
-        throw new IllegalStateException(String.format("Invalid query, cannot find a source: %s",
-                                                      query));
+        Relation parent = new Relation(operationName.get() != null ? operationName.get()
+                                                                   : "query");
+        children.forEach(c -> parent.addChild(c));
+        return parent;
     }
 
     static Relation buildSchema(String query, String source) {
