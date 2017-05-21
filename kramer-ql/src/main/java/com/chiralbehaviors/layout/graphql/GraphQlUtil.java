@@ -98,12 +98,33 @@ public interface GraphQlUtil {
                     parent.addChild(buildSchema(field));
                 }
             } else if (selection instanceof InlineFragment) {
-
+                buildSchema(parent, (InlineFragment) selection);
             } else if (selection instanceof FragmentSpread) {
 
             }
         }
         return parent;
+    }
+
+    static void buildSchema(Relation parent, InlineFragment fragment) {
+        for (Selection selection : fragment.getSelectionSet()
+                                           .getSelections()) {
+            if (selection instanceof Field) {
+                Field field = (Field) selection;
+                if (field.getSelectionSet() == null) {
+                    if (!field.getName()
+                              .equals("id")) {
+                        parent.addChild(new Primitive(field.getName()));
+                    }
+                } else {
+                    parent.addChild(buildSchema(field));
+                }
+            } else if (selection instanceof InlineFragment) {
+                buildSchema(parent, (InlineFragment) selection);
+            } else if (selection instanceof FragmentSpread) {
+
+            }
+        }
     }
 
     static Relation buildSchema(String query) {
