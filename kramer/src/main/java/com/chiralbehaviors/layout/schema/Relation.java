@@ -327,7 +327,7 @@ public class Relation extends SchemaNode implements Cloneable {
         }
         double labelWidth = layout.textWidth(label);
         labelWidth += layout.getTextHorizontalInset();
-        int sum = 0;
+        double sum = 0;
         tableColumnWidth = 0;
         for (SchemaNode child : children) {
             ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
