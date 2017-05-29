@@ -89,6 +89,14 @@ public class Relation extends SchemaNode implements Cloneable {
         layoutOutline(cardinality, layout);
     }
 
+    public Control buildControl(int cardinality, Layout layout) {
+        if (isFold()) {
+            return fold.buildControl(averageCardinality * cardinality, layout);
+        }
+        return useTable ? buildNestedTable(n -> n, 1, layout)
+                        : buildOutline(n -> n, 1, layout);
+    }
+
     @Override
     public JsonNode extractFrom(JsonNode jsonNode) {
         if (isFold()) {
@@ -99,6 +107,16 @@ public class Relation extends SchemaNode implements Cloneable {
 
     public int getAverageCardinality() {
         return averageCardinality;
+    }
+
+    public SchemaNode getChild(String field) {
+        for (SchemaNode child : children) {
+            if (child.getField()
+                     .equals(field)) {
+                return child;
+            }
+        }
+        return null;
     }
 
     public List<SchemaNode> getChildren() {
@@ -454,14 +472,6 @@ public class Relation extends SchemaNode implements Cloneable {
                 setItems(row, extract.apply(node));
             }, row);
         };
-    }
-
-    public Control buildControl(int cardinality, Layout layout) {
-        if (isFold()) {
-            return fold.buildControl(averageCardinality * cardinality, layout);
-        }
-        return useTable ? buildNestedTable(n -> n, 1, layout)
-                        : buildOutline(n -> n, 1, layout);
     }
 
     private TableView<JsonNode> buildNestedTable(Function<JsonNode, JsonNode> extractor,
