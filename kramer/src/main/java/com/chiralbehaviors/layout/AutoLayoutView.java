@@ -131,7 +131,7 @@ public class AutoLayoutView extends Control {
             JsonNode zeeData = data.get();
             relation.autoLayout(zeeData.size(), width, style);
             layout = relation.buildControl(zeeData.size(), style);
-            relation.setItems(layout, zeeData);
+            relation.setItems(layout, zeeData, style);
             getChildren().add(layout);
         } catch (Throwable e) {
             log.log(Level.SEVERE,
@@ -144,7 +144,7 @@ public class AutoLayoutView extends Control {
             if (layout != null) {
                 SchemaNode relation = root.get();
                 if (relation != null) {
-                    relation.setItems(layout, data.get());
+                    relation.setItems(layout, data.get(), style);
                 }
             }
         } catch (Throwable e) {

@@ -16,8 +16,6 @@
 
 package com.chiralbehaviors.layout.schema;
 
-import static com.chiralbehaviors.layout.Layout.snap;
-
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -84,7 +82,8 @@ public class Primitive extends SchemaNode {
             bind(control, columnMap.get(this), inset);
             layout.getModel()
                   .apply(control, Primitive.this);
-            return new Pair<>(node -> setItems(control, extractFrom(node)),
+            return new Pair<>(node -> setItems(control, extractFrom(node),
+                                               layout),
                               control);
         };
     }
@@ -111,12 +110,7 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double layout(double width, Layout layout) {
-        return variableLength ? width : Math.min(width, columnWidth);
-    }
-
-    @Override
-    double layoutOutline(int cardinality, Layout layout) {
+    double layout(int cardinality, double width, Layout layout) {
         valueHeight = getValueHeight(layout);
         return valueHeight;
     }
@@ -128,13 +122,18 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
+    double layoutWidth(double width, Layout layout) {
+        return variableLength ? width : Math.min(width, columnWidth);
+    }
+
+    @Override
     double measure(ArrayNode data, Layout layout, INDENT indent) {
         double labelWidth = getLabelWidth(layout);
         double sum = 0;
         maxWidth = 0;
         columnWidth = 0;
         for (JsonNode prim : data) {
-            List<JsonNode> rows = asList(prim);
+            List<JsonNode> rows = SchemaNode.asList(prim);
             double width = 0;
             for (JsonNode row : rows) {
                 width += layout.textWidth(toString(row));
@@ -144,8 +143,9 @@ public class Primitive extends SchemaNode {
         }
         double averageWidth = data.size() == 0 ? 0 : (sum / data.size());
 
-        columnWidth = snap(Math.max(labelWidth,
-                                    Math.max(valueDefaultWidth, averageWidth)));
+        columnWidth = layout.snap(Math.max(labelWidth,
+                                           Math.max(valueDefaultWidth,
+                                                    averageWidth)));
         columnWidth += indent == INDENT.RIGHT ? 26 : 0;
         if (maxWidth > averageWidth) {
             variableLength = true;
@@ -180,7 +180,7 @@ public class Primitive extends SchemaNode {
         return new Pair<>(item -> {
             JsonNode extracted = extractor.apply(item);
             JsonNode extractedField = extracted.get(field);
-            setItemsOf(control, extractedField);
+            setItems(control, extractedField, layout);
         }, box);
     }
 
@@ -205,7 +205,7 @@ public class Primitive extends SchemaNode {
 
     private double getValueHeight(Layout layout) {
         double rows = Math.ceil(maxWidth / justifiedWidth) + 1;
-        return Layout.snap(layout.getTextLineHeight() * rows)
+        return layout.snap(layout.getTextLineHeight() * rows)
                + layout.getTextVerticalInset();
     }
 

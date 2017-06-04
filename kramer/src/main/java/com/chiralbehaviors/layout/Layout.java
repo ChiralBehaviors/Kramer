@@ -21,7 +21,9 @@ import java.util.List;
 
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
+import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.sun.javafx.scene.control.skin.TableHeaderRow;
 import com.sun.javafx.scene.control.skin.TableViewSkinBase;
 import com.sun.javafx.scene.control.skin.TextAreaSkin;
@@ -34,6 +36,8 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.Control;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableCell;
@@ -79,10 +83,6 @@ public class Layout {
                           a.getLeft() + b.getLeft());
     }
 
-    public static double snap(double value) {
-        return Math.ceil(value);
-    }
-
     @SuppressWarnings("deprecation")
     static double getLineHeight(Font font, TextBoundsType boundsType) {
         LAYOUT.setContent("W", font.impl_getNativeFont());
@@ -100,6 +100,7 @@ public class Layout {
     }
 
     private Insets            listCellInsets = ZERO_INSETS;
+
     private Insets            listInsets     = ZERO_INSETS;
     private final LayoutModel model;
     private List<String>      styleSheets;
@@ -314,6 +315,33 @@ public class Layout {
         return headerRow.getHeight();
     }
 
+    public void setItemsOf(Control control, JsonNode data) {
+        if (data == null) {
+            data = JsonNodeFactory.instance.arrayNode();
+        }
+        List<JsonNode> dataList = SchemaNode.asList(data);
+        if (control instanceof ListView) {
+            @SuppressWarnings("unchecked")
+            ListView<JsonNode> listView = (ListView<JsonNode>) control;
+            listView.getItems()
+                    .setAll(dataList);
+        } else if (control instanceof TableView) {
+            @SuppressWarnings("unchecked")
+            TableView<JsonNode> tableView = (TableView<JsonNode>) control;
+            tableView.getItems()
+                     .setAll(dataList);
+        } else if (control instanceof Label) {
+            Label label = (Label) control;
+            label.setText(SchemaNode.asText(data));
+        } else if (control instanceof TextArea) {
+            TextArea label = (TextArea) control;
+            label.setText(SchemaNode.asText(data));
+        } else {
+            throw new IllegalArgumentException(String.format("Unknown control %s",
+                                                             control));
+        }
+    }
+
     public void setListCellInsets(Insets listCellInsets) {
         this.listCellInsets = listCellInsets;
     }
@@ -340,6 +368,10 @@ public class Layout {
 
     public void setTextLineHeight(double textLineHeight) {
         this.textLineHeight = textLineHeight;
+    }
+
+    public double snap(double value) {
+        return Math.ceil(value);
     }
 
     public double textDoubleSpaceWidth() {

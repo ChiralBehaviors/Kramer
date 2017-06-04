@@ -33,11 +33,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import javafx.scene.Parent;
 import javafx.scene.control.Control;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
 import javafx.util.Pair;
 
 /**
@@ -58,52 +54,6 @@ abstract public class SchemaNode {
         public boolean isRight() {
             return false;
         }
-    }
-
-    public static ArrayNode asArray(JsonNode node) {
-        if (node == null) {
-            return JsonNodeFactory.instance.arrayNode();
-        }
-        if (node.isArray()) {
-            return (ArrayNode) node;
-        }
-
-        ArrayNode array = JsonNodeFactory.instance.arrayNode();
-        array.add(node);
-        return array;
-    }
-
-    public static List<JsonNode> asList(JsonNode jsonNode) {
-        List<JsonNode> nodes = new ArrayList<>();
-        if (jsonNode == null) {
-            return nodes;
-        }
-        if (jsonNode.isArray()) {
-            jsonNode.forEach(node -> nodes.add(node));
-        } else {
-            return Collections.singletonList(jsonNode);
-        }
-        return nodes;
-    }
-
-    public static String asText(JsonNode node) {
-        if (node == null) {
-            return "";
-        }
-        boolean first = true;
-        if (node.isArray()) {
-            StringBuilder builder = new StringBuilder();
-            for (JsonNode row : ((ArrayNode) node)) {
-                if (first) {
-                    first = false;
-                } else {
-                    builder.append('\n');
-                }
-                builder.append(row.asText());
-            }
-            return builder.toString();
-        }
-        return node.asText();
     }
 
     public static ArrayNode extractField(JsonNode node, String field) {
@@ -148,35 +98,8 @@ abstract public class SchemaNode {
     }
 
     public static double labelHeight(Layout layout) {
-        return Math.max(43, Layout.snap(layout.getTextLineHeight() * 2)
+        return Math.max(43, layout.snap(layout.getTextLineHeight() * 2)
                             + layout.getTextVerticalInset());
-    }
-
-    public static void setItemsOf(Control control, JsonNode data) {
-        if (data == null) {
-            data = JsonNodeFactory.instance.arrayNode();
-        }
-        List<JsonNode> dataList = asList(data);
-        if (control instanceof ListView) {
-            @SuppressWarnings("unchecked")
-            ListView<JsonNode> listView = (ListView<JsonNode>) control;
-            listView.getItems()
-                    .setAll(dataList);
-        } else if (control instanceof TableView) {
-            @SuppressWarnings("unchecked")
-            TableView<JsonNode> tableView = (TableView<JsonNode>) control;
-            tableView.getItems()
-                     .setAll(dataList);
-        } else if (control instanceof Label) {
-            Label label = (Label) control;
-            label.setText(asText(data));
-        } else if (control instanceof TextArea) {
-            TextArea label = (TextArea) control;
-            label.setText(asText(data));
-        } else {
-            throw new IllegalArgumentException(String.format("Unknown control %s",
-                                                             control));
-        }
     }
 
     @JsonProperty
@@ -214,8 +137,8 @@ abstract public class SchemaNode {
         return false;
     }
 
-    public void setItems(Control control, JsonNode data) {
-        setItemsOf(control, data);
+    public void setItems(Control control, JsonNode data, Layout layout) {
+        layout.setItemsOf(control, data);
     }
 
     public void setLabel(String label) {
@@ -257,11 +180,11 @@ abstract public class SchemaNode {
 
     abstract void justify(int cardinality, double width, Layout layout);
 
-    abstract double layout(double width, Layout layout);
-
-    abstract double layoutOutline(int cardinality, Layout layout);
+    abstract double layout(int cardinality, double width, Layout layout);
 
     abstract double layoutRow(int cardinality, Layout layout);
+
+    abstract double layoutWidth(double width, Layout layout);
 
     abstract double measure(ArrayNode data, Layout layout, INDENT indent);
 
@@ -269,4 +192,50 @@ abstract public class SchemaNode {
                                                              Function<JsonNode, JsonNode> extractor,
                                                              int cardinality,
                                                              Layout layout);
+
+    public static String asText(JsonNode node) {
+        if (node == null) {
+            return "";
+        }
+        boolean first = true;
+        if (node.isArray()) {
+            StringBuilder builder = new StringBuilder();
+            for (JsonNode row : ((ArrayNode) node)) {
+                if (first) {
+                    first = false;
+                } else {
+                    builder.append('\n');
+                }
+                builder.append(row.asText());
+            }
+            return builder.toString();
+        }
+        return node.asText();
+    }
+
+    public static ArrayNode asArray(JsonNode node) {
+        if (node == null) {
+            return JsonNodeFactory.instance.arrayNode();
+        }
+        if (node.isArray()) {
+            return (ArrayNode) node;
+        }
+
+        ArrayNode array = JsonNodeFactory.instance.arrayNode();
+        array.add(node);
+        return array;
+    }
+
+    public static List<JsonNode> asList(JsonNode jsonNode) {
+        List<JsonNode> nodes = new ArrayList<>();
+        if (jsonNode == null) {
+            return nodes;
+        }
+        if (jsonNode.isArray()) {
+            jsonNode.forEach(node -> nodes.add(node));
+        } else {
+            return Collections.singletonList(jsonNode);
+        }
+        return nodes;
+    }
 }
