@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2016 Chiral Behaviors, LLC, all rights reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -56,6 +56,52 @@ abstract public class SchemaNode {
         }
     }
 
+    public static ArrayNode asArray(JsonNode node) {
+        if (node == null) {
+            return JsonNodeFactory.instance.arrayNode();
+        }
+        if (node.isArray()) {
+            return (ArrayNode) node;
+        }
+
+        ArrayNode array = JsonNodeFactory.instance.arrayNode();
+        array.add(node);
+        return array;
+    }
+
+    public static List<JsonNode> asList(JsonNode jsonNode) {
+        List<JsonNode> nodes = new ArrayList<>();
+        if (jsonNode == null) {
+            return nodes;
+        }
+        if (jsonNode.isArray()) {
+            jsonNode.forEach(node -> nodes.add(node));
+        } else {
+            return Collections.singletonList(jsonNode);
+        }
+        return nodes;
+    }
+
+    public static String asText(JsonNode node) {
+        if (node == null) {
+            return "";
+        }
+        boolean first = true;
+        if (node.isArray()) {
+            StringBuilder builder = new StringBuilder();
+            for (JsonNode row : ((ArrayNode) node)) {
+                if (first) {
+                    first = false;
+                } else {
+                    builder.append('\n');
+                }
+                builder.append(row.asText());
+            }
+            return builder.toString();
+        }
+        return node.asText();
+    }
+
     public static ArrayNode extractField(JsonNode node, String field) {
         if (node == null) {
             return JsonNodeFactory.instance.arrayNode();
@@ -98,14 +144,13 @@ abstract public class SchemaNode {
     }
 
     public static double labelHeight(Layout layout) {
-        return Math.max(43, layout.snap(layout.getTextLineHeight() * 2)
+        return Math.max(43, Layout.snap(layout.getTextLineHeight() * 2)
                             + layout.getTextVerticalInset());
     }
 
     @JsonProperty
     String field;
-    @JsonProperty
-    double justifiedWidth = 0;
+
     @JsonProperty
     String label;
 
@@ -155,11 +200,13 @@ abstract public class SchemaNode {
                                                                              INDENT indent);
 
     TableColumn<JsonNode, JsonNode> buildColumn(Layout layout, double inset,
-                                                INDENT indent) {
+                                                INDENT indent, double width) {
         TableColumn<JsonNode, JsonNode> column = new TableColumn<>(label);
         column.setUserData(this);
         return column;
     }
+
+    abstract double elementHeight(int cardinality, Layout layout, double width);
 
     Function<JsonNode, JsonNode> extract(Function<JsonNode, JsonNode> extractor) {
         return n -> {
@@ -178,64 +225,17 @@ abstract public class SchemaNode {
         return false;
     }
 
-    abstract void justify(int cardinality, double width, Layout layout);
+    abstract double layout(double width, Layout layout);
 
-    abstract double layout(int cardinality, double width, Layout layout);
-
-    abstract double layoutRow(int cardinality, Layout layout);
-
-    abstract double layoutWidth(double width, Layout layout);
+    abstract double layout(int cardinality, Layout layout, double justified);
 
     abstract double measure(ArrayNode data, Layout layout, INDENT indent);
 
     abstract Pair<Consumer<JsonNode>, Parent> outlineElement(double labelWidth,
                                                              Function<JsonNode, JsonNode> extractor,
                                                              int cardinality,
-                                                             Layout layout);
+                                                             Layout layout,
+                                                             double justified);
 
-    public static String asText(JsonNode node) {
-        if (node == null) {
-            return "";
-        }
-        boolean first = true;
-        if (node.isArray()) {
-            StringBuilder builder = new StringBuilder();
-            for (JsonNode row : ((ArrayNode) node)) {
-                if (first) {
-                    first = false;
-                } else {
-                    builder.append('\n');
-                }
-                builder.append(row.asText());
-            }
-            return builder.toString();
-        }
-        return node.asText();
-    }
-
-    public static ArrayNode asArray(JsonNode node) {
-        if (node == null) {
-            return JsonNodeFactory.instance.arrayNode();
-        }
-        if (node.isArray()) {
-            return (ArrayNode) node;
-        }
-
-        ArrayNode array = JsonNodeFactory.instance.arrayNode();
-        array.add(node);
-        return array;
-    }
-
-    public static List<JsonNode> asList(JsonNode jsonNode) {
-        List<JsonNode> nodes = new ArrayList<>();
-        if (jsonNode == null) {
-            return nodes;
-        }
-        if (jsonNode.isArray()) {
-            jsonNode.forEach(node -> nodes.add(node));
-        } else {
-            return Collections.singletonList(jsonNode);
-        }
-        return nodes;
-    }
+    abstract double rowElement(int cardinality, Layout layout, double width);
 }

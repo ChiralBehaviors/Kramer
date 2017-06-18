@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2016 Chiral Behaviors, LLC, all rights reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,14 +16,15 @@
 
 package com.chiralbehaviors.layout.schema;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import com.chiralbehaviors.layout.Layout;
 import com.chiralbehaviors.layout.RelationTableRow;
@@ -53,51 +54,154 @@ import javafx.util.Pair;
  * @author hhildebrand
  *
  */
-public class Relation extends SchemaNode implements Cloneable {
+public class Relation extends SchemaNode {
     private static class Column {
-        private final Map<SchemaNode, Double> fields = new LinkedHashMap<>();
+        private static class Element {
+            public double           height = 0;
+            public final SchemaNode node;
 
-        void add(SchemaNode node, double height) {
-            fields.put(node, height);
+            public Element(SchemaNode node) {
+                this.node = node;
+            }
+        }
+
+        private ArrayDeque<Element> fields = new ArrayDeque<>();
+        private double              width  = 0;
+
+        public Column(double width) {
+            this.width = width;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Column [fields=%s, elementHeight()=%s, maxWidth()=%s]",
+                                 fields.stream()
+                                       .map(p -> p.node.field)
+                                       .collect(Collectors.toList()),
+                                 maxWidth());
+        }
+
+        void add(SchemaNode node) {
+            fields.add(new Element(node));
+        }
+
+        void addFirst(Element field) {
+            fields.addFirst(field);
+        }
+
+        double elementHeight(int cardinality, Layout layout) {
+            return elementHeight(cardinality, layout, fields);
+        }
+
+        double maxWidth() {
+            return fields.stream()
+                         .mapToDouble(p -> p.height)
+                         .max()
+                         .getAsDouble();
+        }
+
+        void setWidth(double width) {
+            this.width = width;
+        }
+
+        boolean slideRight(int cardinality, Column column, Layout layout,
+                           double columnWidth) {
+            if (fields.size() == 1) {
+                return false;
+            }
+            if (without(cardinality, layout) < column.with(fields.getLast(),
+                                                           cardinality,
+                                                           layout)) {
+                return false;
+            }
+            column.addFirst(fields.removeLast());
+            return true;
+        }
+
+        double with(Element field, int cardinality, Layout layout) {
+            ArrayDeque<Element> elements = fields.clone();
+            elements.add(field);
+            return elementHeight(cardinality, layout, elements);
+        }
+
+        double without(int cardinality, Layout layout) {
+            ArrayDeque<Element> elements = fields.clone();
+            elements.removeLast();
+            return elementHeight(cardinality, layout, elements);
+        }
+
+        private double elementHeight(int cardinality, Layout layout,
+                                     ArrayDeque<Element> elements) {
+            double available = width - elements.stream()
+                                               .map(f -> f.node)
+                                               .mapToDouble(child -> child.getLabelWidth(layout))
+                                               .max()
+                                               .getAsDouble();
+            return Layout.snap(elements.stream()
+                                       .map(f -> f.node)
+                                       .mapToDouble(child -> {
+                                           return child.elementHeight(cardinality,
+                                                                      layout,
+                                                                      available);
+                                       })
+                                       .reduce((a, b) -> a + b)
+                                       .getAsDouble());
         }
     }
 
-    private class ColumnSet {
+    private static class ColumnSet {
+
         private final List<Column> columns = new ArrayList<>();
-        private double             elementHeight;
 
-        {
-            columns.add(new Column());
+        @Override
+        public String toString() {
+            return String.format("ColumnSet [columns=%s]", columns);
         }
 
-        void add(SchemaNode node, double width, Layout layout) {
+        void add(SchemaNode node) {
             columns.get(0)
-                   .add(node, node.layout(averageCardinality, width, layout));
+                   .add(node);
         }
 
-        void layout(double width) {
-
+        double compress(int cardinality, Layout layout, double width) {
+            Column firstColumn = columns.get(0);
+            int count = Math.max(1, (int) (width / firstColumn.maxWidth()));
+            if (count == 1) {
+                return firstColumn.elementHeight(cardinality, layout);
+            } else {
+                double columnWidth = Layout.snap(width / count);
+                firstColumn.setWidth(columnWidth);
+                IntStream.range(1, count)
+                         .forEach(i -> columns.add(new Column(columnWidth)));
+                double elementHeight = firstColumn.elementHeight(cardinality,
+                                                                 layout);
+                double lastHeight;
+                do {
+                    lastHeight = elementHeight;
+                    for (int i = 0; i < columns.size() - 2; i++) {
+                        while (columns.get(i)
+                                      .slideRight(cardinality,
+                                                  columns.get(i + 1), layout,
+                                                  columnWidth)) {
+                        }
+                    }
+                    elementHeight = columns.stream()
+                                           .mapToDouble(c -> c.elementHeight(cardinality,
+                                                                             layout))
+                                           .max()
+                                           .orElse(0d);
+                } while (lastHeight > elementHeight);
+                return elementHeight;
+            }
         }
     }
 
-    @JsonProperty
     private boolean                autoFold           = true;
-    @JsonProperty
     private int                    averageCardinality = 1;
-    @JsonProperty
     private final List<SchemaNode> children           = new ArrayList<>();
     private final List<ColumnSet>  columnSets         = new ArrayList<>();
-    @JsonProperty
-    private double                 contentHeight      = 0;
-    @JsonProperty
-    private double                 elementHeight      = 0;
-    @JsonProperty
     private Relation               fold;
-    @JsonProperty
-    private double                 rowHeight          = 0;
-    @JsonProperty
     private double                 tableColumnWidth   = 0;
-    @JsonProperty
     private boolean                useTable           = false;
 
     public Relation(String label) {
@@ -109,18 +213,17 @@ public class Relation extends SchemaNode implements Cloneable {
     }
 
     public void autoLayout(int cardinality, double width, Layout layout) {
-        double snapped = layout.snap(width);
-        layoutWidth(snapped, layout);
-        justify(cardinality, snapped, layout);
-        layout(cardinality, snapped, layout);
+        double snapped = Layout.snap(width);
+        layout(snapped, layout);
     }
 
-    public Control buildControl(int cardinality, Layout layout) {
+    public Control buildControl(int cardinality, Layout layout, double width) {
         if (isFold()) {
-            return fold.buildControl(averageCardinality * cardinality, layout);
+            return fold.buildControl(averageCardinality * cardinality, layout,
+                                     width);
         }
-        return useTable ? buildNestedTable(n -> n, 1, layout)
-                        : buildOutline(n -> n, 1, layout);
+        return useTable ? buildNestedTable(n -> n, 1, layout, width)
+                        : buildOutline(n -> n, 1, layout, width);
     }
 
     @Override
@@ -212,9 +315,8 @@ public class Relation extends SchemaNode implements Cloneable {
     @Override
     public String toString(int indent) {
         StringBuffer buf = new StringBuffer();
-        buf.append(String.format("Relation [%s:%.2f(%.2f) x %s]", label,
-                                 justifiedWidth, tableColumnWidth,
-                                 averageCardinality));
+        buf.append(String.format("Relation [%s:%.2f x %s]", label,
+                                 tableColumnWidth, averageCardinality));
         buf.append('\n');
         children.forEach(c -> {
             for (int i = 0; i < indent; i++) {
@@ -235,27 +337,54 @@ public class Relation extends SchemaNode implements Cloneable {
                                                                     double inset,
                                                                     INDENT indent) {
         return buildColumn(cardinality, extractor, columnMap, layout, inset,
-                           indent, false);
+                           indent);
     }
 
     @Override
     TableColumn<JsonNode, JsonNode> buildColumn(Layout layout, double inset,
-                                                INDENT indent) {
+                                                INDENT indent,
+                                                double justified) {
         if (isFold()) {
-            return fold.buildColumn(layout, inset, indent);
+            return fold.buildColumn(layout, inset, indent, justified);
         }
         TableColumn<JsonNode, JsonNode> column = super.buildColumn(layout,
                                                                    inset,
-                                                                   indent);
-        column.setPrefWidth(justifiedWidth);
+                                                                   indent,
+                                                                   justified);
+        column.setPrefWidth(justified);
         ObservableList<TableColumn<JsonNode, ?>> columns = column.getColumns();
         children.forEach(child -> columns.add(child.buildColumn(layout,
                                                                 inset(layout,
                                                                       inset,
                                                                       child,
                                                                       indent),
-                                                                indent(child))));
+                                                                indent(child),
+                                                                justified)));
         return column;
+    }
+
+    @Override
+    double elementHeight(int cardinality, Layout layout, double width) {
+        if (isFold()) {
+            return fold.elementHeight(cardinality, layout, width);
+        }
+        if (!useTable) {
+            throw new IllegalStateException("Should only be called on nested tables");
+        }
+        double slack = width - getTableColumnWidth(layout);
+        assert slack >= 0 : String.format("Negative slack: %.2f (%.2f) \n%s",
+                                          slack, width, this);
+        TableView<JsonNode> table = tableBase(width);
+        children.forEach(child -> {
+            INDENT indent = indent(child);
+            table.getColumns()
+                 .add(child.buildColumn(layout, inset(layout, 0, child, indent),
+                                        indent, width));
+        });
+        table.setPrefWidth(width);
+        return (rowElement(cardinality, layout, width)
+                + layout.getTableRowVerticalInset() * cardinality)
+               + layout.measureHeader(table) + layout.getTableVerticalInset();
     }
 
     @Override
@@ -275,70 +404,46 @@ public class Relation extends SchemaNode implements Cloneable {
     }
 
     @Override
-    void justify(int cardinality, double width, Layout layout) {
+    double layout(double justified, Layout layout) {
         if (isFold()) {
-            fold.justify(averageCardinality * cardinality, width, layout);
-            return;
-        }
-        if (width <= 0)
-            return;
-
-        if (useTable) {
-            justifyTable(width, layout);
-        } else {
-            justifyOutline(width, layout);
-        }
-    }
-
-    @Override
-    double layout(int cardinality, double width, Layout layout) {
-        if (isFold()) {
-            return fold.layout(averageCardinality * cardinality, width, layout);
-        }
-        return isUseTable() ? layoutTable(cardinality, layout, 0)
-                            : layoutOutline(cardinality, layout, width);
-    }
-
-    @Override
-    double layoutRow(int cardinality, Layout layout) {
-        if (isFold()) {
-            return fold.layoutRow(averageCardinality * cardinality, layout);
-        }
-
-        elementHeight = children.stream()
-                                .mapToDouble(child -> layout.snap(child.layoutRow(averageCardinality,
-                                                                                  layout)))
-                                .max()
-                                .getAsDouble();
-
-        return extendedHeight(layout, cardinality);
-    }
-
-    @Override
-    double layoutWidth(double width, Layout layout) {
-        if (isFold()) {
-            return fold.layoutWidth(width, layout);
+            return fold.layout(justified, layout);
         }
         useTable = false;
         double listInset = layout.getListHorizontalInset();
         double tableInset = layout.getTableHorizontalInset();
-        double available = width - children.stream()
-                                           .mapToDouble(child -> child.getLabelWidth(layout))
-                                           .max()
-                                           .getAsDouble();
+        double available = justified - children.stream()
+                                               .mapToDouble(child -> child.getLabelWidth(layout))
+                                               .max()
+                                               .getAsDouble();
         double outlineWidth = children.stream()
-                                      .mapToDouble(child -> child.layoutWidth(available,
-                                                                              layout))
+                                      .mapToDouble(child -> child.layout(available,
+                                                                         layout))
                                       .max()
-                                      .getAsDouble()
+                                      .orElse(0d)
                               + listInset;
         double tableWidth = tableColumnWidth + tableInset;
         if (tableWidth <= outlineWidth) {
             nestTable();
             return tableWidth;
         }
-        compressOutline(width);
         return outlineWidth;
+    }
+
+    @Override
+    double layout(int cardinality, Layout layout, double justified) {
+        if (isFold()) {
+            return fold.layout(averageCardinality * cardinality, layout,
+                               justified);
+        }
+
+        double elementHeight = children.stream()
+                                       .mapToDouble(child -> Layout.snap(child.layout(averageCardinality,
+                                                                                      layout,
+                                                                                      justified)))
+                                       .max()
+                                       .getAsDouble();
+
+        return extendedHeight(layout, cardinality, elementHeight);
     }
 
     @Override
@@ -370,7 +475,7 @@ public class Relation extends SchemaNode implements Cloneable {
             tableColumnWidth += child.measure(aggregate, layout, indent(child));
         }
         averageCardinality = (int) Math.ceil(sum / children.size());
-        tableColumnWidth = layout.snap(Math.max(labelWidth, tableColumnWidth));
+        tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth));
         return isFold() ? fold.getTableColumnWidth(layout)
                         : getTableColumnWidth(layout);
     }
@@ -379,15 +484,17 @@ public class Relation extends SchemaNode implements Cloneable {
     Pair<Consumer<JsonNode>, Parent> outlineElement(double labelWidth,
                                                     Function<JsonNode, JsonNode> extractor,
                                                     int cardinality,
-                                                    Layout layout) {
+                                                    Layout layout,
+                                                    double justified) {
         if (isFold()) {
             return fold.outlineElement(labelWidth, extract(extractor),
-                                       averageCardinality * cardinality,
-                                       layout);
+                                       averageCardinality * cardinality, layout,
+                                       justified);
         }
         Control control = useTable ? buildNestedTable(n -> n, cardinality,
-                                                      layout)
-                                   : buildOutline(n -> n, cardinality, layout);
+                                                      layout, justified)
+                                   : buildOutline(n -> n, cardinality, layout,
+                                                  justified);
         Parent element;
         TextArea labelText = new TextArea(label);
         labelText.setWrapText(true);
@@ -397,12 +504,17 @@ public class Relation extends SchemaNode implements Cloneable {
         Pane box;
         if (useTable) {
             box = new HBox();
-            control.setPrefWidth(justifiedWidth);
+            control.setPrefWidth(justified);
+            double elementHeight = elementHeight(cardinality, layout,
+                                                 justified);
+            double contentHeight = Layout.snap(cardinality * (elementHeight
+                                                              + layout.getListCellVerticalInset()))
+                                   + layout.getListVerticalInset();
             box.setMinHeight(contentHeight);
             box.setPrefHeight(contentHeight);
         } else {
             box = new VBox();
-            box.setPrefWidth(justifiedWidth);
+            box.setPrefWidth(justified);
             labelText.setPrefHeight(labelHeight(layout));
             labelText.setMaxHeight(labelHeight(layout));
         }
@@ -423,13 +535,29 @@ public class Relation extends SchemaNode implements Cloneable {
         }, element);
     }
 
+    @Override
+    double rowElement(int cardinality, Layout layout, double justified) {
+        if (isFold()) {
+            return fold.layout(averageCardinality * cardinality, layout,
+                               justified);
+        }
+
+        return extendedHeight(layout, cardinality, children.stream()
+                                                           .mapToDouble(child -> Layout.snap(child.rowElement(cardinality,
+                                                                                                              layout,
+                                                                                                              justified)))
+                                                           .max()
+                                                           .getAsDouble());
+    }
+
     private Function<Double, Pair<Consumer<JsonNode>, Control>> buildColumn(int cardinality,
                                                                             Function<JsonNode, JsonNode> extractor,
                                                                             Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
                                                                             Layout layout,
                                                                             double inset,
                                                                             INDENT indent,
-                                                                            boolean root) {
+                                                                            boolean root,
+                                                                            double justified) {
         if (isFold()) {
             return fold.buildColumn(averageCardinality * cardinality,
                                     extract(extractor), columnMap, layout,
@@ -446,7 +574,8 @@ public class Relation extends SchemaNode implements Cloneable {
                                                                      child,
                                                                      indent),
                                                                indent(child))));
-        double cellHeight = elementHeight + layout.getListCellVerticalInset();
+        double cellHeight = elementHeight(cardinality, layout, justified)
+                            + layout.getListCellVerticalInset();
         double calculatedHeight = (cellHeight * cardinality)
                                   + layout.getListVerticalInset();
 
@@ -455,7 +584,7 @@ public class Relation extends SchemaNode implements Cloneable {
         return rendered -> {
             double deficit = Math.max(0, rendered - calculatedHeight);
             double childDeficit = Math.max(0, deficit / cardinality);
-            double extended = layout.snap(cellHeight + childDeficit);
+            double extended = Layout.snap(cellHeight + childDeficit);
 
             ListView<JsonNode> row = new ListView<JsonNode>();
             layout.getModel()
@@ -481,20 +610,20 @@ public class Relation extends SchemaNode implements Cloneable {
     }
 
     private TableView<JsonNode> buildNestedTable(Function<JsonNode, JsonNode> extractor,
-                                                 int cardinality,
-                                                 Layout layout) {
+                                                 int cardinality, Layout layout,
+                                                 double justified) {
         if (isFold()) {
             return fold.buildNestedTable(extract(extractor),
                                          averageCardinality * cardinality,
-                                         layout);
+                                         layout, justified);
         }
-        TableView<JsonNode> table = tableBase();
+        TableView<JsonNode> table = tableBase(justified);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         children.forEach(child -> {
             INDENT indent = indent(child);
             table.getColumns()
                  .add(child.buildColumn(layout, inset(layout, 0, child, indent),
-                                        indent));
+                                        indent, justified));
         });
 
         Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap = new HashMap<>();
@@ -514,9 +643,12 @@ public class Relation extends SchemaNode implements Cloneable {
                                                                                    layout,
                                                                                    0,
                                                                                    INDENT.NONE,
-                                                                                   true);
+                                                                                   true,
+                                                                                   justified);
 
-        double height = extendedHeight(layout, 1);
+        double height = extendedHeight(layout, 1,
+                                       elementHeight(cardinality, layout,
+                                                     justified));
 
         table.setRowFactory(tableView -> {
             Pair<Consumer<JsonNode>, Control> relationRow = topLevel.apply(height);
@@ -530,6 +662,11 @@ public class Relation extends SchemaNode implements Cloneable {
         layout.getModel()
               .apply(table, this);
         table.setFixedCellSize(height);
+        double rowHeight = layout(averageCardinality, layout, justified)
+                           + layout.getTableRowVerticalInset();
+        double contentHeight = (rowHeight * cardinality)
+                               + layout.measureHeader(table)
+                               + layout.getTableVerticalInset();
         table.setPrefHeight(contentHeight);
         if (cardinality > 1) {
             table.setMinHeight(contentHeight);
@@ -538,10 +675,12 @@ public class Relation extends SchemaNode implements Cloneable {
     }
 
     private ListView<JsonNode> buildOutline(Function<JsonNode, JsonNode> extractor,
-                                            int cardinality, Layout layout) {
+                                            int cardinality, Layout layout,
+                                            double justified) {
         if (isFold()) {
             return fold.buildOutline(extract(extractor),
-                                     averageCardinality * cardinality, layout);
+                                     averageCardinality * cardinality, layout,
+                                     justified);
         }
 
         double outlineLabelWidth = children.stream()
@@ -551,12 +690,18 @@ public class Relation extends SchemaNode implements Cloneable {
         ListView<JsonNode> list = new ListView<>();
         layout.getModel()
               .apply(list, this);
+
+        double elementHeight = compress(cardinality, layout, justified);
+        double contentHeight = Layout.snap(cardinality
+                                           * (elementHeight
+                                              + layout.getListCellVerticalInset()));
         list.setPrefHeight(contentHeight + layout.getListVerticalInset());
         list.setFixedCellSize(elementHeight
                               + layout.getListCellVerticalInset());
         list.setCellFactory(c -> {
             ListCell<JsonNode> cell = outlineListCell(outlineLabelWidth,
-                                                      extractor, layout);
+                                                      extractor, elementHeight,
+                                                      layout, justified);
             layout.getModel()
                   .apply(cell, this);
             return cell;
@@ -567,16 +712,31 @@ public class Relation extends SchemaNode implements Cloneable {
         return list;
     }
 
-    private void compressOutline(double width) {
-        // TODO Auto-generated method stub
-
+    private double compress(int cardinality, Layout layout, double available) {
+        ColumnSet current = null;
+        double halfWidth = available / 2d;
+        for (SchemaNode child : children) {
+            if (child.getTableColumnWidth(layout) > halfWidth) {
+                current = new ColumnSet();
+                columnSets.add(current);
+            } else if (current == null) {
+                current = new ColumnSet();
+                columnSets.add(current);
+            }
+            current.add(child);
+        }
+        return columnSets.stream()
+                         .mapToDouble(cs -> cs.compress(cardinality, layout,
+                                                        available))
+                         .max()
+                         .getAsDouble();
     }
 
-    private double extendedHeight(Layout layout, int cardinality) {
-        double extendedHeight = layout.snap(cardinality * (elementHeight
-                                                           + layout.getListCellVerticalInset()))
-                                + layout.getListVerticalInset();
-        return extendedHeight;
+    private double extendedHeight(Layout layout, int cardinality,
+                                  double elementHeight) {
+        return Layout.snap(cardinality * (elementHeight
+                                          + layout.getListCellVerticalInset()))
+               + layout.getListVerticalInset();
     }
 
     private ArrayNode flatten(JsonNode data) {
@@ -637,84 +797,6 @@ public class Relation extends SchemaNode implements Cloneable {
                && children.get(children.size() - 1) instanceof Relation;
     }
 
-    private void justifyOutline(double width, Layout layout) {
-        double outlineLabelWidth = children.stream()
-                                           .mapToDouble(child -> child.getLabelWidth(layout))
-                                           .max()
-                                           .getAsDouble();
-        justifiedWidth = layout.snap(width);
-        double available = justifiedWidth - outlineLabelWidth;
-        children.forEach(child -> {
-            if (child.isRelation()) {
-                if (((Relation) child).isUseTable()) {
-                    child.justify(averageCardinality, available, layout);
-                } else {
-                    child.justify(averageCardinality, justifiedWidth, layout);
-                }
-            } else {
-                child.justify(averageCardinality, available, layout);
-            }
-        });
-    }
-
-    private void justifyTable(double width, Layout layout) {
-        justifiedWidth = layout.snap(width);
-        double slack = justifiedWidth - getTableColumnWidth(layout);
-        assert slack >= 0 : String.format("Negative slack: %.2f (%.2f) \n%s",
-                                          slack, width, this);
-        double total = layout.snap(children.stream()
-                                           .map(child -> child.getTableColumnWidth(layout))
-                                           .reduce((a, b) -> a + b)
-                                           .orElse(0.0d));
-        children.stream()
-                .forEach(child -> child.justify(averageCardinality,
-                                                slack * (child.getTableColumnWidth(layout)
-                                                         / total) + child.getTableColumnWidth(layout),
-                                                layout));
-    }
-
-    private double layoutOutline(int cardinality, Layout layout, double width) {
-        ColumnSet current = new ColumnSet();
-        Iterator<SchemaNode> iterator = children.iterator();
-        columnSets.add(current);
-        current.add(iterator.next(), width, layout);
-        iterator.forEachRemaining(child -> {
-            double halfWidth = width / 2;
-            if (child.isUseTable()
-                && child.getTableColumnWidth(layout) <= halfWidth) {
-                current.add(child, width, layout);
-            }
-        });
-        elementHeight = layout.snap(children.stream()
-                                            .mapToDouble(child -> child.layout(averageCardinality,
-                                                                               width,
-                                                                               layout))
-                                            .reduce((a, b) -> a + b)
-                                            .getAsDouble());
-        contentHeight = layout.snap(cardinality * (elementHeight
-                                                   + layout.getListCellVerticalInset()))
-                        + layout.getListVerticalInset();
-        double labeledHeight = layout.snap(contentHeight + labelHeight(layout));
-        return labeledHeight;
-    }
-
-    private double layoutTable(int cardinality, Layout layout, double inset) {
-        TableView<JsonNode> table = tableBase();
-        children.forEach(child -> {
-            INDENT indent = indent(child);
-            table.getColumns()
-                 .add(child.buildColumn(layout,
-                                        inset(layout, inset, child, indent),
-                                        indent));
-        });
-        table.setPrefWidth(justifiedWidth);
-        rowHeight = layoutRow(averageCardinality, layout)
-                    + layout.getTableRowVerticalInset();
-        contentHeight = (rowHeight * cardinality) + layout.measureHeader(table)
-                        + layout.getTableVerticalInset();
-        return contentHeight;
-    }
-
     private void nestTable() {
         useTable = true;
         children.forEach(child -> {
@@ -726,7 +808,9 @@ public class Relation extends SchemaNode implements Cloneable {
 
     private ListCell<JsonNode> outlineListCell(double outlineLabelWidth,
                                                Function<JsonNode, JsonNode> extractor,
-                                               Layout layout) {
+                                               double elementHeight,
+                                               Layout layout,
+                                               double justified) {
         return new ListCell<JsonNode>() {
             VBox                                              cell;
             Map<SchemaNode, Pair<Consumer<JsonNode>, Parent>> controls = new HashMap<>();
@@ -734,7 +818,8 @@ public class Relation extends SchemaNode implements Cloneable {
                 itemProperty().addListener((obs, oldItem, newItem) -> {
                     if (newItem != null) {
                         if (cell == null) {
-                            initialize(outlineLabelWidth, extractor, layout);
+                            initialize(outlineLabelWidth, extractor, layout,
+                                       justified);
                         }
                         setGraphic(cell);
                     }
@@ -771,7 +856,7 @@ public class Relation extends SchemaNode implements Cloneable {
 
             private void initialize(double outlineLabelWidth,
                                     Function<JsonNode, JsonNode> extractor,
-                                    Layout layout) {
+                                    Layout layout, double justified) {
                 cell = new VBox();
                 cell.setMinWidth(0);
                 cell.setPrefWidth(1);
@@ -781,7 +866,8 @@ public class Relation extends SchemaNode implements Cloneable {
                     Pair<Consumer<JsonNode>, Parent> master = child.outlineElement(outlineLabelWidth,
                                                                                    extractor,
                                                                                    averageCardinality,
-                                                                                   layout);
+                                                                                   layout,
+                                                                                   justified);
                     controls.put(child, master);
                     cell.getChildren()
                         .add(master.getValue());
@@ -842,11 +928,12 @@ public class Relation extends SchemaNode implements Cloneable {
         };
     }
 
-    private TableView<JsonNode> tableBase() {
+    private TableView<JsonNode> tableBase(double justified) {
         TableView<JsonNode> table = new TableView<>();
         table.setPlaceholder(new Text());
-        table.setPrefWidth(justifiedWidth);
+        table.setPrefWidth(justified);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         return table;
     }
+
 }

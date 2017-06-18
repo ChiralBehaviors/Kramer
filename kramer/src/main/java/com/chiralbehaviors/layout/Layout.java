@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2016 Chiral Behaviors, LLC, all rights reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -83,6 +83,10 @@ public class Layout {
                           a.getLeft() + b.getLeft());
     }
 
+    public static double snap(double value) {
+        return Math.ceil(value);
+    }
+
     @SuppressWarnings("deprecation")
     static double getLineHeight(Font font, TextBoundsType boundsType) {
         LAYOUT.setContent("W", font.impl_getNativeFont());
@@ -100,7 +104,6 @@ public class Layout {
     }
 
     private Insets            listCellInsets = ZERO_INSETS;
-
     private Insets            listInsets     = ZERO_INSETS;
     private final LayoutModel model;
     private List<String>      styleSheets;
@@ -108,6 +111,7 @@ public class Layout {
     private Insets            tableRowInsets;
     private Font              textFont       = Font.getDefault();
     private Insets            textInsets     = ZERO_INSETS;
+
     private double            textLineHeight = 0;
 
     public Layout(LayoutModel model) {
@@ -368,10 +372,6 @@ public class Layout {
 
     public void setTextLineHeight(double textLineHeight) {
         this.textLineHeight = textLineHeight;
-    }
-
-    public double snap(double value) {
-        return Math.ceil(value);
     }
 
     public double textDoubleSpaceWidth() {

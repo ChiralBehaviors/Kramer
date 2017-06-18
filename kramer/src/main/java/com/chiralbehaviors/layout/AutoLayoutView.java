@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2016 Chiral Behaviors, LLC, all rights reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -59,12 +59,8 @@ public class AutoLayoutView extends Control {
         this.root.set(root);
         widthProperty().addListener((o, p, c) -> resize(c.doubleValue()));
         data.addListener((o, p, c) -> setContent());
-        getStylesheets().addListener(new ListChangeListener<String>() {
-            @Override
-            public void onChanged(javafx.collections.ListChangeListener.Change<? extends String> c) {
-                style = new Layout(getStylesheets(), AutoLayoutView.this.model);
-            }
-        });
+        getStylesheets().addListener((ListChangeListener<String>) c -> style = new Layout(getStylesheets(),
+                                                                                          AutoLayoutView.this.model));
     }
 
     public void autoLayout() {
@@ -130,7 +126,7 @@ public class AutoLayoutView extends Control {
             }
             JsonNode zeeData = data.get();
             relation.autoLayout(zeeData.size(), width, style);
-            layout = relation.buildControl(zeeData.size(), style);
+            layout = relation.buildControl(zeeData.size(), style, width);
             relation.setItems(layout, zeeData, style);
             getChildren().add(layout);
         } catch (Throwable e) {
