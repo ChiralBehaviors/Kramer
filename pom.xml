@@ -16,7 +16,6 @@
 		<module>explorer</module>
 		<module>toy-app</module>
 		<module>kramer-ql</module>
-		<module>establish-monicle</module>
 	</modules>
 
 
@@ -63,6 +62,11 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.testfx</groupId>
+				<artifactId>openjfx-monocle</artifactId>
+				<version>1.8.0_20</version>
+			</dependency>
 			<dependency>
 				<groupId>org.testfx</groupId>
 				<artifactId>testfx-core</artifactId>
@@ -140,11 +144,6 @@
 				<groupId>org.glassfish.jersey.media</groupId>
 				<artifactId>jersey-media-json-jackson</artifactId>
 				<version>2.22.1</version>
-			</dependency>
-			<dependency>
-				<groupId>com.hellblazer</groupId>
-				<artifactId>utils</artifactId>
-				<version>0.0.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.mockito</groupId>
