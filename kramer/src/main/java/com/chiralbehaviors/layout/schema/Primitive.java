@@ -105,12 +105,12 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double layout(double width, Layout layout) {
+    double layout(int cardinality, Layout layout, double width) {
         return variableLength ? width : Math.min(width, columnWidth);
     }
 
     @Override
-    double layout(int cardinality, Layout layout, double width) {
+    double layoutHeight(int cardinality, Layout layout, double width) {
         return getValueHeight(layout, width);
     }
 

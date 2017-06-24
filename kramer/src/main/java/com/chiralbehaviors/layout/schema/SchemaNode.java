@@ -225,9 +225,9 @@ abstract public class SchemaNode {
         return false;
     }
 
-    abstract double layout(double width, Layout layout);
+    abstract double layout(int cardinality, Layout layout, double width);
 
-    abstract double layout(int cardinality, Layout layout, double justified);
+    abstract double layoutHeight(int cardinality, Layout layout, double justified);
 
     abstract double measure(ArrayNode data, Layout layout, INDENT indent);
 

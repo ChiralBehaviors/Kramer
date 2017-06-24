@@ -56,17 +56,9 @@ import javafx.util.Pair;
  */
 public class Relation extends SchemaNode {
     private static class Column {
-        private static class Element {
-            public double           height = 0;
-            public final SchemaNode node;
 
-            public Element(SchemaNode node) {
-                this.node = node;
-            }
-        }
-
-        private ArrayDeque<Element> fields = new ArrayDeque<>();
-        private double              width  = 0;
+        private ArrayDeque<SchemaNode> fields = new ArrayDeque<>();
+        private double                 width  = 0;
 
         public Column(double width) {
             this.width = width;
@@ -74,18 +66,17 @@ public class Relation extends SchemaNode {
 
         @Override
         public String toString() {
-            return String.format("Column [fields=%s, elementHeight()=%s, maxWidth()=%s]",
-                                 fields.stream()
-                                       .map(p -> p.node.field)
-                                       .collect(Collectors.toList()),
-                                 maxWidth());
+            return String.format("Column [fields=%s %s]", fields.stream()
+                                                                .map(p -> p.field)
+                                                                .collect(Collectors.toList()),
+                                 width);
         }
 
         void add(SchemaNode node) {
-            fields.add(new Element(node));
+            fields.add(node);
         }
 
-        void addFirst(Element field) {
+        void addFirst(SchemaNode field) {
             fields.addFirst(field);
         }
 
@@ -93,11 +84,11 @@ public class Relation extends SchemaNode {
             return elementHeight(cardinality, layout, fields);
         }
 
-        double maxWidth() {
+        double maxWidth(Layout layout) {
             return fields.stream()
-                         .mapToDouble(p -> p.height)
+                         .mapToDouble(field -> field.getTableColumnWidth(layout))
                          .max()
-                         .getAsDouble();
+                         .orElse(0d);
         }
 
         void setWidth(double width) {
@@ -118,29 +109,27 @@ public class Relation extends SchemaNode {
             return true;
         }
 
-        double with(Element field, int cardinality, Layout layout) {
-            ArrayDeque<Element> elements = fields.clone();
+        double with(SchemaNode field, int cardinality, Layout layout) {
+            ArrayDeque<SchemaNode> elements = fields.clone();
             elements.add(field);
             return elementHeight(cardinality, layout, elements);
         }
 
         double without(int cardinality, Layout layout) {
-            ArrayDeque<Element> elements = fields.clone();
+            ArrayDeque<SchemaNode> elements = fields.clone();
             elements.removeLast();
             return elementHeight(cardinality, layout, elements);
         }
 
         private double elementHeight(int cardinality, Layout layout,
-                                     ArrayDeque<Element> elements) {
+                                     ArrayDeque<SchemaNode> elements) {
             double available = width - elements.stream()
-                                               .map(f -> f.node)
-                                               .mapToDouble(child -> child.getLabelWidth(layout))
+                                               .mapToDouble(field -> field.getLabelWidth(layout))
                                                .max()
                                                .getAsDouble();
             return Layout.snap(elements.stream()
-                                       .map(f -> f.node)
-                                       .mapToDouble(child -> {
-                                           return child.elementHeight(cardinality,
+                                       .mapToDouble(field -> {
+                                           return field.elementHeight(cardinality,
                                                                       layout,
                                                                       available);
                                        })
@@ -152,10 +141,15 @@ public class Relation extends SchemaNode {
     private static class ColumnSet {
 
         private final List<Column> columns = new ArrayList<>();
+        private double             elementHeight;
+
+        {
+            columns.add(new Column(0d));
+        }
 
         @Override
         public String toString() {
-            return String.format("ColumnSet [columns=%s]", columns);
+            return String.format("ColumnSet [%s]", columns);
         }
 
         void add(SchemaNode node) {
@@ -165,34 +159,36 @@ public class Relation extends SchemaNode {
 
         double compress(int cardinality, Layout layout, double width) {
             Column firstColumn = columns.get(0);
-            int count = Math.max(1, (int) (width / firstColumn.maxWidth()));
+            int count = Math.max(1,
+                                 (int) (width / firstColumn.maxWidth(layout)));
             if (count == 1) {
                 return firstColumn.elementHeight(cardinality, layout);
-            } else {
-                double columnWidth = Layout.snap(width / count);
-                firstColumn.setWidth(columnWidth);
-                IntStream.range(1, count)
-                         .forEach(i -> columns.add(new Column(columnWidth)));
-                double elementHeight = firstColumn.elementHeight(cardinality,
-                                                                 layout);
-                double lastHeight;
-                do {
-                    lastHeight = elementHeight;
-                    for (int i = 0; i < columns.size() - 2; i++) {
-                        while (columns.get(i)
-                                      .slideRight(cardinality,
-                                                  columns.get(i + 1), layout,
-                                                  columnWidth)) {
-                        }
-                    }
-                    elementHeight = columns.stream()
-                                           .mapToDouble(c -> c.elementHeight(cardinality,
-                                                                             layout))
-                                           .max()
-                                           .orElse(0d);
-                } while (lastHeight > elementHeight);
-                return elementHeight;
             }
+            double columnWidth = Layout.snap(width / count);
+            firstColumn.setWidth(columnWidth);
+            IntStream.range(1, count)
+                     .forEach(i -> columns.add(new Column(columnWidth)));
+            elementHeight = firstColumn.elementHeight(cardinality, layout);
+            double lastHeight;
+            do {
+                lastHeight = elementHeight;
+                for (int i = 0; i < columns.size() - 2; i++) {
+                    while (columns.get(i)
+                                  .slideRight(cardinality, columns.get(i + 1),
+                                              layout, columnWidth)) {
+                    }
+                }
+                elementHeight = columns.stream()
+                                       .mapToDouble(c -> c.elementHeight(cardinality,
+                                                                         layout))
+                                       .max()
+                                       .orElse(0d);
+            } while (lastHeight > elementHeight);
+            return elementHeight;
+        }
+
+        double getElementHeight() {
+            return elementHeight;
         }
     }
 
@@ -212,9 +208,8 @@ public class Relation extends SchemaNode {
         children.add(child);
     }
 
-    public void autoLayout(int cardinality, double width, Layout layout) {
-        double snapped = Layout.snap(width);
-        layout(snapped, layout);
+    public void autoLayout(int cardinality, Layout layout, double width) {
+        layout(cardinality, layout, Layout.snap(width));
     }
 
     public Control buildControl(int cardinality, Layout layout, double width) {
@@ -404,20 +399,20 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    double layout(double justified, Layout layout) {
+    double layout(int cardinality, Layout layout, double width) {
         if (isFold()) {
-            return fold.layout(justified, layout);
+            return fold.layout(cardinality, layout, width);
         }
         useTable = false;
         double listInset = layout.getListHorizontalInset();
         double tableInset = layout.getTableHorizontalInset();
-        double available = justified - children.stream()
+        double available = width - children.stream()
                                                .mapToDouble(child -> child.getLabelWidth(layout))
                                                .max()
                                                .getAsDouble();
         double outlineWidth = children.stream()
-                                      .mapToDouble(child -> child.layout(available,
-                                                                         layout))
+                                      .mapToDouble(child -> child.layout(cardinality,
+                                                                         layout, available))
                                       .max()
                                       .orElse(0d)
                               + listInset;
@@ -426,18 +421,19 @@ public class Relation extends SchemaNode {
             nestTable();
             return tableWidth;
         }
+        compress(cardinality, layout, width);
         return outlineWidth;
     }
 
     @Override
-    double layout(int cardinality, Layout layout, double justified) {
+    double layoutHeight(int cardinality, Layout layout, double justified) {
         if (isFold()) {
-            return fold.layout(averageCardinality * cardinality, layout,
+            return fold.layoutHeight(averageCardinality * cardinality, layout,
                                justified);
         }
 
         double elementHeight = children.stream()
-                                       .mapToDouble(child -> Layout.snap(child.layout(averageCardinality,
+                                       .mapToDouble(child -> Layout.snap(child.layoutHeight(averageCardinality,
                                                                                       layout,
                                                                                       justified)))
                                        .max()
@@ -538,7 +534,7 @@ public class Relation extends SchemaNode {
     @Override
     double rowElement(int cardinality, Layout layout, double justified) {
         if (isFold()) {
-            return fold.layout(averageCardinality * cardinality, layout,
+            return fold.layoutHeight(averageCardinality * cardinality, layout,
                                justified);
         }
 
@@ -662,7 +658,7 @@ public class Relation extends SchemaNode {
         layout.getModel()
               .apply(table, this);
         table.setFixedCellSize(height);
-        double rowHeight = layout(averageCardinality, layout, justified)
+        double rowHeight = layoutHeight(averageCardinality, layout, justified)
                            + layout.getTableRowVerticalInset();
         double contentHeight = (rowHeight * cardinality)
                                + layout.measureHeader(table)
@@ -691,7 +687,9 @@ public class Relation extends SchemaNode {
         layout.getModel()
               .apply(list, this);
 
-        double elementHeight = compress(cardinality, layout, justified);
+        double elementHeight = columnSets.stream()
+                                         .mapToDouble(cs -> cs.getElementHeight())
+                                         .sum();
         double contentHeight = Layout.snap(cardinality
                                            * (elementHeight
                                               + layout.getListCellVerticalInset()));
@@ -728,8 +726,7 @@ public class Relation extends SchemaNode {
         return columnSets.stream()
                          .mapToDouble(cs -> cs.compress(cardinality, layout,
                                                         available))
-                         .max()
-                         .getAsDouble();
+                         .sum();
     }
 
     private double extendedHeight(Layout layout, int cardinality,
