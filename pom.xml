@@ -9,12 +9,14 @@
 	<packaging>pom</packaging>
 	<properties>
 		<jackson.version>2.6.7</jackson.version>
+		<testfx.version>4.0.1-alpha</testfx.version>
 	</properties>
 	<modules>
 		<module>kramer</module>
 		<module>explorer</module>
 		<module>toy-app</module>
 		<module>kramer-ql</module>
+		<module>establish-monicle</module>
 	</modules>
 
 
@@ -61,6 +63,18 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.testfx</groupId>
+				<artifactId>testfx-core</artifactId>
+				<version>${testfx.version}</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.testfx</groupId>
+				<artifactId>testfx-junit</artifactId>
+				<version>${testfx.version}</version>
+				<scope>test</scope>
+			</dependency>
 			<dependency>
 				<groupId>com.chiralbehaviors.layout</groupId>
 				<artifactId>kramer</artifactId>

@@ -108,7 +108,7 @@ public class Layout {
     private final LayoutModel model;
     private List<String>      styleSheets;
     private Insets            tableInsets    = ZERO_INSETS;
-    private Insets            tableRowInsets;
+    private Insets            tableRowInsets = ZERO_INSETS;;
     private Font              textFont       = Font.getDefault();
     private Insets            textInsets     = ZERO_INSETS;
 

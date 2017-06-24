@@ -16,69 +16,93 @@
 
 package com.chiralbehaviors.layout.schema;
 
+import static com.chiralbehaviors.layout.schema.Util.build;
+import static com.chiralbehaviors.layout.schema.Util.testData;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+
+import java.util.Collections;
+import java.util.List;
+
 import org.junit.Test;
-import static org.mockito.Mockito.*;
+import org.testfx.framework.junit.ApplicationTest;
+
 import com.chiralbehaviors.layout.Layout;
 import com.chiralbehaviors.layout.Layout.LayoutModel;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+
+import javafx.scene.Scene;
+import javafx.scene.layout.HBox;
+import javafx.stage.Stage;
 
 /**
  * @author halhildebrand
  *
  */
-public class SchemaNodeTest {
+public class SchemaNodeTest extends ApplicationTest {
 
-    private Relation build() {
-        Relation root = new Relation("field");
-        root.addChild(new Primitive("name"));
-        root.addChild(new Primitive("notes"));
-
-        Relation n = new Relation("classification");
-        n.addChild(new Primitive("name"));
-        n.addChild(new Primitive("description"));
-        root.addChild(n);
-
-        n = new Relation("classifier");
-        n.addChild(new Primitive("name"));
-        n.addChild(new Primitive("description"));
-        root.addChild(n);
-
-        n = new Relation("attributes");
-        n.addChild(new Primitive("name"));
-        n.addChild(new Primitive("description"));
-        root.addChild(n);
-
-        Relation n2 = new Relation("authorizedAttribute");
-        n2.addChild(new Primitive("name"));
-        n2.addChild(new Primitive("description"));
-        n.addChild(n2);
-
-        n = new Relation("children");
-        n.addChild(new Primitive("name"));
-        n.addChild(new Primitive("notes"));
-        n.addChild(new Primitive("cardinality"));
-        root.addChild(n);
-
-        n2 = new Relation("relationship");
-        n2.addChild(new Primitive("name"));
-        n2.addChild(new Primitive("description"));
-        n.addChild(n2);
-
-        n2 = new Relation("child");
-        n2.addChild(new Primitive("name"));
-        n.addChild(n2);
-
-        return root;
+    @Override
+    public void start(Stage stage) throws Exception {
+        Scene scene = new Scene(new HBox(), 800, 600);
+        stage.setScene(scene);
+        stage.show();
     }
 
     @Test
     public void testColumns() throws Exception {
-        JsonNode data = new ObjectMapper().readTree(getClass().getResourceAsStream("/columns.json"));
+        JsonNode data = testData();
         Relation root = build();
         LayoutModel model = mock(LayoutModel.class);
-        Layout layout = new Layout(model);
+        Layout layout = new Layout(Collections.emptyList(), model);
         root.measure(data, layout);
         root.autoLayout(1, layout, 800d);
+        List<ColumnSet> columnSets = root.getColumnSets();
+        assertEquals(3, columnSets.size());
+        assertFirst(columnSets.get(0));
+        assertSecond(columnSets.get(1));
+        assertThird(columnSets.get(2));
+    }
+
+    private void assertFirst(ColumnSet columnSet) {
+        assertEquals(3, columnSet.getColumns()
+                                 .size());
+        Column column = columnSet.getColumns()
+                                 .get(0);
+        List<SchemaNode> fields = column.getFields();
+        assertEquals(2, fields.size());
+        assertEquals("name", fields.get(0).field);
+        assertEquals("notes", fields.get(1).field);
+
+        column = columnSet.getColumns()
+                          .get(1);
+        fields = column.getFields();
+        assertEquals(1, fields.size());
+        assertEquals("classification", fields.get(0).field);
+
+        column = columnSet.getColumns()
+                          .get(2);
+        fields = column.getFields();
+        assertEquals(1, fields.size());
+        assertEquals("classifier", fields.get(0).field);
+    }
+
+    private void assertSecond(ColumnSet columnSet) {
+        assertEquals(1, columnSet.getColumns()
+                                 .size());
+        Column column = columnSet.getColumns()
+                                 .get(0);
+        List<SchemaNode> fields = column.getFields();
+        assertEquals(1, fields.size());
+        assertEquals("attributes", fields.get(0).field);
+    }
+
+    private void assertThird(ColumnSet columnSet) {
+        assertEquals(1, columnSet.getColumns()
+                                 .size());
+        Column column = columnSet.getColumns()
+                                 .get(0);
+        List<SchemaNode> fields = column.getFields();
+        assertEquals(1, fields.size());
+        assertEquals("children", fields.get(0).field);
     }
 }

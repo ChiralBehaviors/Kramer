@@ -55,6 +55,16 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
+    public double elementHeight(int cardinality, Layout layout, double width) {
+        return getValueHeight(layout, width);
+    }
+
+    @Override
+    public double getTableColumnWidth(Layout layout) {
+        return columnWidth + layout.getTextHorizontalInset();
+    }
+
+    @Override
     public String toString() {
         return String.format("Primitive [%s:%.2f]", label, columnWidth);
     }
@@ -95,23 +105,8 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double elementHeight(int cardinality, Layout layout, double width) {
-        return getValueHeight(layout, width);
-    }
-
-    @Override
-    double getTableColumnWidth(Layout layout) {
-        return columnWidth + layout.getTextHorizontalInset();
-    }
-
-    @Override
     double layout(int cardinality, Layout layout, double width) {
         return variableLength ? width : Math.min(width, columnWidth);
-    }
-
-    @Override
-    double layoutHeight(int cardinality, Layout layout, double width) {
-        return getValueHeight(layout, width);
     }
 
     @Override
@@ -175,6 +170,11 @@ public class Primitive extends SchemaNode {
     @Override
     double rowElement(int cardinality, Layout layout, double width) {
         return elementHeight(cardinality, layout, width);
+    }
+
+    @Override
+    double rowHeight(int cardinality, Layout layout, double width) {
+        return getValueHeight(layout, width);
     }
 
     private void bind(Control control, TableColumn<JsonNode, ?> column,

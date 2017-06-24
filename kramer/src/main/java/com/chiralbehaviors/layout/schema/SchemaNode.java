@@ -166,6 +166,9 @@ abstract public class SchemaNode {
         this.field = field;
     }
 
+    public abstract double elementHeight(int cardinality, Layout layout,
+                                         double width);
+
     public JsonNode extractFrom(JsonNode jsonNode) {
         return extractField(jsonNode, field);
     }
@@ -177,6 +180,12 @@ abstract public class SchemaNode {
     public String getLabel() {
         return label;
     }
+
+    public double getLabelWidth(Layout layout) {
+        return layout.textWidth(label);
+    }
+
+    public abstract double getTableColumnWidth(Layout layout);
 
     public boolean isRelation() {
         return false;
@@ -206,8 +215,6 @@ abstract public class SchemaNode {
         return column;
     }
 
-    abstract double elementHeight(int cardinality, Layout layout, double width);
-
     Function<JsonNode, JsonNode> extract(Function<JsonNode, JsonNode> extractor) {
         return n -> {
             JsonNode extracted = extractor.apply(n);
@@ -215,19 +222,11 @@ abstract public class SchemaNode {
         };
     }
 
-    double getLabelWidth(Layout layout) {
-        return layout.textWidth(label);
-    }
-
-    abstract double getTableColumnWidth(Layout layout);
-
     boolean isUseTable() {
         return false;
     }
 
     abstract double layout(int cardinality, Layout layout, double width);
-
-    abstract double layoutHeight(int cardinality, Layout layout, double justified);
 
     abstract double measure(ArrayNode data, Layout layout, INDENT indent);
 
@@ -238,4 +237,6 @@ abstract public class SchemaNode {
                                                              double justified);
 
     abstract double rowElement(int cardinality, Layout layout, double width);
+
+    abstract double rowHeight(int cardinality, Layout layout, double justified);
 }
