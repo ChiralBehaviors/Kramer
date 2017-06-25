@@ -16,12 +16,22 @@
 
 package com.chiralbehaviors.layout.schema;
 
-import static java.lang.Math.*;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import com.chiralbehaviors.layout.Layout;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import javafx.scene.Parent;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.util.Pair;
 
 /**
  * 
@@ -40,6 +50,11 @@ public class ColumnSet {
     public void add(SchemaNode node) {
         columns.get(0)
                .add(node);
+    }
+
+    public Parent build(int cardinality, Layout layout, double width) {
+        return null;
+
     }
 
     public void compress(int cardinality, Layout layout, double width) {
@@ -76,6 +91,28 @@ public class ColumnSet {
         } while (lastHeight > elementHeight);
     }
 
+    Pair<Consumer<JsonNode>, Parent> build(int cardinality,
+                                           Function<JsonNode, JsonNode> extractor,
+                                           Layout layout) {
+        HBox span = new HBox();
+        span.setMinWidth(0);
+        span.setPrefWidth(1);
+        span.setMinHeight(elementHeight);
+        span.setPrefHeight(elementHeight);
+        List<Consumer<JsonNode>> controls = new ArrayList<>();
+        columns.forEach(c -> {
+            VBox cell = new VBox();
+            controls.add(c.build(cell, cardinality, extractor, layout));
+            cell.setMinWidth(0);
+            cell.setPrefWidth(1);
+            cell.setMinHeight(elementHeight);
+            cell.setPrefHeight(elementHeight);
+            span.getChildren()
+                .add(cell);
+        });
+        return new Pair<>(item -> controls.forEach(c -> c.accept(item)), span);
+    }
+
     public double getElementHeight() {
         return elementHeight;
     }
@@ -85,7 +122,6 @@ public class ColumnSet {
         return String.format("ColumnSet [%s]", columns);
     }
 
-    //for testing
     List<Column> getColumns() {
         return columns;
     }

@@ -17,11 +17,19 @@
 package com.chiralbehaviors.layout.schema;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.chiralbehaviors.layout.Layout;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import javafx.scene.Parent;
+import javafx.scene.layout.VBox;
+import javafx.util.Pair;
 
 /**
  * 
@@ -64,7 +72,7 @@ public class Column {
                               double columnWidth) {
         if (fields.size() < 1) {
             return false;
-        } 
+        }
         if (column.fields.isEmpty()) {
             column.addFirst(fields.removeLast());
             return true;
@@ -85,7 +93,27 @@ public class Column {
                              width);
     }
 
-    //for testing
+    Consumer<JsonNode> build(VBox cell, int cardinality,
+                             Function<JsonNode, JsonNode> extractor,
+                             Layout layout) {
+        double outlineLabelWidth = fields.stream()
+                                         .mapToDouble(child -> child.getLabelWidth(layout))
+                                         .max()
+                                         .orElse(0d);
+        List<Consumer<JsonNode>> controls = new ArrayList<>();
+        fields.forEach(child -> {
+            Pair<Consumer<JsonNode>, Parent> master = child.outlineElement(outlineLabelWidth,
+                                                                           extractor,
+                                                                           cardinality,
+                                                                           layout,
+                                                                           width);
+            controls.add(master.getKey());
+            cell.getChildren()
+                .add(master.getValue());
+        });
+        return item -> controls.forEach(m -> m.accept(item));
+    }
+
     List<SchemaNode> getFields() {
         return Arrays.stream(fields.toArray())
                      .map(f -> (SchemaNode) f)

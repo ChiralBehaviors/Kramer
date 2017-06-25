@@ -206,7 +206,8 @@ abstract public class SchemaNode {
                                                                              Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
                                                                              Layout layout,
                                                                              double inset,
-                                                                             INDENT indent);
+                                                                             INDENT indent,
+                                                                             double justified);
 
     TableColumn<JsonNode, JsonNode> buildColumn(Layout layout, double inset,
                                                 INDENT indent, double width) {

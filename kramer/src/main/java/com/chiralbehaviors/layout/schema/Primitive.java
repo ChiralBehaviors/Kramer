@@ -80,7 +80,8 @@ public class Primitive extends SchemaNode {
                                                                     Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
                                                                     Layout layout,
                                                                     double inset,
-                                                                    INDENT indent) {
+                                                                    INDENT indent,
+                                                                    double justified) {
         return height -> {
             TextArea control = buildControl(1, layout);
             control.setPrefHeight(height);

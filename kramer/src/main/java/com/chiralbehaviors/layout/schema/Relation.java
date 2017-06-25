@@ -232,9 +232,10 @@ public class Relation extends SchemaNode {
                                                                     Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
                                                                     Layout layout,
                                                                     double inset,
-                                                                    INDENT indent) {
+                                                                    INDENT indent,
+                                                                    double justified) {
         return buildColumn(cardinality, extractor, columnMap, layout, inset,
-                           indent);
+                           indent, false, justified);
     }
 
     @Override
@@ -342,7 +343,6 @@ public class Relation extends SchemaNode {
                                                       layout, justified)
                                    : buildOutline(n -> n, cardinality, layout,
                                                   justified);
-        Parent element;
         TextArea labelText = new TextArea(label);
         labelText.setWrapText(true);
         labelText.setPrefColumnCount(1);
@@ -369,7 +369,6 @@ public class Relation extends SchemaNode {
            .add(labelText);
         box.getChildren()
            .add(control);
-        element = box;
 
         return new Pair<>(item -> {
             if (item == null) {
@@ -379,7 +378,7 @@ public class Relation extends SchemaNode {
             JsonNode extractedField = extracted == null ? null
                                                         : extracted.get(field);
             setItems(control, extractedField, layout);
-        }, element);
+        }, box);
     }
 
     @Override
@@ -425,7 +424,7 @@ public class Relation extends SchemaNode {
         if (isFold()) {
             return fold.buildColumn(averageCardinality * cardinality,
                                     extract(extractor), columnMap, layout,
-                                    inset, indent);
+                                    inset, indent, justified);
         }
 
         List<Function<Double, Pair<Consumer<JsonNode>, Control>>> fields = new ArrayList<>();
@@ -437,7 +436,8 @@ public class Relation extends SchemaNode {
                                                                      inset,
                                                                      child,
                                                                      indent),
-                                                               indent(child))));
+                                                               indent(child),
+                                                               justified)));
         double cellHeight = elementHeight(cardinality, layout, justified)
                             + layout.getListCellVerticalInset();
         double calculatedHeight = (cellHeight * cardinality)
@@ -547,10 +547,6 @@ public class Relation extends SchemaNode {
                                      justified);
         }
 
-        double outlineLabelWidth = children.stream()
-                                           .mapToDouble(child -> child.getLabelWidth(layout))
-                                           .max()
-                                           .getAsDouble();
         ListView<JsonNode> list = new ListView<>();
         layout.getModel()
               .apply(list, this);
@@ -565,8 +561,7 @@ public class Relation extends SchemaNode {
         list.setFixedCellSize(elementHeight
                               + layout.getListCellVerticalInset());
         list.setCellFactory(c -> {
-            ListCell<JsonNode> cell = outlineListCell(outlineLabelWidth,
-                                                      extractor, elementHeight,
+            ListCell<JsonNode> cell = outlineListCell(extractor, elementHeight,
                                                       layout, justified);
             layout.getModel()
                   .apply(cell, this);
@@ -668,20 +663,18 @@ public class Relation extends SchemaNode {
         });
     }
 
-    private ListCell<JsonNode> outlineListCell(double outlineLabelWidth,
-                                               Function<JsonNode, JsonNode> extractor,
+    private ListCell<JsonNode> outlineListCell(Function<JsonNode, JsonNode> extractor,
                                                double elementHeight,
                                                Layout layout,
                                                double justified) {
         return new ListCell<JsonNode>() {
-            VBox                                              cell;
-            Map<SchemaNode, Pair<Consumer<JsonNode>, Parent>> controls = new HashMap<>();
+            VBox                     cell;
+            List<Consumer<JsonNode>> controls = new ArrayList<>();
             {
                 itemProperty().addListener((obs, oldItem, newItem) -> {
                     if (newItem != null) {
                         if (cell == null) {
-                            initialize(outlineLabelWidth, extractor, layout,
-                                       justified);
+                            initialize(extractor, layout, justified);
                         }
                         setGraphic(cell);
                     }
@@ -709,28 +702,21 @@ public class Relation extends SchemaNode {
                     super.setGraphic(null);
                     return;
                 }
-                children.forEach(child -> {
-                    controls.get(child)
-                            .getKey()
-                            .accept(item);
-                });
+                controls.forEach(child -> child.accept(item));
             }
 
-            private void initialize(double outlineLabelWidth,
-                                    Function<JsonNode, JsonNode> extractor,
+            private void initialize(Function<JsonNode, JsonNode> extractor,
                                     Layout layout, double justified) {
                 cell = new VBox();
                 cell.setMinWidth(0);
                 cell.setPrefWidth(1);
                 cell.setMinHeight(elementHeight);
                 cell.setPrefHeight(elementHeight);
-                children.forEach(child -> {
-                    Pair<Consumer<JsonNode>, Parent> master = child.outlineElement(outlineLabelWidth,
-                                                                                   extractor,
-                                                                                   averageCardinality,
-                                                                                   layout,
-                                                                                   justified);
-                    controls.put(child, master);
+                columnSets.forEach(child -> {
+                    Pair<Consumer<JsonNode>, Parent> master = child.build(averageCardinality,
+                                                                          extractor,
+                                                                          layout);
+                    controls.add(master.getKey());
                     cell.getChildren()
                         .add(master.getValue());
                 });
