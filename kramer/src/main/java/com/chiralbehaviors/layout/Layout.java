@@ -17,6 +17,7 @@
 package com.chiralbehaviors.layout;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.List;
 
 import com.chiralbehaviors.layout.schema.Primitive;
@@ -111,16 +112,26 @@ public class Layout {
     private Insets            tableRowInsets = ZERO_INSETS;;
     private Font              textFont       = Font.getDefault();
     private Insets            textInsets     = ZERO_INSETS;
-
     private double            textLineHeight = 0;
 
     public Layout(LayoutModel model) {
-        this.model = model;
+        this(Collections.emptyList(), model, true);
+    }
+
+    public Layout(LayoutModel model, boolean initialize) {
+        this(Collections.emptyList(), model, initialize);
     }
 
     public Layout(List<String> styleSheets, LayoutModel model) {
-        this(model);
-        initialize(styleSheets);
+        this(styleSheets, model, true);
+    }
+
+    public Layout(List<String> styleSheets, LayoutModel model,
+                  boolean initialize) {
+        this.model = model;
+        if (initialize) {
+            initialize(styleSheets);
+        }
     }
 
     public double getListCellHorizontalInset() {

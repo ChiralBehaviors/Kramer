@@ -59,7 +59,7 @@ public class Column {
 
     public double maxWidth(Layout layout) {
         return fields.stream()
-                     .mapToDouble(field -> field.getTableColumnWidth(layout))
+                     .mapToDouble(field -> field.layoutWidth(layout))
                      .max()
                      .orElse(0d);
     }
@@ -120,6 +120,10 @@ public class Column {
                      .collect(Collectors.toList());
     }
 
+    double getWidth() {
+        return width;
+    }
+
     private double elementHeight(int cardinality, Layout layout,
                                  ArrayDeque<SchemaNode> elements) {
         double available = width - elements.stream()
@@ -127,11 +131,13 @@ public class Column {
                                            .max()
                                            .orElse(0d);
         return Layout.snap(elements.stream()
+                                   .peek(f -> System.out.print(f.field + ": "))
                                    .mapToDouble(field -> {
                                        return field.elementHeight(cardinality,
                                                                   layout,
                                                                   available);
                                    })
+                                   .peek(f -> System.out.println(f))
                                    .reduce((a, b) -> a + b)
                                    .orElse(0d));
     }

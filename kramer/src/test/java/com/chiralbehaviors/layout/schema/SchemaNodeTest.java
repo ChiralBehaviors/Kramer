@@ -41,9 +41,12 @@ import javafx.stage.Stage;
  */
 public class SchemaNodeTest extends ApplicationTest {
 
+    private HBox parent;
+
     @Override
     public void start(Stage stage) throws Exception {
-        Scene scene = new Scene(new HBox(), 800, 600);
+        parent = new HBox();
+        Scene scene = new Scene(parent, 800, 600);
         stage.setScene(scene);
         stage.show();
     }
@@ -53,7 +56,7 @@ public class SchemaNodeTest extends ApplicationTest {
         JsonNode data = testData();
         Relation root = build();
         LayoutModel model = mock(LayoutModel.class);
-        Layout layout = new Layout(Collections.emptyList(), model);
+        Layout layout = new Layout(model);
         root.measure(data, layout);
         root.autoLayout(1, layout, 800d);
         List<ColumnSet> columnSets = root.getColumnSets();
@@ -64,10 +67,12 @@ public class SchemaNodeTest extends ApplicationTest {
     }
 
     private void assertFirst(ColumnSet columnSet) {
+        assertEquals(88.0, columnSet.getElementHeight(), 0d);
         assertEquals(3, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()
                                  .get(0);
+        assertEquals(267.0, column.getWidth(), 0d);
         List<SchemaNode> fields = column.getFields();
         assertEquals(2, fields.size());
         assertEquals("name", fields.get(0).field);
@@ -75,32 +80,38 @@ public class SchemaNodeTest extends ApplicationTest {
 
         column = columnSet.getColumns()
                           .get(1);
+        assertEquals(267.0, column.getWidth(), 0d);
         fields = column.getFields();
         assertEquals(1, fields.size());
         assertEquals("classification", fields.get(0).field);
-
+        
         column = columnSet.getColumns()
                           .get(2);
+        assertEquals(267.0, column.getWidth(), 0d);
         fields = column.getFields();
         assertEquals(1, fields.size());
         assertEquals("classifier", fields.get(0).field);
     }
 
     private void assertSecond(ColumnSet columnSet) {
+        assertEquals(126.0, columnSet.getElementHeight(), 0d);
         assertEquals(1, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()
                                  .get(0);
+        assertEquals(800.0, column.getWidth(), 0d);
         List<SchemaNode> fields = column.getFields();
         assertEquals(1, fields.size());
         assertEquals("attributes", fields.get(0).field);
     }
 
     private void assertThird(ColumnSet columnSet) {
+        assertEquals(214.0, columnSet.getElementHeight(), 0d);
         assertEquals(1, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()
                                  .get(0);
+        assertEquals(800.0, column.getWidth(), 0d);
         List<SchemaNode> fields = column.getFields();
         assertEquals(1, fields.size());
         assertEquals("children", fields.get(0).field);

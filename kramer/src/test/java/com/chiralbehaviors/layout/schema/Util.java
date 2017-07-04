@@ -30,7 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 final public class Util {
 
     public static Relation build() {
-        Relation root = new Relation("field");
+        Relation root = new Relation("facet");
         root.addChild(new Primitive("name"));
         root.addChild(new Primitive("notes"));
 

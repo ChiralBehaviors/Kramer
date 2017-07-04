@@ -44,7 +44,9 @@ import javafx.util.Pair;
 abstract public class SchemaNode {
 
     protected static enum INDENT {
-        LEFT, NONE, RIGHT {
+        LEFT,
+        NONE,
+        RIGHT {
             @Override
             public boolean isRight() {
                 return true;
@@ -228,6 +230,8 @@ abstract public class SchemaNode {
     }
 
     abstract double layout(int cardinality, Layout layout, double width);
+
+    abstract double layoutWidth(Layout layout);
 
     abstract double measure(ArrayNode data, Layout layout, INDENT indent);
 

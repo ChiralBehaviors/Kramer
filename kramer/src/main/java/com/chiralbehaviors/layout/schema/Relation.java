@@ -57,6 +57,7 @@ public class Relation extends SchemaNode {
     private final List<SchemaNode> children           = new ArrayList<>();
     private final List<ColumnSet>  columnSets         = new ArrayList<>();
     private Relation               fold;
+    private double                 outlineWidth       = 0;
     private double                 tableColumnWidth   = 0;
     private boolean                useTable           = false;
 
@@ -91,9 +92,9 @@ public class Relation extends SchemaNode {
                              .mapToDouble(cs -> cs.getElementHeight())
                              .sum();
         }
-        double slack = width - getTableColumnWidth(layout);
+        double slack = width - getLabelWidth(layout);
         assert slack >= 0 : String.format("Negative slack: %.2f (%.2f) \n%s",
-                                          slack, width, this);
+                                          slack, width, this.field);
         TableView<JsonNode> table = tableBase(width);
         children.forEach(child -> {
             INDENT indent = indent(child);
@@ -278,13 +279,13 @@ public class Relation extends SchemaNode {
                                            .mapToDouble(child -> child.getLabelWidth(layout))
                                            .max()
                                            .getAsDouble();
-        double outlineWidth = children.stream()
-                                      .mapToDouble(child -> child.layout(cardinality,
-                                                                         layout,
-                                                                         available))
-                                      .max()
-                                      .orElse(0d)
-                              + listInset;
+        outlineWidth = children.stream()
+                               .mapToDouble(child -> child.layout(cardinality,
+                                                                  layout,
+                                                                  available))
+                               .max()
+                               .orElse(0d)
+                       + listInset;
         double tableWidth = tableColumnWidth + tableInset;
         if (tableWidth <= outlineWidth) {
             nestTable();
@@ -354,8 +355,9 @@ public class Relation extends SchemaNode {
             control.setPrefWidth(justified);
             double elementHeight = elementHeight(cardinality, layout,
                                                  justified);
-            double contentHeight = Layout.snap(cardinality * (elementHeight
-                                                              + layout.getListCellVerticalInset()))
+            double contentHeight = Layout.snap(cardinality
+                                               * (elementHeight
+                                                  + layout.getListCellVerticalInset()))
                                    + layout.getListVerticalInset();
             box.setMinHeight(contentHeight);
             box.setPrefHeight(contentHeight);
@@ -459,8 +461,8 @@ public class Relation extends SchemaNode {
             row.setFixedCellSize(extended);
             row.setPrefHeight(rendered);
             row.setCellFactory(control -> {
-                ListCell<JsonNode> cell = rowCell(fields,
-                                                  extended - layout.getListCellVerticalInset(),
+                ListCell<JsonNode> cell = rowCell(fields, extended
+                                                          - layout.getListCellVerticalInset(),
                                                   layout);
                 cell.setPrefHeight(extended);
                 layout.getModel()
@@ -557,9 +559,8 @@ public class Relation extends SchemaNode {
         double contentHeight = Layout.snap(cardinality
                                            * (elementHeight
                                               + layout.getListCellVerticalInset()));
-        list.setPrefHeight(contentHeight + layout.getListVerticalInset());
-        list.setFixedCellSize(elementHeight
-                              + layout.getListCellVerticalInset());
+        list.setPrefHeight(contentHeight);
+        list.setFixedCellSize(elementHeight);
         list.setCellFactory(c -> {
             ListCell<JsonNode> cell = outlineListCell(extractor, elementHeight,
                                                       layout, justified);
@@ -574,6 +575,7 @@ public class Relation extends SchemaNode {
     }
 
     private void compress(int cardinality, Layout layout, double available) {
+        columnSets.clear();
         ColumnSet current = null;
         double halfWidth = available / 2d;
         for (SchemaNode child : children) {
@@ -713,6 +715,7 @@ public class Relation extends SchemaNode {
                 cell.setMinHeight(elementHeight);
                 cell.setPrefHeight(elementHeight);
                 columnSets.forEach(child -> {
+                    System.out.println("** " + field + ":" + child);
                     Pair<Consumer<JsonNode>, Parent> master = child.build(averageCardinality,
                                                                           extractor,
                                                                           layout);
@@ -782,6 +785,14 @@ public class Relation extends SchemaNode {
         table.setPrefWidth(justified);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         return table;
+    }
+
+    /* (non-Javadoc)
+     * @see com.chiralbehaviors.layout.schema.SchemaNode#layoutWidth(com.chiralbehaviors.layout.Layout)
+     */
+    @Override
+    double layoutWidth(Layout layout) {
+        return useTable ? tableColumnWidth : outlineWidth;
     }
 
 }

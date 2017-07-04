@@ -52,11 +52,6 @@ public class ColumnSet {
                .add(node);
     }
 
-    public Parent build(int cardinality, Layout layout, double width) {
-        return null;
-
-    }
-
     public void compress(int cardinality, Layout layout, double width) {
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
@@ -64,6 +59,7 @@ public class ColumnSet {
                         max(1, (int) (width / firstColumn.maxWidth(layout))));
 
         if (count == 1) {
+            firstColumn.setWidth(width);
             elementHeight = firstColumn.elementHeight(cardinality, layout);
             return;
         }
@@ -103,8 +99,8 @@ public class ColumnSet {
         columns.forEach(c -> {
             VBox cell = new VBox();
             controls.add(c.build(cell, cardinality, extractor, layout));
-            cell.setMinWidth(0);
-            cell.setPrefWidth(1);
+            cell.setMinWidth(c.getWidth());
+            cell.setPrefWidth(c.getWidth());
             cell.setMinHeight(elementHeight);
             cell.setPrefHeight(elementHeight);
             span.getChildren()

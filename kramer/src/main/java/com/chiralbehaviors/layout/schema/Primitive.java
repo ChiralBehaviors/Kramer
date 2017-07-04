@@ -110,6 +110,14 @@ public class Primitive extends SchemaNode {
         return variableLength ? width : Math.min(width, columnWidth);
     }
 
+    /* (non-Javadoc)
+     * @see com.chiralbehaviors.layout.schema.SchemaNode#layoutWidth(com.chiralbehaviors.layout.Layout)
+     */
+    @Override
+    double layoutWidth(Layout layout) {
+        return getTableColumnWidth(layout);
+    }
+
     @Override
     double measure(ArrayNode data, Layout layout, INDENT indent) {
         double labelWidth = getLabelWidth(layout);

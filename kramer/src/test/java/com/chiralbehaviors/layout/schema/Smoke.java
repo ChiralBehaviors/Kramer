@@ -45,11 +45,12 @@ public class Smoke extends Application {
             .add(layout);
         primaryStage.setScene(new Scene(root, 800, 800));
         primaryStage.show();
-        layout.setRoot(Util.build());
+        
         JsonNode data = Util.testData();
+        layout.setRoot(Util.build());
         layout.measure(data);
-        layout.setData(data);
         layout.autoLayout();
+        layout.setData(data);
     }
 
 }
