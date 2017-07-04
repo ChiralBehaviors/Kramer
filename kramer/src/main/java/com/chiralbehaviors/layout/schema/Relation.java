@@ -240,17 +240,13 @@ public class Relation extends SchemaNode {
                              .mapToDouble(cs -> cs.getElementHeight())
                              .sum();
         }
-        double slack = width - getLabelWidth(layout);
-        assert slack >= 0 : String.format("Negative slack: %.2f (%.2f) \n%s",
-                                          slack, width, this.field);
-        TableView<JsonNode> table = tableBase(width);
+        TableView<JsonNode> table = tableBase();
         children.forEach(child -> {
             INDENT indent = indent(child);
             table.getColumns()
                  .add(child.buildColumn(layout, inset(layout, 0, child, indent),
                                         indent, width));
         });
-        table.setPrefWidth(width);
         return (rowElement(cardinality, layout, width)
                 + layout.getTableRowVerticalInset() * cardinality)
                + layout.measureHeader(table) + layout.getTableVerticalInset();
@@ -341,23 +337,27 @@ public class Relation extends SchemaNode {
                                        averageCardinality * cardinality, layout,
                                        justified);
         }
+        double available = Layout.snap(justified - labelWidth);
         Control control = useTable ? buildNestedTable(n -> n, cardinality,
-                                                      layout, justified)
+                                                      layout, available)
                                    : buildOutline(n -> n, cardinality, layout,
-                                                  justified);
+                                                  available);
+        control.setPrefWidth(available);
+        control.setMaxWidth(available);
         TextArea labelText = new TextArea(label);
         labelText.setWrapText(true);
         labelText.setPrefColumnCount(1);
-        labelText.setMinWidth(labelWidth);
         labelText.setPrefWidth(labelWidth);
+        labelText.setMaxWidth(labelWidth);
         Pane box = new HBox();
-        control.setPrefWidth(justified);
+        box.setPrefWidth(justified);
+        box.setMaxWidth(justified);
         double elementHeight = elementHeight(cardinality, layout, justified);
         double contentHeight = Layout.snap(cardinality
                                            * (elementHeight
-                                              + layout.getListCellVerticalInset()))
-                               + layout.getListVerticalInset();
+                                              + layout.getListCellVerticalInset()));
         box.setMinHeight(contentHeight);
+        box.setMaxHeight(contentHeight);
         box.getChildren()
            .add(labelText);
         box.getChildren()
@@ -482,7 +482,7 @@ public class Relation extends SchemaNode {
                                          averageCardinality * cardinality,
                                          layout, justified);
         }
-        TableView<JsonNode> table = tableBase(justified);
+        TableView<JsonNode> table = tableBase();
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         children.forEach(child -> {
             INDENT indent = indent(child);
@@ -588,13 +588,13 @@ public class Relation extends SchemaNode {
                                     .orElse(0);
         columnSets.clear();
         ColumnSet current = null;
-        double halfWidth = Layout.snap(available / 2d); 
+        double halfWidth = Layout.snap(available / 2d);
         for (SchemaNode child : children) {
-            double childWidth = labelWidth + child.layoutWidth(layout); 
+            double childWidth = labelWidth + child.layoutWidth(layout);
             if (childWidth > halfWidth || current == null) {
                 current = new ColumnSet(labelWidth);
                 columnSets.add(current);
-                current.add(child); 
+                current.add(child);
                 if (childWidth > halfWidth) {
                     current = null;
                 }
@@ -792,10 +792,11 @@ public class Relation extends SchemaNode {
         };
     }
 
-    private TableView<JsonNode> tableBase(double justified) {
+    private TableView<JsonNode> tableBase() {
         TableView<JsonNode> table = new TableView<>();
         table.setPlaceholder(new Text());
-        table.setPrefWidth(justified);
+        table.setMinWidth(0);
+        table.setPrefWidth(1);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         return table;
     }
