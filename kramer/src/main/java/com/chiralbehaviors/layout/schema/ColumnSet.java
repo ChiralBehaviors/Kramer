@@ -67,28 +67,37 @@ public class ColumnSet {
 
         if (count == 1) {
             firstColumn.setWidth(width);
-            elementHeight = firstColumn.elementHeight(cardinality, layout);
+            firstColumn.getFields()
+                       .forEach(f -> f.compress(cardinality, layout,
+                                                width - labelWidth));
+            elementHeight = firstColumn.elementHeight(cardinality, layout,
+                                                      labelWidth);
             return;
         }
 
         // compression
         double columnWidth = Layout.snap(width / count);
+        firstColumn.getFields()
+                   .forEach(f -> f.compress(cardinality, layout,
+                                            columnWidth - labelWidth));
         firstColumn.setWidth(columnWidth);
         IntStream.range(1, count)
                  .forEach(i -> columns.add(new Column(columnWidth)));
-        elementHeight = firstColumn.elementHeight(cardinality, layout);
+        elementHeight = firstColumn.elementHeight(cardinality, layout,
+                                                  labelWidth);
         double lastHeight;
         do {
             lastHeight = elementHeight;
             for (int i = 0; i < columns.size() - 1; i++) {
                 while (columns.get(i)
                               .slideRight(cardinality, columns.get(i + 1),
-                                          layout, columnWidth)) {
+                                          layout, columnWidth, labelWidth)) {
                 }
             }
             elementHeight = columns.stream()
                                    .mapToDouble(c -> c.elementHeight(cardinality,
-                                                                     layout))
+                                                                     layout,
+                                                                     labelWidth))
                                    .max()
                                    .orElse(0d);
         } while (lastHeight > elementHeight);

@@ -168,9 +168,6 @@ abstract public class SchemaNode {
         this.field = field;
     }
 
-    abstract double elementHeight(int cardinality, Layout layout,
-                                         double width);
-
     public JsonNode extractFrom(JsonNode jsonNode) {
         return extractField(jsonNode, field);
     }
@@ -186,8 +183,6 @@ abstract public class SchemaNode {
     public double getLabelWidth(Layout layout) {
         return layout.textWidth(label);
     }
-
-    abstract double tableColumnWidth(Layout layout);
 
     public boolean isRelation() {
         return false;
@@ -218,6 +213,11 @@ abstract public class SchemaNode {
         return column;
     }
 
+    void compress(int cardinality, Layout layout, double available) {
+    }
+
+    abstract double elementHeight(int cardinality, Layout layout, double width);
+
     Function<JsonNode, JsonNode> extract(Function<JsonNode, JsonNode> extractor) {
         return n -> {
             JsonNode extracted = extractor.apply(n);
@@ -244,4 +244,6 @@ abstract public class SchemaNode {
     abstract double rowElement(int cardinality, Layout layout, double width);
 
     abstract double rowHeight(int cardinality, Layout layout, double justified);
+
+    abstract double tableColumnWidth(Layout layout);
 }

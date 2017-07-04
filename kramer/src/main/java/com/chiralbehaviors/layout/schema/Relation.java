@@ -70,7 +70,9 @@ public class Relation extends SchemaNode {
     }
 
     public void autoLayout(int cardinality, Layout layout, double width) {
-        layout(cardinality, layout, Layout.snap(width));
+        double snapped = Layout.snap(width);
+        layout(cardinality, layout, snapped);
+        compress(cardinality, layout, snapped);
     }
 
     public Control buildControl(int cardinality, Layout layout, double width) {
@@ -265,26 +267,24 @@ public class Relation extends SchemaNode {
             return fold.layout(cardinality, layout, width);
         }
         useTable = false;
-        double listInset = layout.getListHorizontalInset();
-        double tableInset = layout.getTableHorizontalInset();
-        double available = width - children.stream()
-                                           .mapToDouble(child -> child.getLabelWidth(layout))
-                                           .max()
-                                           .getAsDouble();
+        double labelWidth = children.stream()
+                                    .mapToDouble(child -> child.getLabelWidth(layout))
+                                    .max()
+                                    .getAsDouble();
         outlineWidth = children.stream()
                                .mapToDouble(child -> child.layout(cardinality,
                                                                   layout,
-                                                                  available))
+                                                                  width - labelWidth))
                                .max()
                                .orElse(0d)
-                       + listInset;
-        double tableWidth = tableColumnWidth + tableInset;
-        if (tableWidth <= outlineWidth) {
+                       + labelWidth;
+        double tableWidth = tableColumnWidth + layout.getTableHorizontalInset();
+        double oWidth = outlineWidth + layout.getListHorizontalInset();
+        if (tableWidth <= oWidth) {
             nestTable();
             return tableWidth;
         }
-        compress(cardinality, layout, width);
-        return outlineWidth;
+        return oWidth;
     }
 
     /* (non-Javadoc)
@@ -292,7 +292,8 @@ public class Relation extends SchemaNode {
      */
     @Override
     double layoutWidth(Layout layout) {
-        return useTable ? tableColumnWidth(layout) : outlineWidth;
+        return useTable ? tableColumnWidth(layout)
+                        : outlineWidth + layout.getListHorizontalInset();
     }
 
     @Override
@@ -572,20 +573,34 @@ public class Relation extends SchemaNode {
         return list;
     }
 
-    private void compress(int cardinality, Layout layout, double available) {
-        double labelWidth = children.stream().mapToDouble(n -> n.getLabelWidth(layout)).max().orElse(0);
+    @Override
+    void compress(int cardinality, Layout layout, double available) {
+        if (isFold()) {
+            fold.compress(cardinality, layout, available);
+            return;
+        }
+        if (useTable) {
+            return;
+        }
+        double labelWidth = children.stream()
+                                    .mapToDouble(n -> n.getLabelWidth(layout))
+                                    .max()
+                                    .orElse(0);
         columnSets.clear();
         ColumnSet current = null;
-        double halfWidth = available / 2d;
+        double halfWidth = Layout.snap(available / 2d); 
         for (SchemaNode child : children) {
-            if (labelWidth + child.layoutWidth(layout) > halfWidth) {
+            double childWidth = labelWidth + child.layoutWidth(layout); 
+            if (childWidth > halfWidth || current == null) {
                 current = new ColumnSet(labelWidth);
                 columnSets.add(current);
-            } else if (current == null) {
-                current = new ColumnSet(labelWidth);
-                columnSets.add(current);
+                current.add(child); 
+                if (childWidth > halfWidth) {
+                    current = null;
+                }
+            } else {
+                current.add(child);
             }
-            current.add(child);
         }
         columnSets.forEach(cs -> cs.compress(cardinality, layout, available));
     }

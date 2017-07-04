@@ -53,8 +53,9 @@ public class Column {
         fields.addFirst(field);
     }
 
-    public double elementHeight(int cardinality, Layout layout) {
-        return elementHeight(cardinality, layout, fields);
+    public double elementHeight(int cardinality, Layout layout,
+                                double labelWidth) {
+        return elementHeight(cardinality, layout, fields, labelWidth);
     }
 
     public double maxWidth(Layout layout, double labelWidth) {
@@ -70,7 +71,7 @@ public class Column {
     }
 
     public boolean slideRight(int cardinality, Column column, Layout layout,
-                              double columnWidth) {
+                              double columnWidth, double labelWidth) {
         if (fields.size() < 1) {
             return false;
         }
@@ -78,8 +79,9 @@ public class Column {
             column.addFirst(fields.removeLast());
             return true;
         }
-        if (without(cardinality, layout) < column.with(fields.getLast(),
-                                                       cardinality, layout)) {
+        if (without(cardinality, layout,
+                    labelWidth) < column.with(fields.getLast(), cardinality,
+                                              layout, labelWidth)) {
             return false;
         }
         column.addFirst(fields.removeLast());
@@ -122,11 +124,9 @@ public class Column {
     }
 
     private double elementHeight(int cardinality, Layout layout,
-                                 ArrayDeque<SchemaNode> elements) {
-        double available = width - elements.stream()
-                                           .mapToDouble(field -> field.getLabelWidth(layout))
-                                           .max()
-                                           .orElse(0d);
+                                 ArrayDeque<SchemaNode> elements,
+                                 double labelWidth) {
+        double available = width - labelWidth;
         return Layout.snap(elements.stream()
                                    .mapToDouble(field -> {
                                        return field.elementHeight(cardinality,
@@ -137,15 +137,16 @@ public class Column {
                                    .orElse(0d));
     }
 
-    private double with(SchemaNode field, int cardinality, Layout layout) {
+    private double with(SchemaNode field, int cardinality, Layout layout,
+                        double labelWidth) {
         ArrayDeque<SchemaNode> elements = fields.clone();
         elements.add(field);
-        return elementHeight(cardinality, layout, elements);
+        return elementHeight(cardinality, layout, elements, labelWidth);
     }
 
-    private double without(int cardinality, Layout layout) {
+    private double without(int cardinality, Layout layout, double labelWidth) {
         ArrayDeque<SchemaNode> elements = fields.clone();
         elements.removeLast();
-        return elementHeight(cardinality, layout, elements);
+        return elementHeight(cardinality, layout, elements, labelWidth);
     }
 }
