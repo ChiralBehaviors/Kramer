@@ -42,9 +42,14 @@ public class ColumnSet {
 
     private final List<Column> columns = new ArrayList<>();
     private double             elementHeight;
+    private final double       labelWidth;
 
     {
         columns.add(new Column(0d));
+    }
+
+    public ColumnSet(double labelWidth) {
+        this.labelWidth = labelWidth;
     }
 
     public void add(SchemaNode node) {
@@ -56,7 +61,9 @@ public class ColumnSet {
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
                                    .size(),
-                        max(1, (int) (width / firstColumn.maxWidth(layout))));
+                        max(1,
+                            (int) (width / firstColumn.maxWidth(layout,
+                                                                labelWidth))));
 
         if (count == 1) {
             firstColumn.setWidth(width);
@@ -87,6 +94,15 @@ public class ColumnSet {
         } while (lastHeight > elementHeight);
     }
 
+    public double getElementHeight() {
+        return elementHeight;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("ColumnSet [%s]", columns);
+    }
+
     Pair<Consumer<JsonNode>, Parent> build(int cardinality,
                                            Function<JsonNode, JsonNode> extractor,
                                            Layout layout) {
@@ -98,7 +114,8 @@ public class ColumnSet {
         List<Consumer<JsonNode>> controls = new ArrayList<>();
         columns.forEach(c -> {
             VBox cell = new VBox();
-            controls.add(c.build(cell, cardinality, extractor, layout));
+            controls.add(c.build(cell, cardinality, extractor, layout,
+                                 labelWidth));
             cell.setMinWidth(c.getWidth());
             cell.setPrefWidth(c.getWidth());
             cell.setMinHeight(elementHeight);
@@ -107,15 +124,6 @@ public class ColumnSet {
                 .add(cell);
         });
         return new Pair<>(item -> controls.forEach(c -> c.accept(item)), span);
-    }
-
-    public double getElementHeight() {
-        return elementHeight;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("ColumnSet [%s]", columns);
     }
 
     List<Column> getColumns() {

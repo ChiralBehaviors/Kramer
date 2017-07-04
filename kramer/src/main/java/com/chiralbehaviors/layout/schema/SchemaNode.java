@@ -168,7 +168,7 @@ abstract public class SchemaNode {
         this.field = field;
     }
 
-    public abstract double elementHeight(int cardinality, Layout layout,
+    abstract double elementHeight(int cardinality, Layout layout,
                                          double width);
 
     public JsonNode extractFrom(JsonNode jsonNode) {

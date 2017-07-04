@@ -54,8 +54,7 @@ public class Primitive extends SchemaNode {
         super(label);
     }
 
-    @Override
-    public double elementHeight(int cardinality, Layout layout, double width) {
+    @Override double elementHeight(int cardinality, Layout layout, double width) {
         return getValueHeight(layout, width);
     }
 
@@ -143,7 +142,7 @@ public class Primitive extends SchemaNode {
         }
 
         return columnWidth + layout.getTextHorizontalInset();
-    }
+    } 
 
     @Override
     Pair<Consumer<JsonNode>, Parent> outlineElement(double labelWidth,

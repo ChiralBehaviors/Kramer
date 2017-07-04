@@ -83,32 +83,6 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public double elementHeight(int cardinality, Layout layout, double width) {
-        if (isFold()) {
-            return fold.elementHeight(cardinality, layout, width);
-        }
-        if (!useTable) {
-            return columnSets.stream()
-                             .mapToDouble(cs -> cs.getElementHeight())
-                             .sum();
-        }
-        double slack = width - getLabelWidth(layout);
-        assert slack >= 0 : String.format("Negative slack: %.2f (%.2f) \n%s",
-                                          slack, width, this.field);
-        TableView<JsonNode> table = tableBase(width);
-        children.forEach(child -> {
-            INDENT indent = indent(child);
-            table.getColumns()
-                 .add(child.buildColumn(layout, inset(layout, 0, child, indent),
-                                        indent, width));
-        });
-        table.setPrefWidth(width);
-        return (rowElement(cardinality, layout, width)
-                + layout.getTableRowVerticalInset() * cardinality)
-               + layout.measureHeader(table) + layout.getTableVerticalInset();
-    }
-
-    @Override
     public JsonNode extractFrom(JsonNode jsonNode) {
         if (isFold()) {
             return fold.extractFrom(super.extractFrom(jsonNode));
@@ -140,13 +114,6 @@ public class Relation extends SchemaNode {
             return fold.getLabelWidth(layout);
         }
         return layout.textWidth(label);
-    }
-
-    @Override double tableColumnWidth(Layout layout) {
-        if (isFold()) {
-            return fold.tableColumnWidth(layout);
-        }
-        return tableColumnWidth + layout.getNestedInset();
     }
 
     @JsonProperty
@@ -261,6 +228,32 @@ public class Relation extends SchemaNode {
         return column;
     }
 
+    @Override
+    double elementHeight(int cardinality, Layout layout, double width) {
+        if (isFold()) {
+            return fold.elementHeight(cardinality, layout, width);
+        }
+        if (!useTable) {
+            return columnSets.stream()
+                             .mapToDouble(cs -> cs.getElementHeight())
+                             .sum();
+        }
+        double slack = width - getLabelWidth(layout);
+        assert slack >= 0 : String.format("Negative slack: %.2f (%.2f) \n%s",
+                                          slack, width, this.field);
+        TableView<JsonNode> table = tableBase(width);
+        children.forEach(child -> {
+            INDENT indent = indent(child);
+            table.getColumns()
+                 .add(child.buildColumn(layout, inset(layout, 0, child, indent),
+                                        indent, width));
+        });
+        table.setPrefWidth(width);
+        return (rowElement(cardinality, layout, width)
+                + layout.getTableRowVerticalInset() * cardinality)
+               + layout.measureHeader(table) + layout.getTableVerticalInset();
+    }
+
     // for testing
     List<ColumnSet> getColumnSets() {
         return columnSets;
@@ -292,6 +285,14 @@ public class Relation extends SchemaNode {
         }
         compress(cardinality, layout, width);
         return outlineWidth;
+    }
+
+    /* (non-Javadoc)
+     * @see com.chiralbehaviors.layout.schema.SchemaNode#layoutWidth(com.chiralbehaviors.layout.Layout)
+     */
+    @Override
+    double layoutWidth(Layout layout) {
+        return useTable ? tableColumnWidth(layout) : outlineWidth;
     }
 
     @Override
@@ -348,24 +349,14 @@ public class Relation extends SchemaNode {
         labelText.setPrefColumnCount(1);
         labelText.setMinWidth(labelWidth);
         labelText.setPrefWidth(labelWidth);
-        Pane box;
-        if (useTable) {
-            box = new HBox();
-            control.setPrefWidth(justified);
-            double elementHeight = elementHeight(cardinality, layout,
-                                                 justified);
-            double contentHeight = Layout.snap(cardinality
-                                               * (elementHeight
-                                                  + layout.getListCellVerticalInset()))
-                                   + layout.getListVerticalInset();
-            box.setMinHeight(contentHeight);
-            box.setPrefHeight(contentHeight);
-        } else {
-            box = new VBox();
-            box.setPrefWidth(justified);
-            labelText.setPrefHeight(labelHeight(layout));
-            labelText.setMaxHeight(labelHeight(layout));
-        }
+        Pane box = new HBox();
+        control.setPrefWidth(justified);
+        double elementHeight = elementHeight(cardinality, layout, justified);
+        double contentHeight = Layout.snap(cardinality
+                                           * (elementHeight
+                                              + layout.getListCellVerticalInset()))
+                               + layout.getListVerticalInset();
+        box.setMinHeight(contentHeight);
         box.getChildren()
            .add(labelText);
         box.getChildren()
@@ -412,6 +403,14 @@ public class Relation extends SchemaNode {
                                        .getAsDouble();
 
         return extendedHeight(layout, cardinality, elementHeight);
+    }
+
+    @Override
+    double tableColumnWidth(Layout layout) {
+        if (isFold()) {
+            return fold.tableColumnWidth(layout);
+        }
+        return tableColumnWidth + layout.getNestedInset();
     }
 
     private Function<Double, Pair<Consumer<JsonNode>, Control>> buildColumn(int cardinality,
@@ -567,22 +566,23 @@ public class Relation extends SchemaNode {
                   .apply(cell, this);
             return cell;
         });
-        list.setMinWidth(0);
-        list.setPrefWidth(1);
+        list.setMinWidth(outlineWidth);
+        //        list.setPrefWidth(1);
         list.setPlaceholder(new Text());
         return list;
     }
 
     private void compress(int cardinality, Layout layout, double available) {
+        double labelWidth = children.stream().mapToDouble(n -> n.getLabelWidth(layout)).max().orElse(0);
         columnSets.clear();
         ColumnSet current = null;
         double halfWidth = available / 2d;
         for (SchemaNode child : children) {
-            if (child.tableColumnWidth(layout) > halfWidth) {
-                current = new ColumnSet();
+            if (labelWidth + child.layoutWidth(layout) > halfWidth) {
+                current = new ColumnSet(labelWidth);
                 columnSets.add(current);
             } else if (current == null) {
-                current = new ColumnSet();
+                current = new ColumnSet(labelWidth);
                 columnSets.add(current);
             }
             current.add(child);
@@ -783,14 +783,6 @@ public class Relation extends SchemaNode {
         table.setPrefWidth(justified);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         return table;
-    }
-
-    /* (non-Javadoc)
-     * @see com.chiralbehaviors.layout.schema.SchemaNode#layoutWidth(com.chiralbehaviors.layout.Layout)
-     */
-    @Override
-    double layoutWidth(Layout layout) {
-        return useTable ? tableColumnWidth : outlineWidth;
     }
 
 }

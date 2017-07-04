@@ -57,9 +57,10 @@ public class Column {
         return elementHeight(cardinality, layout, fields);
     }
 
-    public double maxWidth(Layout layout) {
+    public double maxWidth(Layout layout, double labelWidth) {
         return fields.stream()
-                     .mapToDouble(field -> field.layoutWidth(layout))
+                     .mapToDouble(field -> labelWidth
+                                           + field.layoutWidth(layout))
                      .max()
                      .orElse(0d);
     }
@@ -95,14 +96,10 @@ public class Column {
 
     Consumer<JsonNode> build(VBox cell, int cardinality,
                              Function<JsonNode, JsonNode> extractor,
-                             Layout layout) {
-        double outlineLabelWidth = fields.stream()
-                                         .mapToDouble(child -> child.getLabelWidth(layout))
-                                         .max()
-                                         .orElse(0d);
+                             Layout layout, double labelWidth) {
         List<Consumer<JsonNode>> controls = new ArrayList<>();
         fields.forEach(child -> {
-            Pair<Consumer<JsonNode>, Parent> master = child.outlineElement(outlineLabelWidth,
+            Pair<Consumer<JsonNode>, Parent> master = child.outlineElement(labelWidth,
                                                                            extractor,
                                                                            cardinality,
                                                                            layout,
