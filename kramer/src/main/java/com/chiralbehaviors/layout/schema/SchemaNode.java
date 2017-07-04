@@ -187,7 +187,7 @@ abstract public class SchemaNode {
         return layout.textWidth(label);
     }
 
-    public abstract double getTableColumnWidth(Layout layout);
+    abstract double tableColumnWidth(Layout layout);
 
     public boolean isRelation() {
         return false;

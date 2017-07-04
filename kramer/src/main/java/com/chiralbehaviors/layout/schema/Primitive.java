@@ -59,8 +59,7 @@ public class Primitive extends SchemaNode {
         return getValueHeight(layout, width);
     }
 
-    @Override
-    public double getTableColumnWidth(Layout layout) {
+    @Override double tableColumnWidth(Layout layout) {
         return columnWidth + layout.getTextHorizontalInset();
     }
 
@@ -115,7 +114,7 @@ public class Primitive extends SchemaNode {
      */
     @Override
     double layoutWidth(Layout layout) {
-        return getTableColumnWidth(layout);
+        return tableColumnWidth(layout);
     }
 
     @Override

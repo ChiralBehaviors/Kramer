@@ -142,10 +142,9 @@ public class Relation extends SchemaNode {
         return layout.textWidth(label);
     }
 
-    @Override
-    public double getTableColumnWidth(Layout layout) {
+    @Override double tableColumnWidth(Layout layout) {
         if (isFold()) {
-            return fold.getTableColumnWidth(layout);
+            return fold.tableColumnWidth(layout);
         }
         return tableColumnWidth + layout.getNestedInset();
     }
@@ -325,8 +324,8 @@ public class Relation extends SchemaNode {
         }
         averageCardinality = (int) Math.ceil(sum / children.size());
         tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth));
-        return isFold() ? fold.getTableColumnWidth(layout)
-                        : getTableColumnWidth(layout);
+        return isFold() ? fold.tableColumnWidth(layout)
+                        : tableColumnWidth(layout);
     }
 
     @Override
@@ -579,7 +578,7 @@ public class Relation extends SchemaNode {
         ColumnSet current = null;
         double halfWidth = available / 2d;
         for (SchemaNode child : children) {
-            if (child.getTableColumnWidth(layout) > halfWidth) {
+            if (child.tableColumnWidth(layout) > halfWidth) {
                 current = new ColumnSet();
                 columnSets.add(current);
             } else if (current == null) {
@@ -715,7 +714,6 @@ public class Relation extends SchemaNode {
                 cell.setMinHeight(elementHeight);
                 cell.setPrefHeight(elementHeight);
                 columnSets.forEach(child -> {
-                    System.out.println("** " + field + ":" + child);
                     Pair<Consumer<JsonNode>, Parent> master = child.build(averageCardinality,
                                                                           extractor,
                                                                           layout);

@@ -131,13 +131,11 @@ public class Column {
                                            .max()
                                            .orElse(0d);
         return Layout.snap(elements.stream()
-                                   .peek(f -> System.out.print(f.field + ": "))
                                    .mapToDouble(field -> {
                                        return field.elementHeight(cardinality,
                                                                   layout,
                                                                   available);
                                    })
-                                   .peek(f -> System.out.println(f))
                                    .reduce((a, b) -> a + b)
                                    .orElse(0d));
     }
