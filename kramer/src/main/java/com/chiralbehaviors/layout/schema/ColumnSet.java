@@ -114,11 +114,11 @@ public class ColumnSet {
 
     Pair<Consumer<JsonNode>, Parent> build(int cardinality,
                                            Function<JsonNode, JsonNode> extractor,
-                                           Layout layout) {
+                                           Layout layout, double justified) {
         HBox span = new HBox();
-        span.setMinWidth(0);
-        span.setPrefWidth(1);
-        span.setMinHeight(elementHeight);
+        span.setMaxWidth(justified);
+        span.setPrefWidth(justified);
+        span.setMaxHeight(elementHeight);
         span.setPrefHeight(elementHeight);
         List<Consumer<JsonNode>> controls = new ArrayList<>();
         columns.forEach(c -> {

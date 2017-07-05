@@ -502,7 +502,7 @@ public class Relation extends SchemaNode {
             columns = leaves;
         }
 
-        Function<Double, Pair<Consumer<JsonNode>, Control>> topLevel = buildColumn(cardinality,
+        Function<Double, Pair<Consumer<JsonNode>, Control>> topLevel = buildColumn(averageCardinality,
                                                                                    n -> n,
                                                                                    columnMap,
                                                                                    layout,
@@ -731,7 +731,8 @@ public class Relation extends SchemaNode {
                 columnSets.forEach(child -> {
                     Pair<Consumer<JsonNode>, Parent> master = child.build(averageCardinality,
                                                                           extractor,
-                                                                          layout);
+                                                                          layout,
+                                                                          justified);
                     controls.add(master.getKey());
                     cell.getChildren()
                         .add(master.getValue());
@@ -795,8 +796,6 @@ public class Relation extends SchemaNode {
     private TableView<JsonNode> tableBase() {
         TableView<JsonNode> table = new TableView<>();
         table.setPlaceholder(new Text());
-        table.setMinWidth(0);
-        table.setPrefWidth(1);
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         return table;
     }

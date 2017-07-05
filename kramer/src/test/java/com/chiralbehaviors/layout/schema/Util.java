@@ -34,12 +34,12 @@ final public class Util {
         root.addChild(new Primitive("name"));
         root.addChild(new Primitive("notes"));
 
-        Relation n = new Relation("classification");
+        Relation n = new Relation("classifier");
         n.addChild(new Primitive("name"));
         n.addChild(new Primitive("description"));
         root.addChild(n);
 
-        n = new Relation("classifier");
+        n = new Relation("classification");
         n.addChild(new Primitive("name"));
         n.addChild(new Primitive("description"));
         root.addChild(n);
