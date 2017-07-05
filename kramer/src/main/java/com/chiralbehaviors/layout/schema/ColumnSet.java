@@ -109,7 +109,7 @@ public class ColumnSet {
 
     @Override
     public String toString() {
-        return String.format("ColumnSet [%s]", columns);
+        return String.format("ColumnSet [%s] [%s]", elementHeight, columns);
     }
 
     Pair<Consumer<JsonNode>, Parent> build(int cardinality,
@@ -117,18 +117,19 @@ public class ColumnSet {
                                            Layout layout, double justified) {
         HBox span = new HBox();
         span.setMaxWidth(justified);
-        span.setPrefWidth(justified);
+        span.setMinWidth(justified);
         span.setMaxHeight(elementHeight);
-        span.setPrefHeight(elementHeight);
+        span.setMinHeight(elementHeight);
         List<Consumer<JsonNode>> controls = new ArrayList<>();
         columns.forEach(c -> {
             VBox cell = new VBox();
             controls.add(c.build(cell, cardinality, extractor, layout,
                                  labelWidth));
+            cell.setMaxWidth(c.getWidth());
             cell.setMinWidth(c.getWidth());
-            cell.setPrefWidth(c.getWidth());
+            
             cell.setMinHeight(elementHeight);
-            cell.setPrefHeight(elementHeight);
+            cell.setMaxHeight(elementHeight);
             span.getChildren()
                 .add(cell);
         });

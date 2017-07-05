@@ -90,10 +90,9 @@ public class Column {
 
     @Override
     public String toString() {
-        return String.format("Column [fields=%s %s]", fields.stream()
-                                                            .map(p -> p.getField())
-                                                            .collect(Collectors.toList()),
-                             width);
+        return String.format("Column [%s] [fields=%s]", width, fields.stream()
+                                                                     .map(p -> p.getField())
+                                                                     .collect(Collectors.toList()));
     }
 
     Consumer<JsonNode> build(VBox cell, int cardinality,
