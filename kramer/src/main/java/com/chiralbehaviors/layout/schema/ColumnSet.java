@@ -57,7 +57,7 @@ public class ColumnSet {
                .add(node);
     }
 
-    public void compress(int cardinality, Layout layout, double width) {
+    public void compress(Layout layout, double width) {
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
                                    .size(),
@@ -69,8 +69,7 @@ public class ColumnSet {
             firstColumn.setWidth(width);
             firstColumn.getFields()
                        .forEach(f -> f.compress(layout, width - labelWidth));
-            cellHeight = firstColumn.cellHeight(cardinality, layout,
-                                                labelWidth);
+            cellHeight = firstColumn.cellHeight(layout, labelWidth);
             return;
         }
 
@@ -81,19 +80,18 @@ public class ColumnSet {
         firstColumn.setWidth(columnWidth);
         IntStream.range(1, count)
                  .forEach(i -> columns.add(new Column(columnWidth)));
-        cellHeight = firstColumn.cellHeight(cardinality, layout, labelWidth);
+        cellHeight = firstColumn.cellHeight(layout, labelWidth);
         double lastHeight;
         do {
             lastHeight = cellHeight;
             for (int i = 0; i < columns.size() - 1; i++) {
                 while (columns.get(i)
-                              .slideRight(cardinality, columns.get(i + 1),
-                                          layout, columnWidth, labelWidth)) {
+                              .slideRight(columns.get(i + 1), layout,
+                                          columnWidth, labelWidth)) {
                 }
             }
             cellHeight = columns.stream()
-                                .mapToDouble(c -> c.cellHeight(cardinality,
-                                                               layout,
+                                .mapToDouble(c -> c.cellHeight(layout,
                                                                labelWidth))
                                 .max()
                                 .orElse(0d);
@@ -111,25 +109,14 @@ public class ColumnSet {
 
     Pair<Consumer<JsonNode>, Parent> build(Function<JsonNode, JsonNode> extractor,
                                            Layout layout, double justified) {
-        HBox span = new HBox();
-        span.setMaxWidth(justified);
-        span.setMinWidth(justified);
-        span.setPrefWidth(justified);
-        span.setMaxHeight(cellHeight);
-        span.setMinHeight(cellHeight);
+        HBox span = new HBox(); 
+        span.setPrefWidth(justified); 
         span.setPrefHeight(cellHeight);
         List<Consumer<JsonNode>> controls = new ArrayList<>();
         columns.forEach(c -> {
             VBox cell = new VBox();
             controls.add(c.build(cellHeight, cell, extractor, layout,
-                                 labelWidth));
-            cell.setMinWidth(c.getWidth());
-            cell.setMaxWidth(c.getWidth());
-            cell.setPrefWidth(c.getWidth());
-
-            cell.setMinHeight(cellHeight);
-            cell.setMaxHeight(cellHeight);
-            cell.setPrefHeight(cellHeight);
+                                 labelWidth)); 
             span.getChildren()
                 .add(cell);
         });

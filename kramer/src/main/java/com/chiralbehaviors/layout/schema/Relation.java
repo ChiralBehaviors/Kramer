@@ -255,6 +255,40 @@ public class Relation extends SchemaNode {
                + layout.measureHeader(table) + layout.getTableVerticalInset();
     }
 
+    @Override
+    void compress(Layout layout, double justified) {
+        if (isFold()) {
+            fold.compress(layout, justified);
+            return;
+        }
+        if (useTable) {
+            return;
+        }
+        double labelWidth = children.stream()
+                                    .mapToDouble(n -> n.getLabelWidth(layout))
+                                    .max()
+                                    .orElse(0);
+        columnSets.clear();
+        ColumnSet current = null;
+        double available = justified - layout.getListCellHorizontalInset()
+                           - layout.getListHorizontalInset();
+        double halfWidth = Layout.snap(available / 2d);
+        for (SchemaNode child : children) {
+            double childWidth = labelWidth + child.layoutWidth(layout);
+            if (childWidth > halfWidth || current == null) {
+                current = new ColumnSet(labelWidth);
+                columnSets.add(current);
+                current.add(child);
+                if (childWidth > halfWidth) {
+                    current = null;
+                }
+            } else {
+                current.add(child);
+            }
+        }
+        columnSets.forEach(cs -> cs.compress(layout, available));
+    }
+
     // for testing
     List<ColumnSet> getColumnSets() {
         return columnSets;
@@ -270,15 +304,20 @@ public class Relation extends SchemaNode {
                                     .mapToDouble(child -> child.getLabelWidth(layout))
                                     .max()
                                     .getAsDouble();
+        double available = width - labelWidth
+                           - layout.getListCellHorizontalInset();
         outlineWidth = children.stream()
-                               .mapToDouble(child -> child.layout(cardinality,
-                                                                  layout,
-                                                                  width - labelWidth))
+                               .mapToDouble(child -> {
+                                   return child.layout(cardinality, layout,
+                                                       available);
+                               })
                                .max()
                                .orElse(0d)
                        + labelWidth;
-        double tableWidth = tableColumnWidth + layout.getTableHorizontalInset();
-        double oWidth = outlineWidth + layout.getListHorizontalInset();
+        double tableWidth = tableColumnWidth + layout.getTableHorizontalInset()
+                            + layout.getTableRowHorizontalInset();
+        double oWidth = outlineWidth + layout.getListCellHorizontalInset()
+                        + layout.getListHorizontalInset();
         if (tableWidth <= oWidth) {
             nestTable();
             return tableWidth;
@@ -292,7 +331,8 @@ public class Relation extends SchemaNode {
     @Override
     double layoutWidth(Layout layout) {
         return useTable ? tableColumnWidth(layout)
-                        : outlineWidth + layout.getListHorizontalInset();
+                        : outlineWidth + layout.getListCellHorizontalInset()
+                          + layout.getListHorizontalInset();
     }
 
     @Override
@@ -348,25 +388,17 @@ public class Relation extends SchemaNode {
                                    : buildOutline(cellHeight, n -> n,
                                                   cardinality, layout,
                                                   available);
-        //        control.setMinWidth(available);
-        //        control.setMaxWidth(available);
         control.setPrefWidth(available);
-        //        control.setMinHeight(cellHeight);
-        //        control.setMaxHeight(cellHeight);
         control.setPrefHeight(cellHeight);
         TextArea labelText = new TextArea(label);
         labelText.setWrapText(true);
         labelText.setPrefColumnCount(1);
         labelText.setPrefWidth(labelWidth);
-        //        labelText.setMaxWidth(labelWidth);
+        labelText.setMaxWidth(labelWidth);
         labelText.setPrefHeight(cellHeight);
-        //        labelText.setMaxHeight(cellHeight);
+        labelText.setMaxHeight(cellHeight);
         Pane box = new HBox();
-        //        box.setMinWidth(justified);
-        //        box.setMaxWidth(justified);
         box.setPrefWidth(justified);
-        //        box.setMinHeight(cellHeight);
-        //        box.setMaxHeight(cellHeight);
         box.setPrefHeight(cellHeight);
         box.getChildren()
            .add(labelText);
@@ -402,7 +434,8 @@ public class Relation extends SchemaNode {
         if (isFold()) {
             return fold.tableColumnWidth(layout);
         }
-        return tableColumnWidth + layout.getNestedInset();
+        return tableColumnWidth + layout.getTableHorizontalInset()
+               + layout.getTableRowHorizontalInset();
     }
 
     private Function<Double, Pair<Consumer<JsonNode>, Control>> buildColumn(int cardinality,
@@ -542,53 +575,18 @@ public class Relation extends SchemaNode {
         ListView<JsonNode> list = new ListView<>();
         layout.getModel()
               .apply(list, this);
-
         list.setPrefHeight((extended * cardinality));
-        list.setFixedCellSize(cellHeight);
         list.setCellFactory(c -> {
-            ListCell<JsonNode> cell = outlineListCell(extractor, cellHeight,
-                                                      layout, justified);
+            ListCell<JsonNode> cell = listCell(extractor, cellHeight, layout,
+                                               justified - layout.getListCellHorizontalInset()
+                                                                              - layout.getListHorizontalInset());
             layout.getModel()
                   .apply(cell, this);
             return cell;
         });
-        list.setMinWidth(outlineWidth);
-        //        list.setPrefWidth(1);
+        list.setPrefWidth(justified);
         list.setPlaceholder(new Text());
         return list;
-    }
-
-    @Override
-    void compress(Layout layout, double available) {
-        if (isFold()) {
-            fold.compress(layout, available);
-            return;
-        }
-        if (useTable) {
-            return;
-        }
-        double labelWidth = children.stream()
-                                    .mapToDouble(n -> n.getLabelWidth(layout))
-                                    .max()
-                                    .orElse(0);
-        columnSets.clear();
-        ColumnSet current = null;
-        double halfWidth = Layout.snap(available / 2d);
-        for (SchemaNode child : children) {
-            double childWidth = labelWidth + child.layoutWidth(layout);
-            if (childWidth > halfWidth || current == null) {
-                current = new ColumnSet(labelWidth);
-                columnSets.add(current);
-                current.add(child);
-                if (childWidth > halfWidth) {
-                    current = null;
-                }
-            } else {
-                current.add(child);
-            }
-        }
-        columnSets.forEach(cs -> cs.compress(averageCardinality, layout,
-                                             available));
     }
 
     private double extendedHeight(Layout layout, int cardinality,
@@ -656,18 +654,9 @@ public class Relation extends SchemaNode {
                && children.get(children.size() - 1) instanceof Relation;
     }
 
-    private void nestTable() {
-        useTable = true;
-        children.forEach(child -> {
-            if (child.isRelation()) {
-                ((Relation) child).nestTable();
-            }
-        });
-    }
-
-    private ListCell<JsonNode> outlineListCell(Function<JsonNode, JsonNode> extractor,
-                                               double cellHeight, Layout layout,
-                                               double justified) {
+    private ListCell<JsonNode> listCell(Function<JsonNode, JsonNode> extractor,
+                                        double cellHeight, Layout layout,
+                                        double justified) {
         return new ListCell<JsonNode>() {
             VBox                     cell;
             List<Consumer<JsonNode>> controls = new ArrayList<>();
@@ -709,10 +698,6 @@ public class Relation extends SchemaNode {
             private void initialize(Function<JsonNode, JsonNode> extractor,
                                     Layout layout, double justified) {
                 cell = new VBox();
-                cell.setMinWidth(0);
-                cell.setPrefWidth(1);
-                cell.setMinHeight(cellHeight);
-                cell.setPrefHeight(cellHeight);
                 columnSets.forEach(cs -> {
                     Pair<Consumer<JsonNode>, Parent> master = cs.build(extractor,
                                                                        layout,
@@ -723,6 +708,15 @@ public class Relation extends SchemaNode {
                 });
             }
         };
+    }
+
+    private void nestTable() {
+        useTable = true;
+        children.forEach(child -> {
+            if (child.isRelation()) {
+                ((Relation) child).nestTable();
+            }
+        });
     }
 
     private ListCell<JsonNode> rowCell(List<Function<Double, Pair<Consumer<JsonNode>, Control>>> fields,
