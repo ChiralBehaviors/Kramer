@@ -218,8 +218,6 @@ abstract public class SchemaNode {
     void compress(Layout layout, double available) {
     }
 
-    abstract double elementHeight(int cardinality, Layout layout, double width);
-
     Function<JsonNode, JsonNode> extract(Function<JsonNode, JsonNode> extractor) {
         return n -> {
             JsonNode extracted = extractor.apply(n);
@@ -244,9 +242,7 @@ abstract public class SchemaNode {
                                                              Layout layout,
                                                              double justified);
 
-    abstract double rowElement(int cardinality, Layout layout, double width);
-
-    abstract double rowHeight(int cardinality, Layout layout, double justified);
+    abstract double rowHeight(Layout layout, double justified);
 
     abstract double tableColumnWidth(Layout layout);
 }

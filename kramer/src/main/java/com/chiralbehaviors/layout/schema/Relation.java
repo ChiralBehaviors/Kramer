@@ -81,9 +81,8 @@ public class Relation extends SchemaNode {
                                      width);
         }
         return useTable ? buildNestedTable(n -> n, cardinality, layout, width)
-                        : buildOutline(elementHeight(cardinality, layout,
-                                                     width),
-                                       n -> n, cardinality, layout, width);
+                        : buildOutline(cellHeight(layout, width), n -> n,
+                                       cardinality, layout, width);
     }
 
     @Override
@@ -232,28 +231,6 @@ public class Relation extends SchemaNode {
         return column;
     }
 
-    @Override
-    double elementHeight(int cardinality, Layout layout, double width) {
-        if (isFold()) {
-            return fold.elementHeight(cardinality, layout, width);
-        }
-        if (!useTable) {
-            return columnSets.stream()
-                             .mapToDouble(cs -> cs.getCellHeight())
-                             .sum();
-        }
-        TableView<JsonNode> table = tableBase();
-        children.forEach(child -> {
-            INDENT indent = indent(child);
-            table.getColumns()
-                 .add(child.buildColumn(layout, inset(layout, 0, child, indent),
-                                        indent, width));
-        });
-        return (rowElement(cardinality, layout, width)
-                + layout.getTableRowVerticalInset() * cardinality)
-               + layout.measureHeader(table) + layout.getTableVerticalInset();
-    }
-
     double cellHeight(Layout layout, double width) {
         if (isFold()) {
             return fold.cellHeight(layout, width);
@@ -270,8 +247,8 @@ public class Relation extends SchemaNode {
                  .add(child.buildColumn(layout, inset(layout, 0, child, indent),
                                         indent, width));
         });
-        return (rowElement(averageCardinality, layout, width)
-                + layout.getTableRowVerticalInset())
+        return (averageCardinality * (rowHeight(layout, width)
+                                      + layout.getTableRowVerticalInset()))
                + layout.measureHeader(table) + layout.getTableVerticalInset();
     }
 
@@ -405,35 +382,16 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    double rowElement(int cardinality, Layout layout, double justified) {
+    double rowHeight(Layout layout, double justified) {
         if (isFold()) {
-            return fold.rowHeight(averageCardinality * cardinality, layout,
-                                  justified);
+            return fold.rowHeight(layout, justified);
         }
 
-        return extendedHeight(layout, cardinality, children.stream()
-                                                           .mapToDouble(child -> Layout.snap(child.rowElement(cardinality,
-                                                                                                              layout,
-                                                                                                              justified)))
-                                                           .max()
-                                                           .getAsDouble());
-    }
-
-    @Override
-    double rowHeight(int cardinality, Layout layout, double justified) {
-        if (isFold()) {
-            return fold.rowHeight(averageCardinality * cardinality, layout,
-                                  justified);
-        }
-
-        double elementHeight = children.stream()
-                                       .mapToDouble(child -> Layout.snap(child.rowHeight(averageCardinality,
-                                                                                         layout,
-                                                                                         justified)))
-                                       .max()
-                                       .getAsDouble();
-
-        return extendedHeight(layout, cardinality, elementHeight);
+        return children.stream()
+                       .mapToDouble(child -> Layout.snap(child.rowHeight(layout,
+                                                                         justified)))
+                       .max()
+                       .getAsDouble();
     }
 
     @Override
@@ -469,7 +427,7 @@ public class Relation extends SchemaNode {
                                                                      indent),
                                                                indent(child),
                                                                justified)));
-        double cellHeight = elementHeight(cardinality, layout, justified)
+        double cellHeight = rowHeight(layout, justified)
                             + layout.getListCellVerticalInset();
         double calculatedHeight = (cellHeight * cardinality)
                                   + layout.getListVerticalInset();
@@ -541,9 +499,7 @@ public class Relation extends SchemaNode {
                                                                                    true,
                                                                                    justified);
 
-        double height = extendedHeight(layout, 1,
-                                       elementHeight(cardinality, layout,
-                                                     justified));
+        double height = extendedHeight(layout, 1, rowHeight(layout, justified));
 
         table.setRowFactory(tableView -> {
             Pair<Consumer<JsonNode>, Control> relationRow = topLevel.apply(height);
@@ -557,7 +513,7 @@ public class Relation extends SchemaNode {
         layout.getModel()
               .apply(table, this);
         table.setFixedCellSize(height);
-        double rowHeight = rowHeight(averageCardinality, layout, justified)
+        double rowHeight = rowHeight(layout, justified)
                            + layout.getTableRowVerticalInset();
         double contentHeight = (rowHeight * cardinality)
                                + layout.measureHeader(table)

@@ -102,11 +102,6 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double elementHeight(int cardinality, Layout layout, double width) {
-        return cellHeight(layout, width);
-    }
-
-    @Override
     double layout(int cardinality, Layout layout, double width) {
         return variableLength ? width : Math.min(width, columnWidth);
     }
@@ -179,12 +174,7 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double rowElement(int cardinality, Layout layout, double width) {
-        return elementHeight(cardinality, layout, width);
-    }
-
-    @Override
-    double rowHeight(int cardinality, Layout layout, double width) {
+    double rowHeight(Layout layout, double width) {
         return cellHeight(layout, width);
     }
 
