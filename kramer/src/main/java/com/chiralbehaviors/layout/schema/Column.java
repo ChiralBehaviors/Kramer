@@ -55,7 +55,7 @@ public class Column {
 
     public double cellHeight(int cardinality, Layout layout,
                              double labelWidth) {
-        return cellHeight(cardinality, layout, fields, labelWidth);
+        return cellHeight(layout, fields, labelWidth);
     }
 
     public double maxWidth(Layout layout, double labelWidth) {
@@ -95,7 +95,7 @@ public class Column {
                                                                      .collect(Collectors.toList()));
     }
 
-    Consumer<JsonNode> build(double cellHeight, VBox cell, int cardinality,
+    Consumer<JsonNode> build(double cellHeight, VBox cell,
                              Function<JsonNode, JsonNode> extractor,
                              Layout layout, double labelWidth) {
         List<Consumer<JsonNode>> controls = new ArrayList<>();
@@ -103,7 +103,7 @@ public class Column {
             Pair<Consumer<JsonNode>, Parent> master = child.outlineElement(labelWidth,
                                                                            extractor,
                                                                            cellHeight,
-                                                                           cardinality,
+                                                                           1,
                                                                            layout,
                                                                            width);
             controls.add(master.getKey());
@@ -123,19 +123,12 @@ public class Column {
         return width;
     }
 
-    private double cellHeight(int cardinality, Layout layout,
-                              ArrayDeque<SchemaNode> elements,
+    private double cellHeight(Layout layout, ArrayDeque<SchemaNode> elements,
                               double labelWidth) {
         double available = width - labelWidth;
         return Layout.snap(elements.stream()
-                                   .mapToDouble(field -> field.isUseTable() ? field.elementHeight(cardinality,
-                                                                                                  layout,
-                                                                                                  available)
-                                                                            : Layout.snap(cardinality
-                                                                                          * (field.elementHeight(cardinality,
-                                                                                                                 layout,
-                                                                                                                 available)
-                                                                                             + layout.getListCellVerticalInset())))
+                                   .mapToDouble(field -> field.cellHeight(layout,
+                                                                           available))
                                    .reduce((a, b) -> a + b)
                                    .orElse(0d));
     }
@@ -144,12 +137,12 @@ public class Column {
                         double labelWidth) {
         ArrayDeque<SchemaNode> elements = fields.clone();
         elements.add(field);
-        return cellHeight(cardinality, layout, elements, labelWidth);
+        return cellHeight(layout, elements, labelWidth);
     }
 
     private double without(int cardinality, Layout layout, double labelWidth) {
         ArrayDeque<SchemaNode> elements = fields.clone();
         elements.removeLast();
-        return cellHeight(cardinality, layout, elements, labelWidth);
+        return cellHeight(layout, elements, labelWidth);
     }
 }

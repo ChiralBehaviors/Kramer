@@ -68,8 +68,7 @@ public class ColumnSet {
         if (count == 1) {
             firstColumn.setWidth(width);
             firstColumn.getFields()
-                       .forEach(f -> f.compress(cardinality, layout,
-                                                width - labelWidth));
+                       .forEach(f -> f.compress(layout, width - labelWidth));
             cellHeight = firstColumn.cellHeight(cardinality, layout,
                                                 labelWidth);
             return;
@@ -78,8 +77,7 @@ public class ColumnSet {
         // compression
         double columnWidth = Layout.snap(width / count);
         firstColumn.getFields()
-                   .forEach(f -> f.compress(cardinality, layout,
-                                            columnWidth - labelWidth));
+                   .forEach(f -> f.compress(layout, columnWidth - labelWidth));
         firstColumn.setWidth(columnWidth);
         IntStream.range(1, count)
                  .forEach(i -> columns.add(new Column(columnWidth)));
@@ -111,23 +109,26 @@ public class ColumnSet {
         return String.format("ColumnSet [%s] [%s]", cellHeight, columns);
     }
 
-    Pair<Consumer<JsonNode>, Parent> build(int cardinality,
-                                           Function<JsonNode, JsonNode> extractor,
+    Pair<Consumer<JsonNode>, Parent> build(Function<JsonNode, JsonNode> extractor,
                                            Layout layout, double justified) {
         HBox span = new HBox();
         span.setMaxWidth(justified);
         span.setMinWidth(justified);
+        span.setPrefWidth(justified);
         span.setMaxHeight(cellHeight);
         span.setMinHeight(cellHeight);
+        span.setPrefHeight(cellHeight);
         List<Consumer<JsonNode>> controls = new ArrayList<>();
         columns.forEach(c -> {
             VBox cell = new VBox();
-            controls.add(c.build(cellHeight, cell, cardinality, extractor,
-                                 layout, labelWidth));
+            controls.add(c.build(cellHeight, cell, extractor, layout,
+                                 labelWidth));
             cell.setMinWidth(c.getWidth());
+            cell.setMaxWidth(c.getWidth());
             cell.setPrefWidth(c.getWidth());
 
             cell.setMinHeight(cellHeight);
+            cell.setMaxHeight(cellHeight);
             cell.setPrefHeight(cellHeight);
             span.getChildren()
                 .add(cell);

@@ -72,7 +72,7 @@ public class Relation extends SchemaNode {
     public void autoLayout(int cardinality, Layout layout, double width) {
         double snapped = Layout.snap(width);
         layout(cardinality, layout, snapped);
-        compress(cardinality, layout, snapped);
+        compress(layout, snapped);
     }
 
     public Control buildControl(int cardinality, Layout layout, double width) {
@@ -254,6 +254,27 @@ public class Relation extends SchemaNode {
                + layout.measureHeader(table) + layout.getTableVerticalInset();
     }
 
+    double cellHeight(Layout layout, double width) {
+        if (isFold()) {
+            return fold.cellHeight(layout, width);
+        }
+        if (!useTable) {
+            return columnSets.stream()
+                             .mapToDouble(cs -> cs.getCellHeight())
+                             .sum();
+        }
+        TableView<JsonNode> table = tableBase();
+        children.forEach(child -> {
+            INDENT indent = indent(child);
+            table.getColumns()
+                 .add(child.buildColumn(layout, inset(layout, 0, child, indent),
+                                        indent, width));
+        });
+        return (rowElement(averageCardinality, layout, width)
+                + layout.getTableRowVerticalInset())
+               + layout.measureHeader(table) + layout.getTableVerticalInset();
+    }
+
     // for testing
     List<ColumnSet> getColumnSets() {
         return columnSets;
@@ -347,20 +368,26 @@ public class Relation extends SchemaNode {
                                    : buildOutline(cellHeight, n -> n,
                                                   cardinality, layout,
                                                   available);
+        //        control.setMinWidth(available);
+        //        control.setMaxWidth(available);
         control.setPrefWidth(available);
-        control.setMaxWidth(available);
+        //        control.setMinHeight(cellHeight);
+        //        control.setMaxHeight(cellHeight);
+        control.setPrefHeight(cellHeight);
         TextArea labelText = new TextArea(label);
         labelText.setWrapText(true);
         labelText.setPrefColumnCount(1);
-        labelText.setMinWidth(labelWidth);
-        labelText.setMaxWidth(labelWidth);
-        labelText.setMinHeight(cellHeight);
-        labelText.setMaxHeight(cellHeight);
+        labelText.setPrefWidth(labelWidth);
+        //        labelText.setMaxWidth(labelWidth);
+        labelText.setPrefHeight(cellHeight);
+        //        labelText.setMaxHeight(cellHeight);
         Pane box = new HBox();
+        //        box.setMinWidth(justified);
+        //        box.setMaxWidth(justified);
         box.setPrefWidth(justified);
-        box.setMaxWidth(justified);
-        box.setMinHeight(cellHeight);
-        box.setMaxHeight(cellHeight);
+        //        box.setMinHeight(cellHeight);
+        //        box.setMaxHeight(cellHeight);
+        box.setPrefHeight(cellHeight);
         box.getChildren()
            .add(labelText);
         box.getChildren()
@@ -573,9 +600,9 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    void compress(int cardinality, Layout layout, double available) {
+    void compress(Layout layout, double available) {
         if (isFold()) {
-            fold.compress(cardinality, layout, available);
+            fold.compress(layout, available);
             return;
         }
         if (useTable) {
@@ -601,7 +628,8 @@ public class Relation extends SchemaNode {
                 current.add(child);
             }
         }
-        columnSets.forEach(cs -> cs.compress(cardinality, layout, available));
+        columnSets.forEach(cs -> cs.compress(averageCardinality, layout,
+                                             available));
     }
 
     private double extendedHeight(Layout layout, int cardinality,
@@ -727,11 +755,10 @@ public class Relation extends SchemaNode {
                 cell.setPrefWidth(1);
                 cell.setMinHeight(elementHeight);
                 cell.setPrefHeight(elementHeight);
-                columnSets.forEach(child -> {
-                    Pair<Consumer<JsonNode>, Parent> master = child.build(averageCardinality,
-                                                                          extractor,
-                                                                          layout,
-                                                                          justified);
+                columnSets.forEach(cs -> {
+                    Pair<Consumer<JsonNode>, Parent> master = cs.build(extractor,
+                                                                       layout,
+                                                                       justified);
                     controls.add(master.getKey());
                     cell.getChildren()
                         .add(master.getValue());

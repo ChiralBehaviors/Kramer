@@ -54,16 +54,6 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double elementHeight(int cardinality, Layout layout, double width) {
-        return getValueHeight(layout, width);
-    }
-
-    @Override
-    double tableColumnWidth(Layout layout) {
-        return columnWidth + layout.getTextHorizontalInset();
-    }
-
-    @Override
     public String toString() {
         return String.format("Primitive [%s:%.2f]", label, columnWidth);
     }
@@ -102,6 +92,18 @@ public class Primitive extends SchemaNode {
                                                                    width);
         column.setPrefWidth(width + inset);
         return column;
+    }
+
+    @Override
+    double cellHeight(Layout layout, double justified) {
+        double rows = Math.ceil(maxWidth / justified) + 1;
+        return Layout.snap(layout.getTextLineHeight() * rows)
+               + layout.getTextVerticalInset();
+    }
+
+    @Override
+    double elementHeight(int cardinality, Layout layout, double width) {
+        return cellHeight(layout, width);
     }
 
     @Override
@@ -183,7 +185,12 @@ public class Primitive extends SchemaNode {
 
     @Override
     double rowHeight(int cardinality, Layout layout, double width) {
-        return getValueHeight(layout, width);
+        return cellHeight(layout, width);
+    }
+
+    @Override
+    double tableColumnWidth(Layout layout) {
+        return columnWidth + layout.getTextHorizontalInset();
     }
 
     private void bind(Control control, TableColumn<JsonNode, ?> column,
@@ -203,12 +210,6 @@ public class Primitive extends SchemaNode {
         text.setMinWidth(0);
         text.setPrefWidth(1);
         return text;
-    }
-
-    private double getValueHeight(Layout layout, double justified) {
-        double rows = Math.ceil(maxWidth / justified) + 1;
-        return Layout.snap(layout.getTextLineHeight() * rows)
-               + layout.getTextVerticalInset();
     }
 
     private String toString(JsonNode value) {
