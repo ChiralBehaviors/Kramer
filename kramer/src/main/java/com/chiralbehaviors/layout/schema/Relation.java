@@ -82,7 +82,7 @@ public class Relation extends SchemaNode {
         }
         return useTable ? buildNestedTable(n -> n, cardinality, layout, width)
                         : buildOutline(cellHeight(layout, width), n -> n,
-                                       cardinality, layout, width);
+                                       cardinality, layout);
     }
 
     @Override
@@ -330,9 +330,9 @@ public class Relation extends SchemaNode {
      */
     @Override
     double layoutWidth(Layout layout) {
-        return useTable ? tableColumnWidth(layout)
-                        : outlineWidth + layout.getListCellHorizontalInset()
-                          + layout.getListHorizontalInset();
+        return useTable ? tableColumnWidth + layout.getTableRowHorizontalInset()
+                          + layout.getTableHorizontalInset()
+                        : outlineWidth;
     }
 
     @Override
@@ -386,8 +386,7 @@ public class Relation extends SchemaNode {
         Control control = useTable ? buildNestedTable(n -> n, cardinality,
                                                       layout, available)
                                    : buildOutline(cellHeight, n -> n,
-                                                  cardinality, layout,
-                                                  available);
+                                                  cardinality, layout);
         control.setPrefWidth(available);
         control.setPrefHeight(cellHeight);
         TextArea labelText = new TextArea(label);
@@ -563,12 +562,10 @@ public class Relation extends SchemaNode {
 
     private ListView<JsonNode> buildOutline(double cellHeight,
                                             Function<JsonNode, JsonNode> extractor,
-                                            int cardinality, Layout layout,
-                                            double justified) {
+                                            int cardinality, Layout layout) {
         if (isFold()) {
             return fold.buildOutline(cellHeight, extract(extractor),
-                                     averageCardinality * cardinality, layout,
-                                     justified);
+                                     averageCardinality * cardinality, layout);
         }
 
         double extended = cellHeight + layout.getListCellVerticalInset();
@@ -577,14 +574,11 @@ public class Relation extends SchemaNode {
               .apply(list, this);
         list.setPrefHeight((extended * cardinality));
         list.setCellFactory(c -> {
-            ListCell<JsonNode> cell = listCell(extractor, cellHeight, layout,
-                                               justified - layout.getListCellHorizontalInset()
-                                                                              - layout.getListHorizontalInset());
+            ListCell<JsonNode> cell = listCell(extractor, cellHeight, layout);
             layout.getModel()
                   .apply(cell, this);
             return cell;
         });
-        list.setPrefWidth(justified);
         list.setPlaceholder(new Text());
         return list;
     }
@@ -655,8 +649,7 @@ public class Relation extends SchemaNode {
     }
 
     private ListCell<JsonNode> listCell(Function<JsonNode, JsonNode> extractor,
-                                        double cellHeight, Layout layout,
-                                        double justified) {
+                                        double cellHeight, Layout layout) {
         return new ListCell<JsonNode>() {
             VBox                     cell;
             List<Consumer<JsonNode>> controls = new ArrayList<>();
@@ -664,7 +657,7 @@ public class Relation extends SchemaNode {
                 itemProperty().addListener((obs, oldItem, newItem) -> {
                     if (newItem != null) {
                         if (cell == null) {
-                            initialize(extractor, layout, justified);
+                            initialize(extractor, layout);
                         }
                         setGraphic(cell);
                     }
@@ -696,12 +689,11 @@ public class Relation extends SchemaNode {
             }
 
             private void initialize(Function<JsonNode, JsonNode> extractor,
-                                    Layout layout, double justified) {
+                                    Layout layout) {
                 cell = new VBox();
                 columnSets.forEach(cs -> {
                     Pair<Consumer<JsonNode>, Parent> master = cs.build(extractor,
-                                                                       layout,
-                                                                       justified);
+                                                                       layout);
                     controls.add(master.getKey());
                     cell.getChildren()
                         .add(master.getValue());

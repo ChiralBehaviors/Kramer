@@ -57,24 +57,25 @@ public class ColumnSet {
                .add(node);
     }
 
-    public void compress(Layout layout, double width) {
+    public void compress(Layout layout, double available) {
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
                                    .size(),
                         max(1,
-                            (int) (width / firstColumn.maxWidth(layout,
-                                                                labelWidth))));
-
+                            (int) (available
+                                   / firstColumn.maxWidth(layout,
+                                                          labelWidth))));
         if (count == 1) {
-            firstColumn.setWidth(width);
+            firstColumn.setWidth(available);
             firstColumn.getFields()
-                       .forEach(f -> f.compress(layout, width - labelWidth));
+                       .forEach(f -> f.compress(layout,
+                                                available - labelWidth));
             cellHeight = firstColumn.cellHeight(layout, labelWidth);
             return;
         }
 
         // compression
-        double columnWidth = Layout.snap(width / count);
+        double columnWidth = Layout.snap(available / count);
         firstColumn.getFields()
                    .forEach(f -> f.compress(layout, columnWidth - labelWidth));
         firstColumn.setWidth(columnWidth);
@@ -108,15 +109,14 @@ public class ColumnSet {
     }
 
     Pair<Consumer<JsonNode>, Parent> build(Function<JsonNode, JsonNode> extractor,
-                                           Layout layout, double justified) {
-        HBox span = new HBox(); 
-        span.setPrefWidth(justified); 
+                                           Layout layout) {
+        HBox span = new HBox();
         span.setPrefHeight(cellHeight);
         List<Consumer<JsonNode>> controls = new ArrayList<>();
         columns.forEach(c -> {
             VBox cell = new VBox();
             controls.add(c.build(cellHeight, cell, extractor, layout,
-                                 labelWidth)); 
+                                 labelWidth));
             span.getChildren()
                 .add(cell);
         });
