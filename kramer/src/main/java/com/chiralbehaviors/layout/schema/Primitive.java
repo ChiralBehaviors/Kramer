@@ -43,7 +43,6 @@ public class Primitive extends SchemaNode {
     private double  columnWidth       = 0;
     private double  maxWidth          = 0;
     private double  valueDefaultWidth = 0;
-    private double  valueHeight       = 0;
     private boolean variableLength    = false;
 
     public Primitive() {
@@ -54,11 +53,13 @@ public class Primitive extends SchemaNode {
         super(label);
     }
 
-    @Override double elementHeight(int cardinality, Layout layout, double width) {
+    @Override
+    double elementHeight(int cardinality, Layout layout, double width) {
         return getValueHeight(layout, width);
     }
 
-    @Override double tableColumnWidth(Layout layout) {
+    @Override
+    double tableColumnWidth(Layout layout) {
         return columnWidth + layout.getTextHorizontalInset();
     }
 
@@ -142,11 +143,12 @@ public class Primitive extends SchemaNode {
         }
 
         return columnWidth + layout.getTextHorizontalInset();
-    } 
+    }
 
     @Override
     Pair<Consumer<JsonNode>, Parent> outlineElement(double labelWidth,
                                                     Function<JsonNode, JsonNode> extractor,
+                                                    double elementHeight,
                                                     int cardinality,
                                                     Layout layout,
                                                     double justified) {
@@ -160,10 +162,10 @@ public class Primitive extends SchemaNode {
            .add(labelText);
         Control control = buildControl(cardinality, layout);
         control.setPrefWidth(justified);
-        control.setPrefHeight(valueHeight);
+        control.setPrefHeight(elementHeight);
         box.getChildren()
            .add(control);
-        box.setPrefHeight(valueHeight);
+        box.setPrefHeight(elementHeight);
         box.setPrefWidth(justified);
         //        VBox.setVgrow(labelText, Priority.NEVER);
         //        VBox.setVgrow(control, Priority.ALWAYS);

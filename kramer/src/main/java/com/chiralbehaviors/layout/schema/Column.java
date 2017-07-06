@@ -53,9 +53,9 @@ public class Column {
         fields.addFirst(field);
     }
 
-    public double elementHeight(int cardinality, Layout layout,
-                                double labelWidth) {
-        return elementHeight(cardinality, layout, fields, labelWidth);
+    public double cellHeight(int cardinality, Layout layout,
+                             double labelWidth) {
+        return cellHeight(cardinality, layout, fields, labelWidth);
     }
 
     public double maxWidth(Layout layout, double labelWidth) {
@@ -95,13 +95,14 @@ public class Column {
                                                                      .collect(Collectors.toList()));
     }
 
-    Consumer<JsonNode> build(VBox cell, int cardinality,
+    Consumer<JsonNode> build(double cellHeight, VBox cell, int cardinality,
                              Function<JsonNode, JsonNode> extractor,
                              Layout layout, double labelWidth) {
         List<Consumer<JsonNode>> controls = new ArrayList<>();
         fields.forEach(child -> {
             Pair<Consumer<JsonNode>, Parent> master = child.outlineElement(labelWidth,
                                                                            extractor,
+                                                                           cellHeight,
                                                                            cardinality,
                                                                            layout,
                                                                            width);
@@ -122,16 +123,19 @@ public class Column {
         return width;
     }
 
-    private double elementHeight(int cardinality, Layout layout,
-                                 ArrayDeque<SchemaNode> elements,
-                                 double labelWidth) {
+    private double cellHeight(int cardinality, Layout layout,
+                              ArrayDeque<SchemaNode> elements,
+                              double labelWidth) {
         double available = width - labelWidth;
         return Layout.snap(elements.stream()
-                                   .mapToDouble(field -> {
-                                       return field.elementHeight(cardinality,
-                                                                  layout,
-                                                                  available);
-                                   })
+                                   .mapToDouble(field -> field.isUseTable() ? field.elementHeight(cardinality,
+                                                                                                  layout,
+                                                                                                  available)
+                                                                            : Layout.snap(cardinality
+                                                                                          * (field.elementHeight(cardinality,
+                                                                                                                 layout,
+                                                                                                                 available)
+                                                                                             + layout.getListCellVerticalInset())))
                                    .reduce((a, b) -> a + b)
                                    .orElse(0d));
     }
@@ -140,12 +144,12 @@ public class Column {
                         double labelWidth) {
         ArrayDeque<SchemaNode> elements = fields.clone();
         elements.add(field);
-        return elementHeight(cardinality, layout, elements, labelWidth);
+        return cellHeight(cardinality, layout, elements, labelWidth);
     }
 
     private double without(int cardinality, Layout layout, double labelWidth) {
         ArrayDeque<SchemaNode> elements = fields.clone();
         elements.removeLast();
-        return elementHeight(cardinality, layout, elements, labelWidth);
+        return cellHeight(cardinality, layout, elements, labelWidth);
     }
 }

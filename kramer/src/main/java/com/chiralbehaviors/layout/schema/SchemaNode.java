@@ -237,6 +237,7 @@ abstract public class SchemaNode {
 
     abstract Pair<Consumer<JsonNode>, Parent> outlineElement(double labelWidth,
                                                              Function<JsonNode, JsonNode> extractor,
+                                                             double cellHeight,
                                                              int cardinality,
                                                              Layout layout,
                                                              double justified);

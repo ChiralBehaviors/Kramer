@@ -80,8 +80,10 @@ public class Relation extends SchemaNode {
             return fold.buildControl(averageCardinality * cardinality, layout,
                                      width);
         }
-        return useTable ? buildNestedTable(n -> n, 1, layout, width)
-                        : buildOutline(n -> n, 1, layout, width);
+        return useTable ? buildNestedTable(n -> n, cardinality, layout, width)
+                        : buildOutline(elementHeight(cardinality, layout,
+                                                     width),
+                                       n -> n, cardinality, layout, width);
     }
 
     @Override
@@ -237,7 +239,7 @@ public class Relation extends SchemaNode {
         }
         if (!useTable) {
             return columnSets.stream()
-                             .mapToDouble(cs -> cs.getElementHeight())
+                             .mapToDouble(cs -> cs.getCellHeight())
                              .sum();
         }
         TableView<JsonNode> table = tableBase();
@@ -329,35 +331,36 @@ public class Relation extends SchemaNode {
     @Override
     Pair<Consumer<JsonNode>, Parent> outlineElement(double labelWidth,
                                                     Function<JsonNode, JsonNode> extractor,
+                                                    double cellHeight,
                                                     int cardinality,
                                                     Layout layout,
                                                     double justified) {
         if (isFold()) {
             return fold.outlineElement(labelWidth, extract(extractor),
+                                       cellHeight,
                                        averageCardinality * cardinality, layout,
                                        justified);
         }
         double available = Layout.snap(justified - labelWidth);
         Control control = useTable ? buildNestedTable(n -> n, cardinality,
                                                       layout, available)
-                                   : buildOutline(n -> n, cardinality, layout,
+                                   : buildOutline(cellHeight, n -> n,
+                                                  cardinality, layout,
                                                   available);
         control.setPrefWidth(available);
         control.setMaxWidth(available);
         TextArea labelText = new TextArea(label);
         labelText.setWrapText(true);
         labelText.setPrefColumnCount(1);
-        labelText.setPrefWidth(labelWidth);
+        labelText.setMinWidth(labelWidth);
         labelText.setMaxWidth(labelWidth);
+        labelText.setMinHeight(cellHeight);
+        labelText.setMaxHeight(cellHeight);
         Pane box = new HBox();
         box.setPrefWidth(justified);
         box.setMaxWidth(justified);
-        double elementHeight = elementHeight(cardinality, layout, justified);
-        double contentHeight = Layout.snap(cardinality
-                                           * (elementHeight
-                                              + layout.getListCellVerticalInset()));
-        box.setMinHeight(contentHeight);
-        box.setMaxHeight(contentHeight);
+        box.setMinHeight(cellHeight);
+        box.setMaxHeight(cellHeight);
         box.getChildren()
            .add(labelText);
         box.getChildren()
@@ -539,11 +542,12 @@ public class Relation extends SchemaNode {
         return table;
     }
 
-    private ListView<JsonNode> buildOutline(Function<JsonNode, JsonNode> extractor,
+    private ListView<JsonNode> buildOutline(double cellHeight,
+                                            Function<JsonNode, JsonNode> extractor,
                                             int cardinality, Layout layout,
                                             double justified) {
         if (isFold()) {
-            return fold.buildOutline(extract(extractor),
+            return fold.buildOutline(cellHeight, extract(extractor),
                                      averageCardinality * cardinality, layout,
                                      justified);
         }
@@ -552,16 +556,11 @@ public class Relation extends SchemaNode {
         layout.getModel()
               .apply(list, this);
 
-        double elementHeight = columnSets.stream()
-                                         .mapToDouble(cs -> cs.getElementHeight())
-                                         .sum();
-        double contentHeight = Layout.snap(cardinality
-                                           * (elementHeight
-                                              + layout.getListCellVerticalInset()));
-        list.setPrefHeight(contentHeight);
-        list.setFixedCellSize(elementHeight);
+        list.setPrefHeight((cellHeight * cardinality)
+                           + layout.getListCellVerticalInset());
+        list.setFixedCellSize(cellHeight);
         list.setCellFactory(c -> {
-            ListCell<JsonNode> cell = outlineListCell(extractor, elementHeight,
+            ListCell<JsonNode> cell = outlineListCell(extractor, cellHeight,
                                                       layout, justified);
             layout.getModel()
                   .apply(cell, this);

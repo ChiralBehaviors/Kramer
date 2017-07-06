@@ -40,8 +40,8 @@ import javafx.util.Pair;
  */
 public class ColumnSet {
 
+    private double             cellHeight;
     private final List<Column> columns = new ArrayList<>();
-    private double             elementHeight;
     private final double       labelWidth;
 
     {
@@ -70,8 +70,8 @@ public class ColumnSet {
             firstColumn.getFields()
                        .forEach(f -> f.compress(cardinality, layout,
                                                 width - labelWidth));
-            elementHeight = firstColumn.elementHeight(cardinality, layout,
-                                                      labelWidth);
+            cellHeight = firstColumn.cellHeight(cardinality, layout,
+                                                labelWidth);
             return;
         }
 
@@ -83,33 +83,32 @@ public class ColumnSet {
         firstColumn.setWidth(columnWidth);
         IntStream.range(1, count)
                  .forEach(i -> columns.add(new Column(columnWidth)));
-        elementHeight = firstColumn.elementHeight(cardinality, layout,
-                                                  labelWidth);
+        cellHeight = firstColumn.cellHeight(cardinality, layout, labelWidth);
         double lastHeight;
         do {
-            lastHeight = elementHeight;
+            lastHeight = cellHeight;
             for (int i = 0; i < columns.size() - 1; i++) {
                 while (columns.get(i)
                               .slideRight(cardinality, columns.get(i + 1),
                                           layout, columnWidth, labelWidth)) {
                 }
             }
-            elementHeight = columns.stream()
-                                   .mapToDouble(c -> c.elementHeight(cardinality,
-                                                                     layout,
-                                                                     labelWidth))
-                                   .max()
-                                   .orElse(0d);
-        } while (lastHeight > elementHeight);
+            cellHeight = columns.stream()
+                                .mapToDouble(c -> c.cellHeight(cardinality,
+                                                               layout,
+                                                               labelWidth))
+                                .max()
+                                .orElse(0d);
+        } while (lastHeight > cellHeight);
     }
 
-    public double getElementHeight() {
-        return elementHeight;
+    public double getCellHeight() {
+        return cellHeight;
     }
 
     @Override
     public String toString() {
-        return String.format("ColumnSet [%s] [%s]", elementHeight, columns);
+        return String.format("ColumnSet [%s] [%s]", cellHeight, columns);
     }
 
     Pair<Consumer<JsonNode>, Parent> build(int cardinality,
@@ -118,18 +117,18 @@ public class ColumnSet {
         HBox span = new HBox();
         span.setMaxWidth(justified);
         span.setMinWidth(justified);
-        span.setMaxHeight(elementHeight);
-        span.setMinHeight(elementHeight);
+        span.setMaxHeight(cellHeight);
+        span.setMinHeight(cellHeight);
         List<Consumer<JsonNode>> controls = new ArrayList<>();
         columns.forEach(c -> {
             VBox cell = new VBox();
-            controls.add(c.build(cell, cardinality, extractor, layout,
-                                 labelWidth));
-            cell.setMaxWidth(c.getWidth());
+            controls.add(c.build(cellHeight, cell, cardinality, extractor,
+                                 layout, labelWidth));
             cell.setMinWidth(c.getWidth());
-            
-            cell.setMinHeight(elementHeight);
-            cell.setMaxHeight(elementHeight);
+            cell.setPrefWidth(c.getWidth());
+
+            cell.setMinHeight(cellHeight);
+            cell.setPrefHeight(cellHeight);
             span.getChildren()
                 .add(cell);
         });

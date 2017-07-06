@@ -67,7 +67,7 @@ public class SchemaNodeTest extends ApplicationTest {
     }
 
     private void assertFirst(ColumnSet columnSet) {
-        assertEquals(88.0, columnSet.getElementHeight(), 0d);
+        assertEquals(88.0, columnSet.getCellHeight(), 0d);
         assertEquals(2, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()
@@ -87,7 +87,7 @@ public class SchemaNodeTest extends ApplicationTest {
     }
 
     private void assertSecond(ColumnSet columnSet) {
-        assertEquals(44.0, columnSet.getElementHeight(), 0d);
+        assertEquals(44.0, columnSet.getCellHeight(), 0d);
         assertEquals(1, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()
@@ -99,7 +99,7 @@ public class SchemaNodeTest extends ApplicationTest {
     }
 
     private void assertThird(ColumnSet columnSet) {
-        assertEquals(126.0, columnSet.getElementHeight(), 0d);
+        assertEquals(126.0, columnSet.getCellHeight(), 0d);
         assertEquals(1, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()
@@ -111,7 +111,7 @@ public class SchemaNodeTest extends ApplicationTest {
     }
 
     private void assertFourth(ColumnSet columnSet) {
-        assertEquals(226.0, columnSet.getElementHeight(), 0d);
+        assertEquals(226.0, columnSet.getCellHeight(), 0d);
         assertEquals(1, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()
