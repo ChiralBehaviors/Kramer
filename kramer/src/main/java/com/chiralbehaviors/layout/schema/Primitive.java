@@ -158,12 +158,11 @@ public class Primitive extends SchemaNode {
         box.getChildren()
            .add(labelText);
         Control control = buildControl(cardinality, layout);
-        control.setPrefWidth(justified);
-        control.setPrefHeight(elementHeight);
+        //        control.setPrefWidth(justified);
+        //        control.setPrefHeight(elementHeight);
         box.getChildren()
            .add(control);
-        box.setPrefHeight(elementHeight);
-        box.setPrefWidth(justified);
+        box.setPrefSize(justified, elementHeight);
         //        VBox.setVgrow(labelText, Priority.NEVER);
         //        VBox.setVgrow(control, Priority.ALWAYS);
         return new Pair<>(item -> {
@@ -188,12 +187,14 @@ public class Primitive extends SchemaNode {
         column.widthProperty()
               .addListener((o, prev, cur) -> {
                   double width = cur.doubleValue() - inset;
-                  control.setMinWidth(width);
+                  //                  control.setMinWidth(width);
+                  //                  control.setMaxWidth(width);
                   control.setPrefWidth(width);
-                  control.setMaxWidth(width);
               });
-        control.setPrefWidth(column.getWidth() - inset);
-        control.setMaxWidth(column.getWidth() - inset);
+        double width = column.getWidth() - inset;
+        control.setMinWidth(width);
+        control.setMaxWidth(width);
+        control.setPrefWidth(width);
     }
 
     private TextArea buildControl(int cardinality, Layout layout) {

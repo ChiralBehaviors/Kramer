@@ -537,7 +537,8 @@ public class Relation extends SchemaNode {
                                                                                    true,
                                                                                    justified);
 
-        double height = extendedHeight(layout, 1, rowHeight(layout, justified));
+        double height = extendedHeight(layout, averageCardinality,
+                                       rowHeight(layout, justified));
 
         table.setRowFactory(tableView -> {
             Pair<Consumer<JsonNode>, Control> relationRow = topLevel.apply(height);
@@ -551,10 +552,7 @@ public class Relation extends SchemaNode {
         layout.getModel()
               .apply(table, this);
         table.setFixedCellSize(height);
-        double rowHeight = rowHeight(layout, justified)
-                           + layout.getTableRowVerticalInset();
-        double contentHeight = (rowHeight * cardinality)
-                               + layout.measureHeader(table)
+        double contentHeight = height + layout.measureHeader(table)
                                + layout.getTableVerticalInset();
         table.setPrefHeight(contentHeight);
         if (cardinality > 1) {
