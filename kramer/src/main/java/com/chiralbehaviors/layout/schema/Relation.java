@@ -699,6 +699,8 @@ public class Relation extends SchemaNode {
             private void initialize(Function<JsonNode, JsonNode> extractor,
                                     Layout layout) {
                 cell = new VBox();
+                cell.setMinSize(0, 0);
+                cell.setPrefSize(1, 1);
                 columnSets.forEach(cs -> {
                     Pair<Consumer<JsonNode>, Parent> master = cs.build(extractor,
                                                                        layout);
