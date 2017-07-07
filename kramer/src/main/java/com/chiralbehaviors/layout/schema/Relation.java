@@ -243,6 +243,8 @@ public class Relation extends SchemaNode {
                                           + layout.getListCellVerticalInset()))
                    + layout.getListVerticalInset();
         }
+        double height = extendedHeight(layout, averageCardinality,
+                                       rowHeight(layout, width));
         TableView<JsonNode> table = tableBase();
         children.forEach(child -> {
             INDENT indent = indent(child);
@@ -250,9 +252,8 @@ public class Relation extends SchemaNode {
                  .add(child.buildColumn(layout, inset(layout, 0, child, indent),
                                         indent, width));
         });
-        return (averageCardinality * (rowHeight(layout, width)
-                                      + layout.getTableRowVerticalInset()))
-               + layout.measureHeader(table) + layout.getTableVerticalInset();
+        return height + layout.measureHeader(table)
+               + layout.getTableVerticalInset();
     }
 
     @Override
@@ -428,7 +429,8 @@ public class Relation extends SchemaNode {
                        .mapToDouble(child -> Layout.snap(child.rowHeight(layout,
                                                                          justified)))
                        .max()
-                       .getAsDouble();
+                       .getAsDouble()
+               + layout.getListVerticalInset();
     }
 
     @Override
@@ -753,9 +755,8 @@ public class Relation extends SchemaNode {
 
             private void buildRow() {
                 row = new HBox();
-                row.setMinWidth(0);
-                row.setPrefWidth(1);
-                row.setPrefHeight(resolvedHeight);
+                row.setMinSize(0, 0);
+                row.setPrefSize(1, 1);
                 List<Consumer<JsonNode>> consumers = new ArrayList<>();
                 fields.forEach(p -> {
                     Pair<Consumer<JsonNode>, Control> pair = p.apply(resolvedHeight);
