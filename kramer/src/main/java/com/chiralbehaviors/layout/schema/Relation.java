@@ -264,15 +264,15 @@ public class Relation extends SchemaNode {
         if (useTable) {
             return;
         }
+        double available = justified - layout.getListCellHorizontalInset()
+                           - layout.getListHorizontalInset();
         double labelWidth = children.stream()
                                     .mapToDouble(n -> n.getLabelWidth(layout))
                                     .max()
                                     .orElse(0);
         columnSets.clear();
         ColumnSet current = null;
-        double available = justified - layout.getListCellHorizontalInset()
-                           - layout.getListHorizontalInset();
-        double halfWidth = Layout.snap(available / 2d);
+        double halfWidth = available / 2d;
         for (SchemaNode child : children) {
             double childWidth = labelWidth + child.layoutWidth(layout);
             if (childWidth > halfWidth || current == null) {
@@ -332,7 +332,8 @@ public class Relation extends SchemaNode {
     double layoutWidth(Layout layout) {
         return useTable ? tableColumnWidth + layout.getTableRowHorizontalInset()
                           + layout.getTableHorizontalInset()
-                        : outlineWidth;
+                        : outlineWidth + layout.getListCellHorizontalInset()
+                          + layout.getListHorizontalInset();
     }
 
     @Override
@@ -382,19 +383,21 @@ public class Relation extends SchemaNode {
                                        averageCardinality * cardinality, layout,
                                        justified);
         }
-        double available = Layout.snap(justified - labelWidth);
+        double available = justified - labelWidth;
         Control control = useTable ? buildNestedTable(n -> n, cardinality,
                                                       layout, available)
                                    : buildOutline(cellHeight, n -> n,
                                                   cardinality, layout);
-        control.setPrefWidth(available);
+        //        control.setPrefWidth(available);
         control.setPrefHeight(cellHeight);
         TextArea labelText = new TextArea(label);
         labelText.setWrapText(true);
-        labelText.setPrefColumnCount(1);
+        labelText.setMinWidth(labelWidth);
         labelText.setPrefWidth(labelWidth);
         labelText.setMaxWidth(labelWidth);
+        labelText.setPrefRowCount(1);
         labelText.setPrefHeight(cellHeight);
+        labelText.setMaxHeight(cellHeight);
         labelText.setMaxHeight(cellHeight);
         Pane box = new HBox();
         box.setPrefWidth(justified);
@@ -573,6 +576,11 @@ public class Relation extends SchemaNode {
         layout.getModel()
               .apply(list, this);
         list.setPrefHeight((extended * cardinality));
+        list.setFixedCellSize(cellHeight);
+        list.setPrefWidth(columnSets.get(0)
+                                    .getWidth()
+                          + layout.getListCellHorizontalInset()
+                          + layout.getListHorizontalInset());
         list.setCellFactory(c -> {
             ListCell<JsonNode> cell = listCell(extractor, cellHeight, layout);
             layout.getModel()

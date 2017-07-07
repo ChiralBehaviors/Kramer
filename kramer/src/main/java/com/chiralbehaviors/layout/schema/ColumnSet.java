@@ -75,7 +75,7 @@ public class ColumnSet {
         }
 
         // compression
-        double columnWidth = Layout.snap(available / count);
+        double columnWidth = available / count;
         firstColumn.getFields()
                    .forEach(f -> f.compress(layout, columnWidth - labelWidth));
         firstColumn.setWidth(columnWidth);
@@ -101,6 +101,12 @@ public class ColumnSet {
 
     public double getCellHeight() {
         return cellHeight;
+    }
+
+    public double getWidth() {
+        return columns.stream()
+                      .mapToDouble(c -> c.getWidth())
+                      .sum();
     }
 
     @Override

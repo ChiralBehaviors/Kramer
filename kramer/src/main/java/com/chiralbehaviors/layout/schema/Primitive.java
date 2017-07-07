@@ -188,17 +188,17 @@ public class Primitive extends SchemaNode {
         column.widthProperty()
               .addListener((o, prev, cur) -> {
                   double width = cur.doubleValue() - inset;
-                  //                  control.setMinWidth(width);
+                  control.setMinWidth(width);
                   control.setPrefWidth(width);
+                  control.setMaxWidth(width);
               });
         control.setPrefWidth(column.getWidth() - inset);
+        control.setMaxWidth(column.getWidth() - inset);
     }
 
     private TextArea buildControl(int cardinality, Layout layout) {
         TextArea text = new TextArea();
         text.setWrapText(true);
-        text.setMinWidth(0);
-        text.setPrefWidth(1);
         return text;
     }
 
