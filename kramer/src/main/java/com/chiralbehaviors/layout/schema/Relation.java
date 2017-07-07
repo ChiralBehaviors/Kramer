@@ -237,11 +237,11 @@ public class Relation extends SchemaNode {
             return fold.cellHeight(layout, width);
         }
         if (!useTable) {
-            return (averageCardinality * (columnSets.stream()
-                                                    .mapToDouble(cs -> cs.getCellHeight())
-                                                    .sum()
-                                          + layout.getListCellVerticalInset()))
-                   + layout.getListVerticalInset();
+            return Layout.snap((averageCardinality * (columnSets.stream()
+                                                                .mapToDouble(cs -> cs.getCellHeight())
+                                                                .sum()
+                                                      + layout.getListCellVerticalInset()))
+                               + layout.getListVerticalInset());
         }
         double height = extendedHeight(layout, averageCardinality,
                                        rowHeight(layout, width));
