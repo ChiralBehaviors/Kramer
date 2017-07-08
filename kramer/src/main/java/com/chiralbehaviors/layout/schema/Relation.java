@@ -234,10 +234,13 @@ public class Relation extends SchemaNode {
             HBox.setHgrow(row, Priority.ALWAYS);
             row.setMinWidth(0);
             row.setPrefWidth(1);
-            row.setFixedCellSize(cellHeight);
+            row.setFixedCellSize(cellHeight
+                                 + layout.getListCellVerticalInset());
             row.setCellFactory(control -> {
                 ListCell<JsonNode> cell = rowCell(fields, cellHeight, layout);
-                //                cell.setPrefHeight(extended);
+                cell.setMinWidth(0);
+                cell.setPrefWidth(1);
+                cell.setMaxHeight(cellHeight);
                 layout.getModel()
                       .apply(cell, Relation.this);
                 return cell;
@@ -709,7 +712,7 @@ public class Relation extends SchemaNode {
             private HBox               row;
             {
                 setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-                setAlignment(Pos.CENTER);
+                setAlignment(Pos.CENTER_LEFT);
             }
 
             @Override
@@ -735,7 +738,9 @@ public class Relation extends SchemaNode {
 
             private void buildRow() {
                 row = new HBox();
-                row.setPrefHeight(resolvedHeight);
+                row.setMinWidth(0);
+                row.setPrefWidth(1);
+                row.setMaxHeight(resolvedHeight);
                 List<Consumer<JsonNode>> consumers = new ArrayList<>();
                 fields.forEach(p -> {
                     Pair<Consumer<JsonNode>, Control> pair = p.get();
