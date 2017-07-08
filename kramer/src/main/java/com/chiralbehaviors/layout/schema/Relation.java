@@ -44,6 +44,7 @@ import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.util.Pair;
@@ -231,9 +232,25 @@ public class Relation extends SchemaNode {
             ListView<JsonNode> row = new ListView<JsonNode>();
             layout.getModel()
                   .apply(row, this);
-            HBox.setHgrow(row, Priority.ALWAYS);
-            row.setMinWidth(0);
-            row.setPrefWidth(1);
+            HBox.setHgrow(row, Priority.SOMETIMES);
+            row.setMaxSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+            TableColumn<JsonNode, ?> column = columnMap.get(Relation.this);
+            if (column != null) {
+                column.widthProperty()
+                      .addListener((o, prev, cur) -> {
+                          double width = cur.doubleValue() - inset;
+                          //                  control.setMinWidth(width);
+                          //                  control.setMaxWidth(width);
+                          row.setPrefWidth(width);
+                      });
+                double width = column.getWidth() - inset;
+                row.setMinWidth(width);
+                row.setMaxWidth(width);
+                row.setPrefWidth(width);
+            } else {
+                row.setMinWidth(0);
+                row.setPrefWidth(1);
+            }
             row.setFixedCellSize(cellHeight
                                  + layout.getListCellVerticalInset());
             row.setCellFactory(control -> {
@@ -738,8 +755,8 @@ public class Relation extends SchemaNode {
 
             private void buildRow() {
                 row = new HBox();
-                row.setMinWidth(0);
-                row.setPrefWidth(1);
+                row.setMaxSize(Region.USE_COMPUTED_SIZE,
+                               Region.USE_COMPUTED_SIZE);
                 row.setMaxHeight(resolvedHeight);
                 List<Consumer<JsonNode>> consumers = new ArrayList<>();
                 fields.forEach(p -> {
