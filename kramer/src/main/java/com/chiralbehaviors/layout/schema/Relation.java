@@ -243,10 +243,7 @@ public class Relation extends SchemaNode {
                           //                  control.setMaxWidth(width);
                           row.setPrefWidth(width);
                       });
-                double width = column.getWidth() - inset;
-                row.setMinWidth(width);
-                row.setMaxWidth(width);
-                row.setPrefWidth(width);
+                row.setPrefWidth(tableColumnWidth);
             } else {
                 row.setMinWidth(0);
                 row.setPrefWidth(1);
