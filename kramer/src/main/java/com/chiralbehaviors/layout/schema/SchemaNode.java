@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.chiralbehaviors.layout.Layout;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -198,13 +199,13 @@ abstract public class SchemaNode {
 
     abstract public String toString(int indent);
 
-    abstract Function<Double, Pair<Consumer<JsonNode>, Control>> buildColumn(int cardinality,
-                                                                             Function<JsonNode, JsonNode> extractor,
-                                                                             Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
-                                                                             Layout layout,
-                                                                             double inset,
-                                                                             INDENT indent,
-                                                                             double justified);
+    abstract Supplier<Pair<Consumer<JsonNode>, Control>> buildColumn(int cardinality,
+                                                                     Function<JsonNode, JsonNode> extractor,
+                                                                     Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
+                                                                     Layout layout,
+                                                                     double inset,
+                                                                     INDENT indent,
+                                                                     double justified);
 
     TableColumn<JsonNode, JsonNode> buildColumn(Layout layout, double inset,
                                                 INDENT indent, double width) {

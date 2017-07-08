@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import com.chiralbehaviors.layout.Layout;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -64,16 +65,15 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    Function<Double, Pair<Consumer<JsonNode>, Control>> buildColumn(int cardinality,
-                                                                    Function<JsonNode, JsonNode> extractor,
-                                                                    Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
-                                                                    Layout layout,
-                                                                    double inset,
-                                                                    INDENT indent,
-                                                                    double justified) {
-        return height -> {
+    Supplier<Pair<Consumer<JsonNode>, Control>> buildColumn(int cardinality,
+                                                            Function<JsonNode, JsonNode> extractor,
+                                                            Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
+                                                            Layout layout,
+                                                            double inset,
+                                                            INDENT indent,
+                                                            double justified) {
+        return () -> {
             TextArea control = buildControl(1, layout);
-            control.setPrefHeight(height);
             bind(control, columnMap.get(this), inset);
             layout.getModel()
                   .apply(control, Primitive.this);
