@@ -59,7 +59,6 @@ public class Relation extends SchemaNode {
     private final List<SchemaNode> children           = new ArrayList<>();
     private final List<ColumnSet>  columnSets         = new ArrayList<>();
     private Relation               fold;
-    private double                 justifiedWidth;
     private double                 outlineWidth       = 0;
     private double                 tableColumnWidth   = 0;
     private boolean                useTable           = false;
@@ -75,6 +74,7 @@ public class Relation extends SchemaNode {
     public void autoLayout(int cardinality, Layout layout, double width) {
         double snapped = Layout.snap(width);
         layout(cardinality, layout, snapped);
+        justify(snapped, layout);
         compress(layout, snapped);
     }
 
@@ -223,8 +223,8 @@ public class Relation extends SchemaNode {
                                                                      child,
                                                                      indent),
                                                                indent(child),
-                                                               justified)));
-        double cellHeight = rowHeight(layout, justified);
+                                                               justifiedWidth)));
+        double cellHeight = rowHeight(layout, justifiedWidth);
 
         Function<JsonNode, JsonNode> extract = extractor == null ? n -> n
                                                                  : extract(extractor);
@@ -234,7 +234,7 @@ public class Relation extends SchemaNode {
             layout.getModel()
                   .apply(row, this);
             HBox.setHgrow(row, Priority.SOMETIMES);
-            row.setMaxSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
+            //            row.setMaxSize(Region.USE_COMPUTED_SIZE, Region.USE_COMPUTED_SIZE);
             TableColumn<JsonNode, ?> column = columnMap.get(Relation.this);
             if (column != null) {
                 column.widthProperty()
@@ -244,7 +244,7 @@ public class Relation extends SchemaNode {
                           //                  control.setMaxWidth(width);
                           row.setPrefWidth(width);
                       });
-                row.setPrefWidth(tableColumnWidth - inset);
+                row.setPrefWidth(column.getWidth() - inset);
             } else {
                 row.setMinWidth(0);
                 row.setPrefWidth(1);
@@ -255,7 +255,8 @@ public class Relation extends SchemaNode {
                 ListCell<JsonNode> cell = rowCell(fields, cellHeight, layout);
                 cell.setMinWidth(0);
                 cell.setPrefWidth(1);
-                cell.setMaxHeight(cellHeight);
+                cell.setMaxHeight(cellHeight
+                                  + layout.getListCellVerticalInset());
                 layout.getModel()
                       .apply(cell, Relation.this);
                 return cell;
@@ -321,7 +322,6 @@ public class Relation extends SchemaNode {
             return;
         }
         if (useTable) {
-            justify(averageCardinality, justified, layout);
             return;
         }
         double available = justified - layout.getListCellHorizontalInset()
@@ -355,14 +355,35 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    void justify(int cardinality, double width, Layout layout) {
+    void justify(double width, Layout layout) {
         if (isFold()) {
-            fold.justify(averageCardinality * cardinality, width, layout);
+            fold.justify(width, layout);
             return;
         }
-        if (width <= 0)
-            return;
-        justify(width, layout);
+        justifiedWidth = Layout.snap(width
+                                     - layout.getListCellHorizontalInset());
+        double s = justifiedWidth
+                   - (useTable ? tableColumnWidth : outlineWidth);
+        double slack;
+        if (s < 0) {
+            System.out.println(String.format("Negative slack: %.2f (%.2f) \n%s",
+                                             s, width, this));
+            slack = 1;
+        } else {
+            slack = s;
+        }
+        double total = Layout.snap(children.stream()
+                                           .map(child -> rawWidth(layout))
+                                           .reduce((a, b) -> a + b)
+                                           .orElse(0.0d));
+        children.stream()
+                .forEach(child -> {
+                    double childWidth = useTable ? child.tableColumnWidth(layout)
+                                                 : child.outlineWidth(layout);
+                    child.justify(slack * (childWidth / total) + childWidth,
+                                  layout);
+                });
+
     }
 
     @Override
@@ -401,7 +422,9 @@ public class Relation extends SchemaNode {
      */
     @Override
     double layoutWidth(Layout layout) {
-        return useTable ? tableColumnWidth + layout.getTableRowHorizontalInset()
+        return useTable ? justifiedWidth + layout.getListCellHorizontalInset()
+                          + layout.getListHorizontalInset()
+                          + layout.getTableRowHorizontalInset()
                           + layout.getTableHorizontalInset()
                         : outlineWidth + layout.getListCellHorizontalInset()
                           + layout.getListHorizontalInset();
@@ -477,6 +500,7 @@ public class Relation extends SchemaNode {
            .add(labelText);
         box.getChildren()
            .add(control);
+        control.setPrefWidth(available);
 
         return new Pair<>(item -> {
             if (item == null) {
@@ -490,6 +514,21 @@ public class Relation extends SchemaNode {
     }
 
     @Override
+    double outlineWidth(Layout layout) {
+        return outlineWidth + layout.getListCellHorizontalInset()
+               + layout.getListHorizontalInset();
+    }
+
+    double rawWidth(Layout layout) {
+        return useTable ? justifiedWidth + layout.getListCellHorizontalInset()
+                          + layout.getListHorizontalInset()
+                          + layout.getTableRowHorizontalInset()
+                          + layout.getTableHorizontalInset()
+                        : outlineWidth + layout.getListCellHorizontalInset()
+                          + layout.getListHorizontalInset();
+    }
+
+    @Override
     double rowHeight(Layout layout, double justified) {
         if (isFold()) {
             return fold.rowHeight(layout, justified);
@@ -497,11 +536,9 @@ public class Relation extends SchemaNode {
 
         return children.stream()
                        .mapToDouble(child -> Layout.snap(child.rowHeight(layout,
-                                                                         justified)))
+                                                                         justifiedWidth)))
                        .max()
-                       .getAsDouble()
-               + layout.getListVerticalInset()
-               + layout.getListCellVerticalInset();
+                       .getAsDouble();
     }
 
     @Override
@@ -573,26 +610,29 @@ public class Relation extends SchemaNode {
         return table;
     }
 
-    private ListView<JsonNode> buildOutline(double cellHeight,
+    private ListView<JsonNode> buildOutline(double extended,
                                             Function<JsonNode, JsonNode> extractor,
                                             int cardinality, Layout layout) {
         if (isFold()) {
-            return fold.buildOutline(cellHeight, extract(extractor),
+            return fold.buildOutline(extended, extract(extractor),
                                      averageCardinality * cardinality, layout);
         }
 
-        double extended = cellHeight + layout.getListCellVerticalInset();
+        double cellHeight = columnSets.stream()
+                                      .mapToDouble(cs -> cs.getCellHeight())
+                                      .sum();
         ListView<JsonNode> list = new ListView<>();
         layout.getModel()
               .apply(list, this);
-        list.setPrefHeight((extended * cardinality));
-        list.setFixedCellSize(cellHeight);
+        list.setPrefHeight(extended);
+        list.setFixedCellSize(cellHeight + layout.getListCellVerticalInset());
         list.setPrefWidth(columnSets.get(0)
                                     .getWidth()
                           + layout.getListCellHorizontalInset()
                           + layout.getListHorizontalInset());
         list.setCellFactory(c -> {
             ListCell<JsonNode> cell = listCell(extractor, cellHeight, layout);
+            cell.setMaxHeight(cellHeight + layout.getListCellVerticalInset());
             layout.getModel()
                   .apply(cell, this);
             return cell;
@@ -666,22 +706,6 @@ public class Relation extends SchemaNode {
                && children.get(children.size() - 1) instanceof Relation;
     }
 
-    private void justify(double width, Layout layout) {
-        justifiedWidth = Layout.snap(width);
-        double slack = justifiedWidth - tableColumnWidth(layout);
-        assert slack >= 0 : String.format("Negative slack: %.2f (%.2f) \n%s",
-                                          slack, width, this);
-        double total = Layout.snap(children.stream()
-                                           .map(child -> child.tableColumnWidth(layout))
-                                           .reduce((a, b) -> a + b)
-                                           .orElse(0.0d));
-        children.stream()
-                .forEach(child -> child.justify(averageCardinality,
-                                                slack * (child.tableColumnWidth(layout)
-                                                         / total) + child.tableColumnWidth(layout),
-                                                layout));
-    }
-
     private ListCell<JsonNode> listCell(Function<JsonNode, JsonNode> extractor,
                                         double cellHeight, Layout layout) {
         return new ListCell<JsonNode>() {
@@ -725,8 +749,9 @@ public class Relation extends SchemaNode {
             private void initialize(Function<JsonNode, JsonNode> extractor,
                                     Layout layout) {
                 cell = new VBox();
-                cell.setMinSize(0, 0);
-                cell.setPrefSize(1, 1);
+                cell.setMinWidth(0);
+                cell.setPrefWidth(1);
+                cell.setMaxHeight(cellHeight);
                 columnSets.forEach(cs -> {
                     Pair<Consumer<JsonNode>, Parent> master = cs.build(extractor,
                                                                        layout);
@@ -805,5 +830,4 @@ public class Relation extends SchemaNode {
         table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
         return table;
     }
-
 }

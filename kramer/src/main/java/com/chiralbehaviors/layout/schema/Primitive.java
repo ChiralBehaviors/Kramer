@@ -23,7 +23,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import com.chiralbehaviors.layout.Layout;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
@@ -40,9 +39,7 @@ import javafx.util.Pair;
  */
 public class Primitive extends SchemaNode {
 
-    @JsonProperty
     private double  columnWidth       = 0;
-    private double  justifiedWidth    = 0;
     private double  maxWidth          = 0;
     private double  valueDefaultWidth = 0;
     private boolean variableLength    = false;
@@ -91,7 +88,7 @@ public class Primitive extends SchemaNode {
                                                                    inset,
                                                                    indent,
                                                                    width);
-        column.setPrefWidth(width + inset);
+        column.setPrefWidth(justifiedWidth + inset);
         return column;
     }
 
@@ -103,7 +100,7 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    void justify(int cardinality, double width, Layout layout) {
+    void justify(double width, Layout layout) {
         justifiedWidth = width;
     }
 
@@ -176,6 +173,11 @@ public class Primitive extends SchemaNode {
             JsonNode extractedField = extracted.get(field);
             setItems(control, extractedField, layout);
         }, box);
+    }
+
+    @Override
+    double outlineWidth(Layout layout) {
+        return tableColumnWidth(layout);
     }
 
     @Override

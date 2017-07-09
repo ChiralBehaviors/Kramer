@@ -27,7 +27,6 @@ import java.util.function.Supplier;
 import com.chiralbehaviors.layout.Layout;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -151,10 +150,8 @@ abstract public class SchemaNode {
                             + layout.getTextVerticalInset());
     }
 
-    @JsonProperty
     String field;
-
-    @JsonProperty
+    double justifiedWidth = 0;
     String label;
 
     public SchemaNode() {
@@ -230,7 +227,7 @@ abstract public class SchemaNode {
         return false;
     }
 
-    abstract void justify(int cardinality, double width, Layout layout);
+    abstract void justify(double width, Layout layout);
 
     abstract double layout(int cardinality, Layout layout, double width);
 
@@ -244,6 +241,8 @@ abstract public class SchemaNode {
                                                              int cardinality,
                                                              Layout layout,
                                                              double justified);
+
+    abstract double outlineWidth(Layout layout);
 
     abstract double rowHeight(Layout layout, double justified);
 

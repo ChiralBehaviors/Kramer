@@ -67,7 +67,7 @@ public class SchemaNodeTest extends ApplicationTest {
     }
 
     private void assertFirst(ColumnSet columnSet) {
-        assertEquals(88.0, columnSet.getCellHeight(), 0d);
+        assertEquals(92.0, columnSet.getCellHeight(), 0d);
         assertEquals(2, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()
