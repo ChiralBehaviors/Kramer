@@ -42,6 +42,7 @@ public class Primitive extends SchemaNode {
 
     @JsonProperty
     private double  columnWidth       = 0;
+    private double  justifiedWidth    = 0;
     private double  maxWidth          = 0;
     private double  valueDefaultWidth = 0;
     private boolean variableLength    = false;
@@ -99,6 +100,11 @@ public class Primitive extends SchemaNode {
         double rows = Math.ceil(maxWidth / justified) + 1;
         return Layout.snap(layout.getTextLineHeight() * rows)
                + layout.getTextVerticalInset();
+    }
+
+    @Override
+    void justify(int cardinality, double width, Layout layout) {
+        justifiedWidth = width;
     }
 
     @Override

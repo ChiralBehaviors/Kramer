@@ -230,6 +230,8 @@ abstract public class SchemaNode {
         return false;
     }
 
+    abstract void justify(int cardinality, double width, Layout layout);
+
     abstract double layout(int cardinality, Layout layout, double width);
 
     abstract double layoutWidth(Layout layout);

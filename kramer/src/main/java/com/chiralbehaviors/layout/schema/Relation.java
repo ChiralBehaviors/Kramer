@@ -59,6 +59,7 @@ public class Relation extends SchemaNode {
     private final List<SchemaNode> children           = new ArrayList<>();
     private final List<ColumnSet>  columnSets         = new ArrayList<>();
     private Relation               fold;
+    private double                 justifiedWidth;
     private double                 outlineWidth       = 0;
     private double                 tableColumnWidth   = 0;
     private boolean                useTable           = false;
@@ -243,7 +244,7 @@ public class Relation extends SchemaNode {
                           //                  control.setMaxWidth(width);
                           row.setPrefWidth(width);
                       });
-                row.setPrefWidth(tableColumnWidth);
+                row.setPrefWidth(tableColumnWidth - inset);
             } else {
                 row.setMinWidth(0);
                 row.setPrefWidth(1);
@@ -320,6 +321,7 @@ public class Relation extends SchemaNode {
             return;
         }
         if (useTable) {
+            justify(averageCardinality, justified, layout);
             return;
         }
         double available = justified - layout.getListCellHorizontalInset()
@@ -350,6 +352,17 @@ public class Relation extends SchemaNode {
     // for testing
     List<ColumnSet> getColumnSets() {
         return columnSets;
+    }
+
+    @Override
+    void justify(int cardinality, double width, Layout layout) {
+        if (isFold()) {
+            fold.justify(averageCardinality * cardinality, width, layout);
+            return;
+        }
+        if (width <= 0)
+            return;
+        justify(width, layout);
     }
 
     @Override
@@ -651,6 +664,22 @@ public class Relation extends SchemaNode {
     private boolean isAutoFoldable() {
         return fold == null && autoFold && children.size() == 1
                && children.get(children.size() - 1) instanceof Relation;
+    }
+
+    private void justify(double width, Layout layout) {
+        justifiedWidth = Layout.snap(width);
+        double slack = justifiedWidth - tableColumnWidth(layout);
+        assert slack >= 0 : String.format("Negative slack: %.2f (%.2f) \n%s",
+                                          slack, width, this);
+        double total = Layout.snap(children.stream()
+                                           .map(child -> child.tableColumnWidth(layout))
+                                           .reduce((a, b) -> a + b)
+                                           .orElse(0.0d));
+        children.stream()
+                .forEach(child -> child.justify(averageCardinality,
+                                                slack * (child.tableColumnWidth(layout)
+                                                         / total) + child.tableColumnWidth(layout),
+                                                layout));
     }
 
     private ListCell<JsonNode> listCell(Function<JsonNode, JsonNode> extractor,
