@@ -360,8 +360,7 @@ public class Relation extends SchemaNode {
             fold.justify(width, layout);
             return;
         }
-        justifiedWidth = Layout.snap(width
-                                     - layout.getListCellHorizontalInset());
+        justifiedWidth = Layout.snap(width);
         double s = justifiedWidth
                    - (useTable ? tableColumnWidth : outlineWidth);
         double slack;
