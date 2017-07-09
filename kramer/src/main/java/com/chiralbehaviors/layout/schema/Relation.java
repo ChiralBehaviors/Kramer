@@ -361,16 +361,10 @@ public class Relation extends SchemaNode {
             return;
         }
         justifiedWidth = Layout.snap(width);
-        double s = justifiedWidth
-                   - (useTable ? tableColumnWidth : outlineWidth);
-        double slack;
-        if (s < 0) {
-            System.out.println(String.format("Negative slack: %.2f (%.2f) \n%s",
-                                             s, width, this));
-            slack = 1;
-        } else {
-            slack = s;
-        }
+        double slack = justifiedWidth
+                       - (useTable ? tableColumnWidth : outlineWidth);
+        assert slack >= 0 : String.format("Negative slack: %.2f (%.2f) \n%s",
+                                          slack, width, this);
         double total = Layout.snap(children.stream()
                                            .map(child -> rawWidth(layout))
                                            .reduce((a, b) -> a + b)
