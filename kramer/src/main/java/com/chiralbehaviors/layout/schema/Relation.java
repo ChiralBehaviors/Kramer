@@ -281,10 +281,11 @@ public class Relation extends SchemaNode {
         column.setPrefWidth(justified);
         ObservableList<TableColumn<JsonNode, ?>> columns = column.getColumns();
         children.forEach(child -> columns.add(child.buildColumn(layout,
-                                                                inset(layout,
-                                                                      inset,
-                                                                      child,
-                                                                      indent),
+                                                                children.size() == 1 ? 0
+                                                                                     : inset(layout,
+                                                                                             inset,
+                                                                                             child,
+                                                                                             indent),
                                                                 indent(child),
                                                                 justified)));
         return column;
