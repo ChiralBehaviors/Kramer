@@ -68,8 +68,7 @@ public class Primitive extends SchemaNode {
                                                             Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
                                                             Layout layout,
                                                             double inset,
-                                                            INDENT indent,
-                                                            double justified) {
+                                                            INDENT indent) {
         return () -> {
             TextArea control = buildControl(1, layout);
             bind(control, columnMap.get(this), inset);
@@ -83,12 +82,11 @@ public class Primitive extends SchemaNode {
 
     @Override
     TableColumn<JsonNode, JsonNode> buildColumn(Layout layout, double inset,
-                                                INDENT indent, double width) {
+                                                INDENT indent) {
         TableColumn<JsonNode, JsonNode> column = super.buildColumn(layout,
                                                                    inset,
-                                                                   indent,
-                                                                   width);
-        column.setPrefWidth(justifiedWidth + inset);
+                                                                   indent);
+        column.setPrefWidth(justifiedWidth - inset);
         return column;
     }
 

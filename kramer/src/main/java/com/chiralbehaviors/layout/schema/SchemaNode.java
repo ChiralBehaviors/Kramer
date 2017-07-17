@@ -46,7 +46,14 @@ abstract public class SchemaNode {
     protected static enum INDENT {
         LEFT,
         NONE,
+        SINGULAR {
+            @Override
+            public boolean isRight() {
+                return true;
+            }
+        },
         RIGHT {
+
             @Override
             public boolean isRight() {
                 return true;
@@ -201,11 +208,10 @@ abstract public class SchemaNode {
                                                                      Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
                                                                      Layout layout,
                                                                      double inset,
-                                                                     INDENT indent,
-                                                                     double justified);
+                                                                     INDENT indent);
 
     TableColumn<JsonNode, JsonNode> buildColumn(Layout layout, double inset,
-                                                INDENT indent, double width) {
+                                                INDENT indent) {
         TableColumn<JsonNode, JsonNode> column = new TableColumn<>(label);
         column.setUserData(this);
         return column;
