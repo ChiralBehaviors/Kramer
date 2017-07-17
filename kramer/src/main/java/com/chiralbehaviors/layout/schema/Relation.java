@@ -43,6 +43,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.util.Pair;
@@ -227,6 +228,7 @@ public class Relation extends SchemaNode {
         return () -> {
 
             ListView<JsonNode> row = new ListView<JsonNode>();
+            HBox.setHgrow(row, Priority.ALWAYS);
             layout.getModel()
                   .apply(row, this);
             row.setPrefHeight(cellHeight + layout.getListCellVerticalInset()
@@ -261,11 +263,10 @@ public class Relation extends SchemaNode {
         column.setPrefWidth(justifiedWidth);
         ObservableList<TableColumn<JsonNode, ?>> columns = column.getColumns();
         children.forEach(child -> columns.add(child.buildColumn(layout,
-                                                                children.size() == 1 ? 0
-                                                                                     : inset(layout,
-                                                                                             inset,
-                                                                                             child,
-                                                                                             indent),
+                                                                inset(layout,
+                                                                      inset,
+                                                                      child,
+                                                                      indent),
                                                                 indent(child))));
         return column;
     }
@@ -667,6 +668,10 @@ public class Relation extends SchemaNode {
                 }
                 break;
             case NONE:
+                if (children.size() == 1) {
+                    return layout.getNestedLeftInset()
+                           + layout.getNestedRightInset();
+                }
                 if (child.equals(children.get(children.size() - 1))) {
                     return layout.getNestedRightInset();
                 } else if (child.equals(children.get(0))) {
