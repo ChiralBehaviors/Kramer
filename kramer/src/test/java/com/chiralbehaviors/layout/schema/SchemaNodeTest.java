@@ -40,85 +40,117 @@ import javafx.stage.Stage;
  */
 public class SchemaNodeTest extends ApplicationTest {
 
-    private HBox parent;
+    private Layout layout;
+    private HBox   parent;
 
     @Override
     public void start(Stage stage) throws Exception {
         parent = new HBox();
-        Scene scene = new Scene(parent, 800, 600);
+        Scene scene = new Scene(parent, 1200, 800);
         stage.setScene(scene);
         stage.show();
+        LayoutModel model = mock(LayoutModel.class);
+        layout = new Layout(model);
     }
 
     @Test
     public void testColumns() throws Exception {
         JsonNode data = testData();
         Relation root = build();
-        LayoutModel model = mock(LayoutModel.class);
-        Layout layout = new Layout(model);
         root.measure(data, layout);
-        root.autoLayout(1, layout, 800d);
+        root.autoLayout(1, layout, 1200);
+        System.out.println(root);
         List<ColumnSet> columnSets = root.getColumnSets();
-        assertEquals(4, columnSets.size());
+        assertEquals(3, columnSets.size());
         assertFirst(columnSets.get(0));
         assertSecond(columnSets.get(1));
         assertThird(columnSets.get(2));
-        assertFourth(columnSets.get(3));
     }
 
     private void assertFirst(ColumnSet columnSet) {
-        assertEquals(92.0, columnSet.getCellHeight(), 0d);
+        assertEquals(170.0, columnSet.getCellHeight(), 0d);
         assertEquals(2, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()
                                  .get(0);
-        assertEquals(400.0, column.getWidth(), 0d);
+        assertEquals(591.0, column.getWidth(), 0d);
         List<SchemaNode> fields = column.getFields();
-        assertEquals(2, fields.size());
+        assertEquals(3, fields.size());
         assertEquals("name", fields.get(0).field);
         assertEquals("notes", fields.get(1).field);
+        assertEquals("classifier", fields.get(2).field);
 
         column = columnSet.getColumns()
                           .get(1);
-        assertEquals(400.0, column.getWidth(), 0d);
+        assertEquals(591.0, column.getWidth(), 0d);
         fields = column.getFields();
-        assertEquals(1, fields.size());
-        assertEquals("classifier", fields.get(0).field);
-    }
-
-    private void assertSecond(ColumnSet columnSet) {
-        assertEquals(44.0, columnSet.getCellHeight(), 0d);
-        assertEquals(1, columnSet.getColumns()
-                                 .size());
-        Column column = columnSet.getColumns()
-                                 .get(0);
-        assertEquals(800.0, column.getWidth(), 0d);
-        List<SchemaNode> fields = column.getFields();
         assertEquals(1, fields.size());
         assertEquals("classification", fields.get(0).field);
     }
 
-    private void assertThird(ColumnSet columnSet) {
-        assertEquals(126.0, columnSet.getCellHeight(), 0d);
+    private void assertSecond(ColumnSet columnSet) {
+        assertEquals(110.0, columnSet.getCellHeight(), 0d);
         assertEquals(1, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()
                                  .get(0);
-        assertEquals(800.0, column.getWidth(), 0d);
+        assertEquals(1182.0, column.getWidth(), 0d);
         List<SchemaNode> fields = column.getFields();
         assertEquals(1, fields.size());
         assertEquals("attributes", fields.get(0).field);
     }
 
-    private void assertFourth(ColumnSet columnSet) {
-        assertEquals(226.0, columnSet.getCellHeight(), 0d);
+    private void assertThird(ColumnSet columnSet) {
+        assertEquals(136.0, columnSet.getCellHeight(), 0d);
         assertEquals(1, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()
                                  .get(0);
-        assertEquals(800.0, column.getWidth(), 0d);
-        List<SchemaNode> fields = column.getFields();
-        assertEquals(1, fields.size());
-        assertEquals("children", fields.get(0).field);
+        assertEquals(1182.0, column.getWidth(), 0d);
+        assertEquals(1, column.getFields()
+                              .size());
+
+        Relation children = (Relation) column.getFields()
+                                             .get(0);
+        assertEquals("children", children.field);
+        assertEquals(768.0, children.getChildren()
+                                    .stream()
+                                    .mapToDouble(f -> f.justifiedWidth)
+                                    .reduce((a, b) -> a + b)
+                                    .getAsDouble(),
+                     0d);
+        assertEquals(1182.0, children.justifiedWidth, 0d);
+
+        assertEquals(126.0, children.getChildren()
+                                    .get(0).justifiedWidth,
+                     0d);
+        assertEquals(82.0, children.getChildren()
+                                   .get(1).justifiedWidth,
+                     0d);
+        assertEquals(114.0, children.getChildren()
+                                    .get(2).justifiedWidth,
+                     0d);
+
+        Relation relationship = (Relation) children.getChildren()
+                                                   .get(3);
+        assertEquals("relationship", relationship.field);
+        assertEquals(333.0, relationship.getChildren()
+                                        .stream()
+                                        .mapToDouble(f -> f.justifiedWidth)
+                                        .reduce((a, b) -> a + b)
+                                        .getAsDouble(),
+                     0d);
+        assertEquals(348.0, relationship.justifiedWidth, 0d);
+
+        Relation child = (Relation) children.getChildren()
+                                            .get(4);
+        assertEquals("child", child.field);
+        assertEquals(95.0, child.getChildren()
+                                .stream()
+                                .mapToDouble(f -> f.justifiedWidth)
+                                .reduce((a, b) -> a + b)
+                                .getAsDouble(),
+                     0d);
+        assertEquals(98.0, child.justifiedWidth, 0d);
     }
 }

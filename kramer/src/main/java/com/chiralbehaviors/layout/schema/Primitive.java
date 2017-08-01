@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import com.chiralbehaviors.layout.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -54,7 +53,8 @@ public class Primitive extends SchemaNode {
 
     @Override
     public String toString() {
-        return String.format("Primitive [%s:%.2f]", label, columnWidth);
+        return String.format("Primitive [%s:%.2f:%.2f]", label, columnWidth,
+                             justifiedWidth);
     }
 
     @Override
@@ -63,14 +63,15 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    Supplier<Pair<Consumer<JsonNode>, Control>> buildColumn(int cardinality,
-                                                            Function<JsonNode, JsonNode> extractor,
-                                                            Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
-                                                            Layout layout,
-                                                            double inset,
-                                                            INDENT indent) {
-        return () -> {
+    Function<Double, Pair<Consumer<JsonNode>, Control>> buildColumn(int cardinality,
+                                                                    Function<JsonNode, JsonNode> extractor,
+                                                                    Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
+                                                                    Layout layout,
+                                                                    double inset,
+                                                                    INDENT indent) {
+        return resolvedHeight -> {
             TextArea control = buildControl(1, layout);
+            control.setPrefHeight(resolvedHeight);
             bind(control, columnMap.get(this), inset);
             layout.getModel()
                   .apply(control, Primitive.this);
@@ -86,7 +87,7 @@ public class Primitive extends SchemaNode {
         TableColumn<JsonNode, JsonNode> column = super.buildColumn(layout,
                                                                    inset,
                                                                    indent);
-        column.setPrefWidth(justifiedWidth - inset);
+        column.setPrefWidth(justifiedWidth);
         return column;
     }
 
@@ -99,7 +100,7 @@ public class Primitive extends SchemaNode {
 
     @Override
     void justify(double width, Layout layout) {
-        justifiedWidth = width;
+        justifiedWidth = Layout.snap(width);
     }
 
     @Override
@@ -198,8 +199,8 @@ public class Primitive extends SchemaNode {
                   control.setPrefWidth(width);
               });
         double width = column.getWidth() - inset;
-        control.setMinWidth(width);
-        control.setMaxWidth(width);
+        //        control.setMinWidth(width);
+        //        control.setMaxWidth(width);
         control.setPrefWidth(width);
     }
 

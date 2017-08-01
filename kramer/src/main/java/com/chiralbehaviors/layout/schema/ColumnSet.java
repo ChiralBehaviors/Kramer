@@ -132,4 +132,8 @@ public class ColumnSet {
     List<Column> getColumns() {
         return columns;
     }
+
+    void justify(Layout layout) {
+        columns.forEach(c -> c.justify(layout));
+    }
 }

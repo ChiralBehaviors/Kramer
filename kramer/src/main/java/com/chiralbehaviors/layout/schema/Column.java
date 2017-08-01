@@ -78,8 +78,8 @@ public class Column {
             column.addFirst(fields.removeLast());
             return true;
         }
-        if (without(layout, labelWidth) < column.with(fields.getLast(),
-                                                      layout, labelWidth)) {
+        if (without(layout, labelWidth) < column.with(fields.getLast(), layout,
+                                                      labelWidth)) {
             return false;
         }
         column.addFirst(fields.removeLast());
@@ -119,6 +119,10 @@ public class Column {
 
     double getWidth() {
         return width;
+    }
+
+    void justify(Layout layout) {
+        fields.forEach(n -> n.justify(width, layout));
     }
 
     private double cellHeight(Layout layout, ArrayDeque<SchemaNode> elements,
