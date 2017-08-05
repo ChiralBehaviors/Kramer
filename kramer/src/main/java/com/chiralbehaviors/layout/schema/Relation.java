@@ -42,7 +42,6 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.util.Pair;
@@ -73,7 +72,6 @@ public class Relation extends SchemaNode {
         double snapped = Layout.snap(width);
         layout(cardinality, layout, snapped);
         compress(layout, snapped);
-        justify(snapped, layout);
     }
 
     public Control buildControl(int cardinality, Layout layout, double width) {
@@ -228,6 +226,7 @@ public class Relation extends SchemaNode {
 
         Function<JsonNode, JsonNode> extract = extractor == null ? n -> n
                                                                  : extract(extractor);
+        TableColumn<JsonNode, ?> column = columnMap.get(this);
         return rendered -> {
             double deficit = Math.max(0, rendered - calculatedHeight);
             assert deficit >= 0 : String.format("negative deficit %s", deficit);
@@ -237,9 +236,12 @@ public class Relation extends SchemaNode {
             ListView<JsonNode> row = new ListView<JsonNode>();
             layout.getModel()
                   .apply(row, this);
-            HBox.setHgrow(row, Priority.ALWAYS);
-            row.setMinWidth(0);
-            row.setPrefWidth(1);
+            if (column == null) {
+                row.setMinWidth(0);
+                row.setPrefWidth(1);
+            } else {
+                row.setPrefWidth(column.getPrefWidth() - inset);
+            }
             row.setFixedCellSize(extended);
             row.setPrefHeight(rendered);
             row.setCellFactory(control -> {
@@ -309,11 +311,13 @@ public class Relation extends SchemaNode {
             fold.compress(layout, justified);
             return;
         }
-        if (useTable) {
-            return;
-        }
         double available = justified - layout.getListCellHorizontalInset()
                            - layout.getListHorizontalInset();
+        if (useTable) {
+            justify(available, layout);
+            return;
+        }
+        justifiedWidth = available;
         double labelWidth = children.stream()
                                     .mapToDouble(n -> n.getLabelWidth(layout))
                                     .max()
@@ -348,13 +352,19 @@ public class Relation extends SchemaNode {
             fold.justify(width, layout);
             return;
         }
+        assert useTable : "Not a nested table";
         justifiedWidth = Layout.snap(width);
-        if (useTable) {
-            justfyTable(width, layout);
-        } else {
-            columnSets.forEach(cs -> cs.justify(layout));
-        }
-
+        double slack = width - tableColumnWidth;
+        assert slack >= 0 : String.format("Negative slack: %.2f (%.2f) \n%s",
+                                          slack, width, this);
+        double total = Layout.snap(children.stream()
+                                           .map(child -> rawWidth(layout))
+                                           .reduce((a, b) -> a + b)
+                                           .orElse(0.0d));
+        children.forEach(child -> {
+            double childWidth = child.tableColumnWidth(layout);
+            child.justify(slack * (childWidth / total) + childWidth, layout);
+        });
     }
 
     @Override
@@ -685,20 +695,6 @@ public class Relation extends SchemaNode {
     private boolean isAutoFoldable() {
         return fold == null && autoFold && children.size() == 1
                && children.get(children.size() - 1) instanceof Relation;
-    }
-
-    private void justfyTable(double width, Layout layout) {
-        double slack = width - tableColumnWidth;
-        assert slack >= 0 : String.format("Negative slack: %.2f (%.2f) \n%s",
-                                          slack, width, this);
-        double total = Layout.snap(children.stream()
-                                           .map(child -> rawWidth(layout))
-                                           .reduce((a, b) -> a + b)
-                                           .orElse(0.0d));
-        children.forEach(child -> {
-            double childWidth = child.tableColumnWidth(layout);
-            child.justify(slack * (childWidth / total) + childWidth, layout);
-        });
     }
 
     private ListCell<JsonNode> listCell(Function<JsonNode, JsonNode> extractor,

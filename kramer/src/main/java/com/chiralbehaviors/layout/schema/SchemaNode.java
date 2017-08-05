@@ -219,6 +219,7 @@ abstract public class SchemaNode {
     abstract double cellHeight(Layout layout, double available);
 
     void compress(Layout layout, double available) {
+        justifiedWidth = available;
     }
 
     Function<JsonNode, JsonNode> extract(Function<JsonNode, JsonNode> extractor) {

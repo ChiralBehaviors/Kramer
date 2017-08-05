@@ -192,12 +192,6 @@ public class Primitive extends SchemaNode {
 
     private void bind(Control control, TableColumn<JsonNode, ?> column,
                       double inset) {
-        column.widthProperty()
-              .addListener((o, prev, cur) -> {
-                  double width = cur.doubleValue() - inset;
-                  //                  control.setMinWidth(width);
-                  control.setPrefWidth(width);
-              });
         control.setPrefWidth(column.getWidth() - inset);
     }
 
