@@ -93,15 +93,14 @@ public class Column {
                                                                      .collect(Collectors.toList()));
     }
 
-    Consumer<JsonNode> build(double cellHeight, VBox cell,
+    Consumer<JsonNode> build(double cellHeight, VBox cell, int cardinality,
                              Function<JsonNode, JsonNode> extractor,
                              Layout layout, double labelWidth) {
         List<Consumer<JsonNode>> controls = new ArrayList<>();
         fields.forEach(child -> {
-            Pair<Consumer<JsonNode>, Parent> master = child.outlineElement(labelWidth,
+            Pair<Consumer<JsonNode>, Parent> master = child.outlineElement(cardinality,
+                                                                           labelWidth,
                                                                            extractor,
-                                                                           cellHeight,
-                                                                           1,
                                                                            layout,
                                                                            width);
             controls.add(master.getKey());
@@ -121,8 +120,8 @@ public class Column {
         return width;
     }
 
-    void justify(Layout layout) {
-        fields.forEach(n -> n.justify(width, layout));
+    void justify(double labelWidth, Layout layout) {
+        fields.forEach(n -> n.justify(width - labelWidth, layout));
     }
 
     private double cellHeight(Layout layout, ArrayDeque<SchemaNode> elements,

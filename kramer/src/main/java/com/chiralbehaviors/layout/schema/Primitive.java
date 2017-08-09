@@ -145,10 +145,9 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    Pair<Consumer<JsonNode>, Parent> outlineElement(double labelWidth,
+    Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
+                                                    double labelWidth,
                                                     Function<JsonNode, JsonNode> extractor,
-                                                    double elementHeight,
-                                                    int cardinality,
                                                     Layout layout,
                                                     double justified) {
         HBox box = new HBox();
@@ -160,12 +159,10 @@ public class Primitive extends SchemaNode {
         box.getChildren()
            .add(labelText);
         Control control = buildControl(cardinality, layout);
-        control.setPrefWidth(justifiedWidth);
-        control.setPrefHeight(elementHeight);
+        control.setPrefWidth(justified);
         box.getChildren()
            .add(control);
-        box.setPrefHeight(elementHeight);
-        box.setPrefWidth(justifiedWidth);
+        box.setPrefWidth(justified);
         //        VBox.setVgrow(labelText, Priority.NEVER);
         //        VBox.setVgrow(control, Priority.ALWAYS);
         return new Pair<>(item -> {

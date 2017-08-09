@@ -65,11 +65,13 @@ public class ColumnSet {
                             (int) (available
                                    / firstColumn.maxWidth(layout,
                                                           labelWidth))));
+        double fieldWidth = available - labelWidth;
         if (count == 1) {
             firstColumn.setWidth(available);
             firstColumn.getFields()
-                       .forEach(f -> f.compress(layout,
-                                                available - labelWidth));
+                       .forEach(f -> {
+                           f.compress(layout, fieldWidth);
+                       });
             cellHeight = firstColumn.cellHeight(layout, labelWidth);
             return;
         }
@@ -114,14 +116,17 @@ public class ColumnSet {
         return String.format("ColumnSet [%s] [%s]", cellHeight, columns);
     }
 
-    Pair<Consumer<JsonNode>, Parent> build(Function<JsonNode, JsonNode> extractor,
+    Pair<Consumer<JsonNode>, Parent> build(int cardinality,
+                                           Function<JsonNode, JsonNode> extractor,
                                            Layout layout) {
         HBox span = new HBox();
         span.setPrefHeight(cellHeight);
         List<Consumer<JsonNode>> controls = new ArrayList<>();
         columns.forEach(c -> {
             VBox cell = new VBox();
-            controls.add(c.build(cellHeight, cell, extractor, layout,
+            cell.setPrefHeight(cellHeight);
+            cell.setPrefWidth(c.getWidth());
+            controls.add(c.build(cardinality, cell, cardinality, extractor, layout,
                                  labelWidth));
             span.getChildren()
                 .add(cell);
@@ -134,6 +139,6 @@ public class ColumnSet {
     }
 
     void justify(Layout layout) {
-        columns.forEach(c -> c.justify(layout));
+        columns.forEach(c -> c.justify(labelWidth, layout));
     }
 }

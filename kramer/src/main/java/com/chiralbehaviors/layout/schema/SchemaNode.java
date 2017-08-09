@@ -241,10 +241,9 @@ abstract public class SchemaNode {
 
     abstract double measure(ArrayNode data, Layout layout, INDENT indent);
 
-    abstract Pair<Consumer<JsonNode>, Parent> outlineElement(double labelWidth,
+    abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
+                                                             double labelWidth,
                                                              Function<JsonNode, JsonNode> extractor,
-                                                             double cellHeight,
-                                                             int cardinality,
                                                              Layout layout,
                                                              double justified);
 
