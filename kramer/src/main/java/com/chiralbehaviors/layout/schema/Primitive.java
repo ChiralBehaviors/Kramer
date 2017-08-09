@@ -178,8 +178,8 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double rowHeight(Layout layout, double width) {
-        return cellHeight(1, layout, width);
+    double rowHeight(int cardinality, Layout layout, double width) {
+        return cellHeight(cardinality, layout, width);
     }
 
     @Override
