@@ -216,7 +216,7 @@ abstract public class SchemaNode {
         return column;
     }
 
-    abstract double cellHeight(Layout layout, double available);
+    abstract double cellHeight(int cardinality, Layout layout, double available);
 
     void compress(Layout layout, double available) {
         justifiedWidth = available;

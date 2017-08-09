@@ -92,7 +92,7 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double cellHeight(Layout layout, double justified) {
+    double cellHeight(int cardinality, Layout layout, double justified) {
         double rows = Math.ceil(maxWidth / justified) + 1;
         return Layout.snap(layout.getTextLineHeight() * rows)
                + layout.getTextVerticalInset();
@@ -179,7 +179,7 @@ public class Primitive extends SchemaNode {
 
     @Override
     double rowHeight(Layout layout, double width) {
-        return cellHeight(layout, width);
+        return cellHeight(1, layout, width);
     }
 
     @Override

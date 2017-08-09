@@ -57,7 +57,7 @@ public class ColumnSet {
                .add(node);
     }
 
-    public void compress(Layout layout, double available) {
+    public void compress(int cardinality, Layout layout, double available) {
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
                                    .size(),
@@ -72,7 +72,8 @@ public class ColumnSet {
                        .forEach(f -> {
                            f.compress(layout, fieldWidth);
                        });
-            cellHeight = firstColumn.cellHeight(layout, labelWidth);
+            cellHeight = firstColumn.cellHeight(cardinality, layout,
+                                                labelWidth);
             return;
         }
 
@@ -83,18 +84,19 @@ public class ColumnSet {
         firstColumn.setWidth(columnWidth);
         IntStream.range(1, count)
                  .forEach(i -> columns.add(new Column(columnWidth)));
-        cellHeight = firstColumn.cellHeight(layout, labelWidth);
+        cellHeight = firstColumn.cellHeight(cardinality, layout, labelWidth);
         double lastHeight;
         do {
             lastHeight = cellHeight;
             for (int i = 0; i < columns.size() - 1; i++) {
                 while (columns.get(i)
-                              .slideRight(columns.get(i + 1), layout,
-                                          columnWidth, labelWidth)) {
+                              .slideRight(cardinality, columns.get(i + 1),
+                                          layout, columnWidth, labelWidth)) {
                 }
             }
             cellHeight = columns.stream()
-                                .mapToDouble(c -> c.cellHeight(layout,
+                                .mapToDouble(c -> c.cellHeight(cardinality,
+                                                               layout,
                                                                labelWidth))
                                 .max()
                                 .orElse(0d);
@@ -126,8 +128,8 @@ public class ColumnSet {
             VBox cell = new VBox();
             cell.setPrefHeight(cellHeight);
             cell.setPrefWidth(c.getWidth());
-            controls.add(c.build(cardinality, cell, cardinality, extractor, layout,
-                                 labelWidth));
+            controls.add(c.build(cardinality, cell, cardinality, extractor,
+                                 layout, labelWidth));
             span.getChildren()
                 .add(cell);
         });

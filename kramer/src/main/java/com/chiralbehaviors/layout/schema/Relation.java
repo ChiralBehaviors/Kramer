@@ -279,22 +279,25 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    double cellHeight(Layout layout, double width) {
+    double cellHeight(int cardinality, Layout layout, double width) {
         if (isFold()) {
-            return fold.cellHeight(layout, width);
+            return fold.cellHeight(averageCardinality * cardinality, layout,
+                                   width);
         }
         if (!useTable) {
-            return Layout.snap(columnSets.stream()
-                                         .mapToDouble(cs -> cs.getCellHeight())
-                                         .sum()
-                               + layout.getListCellVerticalInset()
+            return Layout.snap((cardinality * (columnSets.stream()
+                                                         .mapToDouble(cs -> cs.getCellHeight())
+                                                         .sum()
+                                               + layout.getListCellVerticalInset()))
                                + layout.getListVerticalInset());
         }
         double available = width - layout.getTableHorizontalInset()
                            - layout.getTableRowHorizontalInset()
                            - layout.getListCellHorizontalInset()
                            - layout.getListHorizontalInset();
-        double height = rowHeight(layout, available)
+        double height = (cardinality * (rowHeight(layout, available)
+                                        + layout.getListCellVerticalInset()))
+                        + layout.getListCellVerticalInset()
                         + layout.getTableRowVerticalInset();
         TableView<JsonNode> table = tableBase();
         children.forEach(child -> {
@@ -339,7 +342,8 @@ public class Relation extends SchemaNode {
                 current.add(child);
             }
         }
-        columnSets.forEach(cs -> cs.compress(layout, justifiedWidth));
+        columnSets.forEach(cs -> cs.compress(averageCardinality, layout,
+                                             justifiedWidth));
     }
 
     // for testing
@@ -459,7 +463,7 @@ public class Relation extends SchemaNode {
         }
         double available = justified - labelWidth;
 
-        double cellHeight = cellHeight(layout, available);
+        double cellHeight = cellHeight(cardinality, layout, available);
         Control control = useTable ? buildNestedTable(n -> n, cardinality,
                                                       layout, available)
                                    : buildOutline(n -> n, cardinality, layout);
