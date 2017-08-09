@@ -555,7 +555,7 @@ public class Relation extends SchemaNode {
             columns = leaves;
         }
 
-        Function<Double, Pair<Consumer<JsonNode>, Control>> topLevel = buildColumn(averageCardinality,
+        Function<Double, Pair<Consumer<JsonNode>, Control>> topLevel = buildColumn(cardinality,
                                                                                    null,
                                                                                    columnMap,
                                                                                    layout,
@@ -565,9 +565,9 @@ public class Relation extends SchemaNode {
                            - layout.getTableRowHorizontalInset()
                            - layout.getListCellHorizontalInset()
                            - layout.getListHorizontalInset();
-        double elementHeight = rowHeight(cardinality, layout, available); 
+        double rowHeight = rowHeight(averageCardinality, layout, available);
         table.setRowFactory(tableView -> {
-            Pair<Consumer<JsonNode>, Control> relationRow = topLevel.apply(elementHeight);
+            Pair<Consumer<JsonNode>, Control> relationRow = topLevel.apply(rowHeight);
             RelationTableRow row = new RelationTableRow(relationRow.getKey(),
                                                         relationRow.getValue());
             layout.getModel()
@@ -577,8 +577,11 @@ public class Relation extends SchemaNode {
 
         layout.getModel()
               .apply(table, this);
-        table.setFixedCellSize(elementHeight);
-        double contentHeight = elementHeight + layout.measureHeader(table)
+        table.setFixedCellSize(rowHeight);
+        double contentHeight = (cardinality
+                                * (rowHeight
+                                   + layout.getTableRowVerticalInset()))
+                               + layout.measureHeader(table)
                                + layout.getTableVerticalInset();
         table.setPrefHeight(contentHeight);
         if (cardinality > 1) {
@@ -799,6 +802,7 @@ public class Relation extends SchemaNode {
                 fields.forEach(p -> {
                     Pair<Consumer<JsonNode>, Control> pair = p.apply(resolvedHeight);
                     Control control = pair.getValue();
+                    control.setPrefHeight(resolvedHeight);
                     row.getChildren()
                        .add(control);
                     consumers.add(pair.getKey());
