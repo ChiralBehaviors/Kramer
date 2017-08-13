@@ -35,11 +35,11 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Control;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -472,14 +472,15 @@ public class Relation extends SchemaNode {
                                                       layout, available)
                                    : buildOutline(n -> n, cardinality, layout);
         control.setPrefWidth(available);
-        TextArea labelText = new TextArea(label);
+        Label labelText = new Label(label);
+        labelText.setAlignment(Pos.CENTER);
         labelText.setWrapText(true);
         labelText.setMinWidth(labelWidth);
         labelText.setPrefWidth(labelWidth);
         labelText.setMaxWidth(labelWidth);
-        labelText.setPrefRowCount(1);
-        labelText.setMinHeight(0);
-        labelText.setPrefHeight(1);
+        labelText.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;");
+
+        labelText.setPrefHeight(height);
         Pane box = new HBox();
         box.setPrefWidth(justified);
         box.getChildren()

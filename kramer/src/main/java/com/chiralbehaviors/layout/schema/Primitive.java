@@ -25,8 +25,10 @@ import com.chiralbehaviors.layout.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Control;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
@@ -122,7 +124,8 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double measure(JsonNode data, boolean singular, Layout layout, INDENT indent) {
+    double measure(JsonNode data, boolean singular, Layout layout,
+                   INDENT indent) {
         double labelWidth = getLabelWidth(layout);
         double sum = 0;
         maxWidth = 0;
@@ -156,11 +159,15 @@ public class Primitive extends SchemaNode {
                                                     Layout layout,
                                                     double justified) {
         HBox box = new HBox();
-        TextArea labelText = new TextArea(label);
+        Label labelText = new Label(label);
+        labelText.setAlignment(Pos.CENTER);
         labelText.setMinWidth(labelWidth);
         labelText.setPrefWidth(labelWidth);
         labelText.setMaxWidth(labelWidth);
-        labelText.setPrefRowCount(1);
+        labelText.setPrefHeight(height);
+        labelText.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;\n"
+                           + "    -fx-background-insets: 0, 1;");
+        //        labelText.setPrefRowCount(1);
         box.getChildren()
            .add(labelText);
         Control control = buildControl(cardinality, layout);
