@@ -45,14 +45,14 @@ abstract public class SchemaNode {
     protected static enum INDENT {
         LEFT,
         NONE,
-        SINGULAR {
+        RIGHT {
+
             @Override
             public boolean isRight() {
                 return true;
             }
         },
-        RIGHT {
-
+        SINGULAR {
             @Override
             public boolean isRight() {
                 return true;
@@ -157,6 +157,7 @@ abstract public class SchemaNode {
     }
 
     String field;
+    Double height;
     double justifiedWidth = 0;
     String label;
 
@@ -240,7 +241,8 @@ abstract public class SchemaNode {
 
     abstract double layoutWidth(Layout layout);
 
-    abstract double measure(ArrayNode data, Layout layout, INDENT indent);
+    abstract double measure(JsonNode data, boolean singular, Layout layout,
+                            INDENT indent);
 
     abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                              double labelWidth,

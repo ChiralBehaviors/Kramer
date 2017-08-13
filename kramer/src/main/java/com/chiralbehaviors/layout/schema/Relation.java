@@ -59,6 +59,7 @@ public class Relation extends SchemaNode {
     private double                 outlineWidth       = 0;
     private double                 tableColumnWidth   = 0;
     private boolean                useTable           = false;
+    private boolean                singular           = false;
 
     public Relation(String label) {
         super(label);
@@ -136,14 +137,7 @@ public class Relation extends SchemaNode {
     }
 
     public void measure(JsonNode jsonNode, Layout layout) {
-        if (jsonNode.isArray()) {
-            ArrayNode array = (ArrayNode) jsonNode;
-            measure(array, layout, INDENT.NONE);
-        } else {
-            ArrayNode singleton = JsonNodeFactory.instance.arrayNode();
-            singleton.add(jsonNode);
-            measure(singleton, layout, INDENT.NONE);
-        }
+        measure(jsonNode, !jsonNode.isArray(), layout, INDENT.NONE);
     }
 
     public void setAverageCardinality(int averageCardinality) {
@@ -279,24 +273,29 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    double cellHeight(int cardinality, Layout layout, double width) {
+    double cellHeight(int card, Layout layout, double width) {
         if (isFold()) {
-            return fold.cellHeight(averageCardinality * cardinality, layout,
-                                   width);
+            return fold.cellHeight(averageCardinality * card, layout, width);
         }
+        if (height != null) {
+            return height;
+        }
+
+        int cardinality = singular ? 1 : card;
         if (!useTable) {
-            return Layout.snap((cardinality * (columnSets.stream()
-                                                         .mapToDouble(cs -> cs.getCellHeight())
-                                                         .sum()
-                                               + layout.getListCellVerticalInset()))
-                               + layout.getListVerticalInset());
+            height = Layout.snap((cardinality * (columnSets.stream()
+                                                           .mapToDouble(cs -> cs.getCellHeight())
+                                                           .sum()
+                                                 + layout.getListCellVerticalInset()))
+                                 + layout.getListVerticalInset());
+            return height;
         }
         double available = width - layout.getTableHorizontalInset()
                            - layout.getTableRowHorizontalInset()
                            - layout.getListCellHorizontalInset()
                            - layout.getListHorizontalInset();
-        double height = rowHeight(cardinality, layout, available)
-                        + layout.getTableRowVerticalInset();
+        double cellHeight = rowHeight(cardinality, layout, available)
+                            + layout.getTableRowVerticalInset();
         TableView<JsonNode> table = tableBase();
         children.forEach(child -> {
             INDENT indent = indent(child);
@@ -304,8 +303,9 @@ public class Relation extends SchemaNode {
                  .add(child.buildColumn(layout, inset(layout, 0, child, indent),
                                         indent));
         });
-        return height + layout.measureHeader(table)
-               + layout.getTableVerticalInset();
+        height = cellHeight + layout.measureHeader(table)
+                 + layout.getTableVerticalInset();
+        return height;
     }
 
     @Override
@@ -372,10 +372,11 @@ public class Relation extends SchemaNode {
 
     @Override
     double layout(int cardinality, Layout layout, double width) {
+        height = null;
+        useTable = false;
         if (isFold()) {
             return fold.layout(cardinality, layout, width);
         }
-        useTable = false;
         double labelWidth = children.stream()
                                     .mapToDouble(child -> child.getLabelWidth(layout))
                                     .max()
@@ -414,13 +415,15 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    double measure(ArrayNode data, Layout layout, INDENT indent) {
+    double measure(JsonNode data, boolean isSingular, Layout layout,
+                   INDENT indent) {
         if (isAutoFoldable()) {
             fold = ((Relation) children.get(children.size() - 1));
         }
         if (data.isNull() || children.size() == 0) {
             return 0;
         }
+        singular = isSingular;
         double labelWidth = layout.textWidth(label);
         labelWidth += layout.getTextHorizontalInset();
         double sum = 0;
@@ -428,18 +431,22 @@ public class Relation extends SchemaNode {
         for (SchemaNode child : children) {
             ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
             int cardSum = 0;
+            boolean childSingular = false;
             for (JsonNode node : data) {
                 JsonNode sub = node.get(child.field);
                 if (sub instanceof ArrayNode) {
+                    childSingular = false;
                     aggregate.addAll((ArrayNode) sub);
                     cardSum += sub.size();
                 } else {
+                    childSingular = true;
                     aggregate.add(sub);
                     cardSum += 1;
                 }
             }
             sum += data.size() == 0 ? 1 : Math.round(cardSum / data.size());
-            tableColumnWidth += child.measure(aggregate, layout, indent(child));
+            tableColumnWidth += child.measure(aggregate, childSingular, layout,
+                                              indent(child));
         }
         averageCardinality = (int) Math.ceil(sum / children.size());
         tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth))
@@ -603,7 +610,7 @@ public class Relation extends SchemaNode {
         ListView<JsonNode> list = new ListView<>();
         layout.getModel()
               .apply(list, this);
-        list.setPrefHeight((cardinality
+        list.setPrefHeight(((singular ? 1 : cardinality)
                             * (cellHeight + layout.getListCellVerticalInset()))
                            + layout.getListVerticalInset());
         list.setFixedCellSize(cellHeight + layout.getListCellVerticalInset());

@@ -93,9 +93,13 @@ public class Primitive extends SchemaNode {
 
     @Override
     double cellHeight(int cardinality, Layout layout, double justified) {
+        if (height != null) {
+            return height;
+        }
         double rows = Math.ceil(maxWidth / justified) + 1;
-        return Layout.snap(layout.getTextLineHeight() * rows)
-               + layout.getTextVerticalInset();
+        height = Layout.snap(layout.getTextLineHeight() * rows)
+                 + layout.getTextVerticalInset();
+        return height;
     }
 
     @Override
@@ -105,6 +109,7 @@ public class Primitive extends SchemaNode {
 
     @Override
     double layout(int cardinality, Layout layout, double width) {
+        height = null;
         return variableLength ? width : Math.min(width, columnWidth);
     }
 
@@ -117,7 +122,7 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double measure(ArrayNode data, Layout layout, INDENT indent) {
+    double measure(JsonNode data, boolean singular, Layout layout, INDENT indent) {
         double labelWidth = getLabelWidth(layout);
         double sum = 0;
         maxWidth = 0;
@@ -159,6 +164,7 @@ public class Primitive extends SchemaNode {
         box.getChildren()
            .add(labelText);
         Control control = buildControl(cardinality, layout);
+        control.setPrefHeight(height);
         control.setPrefWidth(justified);
         box.getChildren()
            .add(control);
