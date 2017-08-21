@@ -167,7 +167,6 @@ public class Primitive extends SchemaNode {
         labelText.setPrefHeight(height);
         labelText.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;\n"
                            + "    -fx-background-insets: 0, 1;");
-        //        labelText.setPrefRowCount(1);
         box.getChildren()
            .add(labelText);
         Control control = buildControl(cardinality, layout);
@@ -176,8 +175,6 @@ public class Primitive extends SchemaNode {
         box.getChildren()
            .add(control);
         box.setPrefWidth(justified);
-        //        VBox.setVgrow(labelText, Priority.NEVER);
-        //        VBox.setVgrow(control, Priority.ALWAYS);
         return new Pair<>(item -> {
             JsonNode extracted = extractor.apply(item);
             JsonNode extractedField = extracted.get(field);
@@ -202,6 +199,11 @@ public class Primitive extends SchemaNode {
 
     private void bind(Control control, TableColumn<JsonNode, ?> column,
                       double inset) {
+        column.widthProperty()
+              .addListener((o, prev, cur) -> {
+                  double width = cur.doubleValue() - inset;
+                  control.setPrefWidth(width);
+              });
         control.setPrefWidth(column.getWidth() - inset);
     }
 

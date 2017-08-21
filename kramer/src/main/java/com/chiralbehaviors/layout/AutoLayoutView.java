@@ -134,7 +134,7 @@ public class AutoLayoutView extends Control {
             getChildren().add(layout);
         } catch (Throwable e) {
             log.log(Level.SEVERE,
-                    String.format("Unable to resize to {}", width), e);
+                    String.format("Unable to resize to %s", width), e);
         }
     }
 

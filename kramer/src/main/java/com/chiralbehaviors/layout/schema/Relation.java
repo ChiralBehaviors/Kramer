@@ -42,6 +42,7 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.util.Pair;
@@ -229,18 +230,30 @@ public class Relation extends SchemaNode {
             ListView<JsonNode> row = new ListView<JsonNode>();
             layout.getModel()
                   .apply(row, this);
-            if (column == null) {
-                row.setMinWidth(0);
-                row.setPrefWidth(1);
-            } else {
-                row.setPrefWidth(column.getPrefWidth() - inset);
-            }
             row.setFixedCellSize(extended);
             row.setPrefHeight(rendered);
+            HBox.setHgrow(row, Priority.ALWAYS);
+            if (column != null) {
+                column.widthProperty()
+                      .addListener((o, prev, cur) -> {
+                          double width = cur.doubleValue();
+                          row.setPrefWidth(width);
+                      });
+                row.setPrefWidth(justifiedWidth);
+            }
             row.setCellFactory(control -> {
-                ListCell<JsonNode> cell = rowCell(fields, extended
-                                                          - layout.getListCellVerticalInset(),
+                ListCell<JsonNode> cell = rowCell(column, fields,
+                                                  extended - layout.getListCellVerticalInset(),
                                                   layout);
+                cell.widthProperty()
+                    .addListener((o, p, n) -> {
+                        double width = Math.max(row.getPrefWidth(),
+                                                cell.getWidth() + row.getInsets()
+                                                                     .getLeft()
+                                                                    + row.getInsets()
+                                                                         .getRight());
+                        row.setPrefWidth(width);
+                    });
                 cell.setPrefHeight(extended);
                 layout.getModel()
                       .apply(cell, Relation.this);
@@ -649,9 +662,6 @@ public class Relation extends SchemaNode {
     }
 
     private INDENT indent(SchemaNode child) {
-        if (children.size() == 1) {
-            return INDENT.SINGULAR;
-        }
         INDENT indent = INDENT.NONE;
         if (child.equals(children.get(0))) {
             indent = INDENT.LEFT;
@@ -679,19 +689,12 @@ public class Relation extends SchemaNode {
                 }
                 break;
             case NONE:
-                if (children.size() == 1) {
-                    return layout.getNestedLeftInset()
-                           + layout.getNestedRightInset();
-                }
                 if (child.equals(children.get(children.size() - 1))) {
                     return layout.getNestedRightInset();
                 } else if (child.equals(children.get(0))) {
                     return layout.getNestedLeftInset();
                 }
                 break;
-            case SINGULAR:
-                return layout.getNestedLeftInset()
-                       + layout.getNestedRightInset();
             default:
         }
         return 0;
@@ -769,7 +772,8 @@ public class Relation extends SchemaNode {
         });
     }
 
-    private ListCell<JsonNode> rowCell(List<Function<Double, Pair<Consumer<JsonNode>, Control>>> fields,
+    private ListCell<JsonNode> rowCell(TableColumn<JsonNode, ?> column,
+                                       List<Function<Double, Pair<Consumer<JsonNode>, Control>>> fields,
                                        double resolvedHeight, Layout layout) {
 
         return new ListCell<JsonNode>() {
