@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2016 Chiral Behaviors, LLC, all rights reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -26,18 +26,15 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.Layout;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
 import javafx.util.Pair;
 
 /**
@@ -48,7 +45,10 @@ import javafx.util.Pair;
 abstract public class SchemaNode {
 
     protected static enum INDENT {
-        LEFT, NONE, RIGHT {
+        LEFT,
+        NONE,
+        RIGHT {
+
             @Override
             public boolean isRight() {
                 return true;
@@ -58,6 +58,18 @@ abstract public class SchemaNode {
         public boolean isRight() {
             return false;
         }
+    }
+
+    Label label(double labelWidth) {
+        Label labelText = new Label(label);
+        labelText.setAlignment(Pos.CENTER);
+        labelText.setMinWidth(labelWidth);
+        labelText.setPrefWidth(labelWidth);
+        labelText.setMaxWidth(labelWidth);
+        labelText.setPrefHeight(height);
+        labelText.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;\n"
+                           + "    -fx-background-insets: 0, 1;");
+        return labelText;
     }
 
     public static ArrayNode asArray(JsonNode node) {
@@ -152,38 +164,9 @@ abstract public class SchemaNode {
                             + layout.getTextVerticalInset());
     }
 
-    public static void setItemsOf(Control control, JsonNode data) {
-        if (data == null) {
-            data = JsonNodeFactory.instance.arrayNode();
-        }
-        List<JsonNode> dataList = asList(data);
-        if (control instanceof ListView) {
-            @SuppressWarnings("unchecked")
-            ListView<JsonNode> listView = (ListView<JsonNode>) control;
-            listView.getItems()
-                    .setAll(dataList);
-        } else if (control instanceof TableView) {
-            @SuppressWarnings("unchecked")
-            TableView<JsonNode> tableView = (TableView<JsonNode>) control;
-            tableView.getItems()
-                     .setAll(dataList);
-        } else if (control instanceof Label) {
-            Label label = (Label) control;
-            label.setText(asText(data));
-        } else if (control instanceof TextArea) {
-            TextArea label = (TextArea) control;
-            label.setText(asText(data));
-        } else {
-            throw new IllegalArgumentException(String.format("Unknown control %s",
-                                                             control));
-        }
-    }
-
-    @JsonProperty
     String field;
-    @JsonProperty
+    Double height;
     double justifiedWidth = 0;
-    @JsonProperty
     String label;
 
     public SchemaNode() {
@@ -210,12 +193,16 @@ abstract public class SchemaNode {
         return label;
     }
 
+    public double getLabelWidth(Layout layout) {
+        return layout.textWidth(label);
+    }
+
     public boolean isRelation() {
         return false;
     }
 
-    public void setItems(Control control, JsonNode data) {
-        setItemsOf(control, data);
+    public void setItems(Control control, JsonNode data, Layout layout) {
+        layout.setItemsOf(control, data);
     }
 
     public void setLabel(String label) {
@@ -238,6 +225,13 @@ abstract public class SchemaNode {
         return column;
     }
 
+    abstract double cellHeight(int cardinality, Layout layout,
+                               double available);
+
+    void compress(Layout layout, double available) {
+        justifiedWidth = available;
+    }
+
     Function<JsonNode, JsonNode> extract(Function<JsonNode, JsonNode> extractor) {
         return n -> {
             JsonNode extracted = extractor.apply(n);
@@ -245,28 +239,28 @@ abstract public class SchemaNode {
         };
     }
 
-    double getLabelWidth(Layout layout) {
-        return layout.textWidth(label);
-    }
-
-    abstract double getTableColumnWidth(Layout layout);
-
     boolean isUseTable() {
         return false;
     }
 
-    abstract void justify(int cardinality, double width, Layout layout);
+    abstract void justify(double width, Layout layout);
 
-    abstract double layout(double width, Layout layout);
+    abstract double layout(int cardinality, Layout layout, double width);
 
-    abstract double layoutOutline(int cardinality, Layout layout);
+    abstract double layoutWidth(Layout layout);
 
-    abstract double layoutRow(int cardinality, Layout layout);
+    abstract double measure(JsonNode data, boolean singular, Layout layout,
+                            INDENT indent);
 
-    abstract double measure(ArrayNode data, Layout layout, INDENT indent);
-
-    abstract Pair<Consumer<JsonNode>, Parent> outlineElement(double labelWidth,
+    abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
+                                                             double labelWidth,
                                                              Function<JsonNode, JsonNode> extractor,
-                                                             int cardinality,
-                                                             Layout layout);
+                                                             Layout layout,
+                                                             double justified);
+
+    abstract double outlineWidth(Layout layout);
+
+    abstract double rowHeight(int cardinality, Layout layout, double justified);
+
+    abstract double tableColumnWidth(Layout layout);
 }

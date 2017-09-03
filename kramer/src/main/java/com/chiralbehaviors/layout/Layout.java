@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2016 Chiral Behaviors, LLC, all rights reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,11 +17,14 @@
 package com.chiralbehaviors.layout;
 
 import java.lang.reflect.Field;
+import java.util.Collections;
 import java.util.List;
 
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
+import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.sun.javafx.scene.control.skin.TableHeaderRow;
 import com.sun.javafx.scene.control.skin.TableViewSkinBase;
 import com.sun.javafx.scene.control.skin.TextAreaSkin;
@@ -34,6 +37,8 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.Control;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableCell;
@@ -104,18 +109,29 @@ public class Layout {
     private final LayoutModel model;
     private List<String>      styleSheets;
     private Insets            tableInsets    = ZERO_INSETS;
-    private Insets            tableRowInsets;
+    private Insets            tableRowInsets = ZERO_INSETS;;
     private Font              textFont       = Font.getDefault();
     private Insets            textInsets     = ZERO_INSETS;
     private double            textLineHeight = 0;
 
     public Layout(LayoutModel model) {
-        this.model = model;
+        this(Collections.emptyList(), model, true);
+    }
+
+    public Layout(LayoutModel model, boolean initialize) {
+        this(Collections.emptyList(), model, initialize);
     }
 
     public Layout(List<String> styleSheets, LayoutModel model) {
-        this(model);
-        initialize(styleSheets);
+        this(styleSheets, model, true);
+    }
+
+    public Layout(List<String> styleSheets, LayoutModel model,
+                  boolean initialize) {
+        this.model = model;
+        if (initialize) {
+            initialize(styleSheets);
+        }
     }
 
     public double getListCellHorizontalInset() {
@@ -312,6 +328,33 @@ public class Layout {
         root.getChildren()
             .clear();
         return headerRow.getHeight();
+    }
+
+    public void setItemsOf(Control control, JsonNode data) {
+        if (data == null) {
+            data = JsonNodeFactory.instance.arrayNode();
+        }
+        List<JsonNode> dataList = SchemaNode.asList(data);
+        if (control instanceof ListView) {
+            @SuppressWarnings("unchecked")
+            ListView<JsonNode> listView = (ListView<JsonNode>) control;
+            listView.getItems()
+                    .setAll(dataList);
+        } else if (control instanceof TableView) {
+            @SuppressWarnings("unchecked")
+            TableView<JsonNode> tableView = (TableView<JsonNode>) control;
+            tableView.getItems()
+                     .setAll(dataList);
+        } else if (control instanceof Label) {
+            Label label = (Label) control;
+            label.setText(SchemaNode.asText(data));
+        } else if (control instanceof TextArea) {
+            TextArea label = (TextArea) control;
+            label.setText(SchemaNode.asText(data));
+        } else {
+            throw new IllegalArgumentException(String.format("Unknown control %s",
+                                                             control));
+        }
     }
 
     public void setListCellInsets(Insets listCellInsets) {

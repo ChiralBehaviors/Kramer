@@ -9,6 +9,7 @@
 	<packaging>pom</packaging>
 	<properties>
 		<jackson.version>2.6.7</jackson.version>
+		<testfx.version>4.0.1-alpha</testfx.version>
 	</properties>
 	<modules>
 		<module>kramer</module>
@@ -61,6 +62,23 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.testfx</groupId>
+				<artifactId>openjfx-monocle</artifactId>
+				<version>1.8.0_20</version>
+			</dependency>
+			<dependency>
+				<groupId>org.testfx</groupId>
+				<artifactId>testfx-core</artifactId>
+				<version>${testfx.version}</version>
+				<scope>test</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.testfx</groupId>
+				<artifactId>testfx-junit</artifactId>
+				<version>${testfx.version}</version>
+				<scope>test</scope>
+			</dependency>
 			<dependency>
 				<groupId>com.chiralbehaviors.layout</groupId>
 				<artifactId>kramer</artifactId>
@@ -128,9 +146,9 @@
 				<version>2.22.1</version>
 			</dependency>
 			<dependency>
-				<groupId>com.hellblazer</groupId>
-				<artifactId>utils</artifactId>
-				<version>0.0.6-SNAPSHOT</version>
+				<groupId>org.mockito</groupId>
+				<artifactId>mockito-core</artifactId>
+				<version>1.9.5</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

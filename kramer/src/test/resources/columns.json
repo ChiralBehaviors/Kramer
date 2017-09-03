@@ -1,0 +1,110 @@
+[{
+	"id": "HEDb3UMbEeeLAKVlAGQPIw",
+	"name": "Core User",
+	"notes": null,
+	"classifier": {
+		"id": "AAAAAAAAAAUAAAAAAAAAEw",
+		"name": "is-a",
+		"description": "A is a B"
+	},
+	"classification": {
+		"id": "HD5q0UMbEeeLAKVlAGQPIw",
+		"name": "Core User",
+		"description": "Ultrastructure CoRE API user"
+	},
+	"attributes": [
+		{
+			"id": "HEjLKkMbEeeLAKVlAGQPIw",
+			"authorizedAttribute": {
+				"id": "HCdg7EMbEeeLAKVlAGQPIw",
+				"name": "Login",
+				"description": "The Attribute that contains the login name of the agency"
+			}
+		},
+		{
+			"id": "HEmOe0MbEeeLAKVlAGQPIw",
+			"authorizedAttribute": {
+				"id": "HChLT0MbEeeLAKVlAGQPIw",
+				"name": "Password Rounds",
+				"description": "The number of rounds to hash the password"
+			}
+		},
+		{
+			"id": "HEoDrEMbEeeLAKVlAGQPIw",
+			"authorizedAttribute": {
+				"id": "HCk1skMbEeeLAKVlAGQPIw",
+				"name": "Password Hash",
+				"description": "The hash the password"
+			}
+		},
+		{
+			"id": "HEp43UMbEeeLAKVlAGQPIw",
+			"authorizedAttribute": {
+				"id": "HCn5BUMbEeeLAKVlAGQPIw",
+				"name": "Access Token",
+				"description": "The access bearer token"
+			}
+		},
+		{
+			"id": "HErG_kMbEeeLAKVlAGQPIw",
+			"authorizedAttribute": {
+				"id": "AAAAAAAAAAEAAAAAAAAABg",
+				"name": "Name",
+				"description": "A label"
+			}
+		},
+		{
+			"id": "HEs8L0MbEeeLAKVlAGQPIw",
+			"authorizedAttribute": {
+				"id": "AAAAAAAAAAEAAAAAAAAAAw",
+				"name": "Description",
+				"description": "A description"
+			}
+		}
+	],
+	"children": [
+		{
+			"name": "DefaultRole",
+			"notes": null,
+			"cardinality": "_1",
+			"relationship": {
+				"id": "HDy9FUMbEeeLAKVlAGQPIw",
+				"name": "Default Role",
+				"description": "A has default role B"
+			},
+			"child": {
+				"id": "HEKwoUMbEeeLAKVlAGQPIw",
+				"name": "Role"
+			}
+		},
+		{
+			"name": "DefaultClassification",
+			"notes": null,
+			"cardinality": "_1",
+			"relationship": {
+				"id": "HD2ne0MbEeeLAKVlAGQPIw",
+				"name": "Default Classification",
+				"description": "A has default classification B"
+			},
+			"child": {
+				"id": "HEReVUMbEeeLAKVlAGQPIw",
+				"name": "Classification"
+			}
+		},
+		{
+			"name": "role",
+			"notes": null,
+			"cardinality": "N",
+			"relationship": {
+				"id": "HCt_qUMbEeeLAKVlAGQPIw",
+				"name": "Has Role",
+				"description": "A has role B"
+			},
+			"child": {
+				"id": "HEKwoUMbEeeLAKVlAGQPIw",
+				"name": "Role"
+			}
+		}
+	]
+}
+]
