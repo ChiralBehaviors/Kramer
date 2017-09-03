@@ -23,6 +23,7 @@ import static org.mockito.Mockito.mock;
 
 import java.util.List;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.testfx.framework.junit.ApplicationTest;
 
@@ -54,6 +55,7 @@ public class SchemaNodeTest extends ApplicationTest {
     }
 
     @Test
+    @Ignore
     public void testColumns() throws Exception {
         JsonNode data = testData();
         Relation root = build();
