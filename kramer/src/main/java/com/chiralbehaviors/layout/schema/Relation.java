@@ -234,26 +234,15 @@ public class Relation extends SchemaNode {
             row.setPrefHeight(rendered);
             HBox.setHgrow(row, Priority.ALWAYS);
             if (column != null) {
-                column.widthProperty()
-                      .addListener((o, prev, cur) -> {
-                          double width = cur.doubleValue();
-                          row.setPrefWidth(width);
-                      });
-                row.setPrefWidth(justifiedWidth);
+                row.setMinWidth(column.getColumns()
+                                       .stream()
+                                       .mapToDouble(c -> Layout.snap(c.getWidth()))
+                                       .sum());
             }
             row.setCellFactory(control -> {
                 ListCell<JsonNode> cell = rowCell(column, fields,
                                                   extended - layout.getListCellVerticalInset(),
                                                   layout);
-                cell.widthProperty()
-                    .addListener((o, p, n) -> {
-                        double width = Math.max(row.getPrefWidth(),
-                                                cell.getWidth() + row.getInsets()
-                                                                     .getLeft()
-                                                                    + row.getInsets()
-                                                                         .getRight());
-                        row.setPrefWidth(width);
-                    });
                 cell.setPrefHeight(extended);
                 layout.getModel()
                       .apply(cell, Relation.this);
