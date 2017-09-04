@@ -122,10 +122,6 @@ public class Column {
         return width;
     }
 
-    void justify(double labelWidth, Layout layout) {
-        fields.forEach(n -> n.justify(width - labelWidth, layout));
-    }
-
     private double cellHeight(int cardinality, Layout layout,
                               ArrayDeque<SchemaNode> elements,
                               double labelWidth) {
