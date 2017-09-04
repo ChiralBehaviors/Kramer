@@ -112,6 +112,16 @@ public class Column {
         return item -> controls.forEach(m -> m.accept(item));
     }
 
+    void distributeVertical(double cellHeight) {
+        double calculated = fields.stream()
+                                  .mapToDouble(f -> f.getCalculatedHeight())
+                                  .sum();
+        if (calculated < cellHeight) {
+            double delta = (cellHeight - calculated) / fields.size();
+            fields.forEach(f -> f.adjustHeight(delta));
+        }
+    }
+
     List<SchemaNode> getFields() {
         return Arrays.stream(fields.toArray())
                      .map(f -> (SchemaNode) f)
