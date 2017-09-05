@@ -60,18 +60,6 @@ abstract public class SchemaNode {
         }
     }
 
-    Label label(double labelWidth) {
-        Label labelText = new Label(label);
-        labelText.setAlignment(Pos.CENTER);
-        labelText.setMinWidth(labelWidth);
-        labelText.setPrefWidth(labelWidth);
-        labelText.setMaxWidth(labelWidth);
-        labelText.setPrefHeight(height);
-        labelText.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;\n"
-                           + "    -fx-background-insets: 0, 1;");
-        return labelText;
-    }
-
     public static ArrayNode asArray(JsonNode node) {
         if (node == null) {
             return JsonNodeFactory.instance.arrayNode();
@@ -165,6 +153,7 @@ abstract public class SchemaNode {
     }
 
     String field;
+
     Double height;
     double justifiedWidth = 0;
     String label;
@@ -211,6 +200,10 @@ abstract public class SchemaNode {
 
     abstract public String toString(int indent);
 
+    void adjustHeight(double delta) {
+        this.height = Layout.snap(height + delta);
+    }
+
     abstract Function<Double, Pair<Consumer<JsonNode>, Control>> buildColumn(int cardinality,
                                                                              Function<JsonNode, JsonNode> extractor,
                                                                              Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
@@ -239,11 +232,26 @@ abstract public class SchemaNode {
         };
     }
 
+    Double getCalculatedHeight() {
+        assert height != null : "cell height has not been calculated";
+        return height;
+    }
+
     boolean isUseTable() {
         return false;
     }
 
     abstract void justify(double width, Layout layout);
+
+    Label label(double labelWidth) {
+        Label labelText = new Label(label);
+        labelText.setAlignment(Pos.CENTER);
+        labelText.setMinWidth(labelWidth);
+        labelText.setPrefHeight(height);
+        labelText.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;\n"
+                           + "    -fx-background-insets: 0, 1;");
+        return labelText;
+    }
 
     abstract double layout(int cardinality, Layout layout, double width);
 

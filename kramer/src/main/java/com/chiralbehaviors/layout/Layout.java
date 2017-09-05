@@ -85,7 +85,7 @@ public class Layout {
     }
 
     public static double snap(double value) {
-        return Math.ceil(value);
+        return Math.floor(value);
     }
 
     @SuppressWarnings("deprecation")

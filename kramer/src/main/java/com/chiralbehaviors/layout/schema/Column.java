@@ -112,6 +112,25 @@ public class Column {
         return item -> controls.forEach(m -> m.accept(item));
     }
 
+    void distributeHeight(double finalHeight) {
+        double calculated = fields.stream()
+                                  .mapToDouble(f -> f.getCalculatedHeight())
+                                  .sum();
+        if (calculated < finalHeight) {
+            double delta = (finalHeight - calculated) / fields.size();
+            if (delta >= 1.0) {
+                fields.forEach(f -> f.adjustHeight(delta));
+            }
+        }
+    }
+
+    void adjustHeight(double distributed) {
+        double delta = distributed / fields.size();
+        if (delta >= 1.0) {
+            fields.forEach(f -> f.adjustHeight(delta));
+        }
+    }
+
     List<SchemaNode> getFields() {
         return Arrays.stream(fields.toArray())
                      .map(f -> (SchemaNode) f)
@@ -120,10 +139,6 @@ public class Column {
 
     double getWidth() {
         return width;
-    }
-
-    void justify(double labelWidth, Layout layout) {
-        fields.forEach(n -> n.justify(width - labelWidth, layout));
     }
 
     private double cellHeight(int cardinality, Layout layout,
