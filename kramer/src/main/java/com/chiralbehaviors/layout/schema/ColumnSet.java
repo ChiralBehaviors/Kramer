@@ -101,7 +101,7 @@ public class ColumnSet {
                                 .max()
                                 .orElse(0d);
         } while (lastHeight > cellHeight);
-        columns.forEach(c -> c.distributeVertical(cellHeight));
+        columns.forEach(c -> c.adjustHeight(cellHeight));
     }
 
     public double getCellHeight() {
@@ -117,6 +117,11 @@ public class ColumnSet {
     @Override
     public String toString() {
         return String.format("ColumnSet [%s] [%s]", cellHeight, columns);
+    }
+
+    void adjustHeight(double delta) {
+        cellHeight = Layout.snap(cellHeight + delta);
+        columns.forEach(c -> c.adjustHeight(delta));
     }
 
     Pair<Consumer<JsonNode>, Parent> build(int cardinality,

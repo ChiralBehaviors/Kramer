@@ -247,8 +247,6 @@ abstract public class SchemaNode {
         Label labelText = new Label(label);
         labelText.setAlignment(Pos.CENTER);
         labelText.setMinWidth(labelWidth);
-        labelText.setPrefWidth(labelWidth);
-        labelText.setMaxWidth(labelWidth);
         labelText.setPrefHeight(height);
         labelText.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;\n"
                            + "    -fx-background-insets: 0, 1;");

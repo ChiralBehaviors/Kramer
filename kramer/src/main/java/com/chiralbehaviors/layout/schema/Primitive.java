@@ -25,13 +25,14 @@ import com.chiralbehaviors.layout.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
-import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.util.Pair;
 
 /**
@@ -159,22 +160,17 @@ public class Primitive extends SchemaNode {
                                                     Layout layout,
                                                     double justified) {
         HBox box = new HBox();
-        Label labelText = new Label(label);
-        labelText.setAlignment(Pos.CENTER);
-        labelText.setMinWidth(labelWidth);
-        labelText.setPrefWidth(labelWidth);
-        labelText.setMaxWidth(labelWidth);
-        labelText.setPrefHeight(height);
-        labelText.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;\n"
-                           + "    -fx-background-insets: 0, 1;");
+        VBox.setVgrow(box, Priority.ALWAYS);
+        Label labelText = label(labelWidth);
         box.getChildren()
-           .add(labelText);
+           .add(labelText); 
         Control control = buildControl(cardinality, layout);
         control.setPrefHeight(height);
         control.setPrefWidth(justified);
         box.getChildren()
            .add(control);
         box.setPrefWidth(justified);
+        box.setPrefHeight(height);
         return new Pair<>(item -> {
             JsonNode extracted = extractor.apply(item);
             JsonNode extractedField = extracted.get(field);

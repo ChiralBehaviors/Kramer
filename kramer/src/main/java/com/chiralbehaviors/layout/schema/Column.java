@@ -112,13 +112,15 @@ public class Column {
         return item -> controls.forEach(m -> m.accept(item));
     }
 
-    void distributeVertical(double cellHeight) {
+    void adjustHeight(double cellHeight) {
         double calculated = fields.stream()
                                   .mapToDouble(f -> f.getCalculatedHeight())
                                   .sum();
         if (calculated < cellHeight) {
             double delta = (cellHeight - calculated) / fields.size();
-            fields.forEach(f -> f.adjustHeight(delta));
+            if (delta >= 1.0) {
+                fields.forEach(f -> f.adjustHeight(delta));
+            }
         }
     }
 
