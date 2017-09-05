@@ -4,7 +4,7 @@
 
 ![alt text](media/autolayout.png "Logo Title Text 1")
 
-
+[![Build Status](https://chiralbehaviors.ci.cloudbees.com/buildStatus/icon?job=Kramer)](https://chiralbehaviors.ci.cloudbees.com/job/Kramer/)
 
 
 It's all about levels.
