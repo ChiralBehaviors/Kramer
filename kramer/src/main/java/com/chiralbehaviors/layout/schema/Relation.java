@@ -614,9 +614,9 @@ public class Relation extends SchemaNode {
                                + layout.measureHeader(table)
                                + layout.getTableVerticalInset();
         table.setPrefHeight(contentHeight);
-        if (cardinality == 1) {
-            table.setMinHeight(contentHeight);
-        }
+//        if (cardinality == 1) {
+//            table.setMinHeight(contentHeight);
+//        }
         return table;
     }
 
