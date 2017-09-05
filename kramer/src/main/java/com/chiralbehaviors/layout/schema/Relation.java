@@ -193,6 +193,10 @@ public class Relation extends SchemaNode {
 
     @Override
     void adjustHeight(double delta) {
+        if (isFold()) {
+            fold.adjustHeight(delta);
+            return;
+        }
         if (useTable) {
             return;
         }
@@ -321,6 +325,14 @@ public class Relation extends SchemaNode {
         height = cellHeight + layout.measureHeader(table)
                  + layout.getTableVerticalInset();
         return height;
+    }
+
+    @Override
+    Double getCalculatedHeight() {
+        if (isFold()) {
+            return fold.getCalculatedHeight();
+        }
+        return super.getCalculatedHeight();
     }
 
     @Override
@@ -486,11 +498,11 @@ public class Relation extends SchemaNode {
         Control control = useTable ? buildNestedTable(n -> n, cardinality,
                                                       layout, available)
                                    : buildOutline(n -> n, cardinality, layout);
-        
+
         Label labelText = label(labelWidth);
         control.setPrefWidth(available);
         control.setPrefHeight(height);
-        
+
         Pane box = new HBox();
         box.setPrefWidth(justified);
         box.setPrefHeight(height);
@@ -602,6 +614,9 @@ public class Relation extends SchemaNode {
                                + layout.measureHeader(table)
                                + layout.getTableVerticalInset();
         table.setPrefHeight(contentHeight);
+        if (cardinality == 1) {
+            table.setMinHeight(contentHeight);
+        }
         return table;
     }
 
