@@ -609,14 +609,15 @@ public class Relation extends SchemaNode {
               .apply(table, this);
         table.setFixedCellSize(rowHeight);
         double contentHeight = (cardinality
-                                * (rowHeight
+                                * (rowHeight + layout.getListCellVerticalInset()
+                                   + layout.getListVerticalInset()
                                    + layout.getTableRowVerticalInset()))
                                + layout.measureHeader(table)
                                + layout.getTableVerticalInset();
         table.setPrefHeight(contentHeight);
-//        if (cardinality == 1) {
-//            table.setMinHeight(contentHeight);
-//        }
+        //        if (cardinality == 1) {
+        //            table.setMinHeight(contentHeight);
+        //        }
         return table;
     }
 
