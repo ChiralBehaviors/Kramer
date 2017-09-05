@@ -160,17 +160,20 @@ public class Primitive extends SchemaNode {
                                                     Layout layout,
                                                     double justified) {
         HBox box = new HBox();
-        VBox.setVgrow(box, Priority.ALWAYS);
-        Label labelText = label(labelWidth);
-        box.getChildren()
-           .add(labelText); 
-        Control control = buildControl(cardinality, layout);
-        control.setPrefHeight(height);
-        control.setPrefWidth(justified);
-        box.getChildren()
-           .add(control);
         box.setPrefWidth(justified);
         box.setPrefHeight(height);
+        VBox.setVgrow(box, Priority.ALWAYS);
+        
+        Label labelText = label(labelWidth);
+        Control control = buildControl(cardinality, layout); 
+        control.setPrefHeight(height);
+        control.setPrefWidth(justified);
+        
+        box.getChildren()
+           .add(labelText);
+        box.getChildren()
+           .add(control);
+        
         return new Pair<>(item -> {
             JsonNode extracted = extractor.apply(item);
             JsonNode extractedField = extracted.get(field);

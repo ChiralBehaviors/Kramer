@@ -101,7 +101,7 @@ public class ColumnSet {
                                 .max()
                                 .orElse(0d);
         } while (lastHeight > cellHeight);
-        columns.forEach(c -> c.adjustHeight(cellHeight));
+        columns.forEach(c -> c.distributeHeight(cellHeight));
     }
 
     public double getCellHeight() {

@@ -486,24 +486,18 @@ public class Relation extends SchemaNode {
         Control control = useTable ? buildNestedTable(n -> n, cardinality,
                                                       layout, available)
                                    : buildOutline(n -> n, cardinality, layout);
+        
+        Label labelText = label(labelWidth);
         control.setPrefWidth(available);
-        Label labelText = new Label(label);
-        labelText.setAlignment(Pos.CENTER);
-        labelText.setWrapText(true);
-        labelText.setMinWidth(labelWidth);
-        labelText.setPrefWidth(labelWidth);
-        labelText.setMaxWidth(labelWidth);
-        labelText.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;");
-
-        labelText.setPrefHeight(height);
         control.setPrefHeight(height);
+        
         Pane box = new HBox();
         box.setPrefWidth(justified);
+        box.setPrefHeight(height);
         box.getChildren()
            .add(labelText);
         box.getChildren()
            .add(control);
-        control.setPrefWidth(available);
 
         return new Pair<>(item -> {
             if (item == null) {
