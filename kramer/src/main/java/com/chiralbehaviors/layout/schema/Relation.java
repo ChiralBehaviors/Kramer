@@ -61,6 +61,7 @@ public class Relation extends SchemaNode {
     private boolean                singular           = false;
     private double                 tableColumnWidth   = 0;
     private boolean                useTable           = false;
+    private double rowHeight;
 
     public Relation(String label) {
         super(label);
@@ -229,10 +230,8 @@ public class Relation extends SchemaNode {
                                                                      inset,
                                                                      child,
                                                                      indent),
-                                                               indent(child))));
-        double elementHeight = elementHeight(layout);
-        double cellHeight = elementHeight + layout.getListCellVerticalInset();
-        double calculatedHeight = (cellHeight * cardinality)
+                                                               indent(child)))); 
+        double calculatedHeight = (rowHeight * cardinality)
                                   + layout.getListVerticalInset();
 
         Function<JsonNode, JsonNode> extract = extractor == null ? n -> n
@@ -242,7 +241,7 @@ public class Relation extends SchemaNode {
             double deficit = Math.max(0, rendered - calculatedHeight);
             assert deficit >= 0 : String.format("negative deficit %s", deficit);
             double childDeficit = Math.max(0, deficit / cardinality);
-            double extended = Layout.snap(cellHeight + childDeficit);
+            double extended = Layout.snap(rowHeight + childDeficit);
 
             ListView<JsonNode> row = new ListView<JsonNode>();
             layout.getModel()
@@ -309,12 +308,7 @@ public class Relation extends SchemaNode {
                                  + layout.getListVerticalInset());
             return height;
         }
-        double available = width - layout.getTableHorizontalInset()
-                           - layout.getTableRowHorizontalInset()
-                           - layout.getListCellHorizontalInset()
-                           - layout.getListHorizontalInset();
-        double cellHeight = rowHeight(cardinality, layout, available)
-                            + layout.getTableRowVerticalInset();
+        rowHeight = elementHeight(layout) + layout.getListCellVerticalInset();
         TableView<JsonNode> table = tableBase();
         children.forEach(child -> {
             INDENT indent = indent(child);
@@ -322,7 +316,9 @@ public class Relation extends SchemaNode {
                  .add(child.buildColumn(layout, inset(layout, 0, child, indent),
                                         indent));
         });
-        height = cellHeight + layout.measureHeader(table)
+        double calculatedHeight = (rowHeight * cardinality)
+                                  + layout.getListVerticalInset();
+        height = calculatedHeight + layout.measureHeader(table)
                  + layout.getTableVerticalInset();
         return height;
     }
@@ -401,6 +397,7 @@ public class Relation extends SchemaNode {
     double layout(int cardinality, Layout layout, double width) {
         height = null;
         useTable = false;
+        rowHeight = 0;
         if (isFold()) {
             return fold.layout(cardinality, layout, width);
         }
@@ -590,12 +587,7 @@ public class Relation extends SchemaNode {
                                                                                    columnMap,
                                                                                    layout,
                                                                                    0,
-                                                                                   INDENT.NONE);
-        double available = justified - layout.getTableHorizontalInset()
-                           - layout.getTableRowHorizontalInset()
-                           - layout.getListCellHorizontalInset()
-                           - layout.getListHorizontalInset();
-        double rowHeight = rowHeight(averageCardinality, layout, available);
+                                                                                   INDENT.NONE); 
         table.setRowFactory(tableView -> {
             Pair<Consumer<JsonNode>, Control> relationRow = topLevel.apply(rowHeight);
             RelationTableRow row = new RelationTableRow(relationRow.getKey(),
@@ -607,17 +599,9 @@ public class Relation extends SchemaNode {
 
         layout.getModel()
               .apply(table, this);
-        table.setFixedCellSize(rowHeight);
-        double contentHeight = (cardinality
-                                * (rowHeight + layout.getListCellVerticalInset()
-                                   + layout.getListVerticalInset()
-                                   + layout.getTableRowVerticalInset()))
-                               + layout.measureHeader(table)
-                               + layout.getTableVerticalInset();
-        table.setPrefHeight(contentHeight);
-        //        if (cardinality == 1) {
-        //            table.setMinHeight(contentHeight);
-        //        }
+        table.setFixedCellSize(rowHeight); 
+        table.setPrefHeight(height);
+        table.setMinHeight(height);
         return table;
     }
 
