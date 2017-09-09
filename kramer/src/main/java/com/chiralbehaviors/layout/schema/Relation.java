@@ -256,8 +256,7 @@ public class Relation extends SchemaNode {
                                       .sum());
             }
             row.setCellFactory(control -> {
-                ListCell<JsonNode> cell = rowCell(column, fields,
-                                                  extended - layout.getListCellVerticalInset(),
+                ListCell<JsonNode> cell = rowCell(fields, extended - layout.getListCellVerticalInset(),
                                                   layout);
                 cell.setPrefHeight(extended);
                 layout.getModel()
@@ -316,8 +315,7 @@ public class Relation extends SchemaNode {
                  .add(child.buildColumn(layout, inset(layout, 0, child, indent),
                                         indent));
         });
-        double calculatedHeight = (rowHeight * cardinality)
-                                  + layout.getListVerticalInset();
+        double calculatedHeight = (rowHeight * cardinality);
         height = calculatedHeight + layout.measureHeader(table)
                  + layout.getTableVerticalInset();
         return height;
@@ -600,8 +598,8 @@ public class Relation extends SchemaNode {
         layout.getModel()
               .apply(table, this);
         table.setFixedCellSize(rowHeight); 
-        table.setPrefHeight(height);
-        table.setMinHeight(height);
+//        table.setPrefHeight(height);
+//        table.setMinHeight(height);
         return table;
     }
 
@@ -765,9 +763,9 @@ public class Relation extends SchemaNode {
         });
     }
 
-    private ListCell<JsonNode> rowCell(TableColumn<JsonNode, ?> column,
-                                       List<Function<Double, Pair<Consumer<JsonNode>, Control>>> fields,
-                                       double resolvedHeight, Layout layout) {
+    private ListCell<JsonNode> rowCell(List<Function<Double, Pair<Consumer<JsonNode>, Control>>> fields,
+                                       double resolvedHeight,
+                                       Layout layout) {
 
         return new ListCell<JsonNode>() {
             private Consumer<JsonNode> master;
