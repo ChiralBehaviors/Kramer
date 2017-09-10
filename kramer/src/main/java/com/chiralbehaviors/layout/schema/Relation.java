@@ -255,7 +255,7 @@ public class Relation extends SchemaNode {
                                       .mapToDouble(c -> Layout.snap(c.getWidth()))
                                       .sum());
             } else {
-                
+
             }
             row.setCellFactory(control -> {
                 ListCell<JsonNode> cell = rowCell(fields, extended
@@ -615,14 +615,17 @@ public class Relation extends SchemaNode {
 
         double cellHeight = columnSets.stream()
                                       .mapToDouble(cs -> cs.getCellHeight())
-                                      .sum();
+                                      .sum()
+                            + layout.getListCellVerticalInset();
         ListView<JsonNode> list = new ListView<>();
         layout.getModel()
               .apply(list, this);
-        list.setPrefHeight(cellHeight * cardinality);
-        list.setFixedCellSize(cellHeight + layout.getListCellVerticalInset());
+        list.setPrefHeight(height);
+        list.setFixedCellSize(cellHeight);
         list.setCellFactory(c -> {
-            ListCell<JsonNode> cell = listCell(extractor, cellHeight, layout);
+            ListCell<JsonNode> cell = listCell(extractor,
+                                               cellHeight - layout.getListCellVerticalInset(),
+                                               layout);
             layout.getModel()
                   .apply(cell, this);
             return cell;
