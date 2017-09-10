@@ -91,7 +91,7 @@ public class SchemaNodeTest extends ApplicationTest {
     }
 
     private void assertSecond(ColumnSet columnSet) {
-        assertEquals(404.0, columnSet.getCellHeight(), 0d);
+        assertEquals(398.0, columnSet.getCellHeight(), 0d);
         assertEquals(1, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()
@@ -103,7 +103,7 @@ public class SchemaNodeTest extends ApplicationTest {
     }
 
     private void assertThird(ColumnSet columnSet) {
-        assertEquals(242.0, columnSet.getCellHeight(), 0d);
+        assertEquals(240.0, columnSet.getCellHeight(), 0d);
         assertEquals(1, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()
@@ -115,44 +115,44 @@ public class SchemaNodeTest extends ApplicationTest {
         Relation children = (Relation) column.getFields()
                                              .get(0);
         assertEquals("children", children.field);
-        assertEquals(786.0, children.getChildren()
+        assertEquals(773.0, children.getChildren()
                                     .stream()
                                     .mapToDouble(f -> f.justifiedWidth)
                                     .reduce((a, b) -> a + b)
                                     .getAsDouble(),
                      0d);
-        assertEquals(1056.0, children.justifiedWidth, 0d);
+        assertEquals(1057.0, children.justifiedWidth, 0d);
 
-        assertEquals(123.0, children.getChildren()
+        assertEquals(120.0, children.getChildren()
                                     .get(0).justifiedWidth,
                      0d);
-        assertEquals(81.0, children.getChildren()
+        assertEquals(79.0, children.getChildren()
                                    .get(1).justifiedWidth,
                      0d);
-        assertEquals(111.0, children.getChildren()
+        assertEquals(109.0, children.getChildren()
                                     .get(2).justifiedWidth,
                      0d);
 
         Relation relationship = (Relation) children.getChildren()
                                                    .get(3);
         assertEquals("relationship", relationship.field);
-        assertEquals(330.0, relationship.getChildren()
+        assertEquals(325.0, relationship.getChildren()
                                         .stream()
                                         .mapToDouble(f -> f.justifiedWidth)
                                         .reduce((a, b) -> a + b)
                                         .getAsDouble(),
                      0d);
-        assertEquals(358.0, relationship.justifiedWidth, 0d);
+        assertEquals(355.0, relationship.justifiedWidth, 0d);
 
         Relation child = (Relation) children.getChildren()
                                             .get(4);
         assertEquals("child", child.field);
-        assertEquals(93.0, child.getChildren()
+        assertEquals(89.0, child.getChildren()
                                 .stream()
                                 .mapToDouble(f -> f.justifiedWidth)
                                 .reduce((a, b) -> a + b)
                                 .getAsDouble(),
                      0d);
-        assertEquals(113.0, child.justifiedWidth, 0d);
+        assertEquals(110.0, child.justifiedWidth, 0d);
     }
 }
