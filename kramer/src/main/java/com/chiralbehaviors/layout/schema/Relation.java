@@ -455,6 +455,7 @@ public class Relation extends SchemaNode {
         labelWidth += layout.getTextHorizontalInset();
         double sum = 0;
         tableColumnWidth = 0;
+        int singularChildren = 0;
         for (SchemaNode child : children) {
             ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
             int cardSum = 0;
@@ -462,7 +463,12 @@ public class Relation extends SchemaNode {
             if (singular) {
 
             }
-            for (JsonNode node : data.isArray() ? data : Arrays.asList(data)) {
+            List<JsonNode> datas = data.isArray() ? new ArrayList<>(data.size())
+                                                  : Arrays.asList(data);
+            if (data.isArray()) {
+                data.forEach(n -> datas.add(n));
+            }
+            for (JsonNode node : datas) {
                 JsonNode sub = node.get(child.field);
                 if (sub instanceof ArrayNode) {
                     childSingular = false;
@@ -474,11 +480,19 @@ public class Relation extends SchemaNode {
                     cardSum += 1;
                 }
             }
-            sum += data.size() == 0 ? 1 : Math.round(cardSum / data.size());
+            if (childSingular) {
+                singularChildren += 1;
+            } else {
+                sum += datas.size() == 0 ? 1
+                                         : Math.round(cardSum / datas.size());
+            }
             tableColumnWidth += child.measure(aggregate, childSingular, layout,
                                               indent(child));
         }
-        averageCardinality = (int) Math.ceil(sum / children.size());
+        int effectiveChildren = children.size() - singularChildren;
+        averageCardinality = effectiveChildren == 0 ? 1
+                                                    : (int) Math.ceil(sum
+                                                                      / effectiveChildren);
         tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth))
                            + layout.getNestedInset();
         justifiedWidth = tableColumnWidth;
