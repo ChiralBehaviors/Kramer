@@ -17,6 +17,7 @@
 package com.chiralbehaviors.layout.schema;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -255,7 +256,7 @@ public class Relation extends SchemaNode {
                                       .mapToDouble(c -> Layout.snap(c.getWidth()))
                                       .sum());
             } else {
-                
+
             }
             row.setCellFactory(control -> {
                 ListCell<JsonNode> cell = rowCell(fields, extended
@@ -447,7 +448,8 @@ public class Relation extends SchemaNode {
         }
         if (data.isNull() || children.size() == 0) {
             return 0;
-        }
+        } 
+        
         singular = isSingular;
         double labelWidth = layout.textWidth(label);
         labelWidth += layout.getTextHorizontalInset();
@@ -457,7 +459,10 @@ public class Relation extends SchemaNode {
             ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
             int cardSum = 0;
             boolean childSingular = false;
-            for (JsonNode node : data) {
+            if (singular) {
+                
+            }
+            for (JsonNode node : data.isArray() ? data : Arrays.asList(data)) {
                 JsonNode sub = node.get(child.field);
                 if (sub instanceof ArrayNode) {
                     childSingular = false;
@@ -615,14 +620,17 @@ public class Relation extends SchemaNode {
 
         double cellHeight = columnSets.stream()
                                       .mapToDouble(cs -> cs.getCellHeight())
-                                      .sum();
+                                      .sum()
+                            + layout.getListCellVerticalInset();
         ListView<JsonNode> list = new ListView<>();
         layout.getModel()
               .apply(list, this);
-        list.setPrefHeight(cellHeight * cardinality);
-        list.setFixedCellSize(cellHeight + layout.getListCellVerticalInset());
+        list.setPrefHeight(height);
+        list.setFixedCellSize(cellHeight);
         list.setCellFactory(c -> {
-            ListCell<JsonNode> cell = listCell(extractor, cellHeight, layout);
+            ListCell<JsonNode> cell = listCell(extractor,
+                                               cellHeight - layout.getListCellVerticalInset(),
+                                               layout);
             layout.getModel()
                   .apply(cell, this);
             return cell;
