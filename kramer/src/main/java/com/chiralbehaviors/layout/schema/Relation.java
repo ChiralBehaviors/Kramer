@@ -400,7 +400,7 @@ public class Relation extends SchemaNode {
         useTable = false;
         rowHeight = 0;
         if (isFold()) {
-            return fold.layout(cardinality, layout, width);
+            return fold.layout(cardinality * averageCardinality, layout, width);
         }
         double labelWidth = children.stream()
                                     .mapToDouble(child -> child.getLabelWidth(layout))
