@@ -670,6 +670,9 @@ public class Relation extends SchemaNode {
 
     private INDENT indent(SchemaNode child) {
         INDENT indent = INDENT.NONE;
+        if (children.size() == 1) {
+            return indent;
+        }
         if (child.equals(children.get(0))) {
             indent = INDENT.LEFT;
         } else if (child.equals(children.get(children.size() - 1))) {
@@ -680,6 +683,9 @@ public class Relation extends SchemaNode {
 
     private double inset(Layout layout, double inset, SchemaNode child,
                          INDENT indent) {
+        if (children.size() == 1) {
+            return layout.getNestedInset();
+        }
         switch (indent) {
             case RIGHT:
                 if (child.equals(children.get(children.size() - 1))) {
