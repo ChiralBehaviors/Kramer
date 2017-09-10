@@ -448,8 +448,8 @@ public class Relation extends SchemaNode {
         }
         if (data.isNull() || children.size() == 0) {
             return 0;
-        } 
-        
+        }
+
         singular = isSingular;
         double labelWidth = layout.textWidth(label);
         labelWidth += layout.getTextHorizontalInset();
@@ -460,7 +460,7 @@ public class Relation extends SchemaNode {
             int cardSum = 0;
             boolean childSingular = false;
             if (singular) {
-                
+
             }
             for (JsonNode node : data.isArray() ? data : Arrays.asList(data)) {
                 JsonNode sub = node.get(child.field);
@@ -598,6 +598,8 @@ public class Relation extends SchemaNode {
             Pair<Consumer<JsonNode>, Control> relationRow = topLevel.apply(rowHeight);
             RelationTableRow row = new RelationTableRow(relationRow.getKey(),
                                                         relationRow.getValue());
+            row.setPrefHeight(rowHeight + layout.getListVerticalInset()
+                              + layout.getTableRowVerticalInset());
             layout.getModel()
                   .apply(row, Relation.this);
             return row;
@@ -606,6 +608,10 @@ public class Relation extends SchemaNode {
         layout.getModel()
               .apply(table, this);
         table.setFixedCellSize(rowHeight);
+        //        table.setPrefWidth(table.getColumns()
+        //                                .stream()
+        //                                .mapToDouble(c -> c.getWidth())
+        //                                .sum());
         //        table.setPrefHeight(height);
         //        table.setMinHeight(height);
         return table;
@@ -664,6 +670,9 @@ public class Relation extends SchemaNode {
 
     private INDENT indent(SchemaNode child) {
         INDENT indent = INDENT.NONE;
+        if (children.size() == 1) {
+            return indent;
+        }
         if (child.equals(children.get(0))) {
             indent = INDENT.LEFT;
         } else if (child.equals(children.get(children.size() - 1))) {
@@ -674,6 +683,9 @@ public class Relation extends SchemaNode {
 
     private double inset(Layout layout, double inset, SchemaNode child,
                          INDENT indent) {
+        if (children.size() == 1) {
+            return layout.getNestedInset();
+        }
         switch (indent) {
             case RIGHT:
                 if (child.equals(children.get(children.size() - 1))) {
