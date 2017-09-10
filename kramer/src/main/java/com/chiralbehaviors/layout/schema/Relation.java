@@ -61,7 +61,7 @@ public class Relation extends SchemaNode {
     private boolean                singular           = false;
     private double                 tableColumnWidth   = 0;
     private boolean                useTable           = false;
-    private double                 rowHeight;
+    private Double                 rowHeight;
 
     public Relation(String label) {
         super(label);
@@ -231,22 +231,16 @@ public class Relation extends SchemaNode {
                                                                      child,
                                                                      indent),
                                                                indent(child))));
-        double calculatedHeight = (rowHeight * cardinality)
-                                  + layout.getListVerticalInset();
 
         Function<JsonNode, JsonNode> extract = extractor == null ? n -> n
                                                                  : extract(extractor);
         TableColumn<JsonNode, ?> column = columnMap.get(this);
         return rendered -> {
-            double deficit = Math.max(0, rendered - calculatedHeight);
-            assert deficit >= 0 : String.format("negative deficit %s", deficit);
-            double childDeficit = Math.max(0, deficit / cardinality);
-            double extended = Layout.snap(rowHeight + childDeficit);
 
             ListView<JsonNode> row = new ListView<JsonNode>();
             layout.getModel()
                   .apply(row, this);
-            row.setFixedCellSize(extended);
+            row.setFixedCellSize(rowHeight);
             HBox.setHgrow(row, Priority.ALWAYS);
             if (column != null) {
                 row.setPrefHeight(rendered);
@@ -255,13 +249,11 @@ public class Relation extends SchemaNode {
                                       .mapToDouble(c -> Layout.snap(c.getWidth()))
                                       .sum());
             } else {
-                
+
             }
             row.setCellFactory(control -> {
-                ListCell<JsonNode> cell = rowCell(fields, extended
-                                                          - layout.getListCellVerticalInset(),
-                                                  layout);
-                cell.setPrefHeight(extended);
+                ListCell<JsonNode> cell = rowCell(fields, layout);
+                cell.setPrefHeight(rowHeight);
                 layout.getModel()
                       .apply(cell, Relation.this);
                 return cell;
@@ -398,7 +390,7 @@ public class Relation extends SchemaNode {
     double layout(int cardinality, Layout layout, double width) {
         height = null;
         useTable = false;
-        rowHeight = 0;
+        rowHeight = null;
         if (isFold()) {
             return fold.layout(cardinality * averageCardinality, layout, width);
         }
@@ -541,10 +533,12 @@ public class Relation extends SchemaNode {
             return fold.rowHeight(cardinality * averageCardinality, layout,
                                   justifiedWidth);
         }
-
-        return (cardinality
-                * (elementHeight(layout) + layout.getListCellVerticalInset()))
-               + layout.getListVerticalInset();
+        if (rowHeight == null) {
+            rowHeight = (cardinality * (elementHeight(layout)
+                                        + layout.getListCellVerticalInset()))
+                        + layout.getListVerticalInset();
+        }
+        return rowHeight;
     }
 
     @Override
@@ -767,8 +761,9 @@ public class Relation extends SchemaNode {
     }
 
     private ListCell<JsonNode> rowCell(List<Function<Double, Pair<Consumer<JsonNode>, Control>>> fields,
-                                       double resolvedHeight, Layout layout) {
+                                       Layout layout) {
 
+        double cellHeight = rowHeight - layout.getListCellVerticalInset();
         return new ListCell<JsonNode>() {
             private Consumer<JsonNode> master;
             private HBox               row;
@@ -802,12 +797,12 @@ public class Relation extends SchemaNode {
                 row = new HBox();
                 row.setMinWidth(0);
                 row.setPrefWidth(1);
-                row.setPrefHeight(resolvedHeight);
+                row.setPrefHeight(cellHeight);
                 List<Consumer<JsonNode>> consumers = new ArrayList<>();
                 fields.forEach(p -> {
-                    Pair<Consumer<JsonNode>, Control> pair = p.apply(resolvedHeight);
+                    Pair<Consumer<JsonNode>, Control> pair = p.apply(cellHeight);
                     Control control = pair.getValue();
-                    control.setPrefHeight(resolvedHeight);
+                    control.setPrefHeight(cellHeight);
                     row.getChildren()
                        .add(control);
                     consumers.add(pair.getKey());
