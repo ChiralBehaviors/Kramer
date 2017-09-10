@@ -17,6 +17,7 @@
 package com.chiralbehaviors.layout.schema;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -447,7 +448,8 @@ public class Relation extends SchemaNode {
         }
         if (data.isNull() || children.size() == 0) {
             return 0;
-        }
+        } 
+        
         singular = isSingular;
         double labelWidth = layout.textWidth(label);
         labelWidth += layout.getTextHorizontalInset();
@@ -457,7 +459,10 @@ public class Relation extends SchemaNode {
             ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
             int cardSum = 0;
             boolean childSingular = false;
-            for (JsonNode node : data) {
+            if (singular) {
+                
+            }
+            for (JsonNode node : data.isArray() ? data : Arrays.asList(data)) {
                 JsonNode sub = node.get(child.field);
                 if (sub instanceof ArrayNode) {
                     childSingular = false;
