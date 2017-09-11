@@ -199,10 +199,14 @@ public class Relation extends SchemaNode {
             fold.adjustHeight(delta);
             return;
         }
+        super.adjustHeight(delta);
         if (useTable) {
+            double subDelta = delta / children.size();
+            if (delta >= 1.0) {
+                children.forEach(f -> f.adjustHeight(subDelta));
+            }
             return;
         }
-        super.adjustHeight(delta);
         double subDelta = delta / columnSets.size();
         if (subDelta >= 1.0) {
             columnSets.forEach(c -> c.adjustHeight(subDelta));
@@ -254,7 +258,8 @@ public class Relation extends SchemaNode {
                 row.setMinWidth(column.getColumns()
                                       .stream()
                                       .mapToDouble(c -> Layout.snap(c.getWidth()))
-                                      .sum());
+                                      .sum()
+                                - inset);
             } else {
 
             }
@@ -477,7 +482,6 @@ public class Relation extends SchemaNode {
                 } else {
                     childSingular = true;
                     aggregate.add(sub);
-                    cardSum += 1;
                 }
             }
             if (childSingular) {
@@ -490,9 +494,11 @@ public class Relation extends SchemaNode {
                                               indent(child));
         }
         int effectiveChildren = children.size() - singularChildren;
-        averageCardinality = effectiveChildren == 0 ? 1
-                                                    : (int) Math.ceil(sum
-                                                                      / effectiveChildren);
+        averageCardinality = Math.max(1,
+                                      Math.min(4,
+                                               effectiveChildren == 0 ? 1
+                                                                      : (int) Math.ceil(sum
+                                                                                        / effectiveChildren)));
         tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth))
                            + layout.getNestedInset();
         justifiedWidth = tableColumnWidth;
@@ -774,6 +780,7 @@ public class Relation extends SchemaNode {
             private void initialize(Function<JsonNode, JsonNode> extractor,
                                     Layout layout) {
                 cell = new VBox();
+                cell.setMinHeight(cellHeight);
                 cell.setPrefHeight(cellHeight);
                 cell.setMinWidth(0);
                 cell.setPrefWidth(1);
