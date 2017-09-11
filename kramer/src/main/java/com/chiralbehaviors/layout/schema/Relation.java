@@ -199,10 +199,14 @@ public class Relation extends SchemaNode {
             fold.adjustHeight(delta);
             return;
         }
+        super.adjustHeight(delta);
         if (useTable) {
+            double subDelta = delta / children.size();
+            if (delta >= 1.0) {
+                children.forEach(f -> f.adjustHeight(subDelta));
+            }
             return;
         }
-        super.adjustHeight(delta);
         double subDelta = delta / columnSets.size();
         if (subDelta >= 1.0) {
             columnSets.forEach(c -> c.adjustHeight(subDelta));
@@ -254,7 +258,8 @@ public class Relation extends SchemaNode {
                 row.setMinWidth(column.getColumns()
                                       .stream()
                                       .mapToDouble(c -> Layout.snap(c.getWidth()))
-                                      .sum());
+                                      .sum()
+                                - inset);
             } else {
 
             }
@@ -455,6 +460,7 @@ public class Relation extends SchemaNode {
         labelWidth += layout.getTextHorizontalInset();
         double sum = 0;
         tableColumnWidth = 0;
+        int singularChildren = 0;
         for (SchemaNode child : children) {
             ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
             int cardSum = 0;
@@ -462,7 +468,12 @@ public class Relation extends SchemaNode {
             if (singular) {
 
             }
-            for (JsonNode node : data.isArray() ? data : Arrays.asList(data)) {
+            List<JsonNode> datas = data.isArray() ? new ArrayList<>(data.size())
+                                                  : Arrays.asList(data);
+            if (data.isArray()) {
+                data.forEach(n -> datas.add(n));
+            }
+            for (JsonNode node : datas) {
                 JsonNode sub = node.get(child.field);
                 if (sub instanceof ArrayNode) {
                     childSingular = false;
@@ -471,14 +482,23 @@ public class Relation extends SchemaNode {
                 } else {
                     childSingular = true;
                     aggregate.add(sub);
-                    cardSum += 1;
                 }
             }
-            sum += data.size() == 0 ? 1 : Math.round(cardSum / data.size());
+            if (childSingular) {
+                singularChildren += 1;
+            } else {
+                sum += datas.size() == 0 ? 1
+                                         : Math.round(cardSum / datas.size());
+            }
             tableColumnWidth += child.measure(aggregate, childSingular, layout,
                                               indent(child));
         }
-        averageCardinality = (int) Math.ceil(sum / children.size());
+        int effectiveChildren = children.size() - singularChildren;
+        averageCardinality = Math.max(1,
+                                      Math.min(4,
+                                               effectiveChildren == 0 ? 1
+                                                                      : (int) Math.ceil(sum
+                                                                                        / effectiveChildren)));
         tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth))
                            + layout.getNestedInset();
         justifiedWidth = tableColumnWidth;
@@ -760,6 +780,7 @@ public class Relation extends SchemaNode {
             private void initialize(Function<JsonNode, JsonNode> extractor,
                                     Layout layout) {
                 cell = new VBox();
+                cell.setMinHeight(cellHeight);
                 cell.setPrefHeight(cellHeight);
                 cell.setMinWidth(0);
                 cell.setPrefWidth(1);

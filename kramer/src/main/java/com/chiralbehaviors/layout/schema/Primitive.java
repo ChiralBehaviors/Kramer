@@ -131,7 +131,7 @@ public class Primitive extends SchemaNode {
         double sum = 0;
         maxWidth = 0;
         columnWidth = 0;
-        for (JsonNode prim : data) {
+        for (JsonNode prim : SchemaNode.asList(data)) {
             List<JsonNode> rows = SchemaNode.asList(prim);
             double width = 0;
             for (JsonNode row : rows) {
@@ -163,17 +163,17 @@ public class Primitive extends SchemaNode {
         box.setPrefWidth(justified);
         box.setPrefHeight(height);
         VBox.setVgrow(box, Priority.ALWAYS);
-        
+
         Label labelText = label(labelWidth);
-        Control control = buildControl(cardinality, layout); 
+        Control control = buildControl(cardinality, layout);
         control.setPrefHeight(height);
         control.setPrefWidth(justified);
-        
+
         box.getChildren()
            .add(labelText);
         box.getChildren()
            .add(control);
-        
+
         return new Pair<>(item -> {
             JsonNode extracted = extractor.apply(item);
             JsonNode extractedField = extracted.get(field);
