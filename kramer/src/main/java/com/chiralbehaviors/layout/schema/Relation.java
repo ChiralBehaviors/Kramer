@@ -244,8 +244,8 @@ public class Relation extends SchemaNode {
         TableColumn<JsonNode, ?> column = columnMap.get(this);
         return rendered -> {
             double deficit = Math.max(0, rendered - calculatedHeight);
-            assert deficit >= 0 : String.format("negative deficit %s", deficit);
-            double childDeficit = Math.max(0, deficit / cardinality);
+            double childDeficit = Layout.snap(Math.max(0,
+                                                       deficit / cardinality));
             double extended = Layout.snap(rowHeight + childDeficit);
 
             ListView<JsonNode> row = new ListView<JsonNode>();
@@ -253,19 +253,18 @@ public class Relation extends SchemaNode {
                   .apply(row, this);
             row.setFixedCellSize(extended);
             HBox.setHgrow(row, Priority.ALWAYS);
+            row.setPrefHeight(rendered);
             if (column != null) {
-                row.setPrefHeight(rendered);
-                row.setMaxWidth(column.getColumns()
-                                      .stream()
-                                      .mapToDouble(c -> Layout.snap(c.getWidth()))
-                                      .sum()
-                                - inset);
-            } else {
-
+                row.setPrefWidth(Layout.snap(column.getColumns()
+                                                   .stream()
+                                                   .mapToDouble(c -> Layout.snap(c.getWidth()))
+                                                   .sum()
+                                             - inset));
             }
             row.setCellFactory(control -> {
-                ListCell<JsonNode> cell = rowCell(fields, extended
-                                                          - layout.getListCellVerticalInset(),
+                ListCell<JsonNode> cell = rowCell(fields,
+                                                  Layout.snap(extended
+                                                              - layout.getListCellVerticalInset()),
                                                   layout);
                 cell.setPrefHeight(extended);
                 layout.getModel()
@@ -316,7 +315,8 @@ public class Relation extends SchemaNode {
                                  + layout.getListVerticalInset());
             return height;
         }
-        rowHeight = elementHeight(layout) + layout.getListCellVerticalInset();
+        rowHeight = Layout.snap(elementHeight(layout)
+                                + layout.getListCellVerticalInset());
         TableView<JsonNode> table = tableBase();
         children.forEach(child -> {
             INDENT indent = indent(child);
@@ -628,12 +628,6 @@ public class Relation extends SchemaNode {
         layout.getModel()
               .apply(table, this);
         table.setFixedCellSize(rowHeight);
-        //        table.setPrefWidth(table.getColumns()
-        //                                .stream()
-        //                                .mapToDouble(c -> c.getWidth())
-        //                                .sum());
-        //        table.setPrefHeight(height);
-        //        table.setMinHeight(height);
         return table;
     }
 
@@ -693,9 +687,9 @@ public class Relation extends SchemaNode {
         if (children.size() == 1) {
             return indent;
         }
-        if (child.equals(children.get(0))) {
+        if (child == children.get(0)) {
             indent = INDENT.LEFT;
-        } else if (child.equals(children.get(children.size() - 1))) {
+        } else if (child == children.get(children.size() - 1)) {
             indent = INDENT.RIGHT;
         }
         return indent;
@@ -710,21 +704,21 @@ public class Relation extends SchemaNode {
             case RIGHT:
                 if (child == children.get(children.size() - 1)) {
                     return inset + layout.getNestedRightInset();
-                } else if (child.equals(children.get(0))) {
+                } else if (child == children.get(0)) {
                     return layout.getNestedLeftInset();
                 }
                 break;
             case LEFT:
                 if (child == children.get(0)) {
                     return inset + layout.getNestedLeftInset();
-                } else if (child.equals(children.get(children.size() - 1))) {
+                } else if (child == children.get(children.size() - 1)) {
                     return layout.getNestedRightInset();
                 }
                 break;
             case NONE:
                 if (child == children.get(children.size() - 1)) {
                     return layout.getNestedRightInset();
-                } else if (child.equals(children.get(0))) {
+                } else if (child == children.get(0)) {
                     return layout.getNestedLeftInset();
                 }
                 break;
@@ -812,10 +806,11 @@ public class Relation extends SchemaNode {
 
         return new ListCell<JsonNode>() {
             private Consumer<JsonNode> master;
-            private HBox               row;
+            private final HBox         row;
             {
                 setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
                 setAlignment(Pos.CENTER_LEFT);
+                row = buildRow();
             }
 
             @Override
@@ -831,31 +826,29 @@ public class Relation extends SchemaNode {
                     setGraphic(null);
                     return;
                 }
-                if (row == null) {
-                    buildRow();
-                }
                 setGraphic(row);
                 master.accept(item);
                 row.requestLayout();
             }
 
-            private void buildRow() {
-                row = new HBox();
-                row.setMinWidth(0);
-                row.setPrefWidth(1);
-                row.setPrefHeight(resolvedHeight);
+            private HBox buildRow() {
+                HBox r = new HBox();
+                r.setMinWidth(0);
+                r.setPrefWidth(1);
+                r.setPrefHeight(resolvedHeight);
                 List<Consumer<JsonNode>> consumers = new ArrayList<>();
                 fields.forEach(p -> {
                     Pair<Consumer<JsonNode>, Control> pair = p.apply(resolvedHeight);
                     Control control = pair.getValue();
                     control.setPrefHeight(resolvedHeight);
-                    row.getChildren()
-                       .add(control);
+                    r.getChildren()
+                     .add(control);
                     consumers.add(pair.getKey());
                 });
                 master = node -> consumers.forEach(c -> {
                     c.accept(node);
                 });
+                return r;
             }
         };
     }

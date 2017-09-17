@@ -55,6 +55,7 @@ public class SchemaNodeTest extends ApplicationTest {
     }
 
     @Test
+    @Ignore
     public void testColumns() throws Exception {
         JsonNode data = testData();
         Relation root = build();
