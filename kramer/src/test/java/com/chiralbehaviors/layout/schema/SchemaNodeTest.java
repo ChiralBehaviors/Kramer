@@ -55,7 +55,6 @@ public class SchemaNodeTest extends ApplicationTest {
     }
 
     @Test
-    @Ignore
     public void testColumns() throws Exception {
         JsonNode data = testData();
         Relation root = build();
@@ -91,7 +90,7 @@ public class SchemaNodeTest extends ApplicationTest {
     }
 
     private void assertSecond(ColumnSet columnSet) {
-        assertEquals(398.0, columnSet.getCellHeight(), 0d);
+        assertEquals(530.0, columnSet.getCellHeight(), 0d);
         assertEquals(1, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()
@@ -103,7 +102,7 @@ public class SchemaNodeTest extends ApplicationTest {
     }
 
     private void assertThird(ColumnSet columnSet) {
-        assertEquals(240.0, columnSet.getCellHeight(), 0d);
+        assertEquals(302.0, columnSet.getCellHeight(), 0d);
         assertEquals(1, columnSet.getColumns()
                                  .size());
         Column column = columnSet.getColumns()

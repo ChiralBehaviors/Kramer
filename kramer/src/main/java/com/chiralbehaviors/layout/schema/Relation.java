@@ -255,7 +255,7 @@ public class Relation extends SchemaNode {
             HBox.setHgrow(row, Priority.ALWAYS);
             if (column != null) {
                 row.setPrefHeight(rendered);
-                row.setMinWidth(column.getColumns()
+                row.setMaxWidth(column.getColumns()
                                       .stream()
                                       .mapToDouble(c -> Layout.snap(c.getWidth()))
                                       .sum()
@@ -704,25 +704,25 @@ public class Relation extends SchemaNode {
     private double inset(Layout layout, double inset, SchemaNode child,
                          INDENT indent) {
         if (children.size() == 1) {
-            return layout.getNestedInset();
+            return inset + layout.getNestedInset();
         }
         switch (indent) {
             case RIGHT:
-                if (child.equals(children.get(children.size() - 1))) {
+                if (child == children.get(children.size() - 1)) {
                     return inset + layout.getNestedRightInset();
                 } else if (child.equals(children.get(0))) {
                     return layout.getNestedLeftInset();
                 }
                 break;
             case LEFT:
-                if (child.equals(children.get(0))) {
+                if (child == children.get(0)) {
                     return inset + layout.getNestedLeftInset();
                 } else if (child.equals(children.get(children.size() - 1))) {
                     return layout.getNestedRightInset();
                 }
                 break;
             case NONE:
-                if (child.equals(children.get(children.size() - 1))) {
+                if (child == children.get(children.size() - 1)) {
                     return layout.getNestedRightInset();
                 } else if (child.equals(children.get(0))) {
                     return layout.getNestedLeftInset();
