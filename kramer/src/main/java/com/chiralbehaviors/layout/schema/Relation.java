@@ -387,9 +387,7 @@ public class Relation extends SchemaNode {
         }
         assert useTable : "Not a nested table";
         justifiedWidth = Layout.snap(width) - layout.getNestedInset();
-        double slack = justifiedWidth - tableColumnWidth;
-        assert slack >= 0 : String.format("Negative slack: %.2f (%.2f) \n%s",
-                                          slack, width, this);
+        double slack = Layout.snap(Math.max(0, justifiedWidth - tableColumnWidth));
         double total = Layout.snap(children.stream()
                                            .map(child -> rawWidth(layout))
                                            .reduce((a, b) -> a + b)
