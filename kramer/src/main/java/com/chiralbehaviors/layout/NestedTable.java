@@ -109,7 +109,7 @@ public class NestedTable extends Control {
                         .add(column.getValue());
                 });
         return new Pair<>(node -> consumers.forEach(c -> {
-            c.accept(relation.extractFrom(node));
+            c.accept(node);
         }), cell);
     }
 

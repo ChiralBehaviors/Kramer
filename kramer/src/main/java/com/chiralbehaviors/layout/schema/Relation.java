@@ -39,7 +39,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -325,16 +324,8 @@ public class Relation extends SchemaNode {
         }
         rowHeight = Layout.snap(elementHeight(layout)
                                 + layout.getListCellVerticalInset());
-        TableView<JsonNode> table = tableBase();
-        children.forEach(child -> {
-            INDENT indent = indent(child);
-            table.getColumns()
-                 .add(child.buildColumn(layout, inset(layout, 0, child, indent),
-                                        indent));
-        });
         double calculatedHeight = (rowHeight * cardinality);
-        height = calculatedHeight + layout.measureHeader(table)
-                 + layout.getTableVerticalInset();
+        height = calculatedHeight + layout.getListCellVerticalInset();
         return height;
     }
 
@@ -590,8 +581,8 @@ public class Relation extends SchemaNode {
     }
 
     private Control buildNestedTable(Function<JsonNode, JsonNode> extractor,
-                                                 int cardinality, Layout layout,
-                                                 double justified) {
+                                     int cardinality, Layout layout,
+                                     double justified) {
         if (isFold()) {
             return fold.buildNestedTable(extract(extractor),
                                          averageCardinality * cardinality,
@@ -821,12 +812,5 @@ public class Relation extends SchemaNode {
                 return r;
             }
         };
-    }
-
-    private TableView<JsonNode> tableBase() {
-        TableView<JsonNode> table = new TableView<>();
-        table.setPlaceholder(new Text());
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        return table;
     }
 }
