@@ -124,8 +124,7 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double measure(JsonNode data, boolean singular, Layout layout,
-                   INDENT indent) {
+    double measure(JsonNode data, boolean singular, Layout layout) {
         double labelWidth = getLabelWidth(layout);
         double sum = 0;
         maxWidth = 0;
@@ -144,7 +143,6 @@ public class Primitive extends SchemaNode {
         columnWidth = Layout.snap(Math.max(labelWidth,
                                            Math.max(valueDefaultWidth,
                                                     averageWidth)));
-        columnWidth += indent == INDENT.RIGHT ? 26 : 0;
         if (maxWidth > averageWidth) {
             variableLength = true;
         }

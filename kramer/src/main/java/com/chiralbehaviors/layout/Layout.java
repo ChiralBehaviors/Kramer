@@ -16,7 +16,6 @@
 
 package com.chiralbehaviors.layout;
 
-import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
 
@@ -27,7 +26,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.sun.javafx.scene.control.skin.TableHeaderRow;
 import com.sun.javafx.scene.control.skin.TableViewSkinBase;
-import com.sun.javafx.scene.control.skin.TextAreaSkin;
 import com.sun.javafx.scene.text.TextLayout;
 import com.sun.javafx.tk.FontLoader;
 import com.sun.javafx.tk.Toolkit;
@@ -46,7 +44,6 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextBoundsType;
@@ -293,23 +290,7 @@ public class Layout {
         textLineHeight = snap(getLineHeight(textFont,
                                             TextBoundsType.LOGICAL_VERTICAL_CENTER))
                          + 1;
-        Field contentField;
-        try {
-            contentField = TextAreaSkin.class.getDeclaredField("contentView");
-        } catch (NoSuchFieldException | SecurityException e) {
-            throw new IllegalStateException(e);
-        }
-        contentField.setAccessible(true);
-        Region content;
-        try {
-            content = (Region) contentField.get(text.getSkin());
-        } catch (IllegalArgumentException | IllegalAccessException e) {
-            throw new IllegalStateException(e);
-        }
-        textInsets = new Insets(content.snappedTopInset(),
-                                content.snappedRightInset(),
-                                content.snappedBottomInset(),
-                                content.snappedLeftInset());
+        textInsets = new Insets(3, 20, 3, 20);
     }
 
     public double measureHeader(TableView<?> table) {

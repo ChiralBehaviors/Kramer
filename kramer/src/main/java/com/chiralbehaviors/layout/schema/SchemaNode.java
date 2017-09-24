@@ -155,7 +155,6 @@ abstract public class SchemaNode {
     }
 
     String field;
-
     Double height;
     double justifiedWidth = 0;
     String label;
@@ -185,6 +184,10 @@ abstract public class SchemaNode {
 
     public String getField() {
         return field;
+    }
+
+    public Double getHeight() {
+        return height;
     }
 
     public double getJustifiedWidth() {
@@ -263,8 +266,7 @@ abstract public class SchemaNode {
 
     abstract double layoutWidth(Layout layout);
 
-    abstract double measure(JsonNode data, boolean singular, Layout layout,
-                            INDENT indent);
+    abstract double measure(JsonNode data, boolean singular, Layout layout);
 
     abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                              double labelWidth,

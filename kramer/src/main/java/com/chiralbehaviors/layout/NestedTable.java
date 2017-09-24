@@ -53,25 +53,29 @@ public class NestedTable extends Control {
             .add(frame);
     }
 
-    private ListView<JsonNode> buildRows(int cardinality, Relation relation,
+    private ListView<JsonNode> buildRows(int card, Relation relation,
                                          Layout layout) {
         ListView<JsonNode> row = new ListView<>();
         layout.getModel()
               .apply(row, relation);
         double rowHeight = relation.getRowHeight();
         row.setFixedCellSize(rowHeight);
-        double height = (rowHeight * cardinality)
-                        + layout.getListCellVerticalInset();
-        row.setMinHeight(height);
-        row.setMaxHeight(height);
+        row.setMinHeight(relation.getHeight());
+        row.setMaxHeight(relation.getHeight());
         double width = relation.getJustifiedWidth()
                        + layout.getListCellHorizontalInset()
-                       + layout.getListCellHorizontalInset();
+                       + layout.getListHorizontalInset();
         row.setMinWidth(width);
         row.setMaxWidth(width);
-        row.setCellFactory(listView -> listCell(buildCell(rowHeight
-                                                          - layout.getListCellVerticalInset(),
-                                                          relation, layout)));
+        row.setCellFactory(listView -> {
+            ListCell<JsonNode> cell = listCell(buildCell(rowHeight
+                                                         - layout.getListCellVerticalInset(),
+                                                         relation, layout));
+            double cellWidth = width - layout.getListHorizontalInset();
+            cell.setMinWidth(cellWidth);
+            cell.setMaxWidth(cellWidth);
+            return cell;
+        });
         return row;
     }
 
@@ -96,8 +100,10 @@ public class NestedTable extends Control {
                                                        Relation relation,
                                                        Layout layout) {
         HBox cell = new HBox();
-        cell.setPrefWidth(relation.getJustifiedWidth());
-        cell.setPrefHeight(rendered);
+        cell.setMinWidth(relation.getJustifiedWidth());
+        cell.setMaxWidth(relation.getJustifiedWidth());
+        cell.setMinHeight(rendered);
+        cell.setMaxHeight(rendered);
         List<Consumer<JsonNode>> consumers = new ArrayList<>();
         relation.getChildren()
                 .forEach(child -> {
@@ -136,10 +142,12 @@ public class NestedTable extends Control {
                       + "                    white 0%;"
                       + "-fx-background-insets: 0 0 -1 0,0,1;"
                       + "-fx-background-radius: 5,5,4;"
-                      + "-fx-padding: 3 30 3 30;" + "-fx-text-fill: #242d35;"
+                      + "-fx-padding: 3 20 3 20;" + "-fx-text-fill: #242d35;"
                       + "-fx-font-size: 14px;");
-        text.setPrefWidth(child.getJustifiedWidth());
-        text.setPrefHeight(rendered);
+        text.setMaxWidth(child.getJustifiedWidth());
+        text.setMaxWidth(child.getJustifiedWidth());
+        text.setMinHeight(rendered);
+        text.setMaxHeight(rendered);
         return new Pair<>(node -> layout.setItemsOf(text,
                                                     child.extractFrom(node)),
                           text);
@@ -156,7 +164,8 @@ public class NestedTable extends Control {
 
     private ListView<JsonNode> buildNestedRow(Relation relation,
                                               double rendered, Layout layout) {
-        int cardinality = relation.getAverageCardinality();
+        int cardinality = relation.isSingular() ? 1
+                                                : relation.getAverageCardinality();
         double calculatedHeight = (relation.getRowHeight() * cardinality)
                                   + layout.getListVerticalInset();
         double deficit = Math.max(0, rendered - calculatedHeight);
@@ -164,20 +173,34 @@ public class NestedTable extends Control {
         double extended = Layout.snap(relation.getRowHeight() + childDeficit);
 
         ListView<JsonNode> row = new ListView<>();
+        HBox.setHgrow(row, Priority.ALWAYS);
         layout.getModel()
               .apply(row, relation);
+
         row.setFixedCellSize(extended);
-        HBox.setHgrow(row, Priority.ALWAYS);
         row.setMinHeight(rendered);
         row.setMaxHeight(rendered);
+
         double width = relation.getJustifiedWidth()
                        + layout.getListCellHorizontalInset()
                        + layout.getListCellHorizontalInset();
         row.setMinWidth(width);
         row.setMaxWidth(width);
-        row.setCellFactory(listView -> listCell(buildCell(extended
-                                                          - layout.getListCellVerticalInset(),
-                                                          relation, layout)));
+
+        row.setCellFactory(listView -> {
+            ListCell<JsonNode> cell = listCell(buildCell(extended
+                                                         - layout.getListCellVerticalInset(),
+                                                         relation, layout));
+            double cellWidth = width - layout.getListHorizontalInset();
+
+            cell.setMinWidth(cellWidth);
+            cell.setMaxWidth(cellWidth);
+
+            cell.setMinHeight(extended);
+            cell.setMaxHeight(extended);
+
+            return cell;
+        });
         return row;
     }
 

@@ -114,6 +114,11 @@ public class Relation extends SchemaNode {
     }
 
     @Override
+    public Double getHeight() {
+        return isFold() ? fold.getHeight() : height;
+    }
+
+    @Override
     public double getLabelWidth(Layout layout) {
         if (isFold()) {
             return fold.getLabelWidth(layout);
@@ -135,6 +140,13 @@ public class Relation extends SchemaNode {
         return true;
     }
 
+    public boolean isSingular() {
+        if (isFold()) {
+            return fold.isSingular();
+        }
+        return singular;
+    }
+
     @Override
     public boolean isUseTable() {
         if (isFold()) {
@@ -144,7 +156,7 @@ public class Relation extends SchemaNode {
     }
 
     public void measure(JsonNode jsonNode, Layout layout) {
-        measure(jsonNode, !jsonNode.isArray(), layout, INDENT.NONE);
+        measure(jsonNode, !jsonNode.isArray(), layout);
     }
 
     public void setAverageCardinality(int averageCardinality) {
@@ -324,8 +336,7 @@ public class Relation extends SchemaNode {
         }
         rowHeight = Layout.snap(elementHeight(layout)
                                 + layout.getListCellVerticalInset());
-        double calculatedHeight = (rowHeight * cardinality);
-        height = calculatedHeight + layout.getListCellVerticalInset();
+        height = (rowHeight * cardinality) + layout.getListVerticalInset();
         return height;
     }
 
@@ -336,11 +347,10 @@ public class Relation extends SchemaNode {
             return;
         }
         if (useTable) {
-            justify(justified - layout.getTableRowHorizontalInset()
-                    - layout.getTableHorizontalInset(), layout);
+            justify(justified, layout);
             return;
         }
-        justifiedWidth = justified - layout.getNestedInset();
+        justifiedWidth = Layout.snap(justified - layout.getNestedInset());
         double labelWidth = Layout.snap(children.stream()
                                                 .mapToDouble(n -> n.getLabelWidth(layout))
                                                 .max()
@@ -385,7 +395,7 @@ public class Relation extends SchemaNode {
             return;
         }
         assert useTable : "Not a nested table";
-        justifiedWidth = Layout.snap(width) - layout.getNestedInset();
+        justifiedWidth = Layout.snap(width - layout.getNestedInset());
         double slack = Layout.snap(Math.max(0,
                                             justifiedWidth - tableColumnWidth));
         double total = Layout.snap(children.stream()
@@ -446,8 +456,7 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    double measure(JsonNode data, boolean isSingular, Layout layout,
-                   INDENT indent) {
+    double measure(JsonNode data, boolean isSingular, Layout layout) {
         if (isAutoFoldable()) {
             fold = ((Relation) children.get(children.size() - 1));
         }
@@ -490,8 +499,7 @@ public class Relation extends SchemaNode {
                 sum += datas.size() == 0 ? 1
                                          : Math.round(cardSum / datas.size());
             }
-            tableColumnWidth += child.measure(aggregate, childSingular, layout,
-                                              indent(child));
+            tableColumnWidth += child.measure(aggregate, childSingular, layout);
         }
         int effectiveChildren = children.size() - singularChildren;
         averageCardinality = Math.max(1,
