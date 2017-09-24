@@ -29,7 +29,6 @@ import javafx.scene.Parent;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
-import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -73,11 +72,11 @@ public class Primitive extends SchemaNode {
                                                                     double inset,
                                                                     INDENT indent) {
         return resolvedHeight -> {
-            TextArea control = buildControl(1, layout);
+            Label control = buildControl(1, layout);
             control.setPrefHeight(resolvedHeight);
             bind(control, columnMap.get(this), inset);
-            layout.getModel()
-                  .apply(control, Primitive.this);
+            //            layout.getModel()
+            //                  .apply(control, Primitive.this);
             return new Pair<>(node -> setItems(control, extractFrom(node),
                                                layout),
                               control);
@@ -99,7 +98,7 @@ public class Primitive extends SchemaNode {
         if (height != null) {
             return height;
         }
-        double rows = Math.ceil(maxWidth / justified) + 1;
+        double rows = Math.ceil((maxWidth / justified) + 0.5);
         height = Layout.snap(layout.getTextLineHeight() * rows)
                  + layout.getTextVerticalInset();
         return height;
@@ -206,12 +205,20 @@ public class Primitive extends SchemaNode {
               });
         double width = column.getWidth() - inset;
         control.setMinWidth(width);
-        control.setMaxWidth(width);
+        control.setPrefWidth(width);
     }
 
-    private TextArea buildControl(int cardinality, Layout layout) {
-        TextArea text = new TextArea();
+    private Label buildControl(int cardinality, Layout layout) {
+        Label text = new Label();
         text.setWrapText(true);
+        text.setStyle("-fx-background-color: " + "         rgba(0,0,0,0.08),"
+                      + "        linear-gradient(#9a9a9a, #909090),"
+                      + "        white 0%;"
+                      + "    -fx-background-insets: 0 0 -1 0,0,1;"
+                      + "    -fx-background-radius: 5,5,4;"
+                      + "    -fx-padding: 3 30 3 30;"
+                      + "    -fx-text-fill: #242d35;"
+                      + "    -fx-font-size: 14px;");
         return text;
     }
 
