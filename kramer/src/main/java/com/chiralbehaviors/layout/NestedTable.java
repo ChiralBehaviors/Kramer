@@ -24,7 +24,6 @@ import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import javafx.geometry.Pos;
 import javafx.scene.control.ContentDisplay;
@@ -61,15 +60,18 @@ public class NestedTable extends Control {
               .apply(row, relation);
         double rowHeight = relation.getRowHeight();
         row.setFixedCellSize(rowHeight);
-        row.setPrefHeight((rowHeight * cardinality)
-                          + layout.getListCellVerticalInset());
+        double height = (rowHeight * cardinality)
+                        + layout.getListCellVerticalInset();
+        row.setMinHeight(height);
+        row.setMaxHeight(height);
         double width = relation.getJustifiedWidth()
                        + layout.getListCellHorizontalInset()
                        + layout.getListCellHorizontalInset();
         row.setMinWidth(width);
         row.setMaxWidth(width);
-        row.setCellFactory(listView -> listCell(buildCell(rowHeight, relation,
-                                                          layout)));
+        row.setCellFactory(listView -> listCell(buildCell(rowHeight
+                                                          - layout.getListCellVerticalInset(),
+                                                          relation, layout)));
         return row;
     }
 
@@ -166,7 +168,8 @@ public class NestedTable extends Control {
               .apply(row, relation);
         row.setFixedCellSize(extended);
         HBox.setHgrow(row, Priority.ALWAYS);
-        row.setPrefHeight(rendered);
+        row.setMinHeight(rendered);
+        row.setMaxHeight(rendered);
         double width = relation.getJustifiedWidth()
                        + layout.getListCellHorizontalInset()
                        + layout.getListCellHorizontalInset();
