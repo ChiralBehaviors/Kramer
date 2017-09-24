@@ -255,18 +255,22 @@ public class Relation extends SchemaNode {
             HBox.setHgrow(row, Priority.ALWAYS);
             row.setPrefHeight(rendered);
             if (column != null) {
-                row.setPrefWidth(Layout.snap(column.getColumns()
-                                                   .stream()
-                                                   .mapToDouble(c -> Layout.snap(c.getWidth()))
-                                                   .sum()
-                                             - inset));
+                double width = Layout.snap(column.getColumns()
+                                                 .stream()
+                                                 .mapToDouble(c -> Layout.snap(c.getWidth()))
+                                                 .sum()
+                                           - inset);
+                row.setPrefWidth(width);
             }
             row.setCellFactory(control -> {
                 ListCell<JsonNode> cell = rowCell(fields,
                                                   Layout.snap(extended
                                                               - layout.getListCellVerticalInset()),
-                                                  layout);
+                                                  layout, row);
                 cell.setPrefHeight(extended);
+                cell.setPrefWidth(row.getWidth()
+                                  - layout.getListCellHorizontalInset()
+                                  - layout.getListHorizontalInset());
                 layout.getModel()
                       .apply(cell, Relation.this);
                 return cell;
@@ -803,15 +807,16 @@ public class Relation extends SchemaNode {
     }
 
     private ListCell<JsonNode> rowCell(List<Function<Double, Pair<Consumer<JsonNode>, Control>>> fields,
-                                       double resolvedHeight, Layout layout) {
+                                       double resolvedHeight, Layout layout,
+                                       ListView<JsonNode> row) {
 
         return new ListCell<JsonNode>() {
             private Consumer<JsonNode> master;
-            private final HBox         row;
+            private final HBox         cell;
             {
                 setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
                 setAlignment(Pos.CENTER_LEFT);
-                row = buildRow();
+                cell = buildCell();
             }
 
             @Override
@@ -827,12 +832,12 @@ public class Relation extends SchemaNode {
                     setGraphic(null);
                     return;
                 }
-                setGraphic(row);
+                setGraphic(cell);
                 master.accept(item);
-                row.requestLayout();
+                cell.requestLayout();
             }
 
-            private HBox buildRow() {
+            private HBox buildCell() {
                 HBox r = new HBox();
                 r.setMinWidth(0);
                 r.setPrefWidth(1);
