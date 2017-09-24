@@ -387,7 +387,8 @@ public class Relation extends SchemaNode {
         }
         assert useTable : "Not a nested table";
         justifiedWidth = Layout.snap(width) - layout.getNestedInset();
-        double slack = Layout.snap(Math.max(0, justifiedWidth - tableColumnWidth));
+        double slack = Layout.snap(Math.max(0,
+                                            justifiedWidth - tableColumnWidth));
         double total = Layout.snap(children.stream()
                                            .map(child -> rawWidth(layout))
                                            .reduce((a, b) -> a + b)
@@ -406,19 +407,21 @@ public class Relation extends SchemaNode {
         if (isFold()) {
             return fold.layout(cardinality * averageCardinality, layout, width);
         }
-        double labelWidth = children.stream()
-                                    .mapToDouble(child -> child.getLabelWidth(layout))
-                                    .max()
-                                    .getAsDouble();
-        double available = width - labelWidth - layout.getNestedInset();
-        outlineWidth = children.stream()
-                               .mapToDouble(child -> {
-                                   return child.layout(cardinality, layout,
-                                                       available);
-                               })
-                               .max()
-                               .orElse(0d)
-                       + labelWidth;
+        double labelWidth = Layout.snap(children.stream()
+                                                .mapToDouble(child -> child.getLabelWidth(layout))
+                                                .max()
+                                                .getAsDouble());
+        double available = Layout.snap(width - labelWidth
+                                       - layout.getNestedInset());
+        outlineWidth = Layout.snap(children.stream()
+                                           .mapToDouble(child -> {
+                                               return child.layout(cardinality,
+                                                                   layout,
+                                                                   available);
+                                           })
+                                           .max()
+                                           .orElse(0d)
+                                   + labelWidth);
         double tableWidth = tableColumnWidth(layout)
                             + layout.getTableHorizontalInset()
                             + layout.getTableRowHorizontalInset();
