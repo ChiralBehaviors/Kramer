@@ -58,22 +58,31 @@ public class NestedTable extends Control {
         ListView<JsonNode> row = new ListView<>();
         layout.getModel()
               .apply(row, relation);
+
         double rowHeight = relation.getRowHeight();
         row.setFixedCellSize(rowHeight);
+
         row.setMinHeight(relation.getHeight());
         row.setMaxHeight(relation.getHeight());
+
         double width = relation.getJustifiedWidth()
                        + layout.getListCellHorizontalInset()
                        + layout.getListHorizontalInset();
         row.setMinWidth(width);
         row.setMaxWidth(width);
+
         row.setCellFactory(listView -> {
             ListCell<JsonNode> cell = listCell(buildCell(rowHeight
                                                          - layout.getListCellVerticalInset(),
                                                          relation, layout));
-            double cellWidth = width - layout.getListHorizontalInset();
+            double cellWidth = width - layout.getListHorizontalInset()
+                               - layout.getListHorizontalInset();
+
             cell.setMinWidth(cellWidth);
             cell.setMaxWidth(cellWidth);
+
+            cell.setMinHeight(rowHeight);
+            cell.setMaxHeight(rowHeight);
             return cell;
         });
         return row;
@@ -144,10 +153,16 @@ public class NestedTable extends Control {
                       + "-fx-background-radius: 5,5,4;"
                       + "-fx-padding: 3 20 3 20;" + "-fx-text-fill: #242d35;"
                       + "-fx-font-size: 14px;");
-        text.setMaxWidth(child.getJustifiedWidth());
-        text.setMaxWidth(child.getJustifiedWidth());
+
+        double width = child.getJustifiedWidth()
+                       + layout.getTextHorizontalInset();
+
+        text.setMinWidth(width);
+        text.setMaxWidth(width);
+
         text.setMinHeight(rendered);
         text.setMaxHeight(rendered);
+
         return new Pair<>(node -> layout.setItemsOf(text,
                                                     child.extractFrom(node)),
                           text);
