@@ -18,14 +18,13 @@ package com.chiralbehaviors.layout.schema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
-import com.chiralbehaviors.layout.RelationTableRow;
+import com.chiralbehaviors.layout.NestedTable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -59,10 +58,10 @@ public class Relation extends SchemaNode {
     private final List<ColumnSet>  columnSets         = new ArrayList<>();
     private Relation               fold;
     private double                 outlineWidth       = 0;
+    private double                 rowHeight;
     private boolean                singular           = false;
     private double                 tableColumnWidth   = 0;
     private boolean                useTable           = false;
-    private double                 rowHeight;
 
     public Relation(String label) {
         super(label);
@@ -97,7 +96,8 @@ public class Relation extends SchemaNode {
     }
 
     public int getAverageCardinality() {
-        return averageCardinality;
+        return isFold() ? averageCardinality * fold.getAverageCardinality()
+                        : averageCardinality;
     }
 
     public SchemaNode getChild(String field) {
@@ -111,7 +111,7 @@ public class Relation extends SchemaNode {
     }
 
     public List<SchemaNode> getChildren() {
-        return children;
+        return isFold() ? fold.getChildren() : children;
     }
 
     @Override
@@ -120,6 +120,10 @@ public class Relation extends SchemaNode {
             return fold.getLabelWidth(layout);
         }
         return layout.textWidth(label);
+    }
+
+    public double getRowHeight() {
+        return isFold() ? fold.getRowHeight() : rowHeight;
     }
 
     @JsonProperty
@@ -335,14 +339,6 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    Double getCalculatedHeight() {
-        if (isFold()) {
-            return fold.getCalculatedHeight();
-        }
-        return super.getCalculatedHeight();
-    }
-
-    @Override
     void compress(Layout layout, double justified) {
         if (isFold()) {
             fold.compress(layout, justified);
@@ -378,6 +374,14 @@ public class Relation extends SchemaNode {
                                              justifiedWidth));
     }
 
+    @Override
+    Double getCalculatedHeight() {
+        if (isFold()) {
+            return fold.getCalculatedHeight();
+        }
+        return super.getCalculatedHeight();
+    }
+
     // for testing
     List<ColumnSet> getColumnSets() {
         return columnSets;
@@ -399,7 +403,7 @@ public class Relation extends SchemaNode {
                                            .orElse(0.0d));
         children.forEach(child -> {
             double childWidth = child.tableColumnWidth(layout);
-            child.justify(slack * (childWidth / total) + childWidth, layout);
+            child.justify((slack * (childWidth / total)) + childWidth, layout);
         });
     }
 
@@ -585,7 +589,7 @@ public class Relation extends SchemaNode {
         return tableColumnWidth + layout.getNestedInset();
     }
 
-    private TableView<JsonNode> buildNestedTable(Function<JsonNode, JsonNode> extractor,
+    private Control buildNestedTable(Function<JsonNode, JsonNode> extractor,
                                                  int cardinality, Layout layout,
                                                  double justified) {
         if (isFold()) {
@@ -593,47 +597,7 @@ public class Relation extends SchemaNode {
                                          averageCardinality * cardinality,
                                          layout, justified);
         }
-        TableView<JsonNode> table = tableBase();
-        table.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        children.forEach(child -> {
-            INDENT indent = indent(child);
-            table.getColumns()
-                 .add(child.buildColumn(layout, inset(layout, 0, child, indent),
-                                        indent));
-        });
-
-        Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap = new HashMap<>();
-        List<TableColumn<JsonNode, ?>> columns = table.getColumns();
-        while (!columns.isEmpty()) {
-            List<TableColumn<JsonNode, ?>> leaves = new ArrayList<>();
-            columns.forEach(c -> {
-                columnMap.put((SchemaNode) c.getUserData(), c);
-                leaves.addAll(c.getColumns());
-            });
-            columns = leaves;
-        }
-
-        Function<Double, Pair<Consumer<JsonNode>, Control>> topLevel = buildColumn(cardinality,
-                                                                                   null,
-                                                                                   columnMap,
-                                                                                   layout,
-                                                                                   0,
-                                                                                   INDENT.NONE);
-        table.setRowFactory(tableView -> {
-            Pair<Consumer<JsonNode>, Control> relationRow = topLevel.apply(rowHeight);
-            RelationTableRow row = new RelationTableRow(relationRow.getKey(),
-                                                        relationRow.getValue());
-            row.setPrefHeight(rowHeight + layout.getListVerticalInset()
-                              + layout.getTableRowVerticalInset());
-            layout.getModel()
-                  .apply(row, Relation.this);
-            return row;
-        });
-
-        layout.getModel()
-              .apply(table, this);
-        table.setFixedCellSize(rowHeight);
-        return table;
+        return new NestedTable(cardinality, this, layout);
     }
 
     private ListView<JsonNode> buildOutline(Function<JsonNode, JsonNode> extractor,
@@ -811,8 +775,8 @@ public class Relation extends SchemaNode {
                                        ListView<JsonNode> row) {
 
         return new ListCell<JsonNode>() {
-            private Consumer<JsonNode> master;
             private final HBox         cell;
+            private Consumer<JsonNode> master;
             {
                 setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
                 setAlignment(Pos.CENTER_LEFT);

@@ -351,6 +351,8 @@ public class Layout {
         } else if (control instanceof TextArea) {
             TextArea label = (TextArea) control;
             label.setText(SchemaNode.asText(data));
+        } else if (control instanceof NestedTable) {
+            ((NestedTable) control).setItems(data);
         } else {
             throw new IllegalArgumentException(String.format("Unknown control %s",
                                                              control));

@@ -125,10 +125,12 @@ abstract public class SchemaNode {
         ArrayNode extracted = JsonNodeFactory.instance.arrayNode();
         node.forEach(element -> {
             JsonNode resolved = element.get(field);
-            if (resolved.isArray()) {
-                extracted.addAll((ArrayNode) resolved);
-            } else {
-                extracted.add(resolved);
+            if (resolved != null) {
+                if (resolved.isArray()) {
+                    extracted.addAll((ArrayNode) resolved);
+                } else {
+                    extracted.add(resolved);
+                }
             }
         });
         return extracted;
@@ -170,12 +172,23 @@ abstract public class SchemaNode {
         this.field = field;
     }
 
+    public Function<JsonNode, JsonNode> extract(Function<JsonNode, JsonNode> extractor) {
+        return n -> {
+            JsonNode extracted = extractor.apply(n);
+            return extracted == null ? null : extracted.get(field);
+        };
+    }
+
     public JsonNode extractFrom(JsonNode jsonNode) {
         return extractField(jsonNode, field);
     }
 
     public String getField() {
         return field;
+    }
+
+    public double getJustifiedWidth() {
+        return justifiedWidth;
     }
 
     public String getLabel() {
@@ -223,13 +236,6 @@ abstract public class SchemaNode {
 
     void compress(Layout layout, double available) {
         justifiedWidth = available;
-    }
-
-    Function<JsonNode, JsonNode> extract(Function<JsonNode, JsonNode> extractor) {
-        return n -> {
-            JsonNode extracted = extractor.apply(n);
-            return extracted == null ? null : extracted.get(field);
-        };
     }
 
     Double getCalculatedHeight() {
