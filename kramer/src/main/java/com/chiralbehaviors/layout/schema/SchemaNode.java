@@ -87,7 +87,7 @@ abstract public class SchemaNode {
     }
 
     public static String asText(JsonNode node) {
-        if (node == null) {
+        if (node == null  || node.isNull()) {
             return "";
         }
         boolean first = true;
@@ -156,7 +156,7 @@ abstract public class SchemaNode {
 
     String field;
     Double height;
-    double justifiedWidth = 0;
+    Double justifiedWidth = 0D;
     String label;
 
     public SchemaNode() {
@@ -237,9 +237,7 @@ abstract public class SchemaNode {
     abstract double cellHeight(int cardinality, Layout layout,
                                double available);
 
-    void compress(Layout layout, double available) {
-        justifiedWidth = available;
-    }
+    abstract void compress(Layout layout, double available);
 
     Double getCalculatedHeight() {
         assert height != null : "cell height has not been calculated";

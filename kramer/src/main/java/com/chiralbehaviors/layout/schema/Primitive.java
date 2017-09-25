@@ -106,7 +106,7 @@ public class Primitive extends SchemaNode {
 
     @Override
     void justify(double width, Layout layout) {
-        justifiedWidth = Layout.snap(width);
+        justifiedWidth = Layout.snap(width - layout.getTextHorizontalInset());
     }
 
     @Override
@@ -124,11 +124,17 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
+    void compress(Layout layout, double available) {
+        justifiedWidth = available - layout.getTextHorizontalInset();
+    }
+
+    @Override
     double measure(JsonNode data, boolean singular, Layout layout) {
         double labelWidth = getLabelWidth(layout);
         double sum = 0;
         maxWidth = 0;
         columnWidth = 0;
+        justifiedWidth = null;
         for (JsonNode prim : SchemaNode.asList(data)) {
             List<JsonNode> rows = SchemaNode.asList(prim);
             double width = 0;

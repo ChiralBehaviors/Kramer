@@ -62,24 +62,22 @@ public class NestedTable extends Control {
         double rowHeight = relation.getRowHeight();
         row.setFixedCellSize(rowHeight);
 
-        row.setMinHeight(relation.getHeight());
-        row.setMaxHeight(relation.getHeight());
-
         double width = relation.getJustifiedWidth()
                        + layout.getListCellHorizontalInset()
                        + layout.getListHorizontalInset();
         row.setMinWidth(width);
         row.setMaxWidth(width);
 
+        row.setMinHeight(relation.getHeight());
+        row.setMaxHeight(relation.getHeight());
+
         row.setCellFactory(listView -> {
             ListCell<JsonNode> cell = listCell(buildCell(rowHeight
                                                          - layout.getListCellVerticalInset(),
                                                          relation, layout));
-            double cellWidth = width - layout.getListHorizontalInset()
-                               - layout.getListHorizontalInset();
 
-            cell.setMinWidth(cellWidth);
-            cell.setMaxWidth(cellWidth);
+            cell.setMinWidth(relation.getJustifiedWidth());
+            cell.setMaxWidth(relation.getJustifiedWidth());
 
             cell.setMinHeight(rowHeight);
             cell.setMaxHeight(rowHeight);

@@ -163,22 +163,6 @@ public class Layout {
         return listInsets.getRight() + listCellInsets.getRight();
     }
 
-    public double getTableHorizontalInset() {
-        return tableInsets.getLeft() + tableInsets.getRight();
-    }
-
-    public double getTableRowHorizontalInset() {
-        return tableRowInsets.getLeft() + tableRowInsets.getRight();
-    }
-
-    public double getTableRowVerticalInset() {
-        return tableRowInsets.getTop() + tableRowInsets.getBottom();
-    }
-
-    public double getTableVerticalInset() {
-        return tableInsets.getTop() + tableInsets.getBottom();
-    }
-
     public double getTextHorizontalInset() {
         return textInsets.getLeft() + textInsets.getRight();
     }

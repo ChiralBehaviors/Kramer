@@ -404,7 +404,9 @@ public class Relation extends SchemaNode {
                                            .orElse(0.0d));
         children.forEach(child -> {
             double childWidth = child.tableColumnWidth(layout);
-            child.justify((slack * (childWidth / total)) + childWidth, layout);
+            double childJustified = Layout.snap(slack * (childWidth / total))
+                                    + childWidth;
+            child.justify(childJustified, layout);
         });
     }
 
@@ -431,9 +433,7 @@ public class Relation extends SchemaNode {
                                            .max()
                                            .orElse(0d)
                                    + labelWidth);
-        double tableWidth = tableColumnWidth(layout)
-                            + layout.getTableHorizontalInset()
-                            + layout.getTableRowHorizontalInset();
+        double tableWidth = tableColumnWidth(layout);
         double oWidth = outlineWidth + layout.getNestedInset();
         if (tableWidth <= oWidth) {
             nestTable();
@@ -447,12 +447,9 @@ public class Relation extends SchemaNode {
      */
     @Override
     double layoutWidth(Layout layout) {
-        return useTable ? justifiedWidth + layout.getListCellHorizontalInset()
-                          + layout.getListHorizontalInset()
-                          + layout.getTableRowHorizontalInset()
-                          + layout.getTableHorizontalInset()
-                        : outlineWidth + layout.getListCellHorizontalInset()
-                          + layout.getListHorizontalInset();
+        return (useTable ? tableColumnWidth : outlineWidth)
+               + layout.getListCellHorizontalInset()
+               + layout.getListHorizontalInset();
     }
 
     @Override
@@ -460,6 +457,7 @@ public class Relation extends SchemaNode {
         if (isAutoFoldable()) {
             fold = ((Relation) children.get(children.size() - 1));
         }
+        justifiedWidth = null;
         if (data.isNull() || children.size() == 0) {
             return 0;
         }
@@ -507,10 +505,9 @@ public class Relation extends SchemaNode {
                                                effectiveChildren == 0 ? 1
                                                                       : (int) Math.ceil(sum
                                                                                         / effectiveChildren)));
-        tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth))
-                           + layout.getNestedInset();
-        justifiedWidth = tableColumnWidth;
-        return isFold() ? fold.tableColumnWidth : tableColumnWidth;
+        tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth));
+        return (isFold() ? fold.tableColumnWidth : tableColumnWidth)
+               + layout.getNestedInset();
     }
 
     @Override
@@ -560,12 +557,9 @@ public class Relation extends SchemaNode {
     }
 
     double rawWidth(Layout layout) {
-        return useTable ? justifiedWidth + layout.getListCellHorizontalInset()
-                          + layout.getListHorizontalInset()
-                          + layout.getTableRowHorizontalInset()
-                          + layout.getTableHorizontalInset()
-                        : outlineWidth + layout.getListCellHorizontalInset()
-                          + layout.getListHorizontalInset();
+        return (useTable ? tableColumnWidth : outlineWidth)
+               + layout.getListCellHorizontalInset()
+               + layout.getListHorizontalInset();
     }
 
     @Override
