@@ -399,13 +399,13 @@ public class Relation extends SchemaNode {
         double slack = Layout.snap(Math.max(0,
                                             justifiedWidth - tableColumnWidth));
         double total = Layout.snap(children.stream()
-                                           .map(child -> rawWidth(layout))
+                                           .map(child -> child.tableColumnWidth(layout))
                                            .reduce((a, b) -> a + b)
                                            .orElse(0.0d));
         children.forEach(child -> {
             double childWidth = child.tableColumnWidth(layout);
-            double childJustified = Layout.snap(slack * (childWidth / total))
-                                    + childWidth;
+            double additional = Layout.snap(slack * (childWidth / total));
+            double childJustified = additional + childWidth;
             child.justify(childJustified, layout);
         });
     }
@@ -553,12 +553,6 @@ public class Relation extends SchemaNode {
     @Override
     double outlineWidth(Layout layout) {
         return outlineWidth + layout.getListCellHorizontalInset()
-               + layout.getListHorizontalInset();
-    }
-
-    double rawWidth(Layout layout) {
-        return (useTable ? tableColumnWidth : outlineWidth)
-               + layout.getListCellHorizontalInset()
                + layout.getListHorizontalInset();
     }
 
