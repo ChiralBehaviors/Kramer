@@ -152,8 +152,61 @@ public class Relation extends SchemaNode {
         return useTable;
     }
 
-    public void measure(JsonNode jsonNode, Layout layout) {
-        measure(jsonNode, !jsonNode.isArray(), layout);
+    @Override
+    public double measure(JsonNode data, Layout layout) {
+        if (isAutoFoldable()) {
+            fold = ((Relation) children.get(children.size() - 1));
+        }
+        justifiedWidth = null;
+        if (data.isNull() || children.size() == 0) {
+            return 0;
+        }
+
+        double labelWidth = layout.textWidth(label);
+        labelWidth += layout.getTextHorizontalInset();
+        double sum = 0;
+        tableColumnWidth = 0;
+        int singularChildren = 0;
+        for (SchemaNode child : children) {
+            ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
+            int cardSum = 0;
+            boolean childSingular = false;
+            if (singular) {
+
+            }
+            List<JsonNode> datas = data.isArray() ? new ArrayList<>(data.size())
+                                                  : Arrays.asList(data);
+            if (data.isArray()) {
+                data.forEach(n -> datas.add(n));
+            }
+            for (JsonNode node : datas) {
+                JsonNode sub = node.get(child.field);
+                if (sub instanceof ArrayNode) {
+                    childSingular = false;
+                    aggregate.addAll((ArrayNode) sub);
+                    cardSum += sub.size();
+                } else {
+                    childSingular = true;
+                    aggregate.add(sub);
+                }
+            }
+            if (childSingular) {
+                singularChildren += 1;
+            } else {
+                sum += datas.size() == 0 ? 1
+                                         : Math.round(cardSum / datas.size());
+            }
+            tableColumnWidth += child.measure(aggregate, layout);
+        }
+        int effectiveChildren = children.size() - singularChildren;
+        averageCardinality = Math.max(1,
+                                      Math.min(4,
+                                               effectiveChildren == 0 ? 1
+                                                                      : (int) Math.ceil(sum
+                                                                                        / effectiveChildren)));
+        tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth));
+        return (isFold() ? fold.tableColumnWidth : tableColumnWidth)
+               + layout.getNestedInset();
     }
 
     public void setAverageCardinality(int averageCardinality) {
@@ -359,64 +412,6 @@ public class Relation extends SchemaNode {
         return (useTable ? tableColumnWidth : outlineWidth)
                + layout.getListCellHorizontalInset()
                + layout.getListHorizontalInset();
-    }
-
-    @Override
-    double measure(JsonNode data, boolean isSingular, Layout layout) {
-        if (isAutoFoldable()) {
-            fold = ((Relation) children.get(children.size() - 1));
-        }
-        justifiedWidth = null;
-        if (data.isNull() || children.size() == 0) {
-            return 0;
-        }
-
-        singular = isSingular;
-        double labelWidth = layout.textWidth(label);
-        labelWidth += layout.getTextHorizontalInset();
-        double sum = 0;
-        tableColumnWidth = 0;
-        int singularChildren = 0;
-        for (SchemaNode child : children) {
-            ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
-            int cardSum = 0;
-            boolean childSingular = false;
-            if (singular) {
-
-            }
-            List<JsonNode> datas = data.isArray() ? new ArrayList<>(data.size())
-                                                  : Arrays.asList(data);
-            if (data.isArray()) {
-                data.forEach(n -> datas.add(n));
-            }
-            for (JsonNode node : datas) {
-                JsonNode sub = node.get(child.field);
-                if (sub instanceof ArrayNode) {
-                    childSingular = false;
-                    aggregate.addAll((ArrayNode) sub);
-                    cardSum += sub.size();
-                } else {
-                    childSingular = true;
-                    aggregate.add(sub);
-                }
-            }
-            if (childSingular) {
-                singularChildren += 1;
-            } else {
-                sum += datas.size() == 0 ? 1
-                                         : Math.round(cardSum / datas.size());
-            }
-            tableColumnWidth += child.measure(aggregate, childSingular, layout);
-        }
-        int effectiveChildren = children.size() - singularChildren;
-        averageCardinality = Math.max(1,
-                                      Math.min(4,
-                                               effectiveChildren == 0 ? 1
-                                                                      : (int) Math.ceil(sum
-                                                                                        / effectiveChildren)));
-        tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth));
-        return (isFold() ? fold.tableColumnWidth : tableColumnWidth)
-               + layout.getNestedInset();
     }
 
     @Override
