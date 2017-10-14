@@ -33,7 +33,6 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
@@ -186,7 +185,6 @@ public class NestedTable extends Control {
         double extended = Layout.snap(relation.getRowHeight() + childDeficit);
 
         ListView<JsonNode> row = new ListView<>();
-        HBox.setHgrow(row, Priority.ALWAYS);
         layout.getModel()
               .apply(row, relation);
 
@@ -196,7 +194,7 @@ public class NestedTable extends Control {
 
         double width = relation.getJustifiedWidth()
                        + layout.getListCellHorizontalInset()
-                       + layout.getListCellHorizontalInset();
+                       + layout.getListHorizontalInset();
         row.setMinWidth(width);
         row.setMaxWidth(width);
 
