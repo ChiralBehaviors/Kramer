@@ -16,7 +16,7 @@
 
 package com.chiralbehaviors.layout.schema;
 
-import com.chiralbehaviors.layout.AutoLayoutView;
+import com.chiralbehaviors.layout.AutoLayout;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.application.Application;
@@ -35,7 +35,7 @@ public class Smoke extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        AutoLayoutView layout = new AutoLayoutView();
+        AutoLayout layout = new AutoLayout();
         AnchorPane.setTopAnchor(layout, 0.0);
         AnchorPane.setLeftAnchor(layout, 0.0);
         AnchorPane.setBottomAnchor(layout, 0.0);

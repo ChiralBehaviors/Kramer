@@ -28,7 +28,7 @@ import javax.ws.rs.client.WebTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.chiralbehaviors.layout.AutoLayoutView;
+import com.chiralbehaviors.layout.AutoLayout;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -95,7 +95,7 @@ public class AutoLayoutController {
     @FXML
     private AnchorPane          anchor;
     private WebTarget           endpoint;
-    private AutoLayoutView      layout;
+    private AutoLayout      layout;
     @FXML
     private ToggleGroup         page;
     private QueryState          queryState;
@@ -150,7 +150,7 @@ public class AutoLayoutController {
             });
     }
 
-    public AutoLayoutView getLayout() {
+    public AutoLayout getLayout() {
         return layout;
     }
 
@@ -232,7 +232,7 @@ public class AutoLayoutController {
     }
 
     private void initialize() {
-        layout = new AutoLayoutView();
+        layout = new AutoLayout();
         AnchorPane.setTopAnchor(layout, 0.0);
         AnchorPane.setLeftAnchor(layout, 0.0);
         AnchorPane.setBottomAnchor(layout, 0.0);

@@ -34,8 +34,8 @@ import javafx.scene.control.Skin;
  * @author hhildebrand
  *
  */
-public class AutoLayoutView extends Control {
-    private static final java.util.logging.Logger log         = Logger.getLogger(AutoLayoutView.class.getCanonicalName());
+public class AutoLayout extends Control {
+    private static final java.util.logging.Logger log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
 
     private SimpleObjectProperty<JsonNode>        data        = new SimpleObjectProperty<>();
     private Control                               layout;
@@ -44,23 +44,23 @@ public class AutoLayoutView extends Control {
     private final SimpleObjectProperty<Relation>  root        = new SimpleObjectProperty<>();
     private Layout                                style;
 
-    public AutoLayoutView() {
+    public AutoLayout() {
         this(null);
     }
 
-    public AutoLayoutView(Relation root) {
+    public AutoLayout(Relation root) {
         this(root, new LayoutModel() {
         });
     }
 
-    public AutoLayoutView(Relation root, LayoutModel model) {
+    public AutoLayout(Relation root, LayoutModel model) {
         this.model = model;
         style = new Layout(this.model);
         this.root.set(root);
         widthProperty().addListener((o, p, c) -> resize(c.doubleValue()));
         data.addListener((o, p, c) -> setContent());
         getStylesheets().addListener((ListChangeListener<String>) c -> style = new Layout(getStylesheets(),
-                                                                                          AutoLayoutView.this.model));
+                                                                                          AutoLayout.this.model));
     }
 
     public void autoLayout() {
