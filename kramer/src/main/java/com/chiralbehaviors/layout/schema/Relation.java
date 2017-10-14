@@ -407,6 +407,9 @@ public class Relation extends SchemaNode {
                                          : Math.round(cardSum / datas.size());
             }
             tableColumnWidth += child.measure(aggregate, childSingular, layout);
+            if (!singular && child.equals(children.get(children.size() - 1))) {
+                tableColumnWidth += layout.scrollWidth();
+            }
         }
         int effectiveChildren = children.size() - singularChildren;
         averageCardinality = Math.max(1,

@@ -295,6 +295,10 @@ public class Layout {
         return headerRow.getHeight();
     }
 
+    public double scrollWidth() {
+        return 24;
+    }
+
     public void setItemsOf(Control control, JsonNode data) {
         if (data == null) {
             data = JsonNodeFactory.instance.arrayNode();
