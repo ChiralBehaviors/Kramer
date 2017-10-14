@@ -38,10 +38,10 @@ import javafx.util.Pair;
  */
 public class Primitive extends SchemaNode {
 
-    private double  columnWidth    = 0;
-    private double  defaultWidth   = 0;
-    private double  maxWidth       = 0;
-    private boolean variableLength = false;
+    private double  columnWidth       = 0;
+    private double  maxWidth          = 0;
+    private double  valueDefaultWidth = 0;
+    private boolean variableLength    = false;
 
     public Primitive() {
         super();
@@ -74,11 +74,6 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    void compress(Layout layout, double available) {
-        justifiedWidth = available - layout.getTextHorizontalInset();
-    }
-
-    @Override
     void justify(double width, Layout layout) {
         justifiedWidth = Layout.snap(width - layout.getTextHorizontalInset());
     }
@@ -98,7 +93,12 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double measure(JsonNode data, Layout layout) {
+    void compress(Layout layout, double available) {
+        justifiedWidth = available - layout.getTextHorizontalInset();
+    }
+
+    @Override
+    double measure(JsonNode data, boolean singular, Layout layout) {
         double labelWidth = getLabelWidth(layout);
         double sum = 0;
         maxWidth = 0;
@@ -115,8 +115,9 @@ public class Primitive extends SchemaNode {
         }
         double averageWidth = data.size() == 0 ? 0 : (sum / data.size());
 
-        columnWidth = Layout.snap(Math.max(labelWidth, Math.max(defaultWidth,
-                                                                averageWidth)));
+        columnWidth = Layout.snap(Math.max(labelWidth,
+                                           Math.max(valueDefaultWidth,
+                                                    averageWidth)));
         if (maxWidth > averageWidth) {
             variableLength = true;
         }
