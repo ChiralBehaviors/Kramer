@@ -17,7 +17,6 @@
 package com.chiralbehaviors.layout.schema;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -28,7 +27,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import javafx.scene.Parent;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -62,35 +60,6 @@ public class Primitive extends SchemaNode {
     @Override
     public String toString(int indent) {
         return toString();
-    }
-
-    @Override
-    Function<Double, Pair<Consumer<JsonNode>, Control>> buildColumn(int cardinality,
-                                                                    Function<JsonNode, JsonNode> extractor,
-                                                                    Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
-                                                                    Layout layout,
-                                                                    double inset,
-                                                                    INDENT indent) {
-        return resolvedHeight -> {
-            Label control = buildControl(1, layout);
-            control.setPrefHeight(resolvedHeight);
-            bind(control, columnMap.get(this), inset);
-            //            layout.getModel()
-            //                  .apply(control, Primitive.this);
-            return new Pair<>(node -> setItems(control, extractFrom(node),
-                                               layout),
-                              control);
-        };
-    }
-
-    @Override
-    TableColumn<JsonNode, JsonNode> buildColumn(Layout layout, double inset,
-                                                INDENT indent) {
-        TableColumn<JsonNode, JsonNode> column = super.buildColumn(layout,
-                                                                   inset,
-                                                                   indent);
-        column.setPrefWidth(justifiedWidth + inset);
-        return column;
     }
 
     @Override
@@ -197,19 +166,6 @@ public class Primitive extends SchemaNode {
     @Override
     double tableColumnWidth(Layout layout) {
         return columnWidth + layout.getTextHorizontalInset();
-    }
-
-    private void bind(Control control, TableColumn<JsonNode, ?> column,
-                      double inset) {
-        column.widthProperty()
-              .addListener((o, prev, cur) -> {
-                  double width = cur.doubleValue() - inset;
-                  control.setMinWidth(width);
-                  control.setMaxWidth(width);
-              });
-        double width = column.getWidth() - inset;
-        control.setMinWidth(width);
-        control.setPrefWidth(width);
     }
 
     private Label buildControl(int cardinality, Layout layout) {

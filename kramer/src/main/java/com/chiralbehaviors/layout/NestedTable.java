@@ -192,9 +192,7 @@ public class NestedTable extends Control {
         row.setMinHeight(rendered);
         row.setMaxHeight(rendered);
 
-        double width = relation.getJustifiedWidth()
-                       + layout.getListCellHorizontalInset()
-                       + layout.getListHorizontalInset();
+        double width = relation.getJustifiedWidth() + layout.getNestedInset();
         row.setMinWidth(width);
         row.setMaxWidth(width);
 

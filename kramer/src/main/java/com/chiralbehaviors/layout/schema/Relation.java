@@ -19,7 +19,6 @@ package com.chiralbehaviors.layout.schema;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -30,7 +29,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
-import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.ContentDisplay;
@@ -38,7 +36,6 @@ import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.TableColumn;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
@@ -226,94 +223,6 @@ public class Relation extends SchemaNode {
         if (subDelta >= 1.0) {
             columnSets.forEach(c -> c.adjustHeight(subDelta));
         }
-    }
-
-    @Override
-    Function<Double, Pair<Consumer<JsonNode>, Control>> buildColumn(int cardinality,
-                                                                    Function<JsonNode, JsonNode> extractor,
-                                                                    Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
-                                                                    Layout layout,
-                                                                    double inset,
-                                                                    INDENT indent) {
-        if (isFold()) {
-            return fold.buildColumn(averageCardinality * cardinality,
-                                    extract(extractor), columnMap, layout,
-                                    inset, indent);
-        }
-
-        List<Function<Double, Pair<Consumer<JsonNode>, Control>>> fields = new ArrayList<>();
-        children.forEach(child -> fields.add(child.buildColumn(averageCardinality,
-                                                               n -> n,
-                                                               columnMap,
-                                                               layout,
-                                                               inset(layout,
-                                                                     inset,
-                                                                     child,
-                                                                     indent),
-                                                               indent(child))));
-        double calculatedHeight = (rowHeight * cardinality)
-                                  + layout.getListVerticalInset();
-
-        Function<JsonNode, JsonNode> extract = extractor == null ? n -> n
-                                                                 : extract(extractor);
-        TableColumn<JsonNode, ?> column = columnMap.get(this);
-        return rendered -> {
-            double deficit = Math.max(0, rendered - calculatedHeight);
-            double childDeficit = Layout.snap(Math.max(0,
-                                                       deficit / cardinality));
-            double extended = Layout.snap(rowHeight + childDeficit);
-
-            ListView<JsonNode> row = new ListView<JsonNode>();
-            layout.getModel()
-                  .apply(row, this);
-            row.setFixedCellSize(extended);
-            HBox.setHgrow(row, Priority.ALWAYS);
-            row.setPrefHeight(rendered);
-            if (column != null) {
-                double width = Layout.snap(column.getColumns()
-                                                 .stream()
-                                                 .mapToDouble(c -> Layout.snap(c.getWidth()))
-                                                 .sum()
-                                           - inset);
-                row.setPrefWidth(width);
-            }
-            row.setCellFactory(control -> {
-                ListCell<JsonNode> cell = rowCell(fields,
-                                                  Layout.snap(extended
-                                                              - layout.getListCellVerticalInset()),
-                                                  layout, row);
-                cell.setPrefHeight(extended);
-                cell.setPrefWidth(row.getWidth()
-                                  - layout.getListCellHorizontalInset()
-                                  - layout.getListHorizontalInset());
-                layout.getModel()
-                      .apply(cell, Relation.this);
-                return cell;
-            });
-            return new Pair<>(node -> {
-                setItems(row, extract.apply(node), layout);
-            }, row);
-        };
-    }
-
-    @Override
-    TableColumn<JsonNode, JsonNode> buildColumn(Layout layout, double inset,
-                                                INDENT indent) {
-        if (isFold()) {
-            return fold.buildColumn(layout, inset, indent);
-        }
-        TableColumn<JsonNode, JsonNode> column = super.buildColumn(layout,
-                                                                   inset,
-                                                                   indent);
-        column.setPrefWidth(justifiedWidth);
-        ObservableList<TableColumn<JsonNode, ?>> columns = column.getColumns();
-        children.forEach(child -> columns.add(child.buildColumn(layout,
-                                                                inset(layout,
-                                                                      inset,
-                                                                      child,
-                                                                      indent),
-                                                                indent(child))));
-        return column;
     }
 
     @Override
@@ -638,51 +547,6 @@ public class Relation extends SchemaNode {
         return flattened;
     }
 
-    private INDENT indent(SchemaNode child) {
-        INDENT indent = INDENT.NONE;
-        if (children.size() == 1) {
-            return indent;
-        }
-        if (child == children.get(0)) {
-            indent = INDENT.LEFT;
-        } else if (child == children.get(children.size() - 1)) {
-            indent = INDENT.RIGHT;
-        }
-        return indent;
-    }
-
-    private double inset(Layout layout, double inset, SchemaNode child,
-                         INDENT indent) {
-        if (children.size() == 1) {
-            return inset + layout.getNestedInset();
-        }
-        switch (indent) {
-            case RIGHT:
-                if (child == children.get(children.size() - 1)) {
-                    return inset + layout.getNestedRightInset();
-                } else if (child == children.get(0)) {
-                    return layout.getNestedLeftInset();
-                }
-                break;
-            case LEFT:
-                if (child == children.get(0)) {
-                    return inset + layout.getNestedLeftInset();
-                } else if (child == children.get(children.size() - 1)) {
-                    return layout.getNestedRightInset();
-                }
-                break;
-            case NONE:
-                if (child == children.get(children.size() - 1)) {
-                    return layout.getNestedRightInset();
-                } else if (child == children.get(0)) {
-                    return layout.getNestedLeftInset();
-                }
-                break;
-            default:
-        }
-        return 0;
-    }
-
     private boolean isAutoFoldable() {
         return fold == null && autoFold && children.size() == 1
                && children.get(children.size() - 1) instanceof Relation;
@@ -755,58 +619,5 @@ public class Relation extends SchemaNode {
                 ((Relation) child).nestTable();
             }
         });
-    }
-
-    private ListCell<JsonNode> rowCell(List<Function<Double, Pair<Consumer<JsonNode>, Control>>> fields,
-                                       double resolvedHeight, Layout layout,
-                                       ListView<JsonNode> row) {
-
-        return new ListCell<JsonNode>() {
-            private final HBox         cell;
-            private Consumer<JsonNode> master;
-            {
-                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-                setAlignment(Pos.CENTER_LEFT);
-                cell = buildCell();
-            }
-
-            @Override
-            protected void updateItem(JsonNode item, boolean empty) {
-                if (item == getItem()) {
-                    return;
-                }
-                super.updateItem(item, empty);
-                if (empty) {
-                    return;
-                }
-                if (item == null) {
-                    setGraphic(null);
-                    return;
-                }
-                setGraphic(cell);
-                master.accept(item);
-                cell.requestLayout();
-            }
-
-            private HBox buildCell() {
-                HBox r = new HBox();
-                r.setMinWidth(0);
-                r.setPrefWidth(1);
-                r.setPrefHeight(resolvedHeight);
-                List<Consumer<JsonNode>> consumers = new ArrayList<>();
-                fields.forEach(p -> {
-                    Pair<Consumer<JsonNode>, Control> pair = p.apply(resolvedHeight);
-                    Control control = pair.getValue();
-                    control.setPrefHeight(resolvedHeight);
-                    r.getChildren()
-                     .add(control);
-                    consumers.add(pair.getKey());
-                });
-                master = node -> consumers.forEach(c -> {
-                    c.accept(node);
-                });
-                return r;
-            }
-        };
     }
 }

@@ -19,7 +19,6 @@ package com.chiralbehaviors.layout.schema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -34,7 +33,6 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
 import javafx.util.Pair;
 
 /**
@@ -218,20 +216,6 @@ abstract public class SchemaNode {
 
     void adjustHeight(double delta) {
         this.height = Layout.snap(height + delta);
-    }
-
-    abstract Function<Double, Pair<Consumer<JsonNode>, Control>> buildColumn(int cardinality,
-                                                                             Function<JsonNode, JsonNode> extractor,
-                                                                             Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
-                                                                             Layout layout,
-                                                                             double inset,
-                                                                             INDENT indent);
-
-    TableColumn<JsonNode, JsonNode> buildColumn(Layout layout, double inset,
-                                                INDENT indent) {
-        TableColumn<JsonNode, JsonNode> column = new TableColumn<>(label);
-        column.setUserData(this);
-        return column;
     }
 
     abstract double cellHeight(int cardinality, Layout layout,
