@@ -295,8 +295,8 @@ public class Layout {
         return headerRow.getHeight();
     }
 
-    public double scrollWidth() {
-        return 24;
+    public double getScrollWidth() {
+        return 16;
     }
 
     public void setItemsOf(Control control, JsonNode data) {

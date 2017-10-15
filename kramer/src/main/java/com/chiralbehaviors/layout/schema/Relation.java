@@ -256,7 +256,7 @@ public class Relation extends SchemaNode {
             return;
         }
         if (useTable) {
-            justify(justified, layout);
+            justify(justified - layout.getNestedInset(), layout);
             return;
         }
         justifiedWidth = Layout.snap(justified - layout.getNestedInset());
@@ -342,13 +342,13 @@ public class Relation extends SchemaNode {
                                            .max()
                                            .orElse(0d)
                                    + labelWidth);
+        double extended = outlineWidth + layout.getNestedInset();
         double tableWidth = tableColumnWidth(layout);
-        double oWidth = outlineWidth + layout.getNestedInset();
-        if (tableWidth <= oWidth) {
+        if (tableWidth <= extended) {
             nestTable();
             return tableWidth;
         }
-        return oWidth;
+        return extended;
     }
 
     /* (non-Javadoc)
@@ -357,8 +357,7 @@ public class Relation extends SchemaNode {
     @Override
     double layoutWidth(Layout layout) {
         return (useTable ? tableColumnWidth : outlineWidth)
-               + layout.getListCellHorizontalInset()
-               + layout.getListHorizontalInset();
+               + layout.getNestedInset();
     }
 
     @Override
@@ -381,9 +380,6 @@ public class Relation extends SchemaNode {
             ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
             int cardSum = 0;
             boolean childSingular = false;
-            if (singular) {
-
-            }
             List<JsonNode> datas = data.isArray() ? new ArrayList<>(data.size())
                                                   : Arrays.asList(data);
             if (data.isArray()) {
@@ -407,9 +403,6 @@ public class Relation extends SchemaNode {
                                          : Math.round(cardSum / datas.size());
             }
             tableColumnWidth += child.measure(aggregate, childSingular, layout);
-            if (!singular && child.equals(children.get(children.size() - 1))) {
-                tableColumnWidth += layout.scrollWidth();
-            }
         }
         int effectiveChildren = children.size() - singularChildren;
         averageCardinality = Math.max(1,
@@ -464,8 +457,7 @@ public class Relation extends SchemaNode {
 
     @Override
     double outlineWidth(Layout layout) {
-        return outlineWidth + layout.getListCellHorizontalInset()
-               + layout.getListHorizontalInset();
+        return outlineWidth + layout.getNestedInset();
     }
 
     @Override

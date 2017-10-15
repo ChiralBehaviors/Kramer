@@ -33,6 +33,7 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
@@ -54,35 +55,35 @@ public class NestedTable extends Control {
 
     private ListView<JsonNode> buildRows(int card, Relation relation,
                                          Layout layout) {
-        ListView<JsonNode> row = new ListView<>();
+        ListView<JsonNode> rows = new ListView<>();
         layout.getModel()
-              .apply(row, relation);
+              .apply(rows, relation);
 
         double rowHeight = relation.getRowHeight();
-        row.setFixedCellSize(rowHeight);
+        rows.setFixedCellSize(rowHeight);
 
         double width = relation.getJustifiedWidth()
                        + layout.getListCellHorizontalInset()
                        + layout.getListHorizontalInset();
-        row.setMinWidth(width);
-        row.setMaxWidth(width);
+        rows.setMinWidth(width);
+        rows.setMaxWidth(width);
 
-        row.setMinHeight(relation.getHeight());
-        row.setMaxHeight(relation.getHeight());
+        rows.setMinHeight(relation.getHeight());
+        rows.setMaxHeight(relation.getHeight());
 
-        row.setCellFactory(listView -> {
+        rows.setCellFactory(listView -> {
             ListCell<JsonNode> cell = listCell(buildCell(rowHeight
                                                          - layout.getListCellVerticalInset(),
                                                          relation, layout));
 
             cell.setMinWidth(relation.getJustifiedWidth());
-            cell.setMaxWidth(relation.getJustifiedWidth());
+            cell.setPrefWidth(relation.getJustifiedWidth());
 
             cell.setMinHeight(rowHeight);
             cell.setMaxHeight(rowHeight);
             return cell;
         });
-        return row;
+        return rows;
     }
 
     public void setItems(JsonNode items) {
@@ -106,8 +107,9 @@ public class NestedTable extends Control {
                                                        Relation relation,
                                                        Layout layout) {
         HBox cell = new HBox();
+        HBox.setHgrow(cell, Priority.ALWAYS);
         cell.setMinWidth(relation.getJustifiedWidth());
-        cell.setMaxWidth(relation.getJustifiedWidth());
+        cell.setPrefWidth(relation.getJustifiedWidth());
         cell.setMinHeight(rendered);
         cell.setMaxHeight(rendered);
         List<Consumer<JsonNode>> consumers = new ArrayList<>();
