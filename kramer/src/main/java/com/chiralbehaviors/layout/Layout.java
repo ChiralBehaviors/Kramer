@@ -177,8 +177,8 @@ public class Layout {
 
     public void initialize(List<String> styleSheets) {
         this.styleSheets = styleSheets;
-        TextArea text = new TextArea("Lorem Ipsum");
-        TextArea labelText = new TextArea("Lorem Ipsum");
+        Label text = new Label("Lorem Ipsum");
+        Label labelText = new Label("Lorem Ipsum");
 
         ListView<String> outlineList = new ListView<>();
 
