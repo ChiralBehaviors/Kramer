@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
-import com.chiralbehaviors.layout.control.NestedTable;
+import com.chiralbehaviors.layout.NestedTable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -161,7 +161,7 @@ public class Relation extends SchemaNode {
     }
 
     public void measure(JsonNode jsonNode, Layout layout) {
-        measure(jsonNode, !jsonNode.isArray(), layout);
+        measure(null, jsonNode, !jsonNode.isArray(), layout);
     }
 
     public void setAverageCardinality(int averageCardinality) {
@@ -369,7 +369,7 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    double measure(JsonNode data, boolean isSingular, Layout layout) {
+    double measure(Relation parent, JsonNode data, boolean isSingular, Layout layout) {
         if (isAutoFoldable()) {
             fold = ((Relation) children.get(children.size() - 1));
         }
@@ -410,7 +410,7 @@ public class Relation extends SchemaNode {
                 sum += datas.size() == 0 ? 1
                                          : Math.round(cardSum / datas.size());
             }
-            tableColumnWidth += child.measure(aggregate, childSingular, layout);
+            tableColumnWidth += child.measure(null, aggregate, childSingular, layout);
         }
         int effectiveChildren = children.size() - singularChildren;
         averageCardinality = Math.max(1,

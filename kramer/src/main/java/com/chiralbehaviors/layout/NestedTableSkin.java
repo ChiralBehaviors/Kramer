@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.control;
+package com.chiralbehaviors.layout;
 
 import javafx.scene.control.SkinBase;
 

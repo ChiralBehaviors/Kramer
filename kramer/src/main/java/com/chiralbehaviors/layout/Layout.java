@@ -17,9 +17,10 @@
 package com.chiralbehaviors.layout;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import com.chiralbehaviors.layout.control.NestedTable;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -66,6 +67,21 @@ public class Layout {
         }
     }
 
+    public interface PrimitiveLayout extends SchemaNodeLayout {
+
+        double measure(JsonNode content);
+    }
+
+    public interface SchemaNodeLayout {
+        double getElementHeightInset();
+
+        double getOutlineInset();
+
+        double getRowHeightInset();
+
+        double getTableInset();
+    }
+
     private static final FontLoader FONT_LOADER = Toolkit.getToolkit()
                                                          .getFontLoader();
     private static final TextLayout LAYOUT      = Toolkit.getToolkit()
@@ -99,13 +115,17 @@ public class Layout {
                                    .getHeight();
     }
 
-    private Insets            listCellInsets = ZERO_INSETS;
-    private Insets            listInsets     = ZERO_INSETS;
-    private final LayoutModel model;
-    private List<String>      styleSheets;
-    private Font              textFont       = Font.getDefault();
-    private Insets            textInsets     = ZERO_INSETS;
-    private double            textLineHeight = 0;
+    private Insets                                listCellInsets = ZERO_INSETS;
+    private Insets                                listInsets     = ZERO_INSETS;
+    private final LayoutModel                     model;
+    @SuppressWarnings("unused")
+    private final Map<Primitive, PrimitiveLayout> primitves      = new HashMap<>();
+    @SuppressWarnings("unused")
+    private final Map<Relation, SchemaNodeLayout> relations      = new HashMap<>();
+    private List<String>                          styleSheets;
+    private Font                                  textFont       = Font.getDefault();
+    private Insets                                textInsets     = ZERO_INSETS;
+    private double                                textLineHeight = 0;
 
     public Layout(LayoutModel model) {
         this(Collections.emptyList(), model, true);

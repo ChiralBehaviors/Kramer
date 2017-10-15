@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
-import com.chiralbehaviors.layout.control.NestedTable;
+import com.chiralbehaviors.layout.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
@@ -107,7 +107,7 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double measure(JsonNode data, boolean singular, Layout layout) {
+    double measure(Relation parent, JsonNode data, boolean singular, Layout layout) {
         double labelWidth = getLabelWidth(layout);
         double sum = 0;
         maxWidth = 0;

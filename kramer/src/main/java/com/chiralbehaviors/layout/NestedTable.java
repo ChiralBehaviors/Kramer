@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.control;
+package com.chiralbehaviors.layout;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import com.chiralbehaviors.layout.Layout;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.fasterxml.jackson.databind.JsonNode;

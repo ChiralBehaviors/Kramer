@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
-import com.chiralbehaviors.layout.control.NestedTable;
+import com.chiralbehaviors.layout.NestedTable;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -250,7 +250,8 @@ abstract public class SchemaNode {
 
     abstract double layoutWidth(Layout layout);
 
-    abstract double measure(JsonNode data, boolean singular, Layout layout);
+    abstract double measure(Relation parent, JsonNode data, boolean singular,
+                            Layout layout);
 
     abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                              double labelWidth,
