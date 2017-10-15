@@ -137,7 +137,8 @@ public class NestedTable extends Control {
     }
 
     private HBox buildHeader(Relation relation, Layout layout) {
-        return new HBox();
+        HBox header = new HBox();
+        return header;
     }
 
     private Pair<Consumer<JsonNode>, Region> buildPrimitive(double rendered,

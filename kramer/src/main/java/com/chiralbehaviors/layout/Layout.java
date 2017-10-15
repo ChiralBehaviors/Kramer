@@ -30,7 +30,6 @@ import com.sun.javafx.scene.text.TextLayout;
 import com.sun.javafx.tk.FontLoader;
 import com.sun.javafx.tk.Toolkit;
 
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
@@ -39,8 +38,6 @@ import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -105,8 +102,6 @@ public class Layout {
     private Insets            listInsets     = ZERO_INSETS;
     private final LayoutModel model;
     private List<String>      styleSheets;
-    private Insets            tableInsets    = ZERO_INSETS;
-    private Insets            tableRowInsets = ZERO_INSETS;;
     private Font              textFont       = Font.getDefault();
     private Insets            textInsets     = ZERO_INSETS;
     private double            textLineHeight = 0;
@@ -191,29 +186,9 @@ public class Layout {
         };
         outlineList.setCellFactory(s -> outlineListCell);
 
-        TableCell<String, String> tableCell = new TableCell<String, String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(item);
-            }
-        };
-
-        TableView<String> table = new TableView<>();
-
-        TableRow<String> tableRow = new TableRow<>();
-        table.setRowFactory(v -> tableRow);
-
-        TableColumn<String, String> column = new TableColumn<>("");
-        column.setCellFactory(c -> tableCell);
-        column.setCellValueFactory(s -> new SimpleStringProperty(s.getValue()));
-
-        table.getColumns()
-             .add(column);
-
         VBox root = new VBox();
         root.getChildren()
-            .addAll(table, outlineList, text, labelText);
+            .addAll(outlineList, text, labelText);
         Scene scene = new Scene(root, 800, 600);
         if (styleSheets != null) {
             scene.getStylesheets()
@@ -225,11 +200,6 @@ public class Layout {
         labelText.applyCss();
         labelText.layout();
 
-        ObservableList<String> tableItems = table.getItems();
-        tableItems.add("Lorem ipsum");
-        table.setItems(null);
-        table.setItems(tableItems);
-
         ObservableList<String> listItems = outlineList.getItems();
         listItems.add("Lorem ipsum");
         outlineList.setItems(null);
@@ -238,11 +208,6 @@ public class Layout {
 
         root.applyCss();
         root.layout();
-        table.applyCss();
-        table.layout();
-        table.refresh();
-        tableRow.applyCss();
-        tableRow.layout();
 
         outlineList.applyCss();
         outlineList.layout();
@@ -259,16 +224,6 @@ public class Layout {
                                 outlineList.snappedRightInset(),
                                 outlineList.snappedBottomInset(),
                                 outlineList.snappedLeftInset());
-
-        tableInsets = new Insets(table.snappedTopInset(),
-                                 table.snappedRightInset(),
-                                 table.snappedBottomInset(),
-                                 table.snappedLeftInset());
-
-        tableRowInsets = new Insets(tableRow.snappedTopInset(),
-                                    tableRow.snappedRightInset(),
-                                    tableRow.snappedBottomInset(),
-                                    tableRow.snappedLeftInset());
 
         textFont = text.getFont();
         textLineHeight = snap(getLineHeight(textFont,
@@ -336,14 +291,6 @@ public class Layout {
         this.listInsets = listInsets;
     }
 
-    public void setTableInsets(Insets tableInsets) {
-        this.tableInsets = tableInsets;
-    }
-
-    public void setTableRowInsets(Insets tableRowInsets) {
-        this.tableRowInsets = tableRowInsets;
-    }
-
     public void setTextFont(Font textFont) {
         this.textFont = textFont;
     }
@@ -368,9 +315,8 @@ public class Layout {
 
     @Override
     public String toString() {
-        return String.format("Layout [model=%s\n listCellInsets=%s\n listInsets=%s\n styleSheets=%s\n tableInsets=%s\n tableRowInsets=%s\n textFont=%s\n textInsets=%s\n textLineHeight=%s]",
+        return String.format("Layout [model=%s\n listCellInsets=%s\n listInsets=%s\n styleSheets=%s\n textFont=%s\n textInsets=%s\n textLineHeight=%s]",
                              model, listCellInsets, listInsets, styleSheets,
-                             tableInsets, tableRowInsets, textFont, textInsets,
-                             textLineHeight);
+                             textFont, textInsets, textLineHeight);
     }
 }
