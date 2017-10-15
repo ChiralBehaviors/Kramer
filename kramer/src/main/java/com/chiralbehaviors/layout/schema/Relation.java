@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
-import com.chiralbehaviors.layout.NestedTable;
+import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -39,6 +39,7 @@ import javafx.scene.control.ListView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.util.Pair;
@@ -72,6 +73,13 @@ public class Relation extends SchemaNode {
         layout(cardinality, layout, snapped);
         compress(layout, snapped);
         cellHeight(cardinality, layout, width);
+    }
+
+    @Override
+    public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
+                                                        double rendered,
+                                                        Layout layout) {
+        return table.buildRelation(rendered, this, layout);
     }
 
     public Control buildControl(int cardinality, Layout layout, double width) {
@@ -437,6 +445,8 @@ public class Relation extends SchemaNode {
         control.setPrefHeight(height);
 
         Pane box = new HBox();
+        box.getStyleClass()
+           .add(field);
         box.setPrefWidth(justified);
         box.setPrefHeight(height);
         box.getChildren()

@@ -131,13 +131,15 @@ public class ColumnSet {
         span.setPrefHeight(cellHeight);
         List<Consumer<JsonNode>> controls = new ArrayList<>();
         columns.forEach(c -> {
-            VBox cell = new VBox();
-            cell.setPrefHeight(cellHeight);
-            cell.setPrefWidth(c.getWidth());
-            controls.add(c.build(cardinality, cell, cardinality, extractor,
+            VBox column = new VBox();
+            column.getStyleClass()
+                  .add("column");
+            column.setPrefHeight(cellHeight);
+            column.setPrefWidth(c.getWidth());
+            controls.add(c.build(cardinality, column, cardinality, extractor,
                                  layout, labelWidth));
             span.getChildren()
-                .add(cell);
+                .add(column);
         });
         return new Pair<>(item -> controls.forEach(c -> c.accept(item)), span);
     }

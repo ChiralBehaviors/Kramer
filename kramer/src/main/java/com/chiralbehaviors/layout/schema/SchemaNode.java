@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
+import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -33,6 +34,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
+import javafx.scene.layout.Region;
 import javafx.util.Pair;
 
 /**
@@ -85,7 +87,7 @@ abstract public class SchemaNode {
     }
 
     public static String asText(JsonNode node) {
-        if (node == null  || node.isNull()) {
+        if (node == null || node.isNull()) {
             return "";
         }
         boolean first = true;
@@ -261,4 +263,8 @@ abstract public class SchemaNode {
     abstract double rowHeight(int cardinality, Layout layout, double justified);
 
     abstract double tableColumnWidth(Layout layout);
+
+    abstract public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
+                                                                 double rendered,
+                                                                 Layout layout);
 }

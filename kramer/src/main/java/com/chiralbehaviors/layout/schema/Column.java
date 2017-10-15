@@ -95,19 +95,19 @@ public class Column {
                                                                      .collect(Collectors.toList()));
     }
 
-    Consumer<JsonNode> build(double cellHeight, VBox cell, int cardinality,
+    Consumer<JsonNode> build(double cellHeight, VBox column, int cardinality,
                              Function<JsonNode, JsonNode> extractor,
                              Layout layout, double labelWidth) {
         List<Consumer<JsonNode>> controls = new ArrayList<>();
-        fields.forEach(child -> {
-            Pair<Consumer<JsonNode>, Parent> master = child.outlineElement(cardinality,
+        fields.forEach(field -> {
+            Pair<Consumer<JsonNode>, Parent> master = field.outlineElement(cardinality,
                                                                            labelWidth,
                                                                            extractor,
                                                                            layout,
                                                                            width);
             controls.add(master.getKey());
-            cell.getChildren()
-                .add(master.getValue());
+            column.getChildren()
+                  .add(master.getValue());
         });
         return item -> controls.forEach(m -> m.accept(item));
     }

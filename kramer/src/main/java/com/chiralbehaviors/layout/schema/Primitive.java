@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
+import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
@@ -29,6 +30,7 @@ import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
 
@@ -49,6 +51,13 @@ public class Primitive extends SchemaNode {
 
     public Primitive(String label) {
         super(label);
+    }
+
+    @Override
+    public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
+                                                        double rendered,
+                                                        Layout layout) {
+        return table.buildPrimitive(rendered, this, layout);
     }
 
     @Override
@@ -74,6 +83,11 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
+    void compress(Layout layout, double available) {
+        justifiedWidth = available - layout.getTextHorizontalInset();
+    }
+
+    @Override
     void justify(double width, Layout layout) {
         justifiedWidth = Layout.snap(width - layout.getTextHorizontalInset());
     }
@@ -90,11 +104,6 @@ public class Primitive extends SchemaNode {
     @Override
     double layoutWidth(Layout layout) {
         return tableColumnWidth(layout);
-    }
-
-    @Override
-    void compress(Layout layout, double available) {
-        justifiedWidth = available - layout.getTextHorizontalInset();
     }
 
     @Override

@@ -19,6 +19,7 @@ package com.chiralbehaviors.layout;
 import java.util.Collections;
 import java.util.List;
 
+import com.chiralbehaviors.layout.control.NestedTable;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -158,6 +159,10 @@ public class Layout {
         return listInsets.getRight() + listCellInsets.getRight();
     }
 
+    public double getScrollWidth() {
+        return 16;
+    }
+
     public double getTextHorizontalInset() {
         return textInsets.getLeft() + textInsets.getRight();
     }
@@ -248,10 +253,6 @@ public class Layout {
         root.getChildren()
             .clear();
         return headerRow.getHeight();
-    }
-
-    public double getScrollWidth() {
-        return 16;
     }
 
     public void setItemsOf(Control control, JsonNode data) {

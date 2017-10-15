@@ -117,20 +117,20 @@ public class SchemaNodeTest extends ApplicationTest {
         assertEquals("children", children.field);
         assertEquals(773.0, children.getChildren()
                                     .stream()
-                                    .mapToDouble(f -> f.justifiedWidth)
+                                    .mapToDouble(f -> f.getJustifiedWidth())
                                     .reduce((a, b) -> a + b)
                                     .getAsDouble(),
                      0d);
-        assertEquals(1057.0, children.justifiedWidth, 0d);
+        assertEquals(1057.0, children.getJustifiedWidth(), 0d);
 
         assertEquals(120.0, children.getChildren()
-                                    .get(0).justifiedWidth,
+                                    .get(0).getJustifiedWidth(),
                      0d);
         assertEquals(79.0, children.getChildren()
-                                   .get(1).justifiedWidth,
+                                   .get(1).getJustifiedWidth(),
                      0d);
         assertEquals(109.0, children.getChildren()
-                                    .get(2).justifiedWidth,
+                                    .get(2).getJustifiedWidth(),
                      0d);
 
         Relation relationship = (Relation) children.getChildren()
@@ -138,21 +138,21 @@ public class SchemaNodeTest extends ApplicationTest {
         assertEquals("relationship", relationship.field);
         assertEquals(325.0, relationship.getChildren()
                                         .stream()
-                                        .mapToDouble(f -> f.justifiedWidth)
+                                        .mapToDouble(f -> f.getJustifiedWidth())
                                         .reduce((a, b) -> a + b)
                                         .getAsDouble(),
                      0d);
-        assertEquals(355.0, relationship.justifiedWidth, 0d);
+        assertEquals(355.0, relationship.getJustifiedWidth(), 0d);
 
         Relation child = (Relation) children.getChildren()
                                             .get(4);
         assertEquals("child", child.field);
         assertEquals(89.0, child.getChildren()
                                 .stream()
-                                .mapToDouble(f -> f.justifiedWidth)
+                                .mapToDouble(f -> f.getJustifiedWidth())
                                 .reduce((a, b) -> a + b)
                                 .getAsDouble(),
                      0d);
-        assertEquals(110.0, child.justifiedWidth, 0d);
+        assertEquals(110.0, child.getJustifiedWidth(), 0d);
     }
 }
