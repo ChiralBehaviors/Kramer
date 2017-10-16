@@ -67,7 +67,13 @@ public class Layout {
 
     public interface PrimitiveLayout extends SchemaNodeLayout {
 
+        double cellHeight(double rows);
+
+        double extend(double columnWidth);
+
         double getHorizontalInset();
+
+        double justify(double available);
 
         double measure(JsonNode content);
     }
@@ -78,13 +84,19 @@ public class Layout {
 
         double extendColumn(double tableColumnWidth);
 
+        double extendElement(double outlineWidth);
+
+        Double extendHeight(int cardinality, double height);
+
+        double extendRow(double elementHeight);
+
         double getRowHeightInset();
 
         double getTableInset();
 
-        double measure(String label);
+        Double justify(double width);
 
-        double extendElement(double outlineWidth);
+        double measure(String label);
 
     }
 
@@ -378,6 +390,17 @@ public class Layout {
         return new PrimitiveLayout() {
 
             @Override
+            public double cellHeight(double rows) {
+                return snap(getTextLineHeight() * rows)
+                       + getTextVerticalInset();
+            }
+
+            @Override
+            public double extend(double width) {
+                return width + getHorizontalInset();
+            }
+
+            @Override
             public double getElementHeightInset() {
                 return getTextVerticalInset();
             }
@@ -390,6 +413,11 @@ public class Layout {
             @Override
             public double getInset() {
                 return getTextHorizontalInset();
+            }
+
+            @Override
+            public double justify(double available) {
+                return available - getTextHorizontalInset();
             }
 
             @Override
@@ -418,6 +446,22 @@ public class Layout {
             }
 
             @Override
+            public double extendElement(double outlineWidth) {
+                return outlineWidth + getNestedInset();
+            }
+
+            @Override
+            public Double extendHeight(int cardinality, double height) {
+                return (cardinality * (height + getListCellVerticalInset()))
+                       + getListVerticalInset();
+            }
+
+            @Override
+            public double extendRow(double height) {
+                return height + getListVerticalInset();
+            }
+
+            @Override
             public double getElementHeightInset() {
                 return getListCellVerticalInset() + getListVerticalInset();
             }
@@ -438,13 +482,13 @@ public class Layout {
             }
 
             @Override
-            public double measure(String label) {
-                return textWidth(label) + getTextHorizontalInset();
+            public Double justify(double width) {
+                return width - getNestedInset();
             }
 
             @Override
-            public double extendElement(double outlineWidth) {
-                return outlineWidth + getNestedInset();
+            public double measure(String label) {
+                return textWidth(label) + getTextHorizontalInset();
             }
         };
     }

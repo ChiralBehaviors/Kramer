@@ -198,9 +198,7 @@ abstract public class SchemaNode {
         return label;
     }
 
-    public double getLabelWidth(Layout layout) {
-        return layout.textWidth(label);
-    }
+    abstract public double getLabelWidth();
 
     public boolean isRelation() {
         return false;
@@ -220,10 +218,9 @@ abstract public class SchemaNode {
         this.height = Layout.snap(height + delta);
     }
 
-    abstract double cellHeight(int cardinality, Layout layout,
-                               double available);
+    abstract double cellHeight(int cardinality, double available);
 
-    abstract void compress(Layout layout, double available);
+    abstract void compress(double available);
 
     Double getCalculatedHeight() {
         assert height != null : "cell height has not been calculated";
@@ -234,7 +231,7 @@ abstract public class SchemaNode {
         return false;
     }
 
-    abstract void justify(double width, Layout layout);
+    abstract void justify(double width);
 
     Label label(double labelWidth) {
         Label labelText = new Label(label);
@@ -246,9 +243,9 @@ abstract public class SchemaNode {
         return labelText;
     }
 
-    abstract double layout(int cardinality, Layout layout, double width);
+    abstract double layout(int cardinality, double width);
 
-    abstract double layoutWidth(Layout layout);
+    abstract double layoutWidth();
 
     abstract double measure(Relation parent, JsonNode data, boolean singular,
                             Layout layout);
@@ -261,9 +258,9 @@ abstract public class SchemaNode {
 
     abstract double outlineWidth(Layout layout);
 
-    abstract double rowHeight(int cardinality, Layout layout, double justified);
+    abstract double rowHeight(int cardinality, double justified);
 
-    abstract double tableColumnWidth(Layout layout);
+    abstract double tableColumnWidth();
 
     abstract public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
                                                                  double rendered,

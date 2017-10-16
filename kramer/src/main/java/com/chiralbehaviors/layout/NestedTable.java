@@ -68,8 +68,7 @@ public class NestedTable extends Control {
                       + "-fx-padding: 3 20 3 20;" + "-fx-text-fill: #242d35;"
                       + "-fx-font-size: 14px;");
 
-        double width = child.getJustifiedWidth()
-                       + layout.getTextHorizontalInset();
+        double width = child.getJustifiedWidth();
 
         text.setMinWidth(width);
         text.setMaxWidth(width);
