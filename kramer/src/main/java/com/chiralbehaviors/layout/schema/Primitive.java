@@ -77,19 +77,18 @@ public class Primitive extends SchemaNode {
             return height;
         }
         double rows = Math.ceil((maxWidth / justified) + 0.5);
-        height = Layout.snap(layout.getTextLineHeight() * rows)
-                 + layout.getTextVerticalInset();
+        height = layout.textHeight(rows);
         return height;
     }
 
     @Override
     void compress(Layout layout, double available) {
-        justifiedWidth = available - layout.getTextHorizontalInset();
+        justifiedWidth = layout.baseTextWidth(available);
     }
 
     @Override
     void justify(double width, Layout layout) {
-        justifiedWidth = Layout.snap(width - layout.getTextHorizontalInset());
+        justifiedWidth = layout.baseTextWidth(width);
     }
 
     @Override
@@ -107,7 +106,8 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double measure(Relation parent, JsonNode data, boolean singular, Layout layout) {
+    double measure(Relation parent, JsonNode data, boolean singular,
+                   Layout layout) {
         double labelWidth = getLabelWidth(layout);
         double sum = 0;
         maxWidth = 0;
@@ -131,7 +131,7 @@ public class Primitive extends SchemaNode {
             variableLength = true;
         }
 
-        return columnWidth + layout.getTextHorizontalInset();
+        return layout.totalTextWidth(columnWidth);
     }
 
     @Override
@@ -174,7 +174,7 @@ public class Primitive extends SchemaNode {
 
     @Override
     double tableColumnWidth(Layout layout) {
-        return columnWidth + layout.getTextHorizontalInset();
+        return layout.totalTextWidth(columnWidth);
     }
 
     private Label buildControl(int cardinality, Layout layout) {

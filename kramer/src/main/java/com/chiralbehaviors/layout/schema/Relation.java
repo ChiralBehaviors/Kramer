@@ -244,16 +244,14 @@ public class Relation extends SchemaNode {
 
         int cardinality = singular ? 1 : card;
         if (!useTable) {
-            height = Layout.snap((cardinality * (columnSets.stream()
-                                                           .mapToDouble(cs -> cs.getCellHeight())
-                                                           .sum()
-                                                 + layout.getListCellVerticalInset()))
-                                 + layout.getListVerticalInset());
+            height = layout.outlineHeight(cardinality, (columnSets.stream()
+                                                                  .mapToDouble(cs -> cs.getCellHeight())
+                                                                  .sum()));
             return height;
         }
-        rowHeight = Layout.snap(elementHeight(layout)
-                                + layout.getListCellVerticalInset());
-        height = (rowHeight * cardinality) + layout.getListVerticalInset();
+        double elementHeight = elementHeight(layout);
+        rowHeight = layout.rowHeight(elementHeight);
+        height = layout.tableHeight(cardinality, elementHeight);
         return height;
     }
 
@@ -264,10 +262,10 @@ public class Relation extends SchemaNode {
             return;
         }
         if (useTable) {
-            justify(justified - layout.getNestedInset(), layout);
+            justify(layout.baseOutlineWidth(justified), layout);
             return;
         }
-        justifiedWidth = Layout.snap(justified - layout.getNestedInset());
+        justifiedWidth = layout.baseOutlineWidth(justified);
         double labelWidth = Layout.snap(children.stream()
                                                 .mapToDouble(n -> n.getLabelWidth(layout))
                                                 .max()
@@ -312,7 +310,7 @@ public class Relation extends SchemaNode {
             return;
         }
         assert useTable : "Not a nested table";
-        justifiedWidth = Layout.snap(width - layout.getNestedInset());
+        justifiedWidth = layout.baseTableColumnWidth(width);
         double slack = Layout.snap(Math.max(0,
                                             justifiedWidth - tableColumnWidth));
         double total = Layout.snap(children.stream()
@@ -339,8 +337,7 @@ public class Relation extends SchemaNode {
                                                 .mapToDouble(child -> child.getLabelWidth(layout))
                                                 .max()
                                                 .getAsDouble());
-        double available = Layout.snap(width - labelWidth
-                                       - layout.getNestedInset());
+        double available = layout.baseOutlineWidth(width - labelWidth);
         outlineWidth = Layout.snap(children.stream()
                                            .mapToDouble(child -> {
                                                return child.layout(cardinality,
@@ -350,7 +347,7 @@ public class Relation extends SchemaNode {
                                            .max()
                                            .orElse(0d)
                                    + labelWidth);
-        double extended = outlineWidth + layout.getNestedInset();
+        double extended = layout.totalOutlineWidth(outlineWidth);
         double tableWidth = tableColumnWidth(layout);
         if (tableWidth <= extended) {
             nestTable();
@@ -364,12 +361,13 @@ public class Relation extends SchemaNode {
      */
     @Override
     double layoutWidth(Layout layout) {
-        return (useTable ? tableColumnWidth : outlineWidth)
-               + layout.getNestedInset();
+        return useTable ? layout.totalTableColumnWidth(tableColumnWidth)
+                        : layout.totalOutlineWidth(outlineWidth);
     }
 
     @Override
-    double measure(Relation parent, JsonNode data, boolean isSingular, Layout layout) {
+    double measure(Relation parent, JsonNode data, boolean isSingular,
+                   Layout layout) {
         if (isAutoFoldable()) {
             fold = ((Relation) children.get(children.size() - 1));
         }
@@ -379,8 +377,7 @@ public class Relation extends SchemaNode {
         }
 
         singular = isSingular;
-        double labelWidth = layout.textWidth(label);
-        labelWidth += layout.getTextHorizontalInset();
+        double labelWidth = layout.totalTextWidth(layout.textWidth(label));
         double sum = 0;
         tableColumnWidth = 0;
         int singularChildren = 0;
@@ -410,7 +407,8 @@ public class Relation extends SchemaNode {
                 sum += datas.size() == 0 ? 1
                                          : Math.round(cardSum / datas.size());
             }
-            tableColumnWidth += child.measure(null, aggregate, childSingular, layout);
+            tableColumnWidth += child.measure(null, aggregate, childSingular,
+                                              layout);
         }
         int effectiveChildren = children.size() - singularChildren;
         averageCardinality = Math.max(1,
@@ -419,8 +417,8 @@ public class Relation extends SchemaNode {
                                                                       : (int) Math.ceil(sum
                                                                                         / effectiveChildren)));
         tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth));
-        return (isFold() ? fold.tableColumnWidth : tableColumnWidth)
-               + layout.getNestedInset();
+        return layout.totalTableColumnWidth(isFold() ? fold.tableColumnWidth
+                                                     : tableColumnWidth);
     }
 
     @Override
@@ -467,7 +465,7 @@ public class Relation extends SchemaNode {
 
     @Override
     double outlineWidth(Layout layout) {
-        return outlineWidth + layout.getNestedInset();
+        return layout.totalOutlineWidth(outlineWidth);
     }
 
     @Override
@@ -476,10 +474,10 @@ public class Relation extends SchemaNode {
             return fold.rowHeight(cardinality * averageCardinality, layout,
                                   justifiedWidth);
         }
-
-        return (cardinality
-                * (elementHeight(layout) + layout.getListCellVerticalInset()))
-               + layout.getListVerticalInset();
+        double elementHeight = elementHeight(layout);
+        rowHeight = layout.rowHeight(elementHeight);
+        height = layout.tableHeight(cardinality, elementHeight);
+        return height;
     }
 
     @Override
@@ -487,7 +485,7 @@ public class Relation extends SchemaNode {
         if (isFold()) {
             return fold.tableColumnWidth(layout);
         }
-        return tableColumnWidth + layout.getNestedInset();
+        return layout.totalTableColumnWidth(tableColumnWidth);
     }
 
     private Control buildNestedTable(Function<JsonNode, JsonNode> extractor,
@@ -508,10 +506,9 @@ public class Relation extends SchemaNode {
                                      averageCardinality * cardinality, layout);
         }
 
-        double cellHeight = columnSets.stream()
-                                      .mapToDouble(cs -> cs.getCellHeight())
-                                      .sum()
-                            + layout.getListCellVerticalInset();
+        double cellHeight = layout.outlineCellHeight(columnSets.stream()
+                                                               .mapToDouble(cs -> cs.getCellHeight())
+                                                               .sum());
         ListView<JsonNode> list = new ListView<>();
         layout.getModel()
               .apply(list, this);
@@ -519,7 +516,7 @@ public class Relation extends SchemaNode {
         list.setFixedCellSize(cellHeight);
         list.setCellFactory(c -> {
             ListCell<JsonNode> cell = listCell(extractor,
-                                               cellHeight - layout.getListCellVerticalInset(),
+                                               layout.baseOutlineCellHeight(cellHeight),
                                                layout);
             layout.getModel()
                   .apply(cell, this);

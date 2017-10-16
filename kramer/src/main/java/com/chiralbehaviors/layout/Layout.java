@@ -26,15 +26,12 @@ import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.sun.javafx.scene.control.skin.TableHeaderRow;
-import com.sun.javafx.scene.control.skin.TableViewSkinBase;
 import com.sun.javafx.scene.text.TextLayout;
 import com.sun.javafx.tk.FontLoader;
 import com.sun.javafx.tk.Toolkit;
 
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
-import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
@@ -147,52 +144,28 @@ public class Layout {
         }
     }
 
-    public double getListCellHorizontalInset() {
-        return listCellInsets.getLeft() + listCellInsets.getRight();
+    public double baseOutlineCellHeight(double cellHeight) {
+        return cellHeight - getListCellVerticalInset();
     }
 
-    public double getListCellVerticalInset() {
-        return listCellInsets.getTop() + listCellInsets.getBottom();
+    public double baseOutlineWidth(double width) {
+        return width - getNestedInset();
     }
 
-    public double getListHorizontalInset() {
-        return listInsets.getLeft() + listInsets.getRight();
+    public double baseRowCellHeight(double extended) {
+        return extended - getListCellVerticalInset();
     }
 
-    public double getListVerticalInset() {
-        return listInsets.getTop() + listInsets.getBottom();
+    public Double baseTableColumnWidth(double width) {
+        return width - getNestedInset();
+    }
+
+    public Double baseTextWidth(double width) {
+        return width - getTextHorizontalInset();
     }
 
     public LayoutModel getModel() {
         return model;
-    }
-
-    public double getNestedInset() {
-        return getNestedLeftInset() + getNestedRightInset();
-    }
-
-    public double getNestedLeftInset() {
-        return listInsets.getLeft() + listCellInsets.getLeft();
-    }
-
-    public double getNestedRightInset() {
-        return listInsets.getRight() + listCellInsets.getRight();
-    }
-
-    public double getScrollWidth() {
-        return 16;
-    }
-
-    public double getTextHorizontalInset() {
-        return textInsets.getLeft() + textInsets.getRight();
-    }
-
-    public double getTextLineHeight() {
-        return textLineHeight;
-    }
-
-    public double getTextVerticalInset() {
-        return textInsets.getTop() + textInsets.getBottom();
     }
 
     public void initialize(List<String> styleSheets) {
@@ -257,22 +230,21 @@ public class Layout {
         textInsets = new Insets(3, 20, 3, 20);
     }
 
-    public double measureHeader(TableView<?> table) {
-        Group root = new Group(table);
-        Scene scene = new Scene(root);
-        if (styleSheets != null) {
-            scene.getStylesheets()
-                 .addAll(styleSheets);
-        }
-        root.applyCss();
-        root.layout();
-        table.applyCss();
-        table.layout();
-        @SuppressWarnings("rawtypes")
-        TableHeaderRow headerRow = ((TableViewSkinBase) table.getSkin()).getTableHeaderRow();
-        root.getChildren()
-            .clear();
-        return headerRow.getHeight();
+    public double outlineCellHeight(double baseHeight) {
+        return baseHeight + getListCellVerticalInset();
+    }
+
+    public Double outlineHeight(int cardinality, double elementHeight) {
+        return (cardinality * (elementHeight + getListCellVerticalInset()))
+               + getListVerticalInset();
+    }
+
+    public double rowCellWidth(double width) {
+        return width - getListCellVerticalInset();
+    }
+
+    public double rowHeight(double elementHeight) {
+        return elementHeight + getListCellVerticalInset();
     }
 
     public void setItemsOf(Control control, JsonNode data) {
@@ -285,11 +257,6 @@ public class Layout {
             ListView<JsonNode> listView = (ListView<JsonNode>) control;
             listView.getItems()
                     .setAll(dataList);
-        } else if (control instanceof TableView) {
-            @SuppressWarnings("unchecked")
-            TableView<JsonNode> tableView = (TableView<JsonNode>) control;
-            tableView.getItems()
-                     .setAll(dataList);
         } else if (control instanceof Label) {
             Label label = (Label) control;
             label.setText(SchemaNode.asText(data));
@@ -304,28 +271,13 @@ public class Layout {
         }
     }
 
-    public void setListCellInsets(Insets listCellInsets) {
-        this.listCellInsets = listCellInsets;
+    public Double tableHeight(int cardinality, double elementHeight) {
+        return (cardinality * (elementHeight + getListCellVerticalInset()))
+               + getListVerticalInset();
     }
 
-    public void setListInsets(Insets listInsets) {
-        this.listInsets = listInsets;
-    }
-
-    public void setTextFont(Font textFont) {
-        this.textFont = textFont;
-    }
-
-    public void setTextInsets(Insets textInsets) {
-        this.textInsets = textInsets;
-    }
-
-    public void setTextLineHeight(double textLineHeight) {
-        this.textLineHeight = textLineHeight;
-    }
-
-    public double textDoubleSpaceWidth() {
-        return FONT_LOADER.computeStringWidth("WW", textFont);
+    public Double textHeight(double rows) {
+        return (getTextLineHeight() * rows) + getTextVerticalInset();
     }
 
     public double textWidth(String text) {
@@ -339,5 +291,49 @@ public class Layout {
         return String.format("Layout [model=%s\n listCellInsets=%s\n listInsets=%s\n styleSheets=%s\n textFont=%s\n textInsets=%s\n textLineHeight=%s]",
                              model, listCellInsets, listInsets, styleSheets,
                              textFont, textInsets, textLineHeight);
+    }
+
+    public double totalOutlineWidth(double outlineWidth) {
+        return outlineWidth + getNestedInset();
+    }
+
+    public double totalTableColumnWidth(double tableColumnWidth) {
+        return tableColumnWidth + getNestedInset();
+    }
+
+    public double totalTextWidth(double justifiedWidth) {
+        return justifiedWidth + getTextHorizontalInset();
+    }
+
+    private double getListCellVerticalInset() {
+        return listCellInsets.getTop() + listCellInsets.getBottom();
+    }
+
+    private double getListVerticalInset() {
+        return listInsets.getTop() + listInsets.getBottom();
+    }
+
+    private double getNestedInset() {
+        return getNestedLeftInset() + getNestedRightInset();
+    }
+
+    private double getNestedLeftInset() {
+        return listInsets.getLeft() + listCellInsets.getLeft();
+    }
+
+    private double getNestedRightInset() {
+        return listInsets.getRight() + listCellInsets.getRight();
+    }
+
+    private double getTextHorizontalInset() {
+        return textInsets.getLeft() + textInsets.getRight();
+    }
+
+    private double getTextLineHeight() {
+        return textLineHeight;
+    }
+
+    private double getTextVerticalInset() {
+        return textInsets.getTop() + textInsets.getBottom();
     }
 }
