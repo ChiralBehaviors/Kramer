@@ -74,11 +74,17 @@ public class Layout {
 
     public interface RelationLayout extends SchemaNodeLayout {
 
+        double cellWidth(double d);
+
+        double extendColumn(double tableColumnWidth);
+
         double getRowHeightInset();
 
         double getTableInset();
 
         double measure(String label);
+
+        double extendElement(double outlineWidth);
 
     }
 
@@ -180,67 +186,15 @@ public class Layout {
         }
     }
 
-    public PrimitiveLayout getLayout(Relation parent, Primitive relation) {
-        return primitives.computeIfAbsent(relation, r -> {
-            return new PrimitiveLayout() {
-
-                @Override
-                public double getElementHeightInset() {
-                    return getTextVerticalInset();
-                }
-
-                @Override
-                public double getHorizontalInset() {
-                    return getTextHorizontalInset();
-                }
-
-                @Override
-                public double getInset() {
-                    return getTextHorizontalInset();
-                }
-
-                @Override
-                public double measure(JsonNode content) {
-                    return textWidth(Layout.toString(content));
-                }
-
-                @Override
-                public double measure(String label) {
-                    return textWidth(label) + getTextHorizontalInset();
-                }
-            };
+    public PrimitiveLayout getLayout(Relation parent, Primitive primitive) {
+        return primitives.computeIfAbsent(primitive, p -> {
+            return primitiveLayout();
         });
     }
 
     public RelationLayout getLayout(Relation parent, Relation relation) {
         return relations.computeIfAbsent(relation, r -> {
-            return new RelationLayout() {
-
-                @Override
-                public double getElementHeightInset() {
-                    return getListCellVerticalInset() + getListVerticalInset();
-                }
-
-                @Override
-                public double getInset() {
-                    return getNestedInset();
-                }
-
-                @Override
-                public double getRowHeightInset() {
-                    return getListCellVerticalInset() + getListVerticalInset();
-                }
-
-                @Override
-                public double getTableInset() {
-                    return getNestedInset();
-                }
-
-                @Override
-                public double measure(String label) {
-                    return textWidth(label) + getTextHorizontalInset();
-                }
-            };
+            return relationLayout();
         });
     }
 
@@ -418,5 +372,80 @@ public class Layout {
         return String.format("Layout [model=%s\n listCellInsets=%s\n listInsets=%s\n styleSheets=%s\n textFont=%s\n textInsets=%s\n textLineHeight=%s]",
                              model, listCellInsets, listInsets, styleSheets,
                              textFont, textInsets, textLineHeight);
+    }
+
+    private PrimitiveLayout primitiveLayout() {
+        return new PrimitiveLayout() {
+
+            @Override
+            public double getElementHeightInset() {
+                return getTextVerticalInset();
+            }
+
+            @Override
+            public double getHorizontalInset() {
+                return getTextHorizontalInset();
+            }
+
+            @Override
+            public double getInset() {
+                return getTextHorizontalInset();
+            }
+
+            @Override
+            public double measure(JsonNode content) {
+                return textWidth(Layout.toString(content));
+            }
+
+            @Override
+            public double measure(String label) {
+                return textWidth(label) + getTextHorizontalInset();
+            }
+        };
+    }
+
+    private RelationLayout relationLayout() {
+        return new RelationLayout() {
+
+            @Override
+            public double cellWidth(double width) {
+                return Layout.snap(width - getNestedInset());
+            }
+
+            @Override
+            public double extendColumn(double tableColumnWidth) {
+                return tableColumnWidth + getNestedInset();
+            }
+
+            @Override
+            public double getElementHeightInset() {
+                return getListCellVerticalInset() + getListVerticalInset();
+            }
+
+            @Override
+            public double getInset() {
+                return getNestedInset();
+            }
+
+            @Override
+            public double getRowHeightInset() {
+                return getListCellVerticalInset() + getListVerticalInset();
+            }
+
+            @Override
+            public double getTableInset() {
+                return getNestedInset();
+            }
+
+            @Override
+            public double measure(String label) {
+                return textWidth(label) + getTextHorizontalInset();
+            }
+
+            @Override
+            public double extendElement(double outlineWidth) {
+                return outlineWidth + getNestedInset();
+            }
+        };
     }
 }
