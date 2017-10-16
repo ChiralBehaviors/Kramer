@@ -109,6 +109,35 @@ public class NestedTable extends Control {
         return new NestedTableSkin(this);
     }
 
+    private ListCell<JsonNode> buildCell(Pair<Consumer<JsonNode>, Region> row) {
+        return new ListCell<JsonNode>() {
+            {
+                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
+                setAlignment(Pos.CENTER_LEFT);
+            }
+
+            @Override
+            protected void updateItem(JsonNode item, boolean empty) {
+                if (item == getItem()) {
+                    return;
+                }
+                super.updateItem(item, empty);
+                if (empty) {
+                    return;
+                }
+                if (item == null) {
+                    setGraphic(null);
+                    return;
+                }
+                setGraphic(row.getValue());
+                row.getKey()
+                   .accept(item);
+                row.getValue()
+                   .requestLayout();
+            }
+        };
+    }
+
     private HBox buildHeader(Relation relation, Layout layout) {
         HBox header = new HBox();
         header.getStyleClass()
@@ -139,9 +168,9 @@ public class NestedTable extends Control {
         row.setMaxWidth(width);
 
         row.setCellFactory(listView -> {
-            ListCell<JsonNode> cell = listCell(buildRowCell(extended
-                                                            - layout.getListCellVerticalInset(),
-                                                            relation, layout));
+            ListCell<JsonNode> cell = buildCell(buildRow(extended
+                                                         - layout.getListCellVerticalInset(),
+                                                         relation, layout));
             double cellWidth = width - layout.getListHorizontalInset();
 
             cell.setMinWidth(cellWidth);
@@ -155,9 +184,9 @@ public class NestedTable extends Control {
         return row;
     }
 
-    private Pair<Consumer<JsonNode>, Region> buildRowCell(double rendered,
-                                                          Relation relation,
-                                                          Layout layout) {
+    private Pair<Consumer<JsonNode>, Region> buildRow(double rendered,
+                                                      Relation relation,
+                                                      Layout layout) {
         HBox cell = new HBox();
         HBox.setHgrow(cell, Priority.ALWAYS);
         cell.setMinWidth(relation.getJustifiedWidth());
@@ -198,9 +227,9 @@ public class NestedTable extends Control {
         rows.setMaxHeight(relation.getHeight());
 
         rows.setCellFactory(listView -> {
-            ListCell<JsonNode> cell = listCell(buildRowCell(rowHeight
-                                                            - layout.getListCellVerticalInset(),
-                                                            relation, layout));
+            ListCell<JsonNode> cell = buildCell(buildRow(rowHeight
+                                                         - layout.getListCellVerticalInset(),
+                                                         relation, layout));
 
             cell.setMinWidth(relation.getJustifiedWidth());
             cell.setPrefWidth(relation.getJustifiedWidth());
@@ -217,34 +246,5 @@ public class NestedTable extends Control {
         Relation.asArray(items)
                 .forEach(n -> itemArray.add(n));
         return itemArray;
-    }
-
-    private ListCell<JsonNode> listCell(Pair<Consumer<JsonNode>, Region> cell) {
-        return new ListCell<JsonNode>() {
-            {
-                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-                setAlignment(Pos.CENTER_LEFT);
-            }
-
-            @Override
-            protected void updateItem(JsonNode item, boolean empty) {
-                if (item == getItem()) {
-                    return;
-                }
-                super.updateItem(item, empty);
-                if (empty) {
-                    return;
-                }
-                if (item == null) {
-                    setGraphic(null);
-                    return;
-                }
-                setGraphic(cell.getValue());
-                cell.getKey()
-                    .accept(item);
-                cell.getValue()
-                    .requestLayout();
-            }
-        };
     }
 }
