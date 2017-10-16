@@ -21,9 +21,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
-import com.chiralbehaviors.layout.Layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import javafx.scene.Parent;
 import javafx.scene.control.Control;
@@ -107,38 +107,31 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double measure(Relation parent, JsonNode data, boolean singular,
-                   Layout layout) {
-        PrimitiveLayout primitiveLayout = layout.getLayout(parent, this);
-
-        double labelWidth = primitiveLayout.measure(label);
-
+    double measure(Relation parent, JsonNode data, boolean singular, Layout layout) {
+        double labelWidth = getLabelWidth(layout);
         double sum = 0;
         maxWidth = 0;
         columnWidth = 0;
         justifiedWidth = null;
-
         for (JsonNode prim : SchemaNode.asList(data)) {
             List<JsonNode> rows = SchemaNode.asList(prim);
             double width = 0;
             for (JsonNode row : rows) {
-                width += primitiveLayout.measure(row);
+                width += layout.textWidth(toString(row));
                 maxWidth = Math.max(maxWidth, width);
             }
             sum += rows.isEmpty() ? 1 : width / rows.size();
         }
-
         double averageWidth = data.size() == 0 ? 0 : (sum / data.size());
 
         columnWidth = Layout.snap(Math.max(labelWidth,
                                            Math.max(valueDefaultWidth,
                                                     averageWidth)));
-
         if (maxWidth > averageWidth) {
             variableLength = true;
         }
 
-        return columnWidth + primitiveLayout.getHorizontalInset();
+        return columnWidth + layout.getTextHorizontalInset();
     }
 
     @Override
@@ -196,5 +189,28 @@ public class Primitive extends SchemaNode {
                       + "    -fx-text-fill: #242d35;"
                       + "    -fx-font-size: 14px;");
         return text;
+    }
+
+    private String toString(JsonNode value) {
+        if (value == null) {
+            return "";
+        }
+        if (value instanceof ArrayNode) {
+            StringBuilder builder = new StringBuilder();
+            boolean first = true;
+            for (JsonNode e : value) {
+                if (first) {
+                    first = false;
+                    builder.append('[');
+                } else {
+                    builder.append(", ");
+                }
+                builder.append(e.asText());
+            }
+            builder.append(']');
+            return builder.toString();
+        } else {
+            return value.asText();
+        }
     }
 }

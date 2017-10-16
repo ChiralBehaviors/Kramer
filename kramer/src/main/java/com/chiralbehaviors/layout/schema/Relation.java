@@ -23,7 +23,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
-import com.chiralbehaviors.layout.Layout.RelationLayout;
 import com.chiralbehaviors.layout.NestedTable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -380,8 +379,8 @@ public class Relation extends SchemaNode {
         }
 
         singular = isSingular;
-        RelationLayout relationalLayout = layout.getLayout(parent, this);
-        double labelWidth = relationalLayout.measure(label);
+        double labelWidth = layout.textWidth(label);
+        labelWidth += layout.getTextHorizontalInset();
         double sum = 0;
         tableColumnWidth = 0;
         int singularChildren = 0;
