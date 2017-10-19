@@ -22,16 +22,11 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
 import com.chiralbehaviors.layout.Layout.PrimitiveLayout;
-import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Parent;
-import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
 import javafx.util.Pair;
 
 /**
@@ -144,25 +139,8 @@ public class Primitive extends SchemaNode {
                                                     double labelWidth,
                                                     Function<JsonNode, JsonNode> extractor,
                                                     double justified) {
-        HBox box = new HBox();
-        box.setPrefWidth(justified);
-        box.setPrefHeight(height);
-        VBox.setVgrow(box, Priority.ALWAYS);
-
-        Label labelText = label(labelWidth);
-        JsonControl control = buildControl(cardinality);
-        control.setPrefHeight(height);
-        control.setPrefWidth(justified);
-
-        box.getChildren()
-           .add(labelText);
-        box.getChildren()
-           .add(control);
-
-        return new Pair<>(item -> {
-            control.setItem(extractor.apply(item)
-                                     .get(field));
-        }, box);
+        return pLayout.outlineElement(field, cardinality, height, label,
+                                      labelWidth, extractor, justified);
     }
 
     @Override
@@ -178,9 +156,5 @@ public class Primitive extends SchemaNode {
     @Override
     double tableColumnWidth() {
         return pLayout.tableColumnWidth(columnWidth);
-    }
-
-    private JsonControl buildControl(int cardinality) {
-        return pLayout.buildControl(cardinality);
     }
 }

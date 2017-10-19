@@ -20,10 +20,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.NestedTable;
+import com.chiralbehaviors.layout.control.Outline;
 import com.chiralbehaviors.layout.control.PrimitiveControl;
+import com.chiralbehaviors.layout.schema.ColumnSet;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -36,6 +40,8 @@ import com.sun.javafx.tk.Toolkit;
 
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
@@ -44,9 +50,13 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextBoundsType;
+import javafx.util.Pair;
 
 @SuppressWarnings("restriction")
 public class Layout {
@@ -70,7 +80,18 @@ public class Layout {
     }
 
     public interface PrimitiveLayout extends SchemaNodeLayout {
+
+        JsonControl buildControl(int cardinality);
+
         Double cellHeight(double maxWidth, double justified);
+
+        Pair<Consumer<JsonNode>, Parent> outlineElement(String field,
+                                                        int cardinality,
+                                                        Double height,
+                                                        String label,
+                                                        double labelWidth,
+                                                        Function<JsonNode, JsonNode> extractor,
+                                                        double justified);
 
         double width(JsonNode row);
 
@@ -86,7 +107,22 @@ public class Layout {
 
         double baseRowCellHeight(double extended);
 
+        JsonControl buildNestedTable(int cardinality);
+
+        JsonControl buildOutline(Double height, List<ColumnSet> columnSets,
+                                 Function<JsonNode, JsonNode> extractor,
+                                 int cardinality);
+
         double outlineCellHeight(double baseHeight);
+
+        Pair<Consumer<JsonNode>, Parent> outlineElement(String field,
+                                                        int cardinality,
+                                                        String label,
+                                                        double labelWidth,
+                                                        Function<JsonNode, JsonNode> extractor,
+                                                        double height,
+                                                        boolean useTable,
+                                                        double justified);
 
         double outlineHeight(int cardinality, double elementHeight);
 
@@ -103,7 +139,7 @@ public class Layout {
 
         double baseTableColumnWidth(double available);
 
-        JsonControl buildControl(int cardinality);
+        Control label(double labelWidth, String label, double height);
 
         double labelWidth(String label);
 
@@ -333,8 +369,43 @@ public class Layout {
             }
 
             @Override
+            public Control label(double labelWidth, String label,
+                                 double height) {
+                return Layout.this.label(labelWidth, label, height);
+            }
+
+            @Override
             public double labelWidth(String label) {
                 return textWidth(label);
+            }
+
+            @Override
+            public Pair<Consumer<JsonNode>, Parent> outlineElement(String field,
+                                                                   int cardinality,
+                                                                   Double height,
+                                                                   String label,
+                                                                   double labelWidth,
+                                                                   Function<JsonNode, JsonNode> extractor,
+                                                                   double justified) {
+                HBox box = new HBox();
+                box.setPrefWidth(justified);
+                box.setPrefHeight(height);
+                VBox.setVgrow(box, Priority.ALWAYS);
+
+                Control labelControl = label(labelWidth, label, height);
+                JsonControl control = buildControl(cardinality);
+                control.setPrefHeight(height);
+                control.setPrefWidth(justified);
+
+                box.getChildren()
+                   .add(labelControl);
+                box.getChildren()
+                   .add(control);
+
+                return new Pair<>(item -> {
+                    control.setItem(extractor.apply(item)
+                                             .get(field));
+                }, box);
             }
 
             @Override
@@ -383,9 +454,23 @@ public class Layout {
             }
 
             @Override
-            public JsonControl buildControl(int cardinality) {
-                // TODO Auto-generated method stub
-                return null;
+            public JsonControl buildNestedTable(int cardinality) {
+                return new NestedTable(cardinality, r);
+            }
+
+            @Override
+            public JsonControl buildOutline(Double height,
+                                            List<ColumnSet> columnSets,
+                                            Function<JsonNode, JsonNode> extractor,
+                                            int cardinality) {
+                return new Outline(r).build(height, columnSets, extractor,
+                                            cardinality);
+            }
+
+            @Override
+            public Control label(double labelWidth, String label,
+                                 double height) {
+                return Layout.this.label(labelWidth, label, height);
             }
 
             @Override
@@ -396,6 +481,48 @@ public class Layout {
             @Override
             public double outlineCellHeight(double baseHeight) {
                 return baseHeight + getListCellVerticalInset();
+            }
+
+            @Override
+            public Pair<Consumer<JsonNode>, Parent> outlineElement(String field,
+                                                                   int cardinality,
+                                                                   String label,
+                                                                   double labelWidth,
+                                                                   Function<JsonNode, JsonNode> extractor,
+                                                                   double height,
+                                                                   boolean useTable,
+                                                                   double justified) {
+
+                double available = justified - labelWidth;
+
+                JsonControl control = useTable ? r.buildNestedTable(extractor,
+                                                                    cardinality,
+                                                                    justified)
+                                               : r.buildOutline(extractor,
+                                                                cardinality);
+
+                Control labelControl = label(labelWidth, label, available);
+                control.setPrefWidth(available);
+                control.setPrefHeight(height);
+
+                Pane box = new HBox();
+                box.getStyleClass()
+                   .add(field);
+                box.setPrefWidth(justified);
+                box.setPrefHeight(height);
+                box.getChildren()
+                   .add(labelControl);
+                box.getChildren()
+                   .add(control);
+
+                return new Pair<>(item -> {
+                    if (item == null) {
+                        return;
+                    }
+                    control.setItem(extractor.apply(item) == null ? null
+                                                                  : extractor.apply(item)
+                                                                             .get(field));
+                }, box);
             }
 
             @Override
@@ -459,6 +586,16 @@ public class Layout {
 
     private double getTextVerticalInset() {
         return textInsets.getTop() + textInsets.getBottom();
+    }
+
+    private Control label(double labelWidth, String label, double height) {
+        Label labelText = new Label(label);
+        labelText.setAlignment(Pos.CENTER);
+        labelText.setMinWidth(labelWidth);
+        labelText.setPrefHeight(height);
+        labelText.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;\n"
+                           + "    -fx-background-insets: 0, 1;");
+        return labelText;
     }
 
     private double textWidth(String text) {

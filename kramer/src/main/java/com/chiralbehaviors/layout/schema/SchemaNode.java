@@ -29,9 +29,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
-import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.Label;
+import javafx.scene.control.Control;
 import javafx.scene.layout.Region;
 import javafx.util.Pair;
 
@@ -213,14 +212,8 @@ abstract public class SchemaNode {
 
     abstract void justify(double width);
 
-    Label label(double labelWidth) {
-        Label labelText = new Label(label);
-        labelText.setAlignment(Pos.CENTER);
-        labelText.setMinWidth(labelWidth);
-        labelText.setPrefHeight(height);
-        labelText.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;\n"
-                           + "    -fx-background-insets: 0, 1;");
-        return labelText;
+    Control label(double labelWidth) {
+        return getLayout().label(labelWidth, label, height);
     }
 
     abstract double layout(int cardinality, double width);

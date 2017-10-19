@@ -26,16 +26,12 @@ import com.chiralbehaviors.layout.Layout;
 import com.chiralbehaviors.layout.Layout.RelationLayout;
 import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.NestedTable;
-import com.chiralbehaviors.layout.control.Outline;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import javafx.scene.Parent;
-import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.util.Pair;
 
@@ -431,34 +427,9 @@ public class Relation extends SchemaNode {
                                        labelWidth, extract(extractor),
                                        justified);
         }
-        double available = justified - labelWidth;
 
-        JsonControl control = useTable ? buildNestedTable(n -> n, cardinality,
-                                                          available)
-                                       : buildOutline(n -> n, cardinality);
-
-        Label labelText = label(labelWidth);
-        control.setPrefWidth(available);
-        control.setPrefHeight(height);
-
-        Pane box = new HBox();
-        box.getStyleClass()
-           .add(field);
-        box.setPrefWidth(justified);
-        box.setPrefHeight(height);
-        box.getChildren()
-           .add(labelText);
-        box.getChildren()
-           .add(control);
-
-        return new Pair<>(item -> {
-            if (item == null) {
-                return;
-            }
-            control.setItem(extractor.apply(item) == null ? null
-                                                          : extractor.apply(item)
-                                                                     .get(field));
-        }, box);
+        return rLayout.outlineElement(field, cardinality, label, labelWidth,
+                                      extractor, height, useTable, justified);
     }
 
     @Override
@@ -486,24 +457,23 @@ public class Relation extends SchemaNode {
         return rLayout.tableColumnWidth(tableColumnWidth);
     }
 
-    private JsonControl buildNestedTable(Function<JsonNode, JsonNode> extractor,
-                                         int cardinality, double justified) {
+    public JsonControl buildNestedTable(Function<JsonNode, JsonNode> extractor,
+                                        int cardinality, double justified) {
         if (isFold()) {
             return fold.buildNestedTable(extract(extractor),
                                          averageCardinality * cardinality,
                                          justified);
         }
-        return new NestedTable(cardinality, this);
+        return rLayout.buildNestedTable(cardinality);
     }
 
-    private Outline buildOutline(Function<JsonNode, JsonNode> extractor,
-                                 int cardinality) {
+    public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
+                                    int cardinality) {
         if (isFold()) {
             return fold.buildOutline(extract(extractor),
                                      averageCardinality * cardinality);
         }
-        return new Outline(this).build(height, columnSets, extractor,
-                                       cardinality);
+        return rLayout.buildOutline(height, columnSets, extractor, cardinality);
     }
 
     private double elementHeight() {
