@@ -75,6 +75,12 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
+    public double justify(double available) {
+        justifiedWidth = pLayout.baseTableColumnWidth(available);
+        return justifiedWidth;
+    }
+
+    @Override
     public double layoutWidth() {
         return tableColumnWidth();
     }
@@ -89,6 +95,11 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
+    public double tableColumnWidth() {
+        return pLayout.tableColumnWidth(columnWidth);
+    }
+
+    @Override
     public String toString() {
         return String.format("Primitive [%s:%.2f:%.2f]", label, columnWidth,
                              justifiedWidth);
@@ -97,11 +108,6 @@ public class Primitive extends SchemaNode {
     @Override
     public String toString(int indent) {
         return toString();
-    }
-
-    @Override
-    void justify(double available) {
-        justifiedWidth = pLayout.baseTableColumnWidth(available);
     }
 
     @Override
@@ -148,10 +154,5 @@ public class Primitive extends SchemaNode {
     @Override
     double rowHeight(int cardinality, double width) {
         return cellHeight(cardinality, width);
-    }
-
-    @Override
-    double tableColumnWidth() {
-        return pLayout.tableColumnWidth(columnWidth);
     }
 }

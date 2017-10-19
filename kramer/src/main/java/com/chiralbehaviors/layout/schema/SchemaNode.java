@@ -195,6 +195,8 @@ abstract public class SchemaNode {
         return false;
     }
 
+    public abstract double justify(double width);
+
     public abstract double layoutWidth();
 
     public abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
@@ -206,13 +208,13 @@ abstract public class SchemaNode {
         this.label = label;
     }
 
+    public abstract double tableColumnWidth();
+
     abstract public String toString(int indent);
 
     boolean isUseTable() {
         return false;
     }
-
-    abstract void justify(double width);
 
     Control label(double labelWidth) {
         return getLayout().label(labelWidth, label, height);
@@ -226,6 +228,4 @@ abstract public class SchemaNode {
     abstract double outlineWidth();
 
     abstract double rowHeight(int cardinality, double justified);
-
-    abstract double tableColumnWidth();
 }

@@ -105,6 +105,9 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
 
     @Override
     public double compress(double justified, int averageCardinality) {
+        if (r.isUseTable()) { 
+            return r.justify(baseOutlineWidth(justified));
+        }
         double justifiedWidth = baseOutlineWidth(justified);
         List<SchemaNode> children = r.getChildren();
         double labelWidth = Layout.snap(children.stream()
@@ -133,13 +136,32 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
     }
 
     @Override
+    public double justify(double width, double tableColumnWidth) {
+        double justifiedWidth = baseTableColumnWidth(width);
+        double slack = Layout.snap(Math.max(0,
+                                            justifiedWidth - tableColumnWidth));
+        List<SchemaNode> children = r.getChildren();
+        double total = Layout.snap(children.stream()
+                                           .map(child -> child.tableColumnWidth())
+                                           .reduce((a, b) -> a + b)
+                                           .orElse(0.0d));
+        children.forEach(child -> {
+            double childWidth = child.tableColumnWidth();
+            double additional = Layout.snap(slack * (childWidth / total));
+            double childJustified = additional + childWidth;
+            child.justify(childJustified);
+        });
+        return justifiedWidth;
+    }
+
+    @Override
     public Control label(double labelWidth, String label, double height) {
         return layout.label(labelWidth, label, height);
     }
 
     @Override
     public double labelWidth(String label) {
-        return layout.totalTextWidth(layout.textWidth(label));
+        return layout.textWidth(label);
     }
 
     @Override

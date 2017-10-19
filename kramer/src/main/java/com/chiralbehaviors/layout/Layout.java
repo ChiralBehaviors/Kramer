@@ -108,6 +108,8 @@ public class Layout {
 
         double compress(double justified, int averageCardinality);
 
+        double justify(double width, double tableColumnWidth);
+
         double outlineCellHeight(double baseHeight);
 
         Pair<Consumer<JsonNode>, Parent> outlineElement(String field,
@@ -234,10 +236,6 @@ public class Layout {
         }
     }
 
-    public Double baseTextWidth(double width) {
-        return width - getTextHorizontalInset();
-    }
-
     public LayoutModel getModel() {
         return model;
     }
@@ -322,6 +320,10 @@ public class Layout {
                              textFont, textInsets, textLineHeight);
     }
 
+    double baseTextWidth(double width) {
+        return width - getTextHorizontalInset();
+    }
+
     double getListCellVerticalInset() {
         return listCellInsets.getTop() + listCellInsets.getBottom();
     }
@@ -353,8 +355,7 @@ public class Layout {
     }
 
     double textWidth(String text) {
-        return snap(FONT_LOADER.computeStringWidth(String.format("W%sW\n",
-                                                                 text),
+        return snap(FONT_LOADER.computeStringWidth(String.format("%s", text),
                                                    textFont));
     }
 

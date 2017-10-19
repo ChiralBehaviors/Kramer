@@ -144,10 +144,6 @@ public class Relation extends SchemaNode {
             fold.compress(justified);
             return;
         }
-        if (useTable) {
-            justify(rLayout.baseOutlineWidth(justified));
-            return;
-        }
         justifiedWidth = rLayout.compress(justified, averageCardinality);
     }
 
@@ -225,6 +221,16 @@ public class Relation extends SchemaNode {
         return useTable;
     }
 
+    @Override
+    public double justify(double width) {
+        if (isFold()) {
+            return fold.justify(width);
+        }
+        assert useTable : "Not a nested table";
+        justifiedWidth = rLayout.justify(width, tableColumnWidth);
+        return justifiedWidth;
+    }
+
     /* (non-Javadoc)
      * @see com.chiralbehaviors.layout.schema.SchemaNode#layoutWidth(com.chiralbehaviors.layout.Layout)
      */
@@ -279,6 +285,14 @@ public class Relation extends SchemaNode {
     }
 
     @Override
+    public double tableColumnWidth() {
+        if (isFold()) {
+            return fold.tableColumnWidth();
+        }
+        return rLayout.tableColumnWidth(tableColumnWidth);
+    }
+
+    @Override
     public String toString() {
         return toString(0);
     }
@@ -299,28 +313,6 @@ public class Relation extends SchemaNode {
             buf.append('\n');
         });
         return buf.toString();
-    }
-
-    @Override
-    void justify(double width) {
-        if (isFold()) {
-            fold.justify(width);
-            return;
-        }
-        assert useTable : "Not a nested table";
-        justifiedWidth = rLayout.baseTableColumnWidth(width);
-        double slack = Layout.snap(Math.max(0,
-                                            justifiedWidth - tableColumnWidth));
-        double total = Layout.snap(children.stream()
-                                           .map(child -> child.tableColumnWidth())
-                                           .reduce((a, b) -> a + b)
-                                           .orElse(0.0d));
-        children.forEach(child -> {
-            double childWidth = child.tableColumnWidth();
-            double additional = Layout.snap(slack * (childWidth / total));
-            double childJustified = additional + childWidth;
-            child.justify(childJustified);
-        });
     }
 
     @Override
@@ -425,14 +417,6 @@ public class Relation extends SchemaNode {
         rowHeight = rLayout.rowHeight(elementHeight);
         height = rLayout.tableHeight(cardinality, elementHeight);
         return height;
-    }
-
-    @Override
-    double tableColumnWidth() {
-        if (isFold()) {
-            return fold.tableColumnWidth();
-        }
-        return rLayout.tableColumnWidth(tableColumnWidth);
     }
 
     private double elementHeight() {
