@@ -25,6 +25,7 @@ import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.sun.javafx.scene.text.TextLayout;
 import com.sun.javafx.tk.FontLoader;
@@ -66,12 +67,14 @@ public class Layout {
     }
 
     public interface PrimitiveLayout extends SchemaNodeLayout {
-    }
-
-    public interface SchemaNodeLayout {
+        double width(JsonNode row);
     }
 
     public interface RelationLayout extends SchemaNodeLayout {
+    }
+
+    public interface SchemaNodeLayout {
+        double labelWidth(String label);
     }
 
     private static final FontLoader FONT_LOADER = Toolkit.getToolkit()
@@ -111,13 +114,36 @@ public class Layout {
     private Insets                                listInsets     = ZERO_INSETS;
     private final LayoutModel                     model;
     @SuppressWarnings("unused")
-    private final Map<Primitive, PrimitiveLayout> primitves      = new HashMap<>();
+    private final Map<Primitive, PrimitiveLayout> primitives     = new HashMap<>();
     @SuppressWarnings("unused")
     private final Map<Relation, RelationLayout>   relations      = new HashMap<>();
     private List<String>                          styleSheets;
     private Font                                  textFont       = Font.getDefault();
     private Insets                                textInsets     = ZERO_INSETS;
     private double                                textLineHeight = 0;
+
+    private static String toString(JsonNode value) {
+        if (value == null) {
+            return "";
+        }
+        if (value instanceof ArrayNode) {
+            StringBuilder builder = new StringBuilder();
+            boolean first = true;
+            for (JsonNode e : value) {
+                if (first) {
+                    first = false;
+                    builder.append('[');
+                } else {
+                    builder.append(", ");
+                }
+                builder.append(e.asText());
+            }
+            builder.append(']');
+            return builder.toString();
+        } else {
+            return value.asText();
+        }
+    }
 
     public Layout(LayoutModel model) {
         this(Collections.emptyList(), model, true);
@@ -227,6 +253,39 @@ public class Layout {
                                             TextBoundsType.LOGICAL_VERTICAL_CENTER))
                          + 1;
         textInsets = new Insets(3, 20, 3, 20);
+    }
+
+    public PrimitiveLayout layout(Primitive primitive) {
+        return primitives.computeIfAbsent(primitive, p -> getLayout(p));
+    }
+
+    private PrimitiveLayout getLayout(Primitive p) {
+        return new PrimitiveLayout() {
+
+            @Override
+            public double labelWidth(String label) {
+                return textWidth(label);
+            }
+
+            @Override
+            public double width(JsonNode row) {
+                return textWidth(Layout.toString(row));
+            }
+        };
+    }
+
+    public RelationLayout layout(Relation relation) {
+        return relations.computeIfAbsent(relation, r -> getLayout(r));
+    }
+
+    private RelationLayout getLayout(Relation r) {
+        return new RelationLayout() {
+
+            @Override
+            public double labelWidth(String label) {
+                return textWidth(label);
+            }
+        };
     }
 
     public double nestedOutlineWidth(double outlineWidth) {

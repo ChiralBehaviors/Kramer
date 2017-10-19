@@ -21,9 +21,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
+import com.chiralbehaviors.layout.Layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import javafx.scene.Parent;
 import javafx.scene.control.Control;
@@ -40,10 +40,11 @@ import javafx.util.Pair;
  */
 public class Primitive extends SchemaNode {
 
-    private double  columnWidth       = 0;
-    private double  maxWidth          = 0;
-    private double  valueDefaultWidth = 0;
-    private boolean variableLength    = false;
+    private double          columnWidth       = 0;
+    private PrimitiveLayout pLayout;
+    private double          maxWidth          = 0;
+    private double          valueDefaultWidth = 0;
+    private boolean         variableLength    = false;
 
     public Primitive() {
         super();
@@ -58,6 +59,11 @@ public class Primitive extends SchemaNode {
                                                         double rendered,
                                                         Layout layout) {
         return table.buildPrimitive(rendered, this, layout);
+    }
+
+    @Override
+    public PrimitiveLayout getLayout() {
+        return pLayout;
     }
 
     @Override
@@ -108,6 +114,7 @@ public class Primitive extends SchemaNode {
     @Override
     double measure(Relation parent, JsonNode data, boolean singular,
                    Layout layout) {
+        pLayout = layout.layout(this);
         double labelWidth = getLabelWidth(layout);
         double sum = 0;
         maxWidth = 0;
@@ -117,7 +124,7 @@ public class Primitive extends SchemaNode {
             List<JsonNode> rows = SchemaNode.asList(prim);
             double width = 0;
             for (JsonNode row : rows) {
-                width += layout.textWidth(toString(row));
+                width += pLayout.width(row);
                 maxWidth = Math.max(maxWidth, width);
             }
             sum += rows.isEmpty() ? 1 : width / rows.size();
@@ -189,28 +196,5 @@ public class Primitive extends SchemaNode {
                       + "    -fx-text-fill: #242d35;"
                       + "    -fx-font-size: 14px;");
         return text;
-    }
-
-    private String toString(JsonNode value) {
-        if (value == null) {
-            return "";
-        }
-        if (value instanceof ArrayNode) {
-            StringBuilder builder = new StringBuilder();
-            boolean first = true;
-            for (JsonNode e : value) {
-                if (first) {
-                    first = false;
-                    builder.append('[');
-                } else {
-                    builder.append(", ");
-                }
-                builder.append(e.asText());
-            }
-            builder.append(']');
-            return builder.toString();
-        } else {
-            return value.asText();
-        }
     }
 }

@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
+import com.chiralbehaviors.layout.Layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.NestedTable;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
@@ -154,6 +155,7 @@ abstract public class SchemaNode {
     }
 
     String field;
+
     Double height;
     Double justifiedWidth = 0D;
     String label;
@@ -169,6 +171,10 @@ abstract public class SchemaNode {
         this.label = label;
         this.field = field;
     }
+
+    abstract public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
+                                                                 double rendered,
+                                                                 Layout layout);
 
     public Function<JsonNode, JsonNode> extract(Function<JsonNode, JsonNode> extractor) {
         return n -> {
@@ -198,8 +204,10 @@ abstract public class SchemaNode {
     }
 
     public double getLabelWidth(Layout layout) {
-        return layout.textWidth(label);
+        return getLayout().labelWidth(label);
     }
+
+    abstract public SchemaNodeLayout getLayout();
 
     public boolean isRelation() {
         return false;
@@ -263,8 +271,4 @@ abstract public class SchemaNode {
     abstract double rowHeight(int cardinality, Layout layout, double justified);
 
     abstract double tableColumnWidth(Layout layout);
-
-    abstract public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
-                                                                 double rendered,
-                                                                 Layout layout);
 }

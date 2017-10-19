@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
+import com.chiralbehaviors.layout.Layout.RelationLayout;
 import com.chiralbehaviors.layout.NestedTable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -54,6 +55,7 @@ public class Relation extends SchemaNode {
     private final List<SchemaNode> children           = new ArrayList<>();
     private final List<ColumnSet>  columnSets         = new ArrayList<>();
     private Relation               fold;
+    private RelationLayout         layout;
     private double                 outlineWidth       = 0;
     private double                 rowHeight;
     private boolean                singular           = false;
@@ -129,6 +131,11 @@ public class Relation extends SchemaNode {
             return fold.getLabelWidth(layout);
         }
         return layout.textWidth(label);
+    }
+
+    @Override
+    public RelationLayout getLayout() {
+        return layout;
     }
 
     public double getRowHeight() {
@@ -418,7 +425,7 @@ public class Relation extends SchemaNode {
                                                                                         / effectiveChildren)));
         tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth));
         return layout.nestedTableColumnWidth(isFold() ? fold.tableColumnWidth
-                                                     : tableColumnWidth);
+                                                      : tableColumnWidth);
     }
 
     @Override
