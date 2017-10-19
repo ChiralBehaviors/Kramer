@@ -92,6 +92,13 @@ public class Column {
                                                                      .collect(Collectors.toList()));
     }
 
+    void adjustHeight(double distributed) {
+        double delta = distributed / fields.size();
+        if (delta >= 1.0) {
+            fields.forEach(f -> f.adjustHeight(delta));
+        }
+    }
+
     Consumer<JsonNode> build(double cellHeight, VBox column, int cardinality,
                              Function<JsonNode, JsonNode> extractor,
                              double labelWidth) {
@@ -117,13 +124,6 @@ public class Column {
             if (delta >= 1.0) {
                 fields.forEach(f -> f.adjustHeight(delta));
             }
-        }
-    }
-
-    void adjustHeight(double distributed) {
-        double delta = distributed / fields.size();
-        if (delta >= 1.0) {
-            fields.forEach(f -> f.adjustHeight(delta));
         }
     }
 

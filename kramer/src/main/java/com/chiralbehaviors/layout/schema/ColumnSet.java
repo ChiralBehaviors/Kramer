@@ -57,6 +57,25 @@ public class ColumnSet {
                .add(node);
     }
 
+    public Pair<Consumer<JsonNode>, Parent> build(int cardinality,
+                                                  Function<JsonNode, JsonNode> extractor) {
+        HBox span = new HBox();
+        span.setPrefHeight(cellHeight);
+        List<Consumer<JsonNode>> controls = new ArrayList<>();
+        columns.forEach(c -> {
+            VBox column = new VBox();
+            column.getStyleClass()
+                  .add("column");
+            column.setPrefHeight(cellHeight);
+            column.setPrefWidth(c.getWidth());
+            controls.add(c.build(cardinality, column, cardinality, extractor,
+                                 labelWidth));
+            span.getChildren()
+                .add(column);
+        });
+        return new Pair<>(item -> controls.forEach(c -> c.accept(item)), span);
+    }
+
     public void compress(int cardinality, double available) {
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
@@ -118,25 +137,6 @@ public class ColumnSet {
     void adjustHeight(double delta) {
         cellHeight = Layout.snap(cellHeight + delta);
         columns.forEach(c -> c.adjustHeight(delta));
-    }
-
-    public Pair<Consumer<JsonNode>, Parent> build(int cardinality,
-                                                  Function<JsonNode, JsonNode> extractor) {
-        HBox span = new HBox();
-        span.setPrefHeight(cellHeight);
-        List<Consumer<JsonNode>> controls = new ArrayList<>();
-        columns.forEach(c -> {
-            VBox column = new VBox();
-            column.getStyleClass()
-                  .add("column");
-            column.setPrefHeight(cellHeight);
-            column.setPrefWidth(c.getWidth());
-            controls.add(c.build(cardinality, column, cardinality, extractor,
-                                 labelWidth));
-            span.getChildren()
-                .add(column);
-        });
-        return new Pair<>(item -> controls.forEach(c -> c.accept(item)), span);
     }
 
     List<Column> getColumns() {

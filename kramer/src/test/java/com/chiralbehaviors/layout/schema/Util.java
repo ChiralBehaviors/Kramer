@@ -18,8 +18,6 @@ package com.chiralbehaviors.layout.schema;
 
 import java.io.IOException;
 
-import com.chiralbehaviors.layout.schema.Primitive;
-import com.chiralbehaviors.layout.schema.Relation;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

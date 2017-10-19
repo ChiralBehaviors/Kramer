@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout;
+package com.chiralbehaviors.layout.control;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.chiralbehaviors.layout.Layout;
 import com.chiralbehaviors.layout.Layout.LayoutModel;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;

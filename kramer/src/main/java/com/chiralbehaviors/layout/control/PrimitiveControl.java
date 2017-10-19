@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout;
+package com.chiralbehaviors.layout.control;
 
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -44,10 +44,10 @@ public class PrimitiveControl extends JsonControl {
                        + "    -fx-background-radius: 5,5,4;"
                        + "    -fx-padding: 3 30 3 30;"
                        + "    -fx-text-fill: #242d35;"
-                       + "    -fx-font-size: 14px;"); 
-        AnchorPane.setLeftAnchor(label, 0d); 
-        AnchorPane.setRightAnchor(label, 0d); 
-        AnchorPane.setTopAnchor(label, 0d); 
+                       + "    -fx-font-size: 14px;");
+        AnchorPane.setLeftAnchor(label, 0d);
+        AnchorPane.setRightAnchor(label, 0d);
+        AnchorPane.setTopAnchor(label, 0d);
         AnchorPane.setBottomAnchor(label, 0d);
         getChildren().add(new AnchorPane(label));
     }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout;
+package com.chiralbehaviors.layout.control;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -47,22 +47,11 @@ public class Outline extends JsonControl {
     private final ListView<JsonNode> list;
     private final Relation           relation;
 
-    @Override
-    protected Skin<?> createDefaultSkin() { 
-        return new OutlineSkin(this);
-    }
-
     public Outline(Relation relation) {
         getStyleClass().add(relation.getField());
         list = new ListView<>();
         getChildren().add(list);
         this.relation = relation;
-    }
-
-    @Override
-    public void setItem(JsonNode item) {
-        list.getItems()
-            .setAll(SchemaNode.asList(item));
     }
 
     public Outline build(double height, Collection<ColumnSet> columnSets,
@@ -86,6 +75,17 @@ public class Outline extends JsonControl {
         });
         list.setPlaceholder(new Text());
         return this;
+    }
+
+    @Override
+    public void setItem(JsonNode item) {
+        list.getItems()
+            .setAll(SchemaNode.asList(item));
+    }
+
+    @Override
+    protected Skin<?> createDefaultSkin() {
+        return new OutlineSkin(this);
     }
 
     private ListCell<JsonNode> listCell(int averageCardinality,

@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout;
+package com.chiralbehaviors.layout.control;
 
-import javafx.scene.control.SkinBase;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import javafx.scene.control.Control;
 
 /**
  * @author halhildebrand
  *
  */
-public class PrimitiveControlSkin extends SkinBase<PrimitiveControl> {
+abstract public class JsonControl extends Control {
 
-    protected PrimitiveControlSkin(PrimitiveControl control) {
-        super(control);
-    }
+    abstract public void setItem(JsonNode item);
 }

@@ -124,13 +124,16 @@ public class SchemaNodeTest extends ApplicationTest {
         assertEquals(1057.0, children.getJustifiedWidth(), 0d);
 
         assertEquals(120.0, children.getChildren()
-                                    .get(0).getJustifiedWidth(),
+                                    .get(0)
+                                    .getJustifiedWidth(),
                      0d);
         assertEquals(79.0, children.getChildren()
-                                   .get(1).getJustifiedWidth(),
+                                   .get(1)
+                                   .getJustifiedWidth(),
                      0d);
         assertEquals(109.0, children.getChildren()
-                                    .get(2).getJustifiedWidth(),
+                                    .get(2)
+                                    .getJustifiedWidth(),
                      0d);
 
         Relation relationship = (Relation) children.getChildren()
