@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.schema;
+package com.chiralbehaviors.layout;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
@@ -23,10 +23,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import com.chiralbehaviors.layout.Layout;
+import com.chiralbehaviors.layout.schema.SchemaNode;
 
 /**
- * 
+ *
  * @author halhildebrand
  *
  */
@@ -47,6 +47,11 @@ public class ColumnSet {
     public void add(SchemaNode node) {
         columns.get(0)
                .add(node);
+    }
+
+    public void adjustHeight(double delta) {
+        cellHeight = Layout.snap(cellHeight + delta);
+        columns.forEach(c -> c.adjustHeight(delta));
     }
 
     public void compress(int cardinality, double available) {
@@ -96,6 +101,14 @@ public class ColumnSet {
         return cellHeight;
     }
 
+    public List<Column> getColumns() {
+        return columns;
+    }
+
+    public double getLabelWidth() {
+        return labelWidth;
+    }
+
     public double getWidth() {
         return columns.stream()
                       .mapToDouble(c -> c.getWidth())
@@ -105,18 +118,5 @@ public class ColumnSet {
     @Override
     public String toString() {
         return String.format("ColumnSet [%s] [%s]", cellHeight, columns);
-    }
-
-    void adjustHeight(double delta) {
-        cellHeight = Layout.snap(cellHeight + delta);
-        columns.forEach(c -> c.adjustHeight(delta));
-    }
-
-    public List<Column> getColumns() {
-        return columns;
-    }
-
-    public double getLabelWidth() {
-        return labelWidth;
     }
 }

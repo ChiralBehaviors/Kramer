@@ -16,6 +16,7 @@
 
 package com.chiralbehaviors.layout;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -23,8 +24,8 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.NestedTable;
 import com.chiralbehaviors.layout.control.Outline;
-import com.chiralbehaviors.layout.schema.ColumnSet;
 import com.chiralbehaviors.layout.schema.Relation;
+import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Parent;
@@ -36,17 +37,26 @@ import javafx.scene.layout.Pane;
 import javafx.util.Pair;
 
 /**
- * 
+ *
  * @author halhildebrand
  *
  */
 public class RelationLayoutImpl implements Layout.RelationLayout {
-    private final Layout   layout;
-    private final Relation r;
+    private final List<ColumnSet> columnSets = new ArrayList<>();
+    private final Layout          layout;
+    private final Relation        r;
 
     public RelationLayoutImpl(Layout layout, Relation r) {
         this.layout = layout;
         this.r = r;
+    }
+
+    @Override
+    public void adjustHeight(double delta) {
+        double subDelta = delta / columnSets.size();
+        if (subDelta >= 1.0) {
+            columnSets.forEach(c -> c.adjustHeight(subDelta));
+        }
     }
 
     @Override
@@ -87,10 +97,39 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
     }
 
     @Override
-    public JsonControl buildOutline(Double height, List<ColumnSet> columnSets,
+    public JsonControl buildOutline(Double height,
                                     Function<JsonNode, JsonNode> extractor,
                                     int cardinality) {
         return new Outline(r).build(height, columnSets, extractor, cardinality);
+    }
+
+    @Override
+    public double compress(double justified, int averageCardinality) {
+        double justifiedWidth = baseOutlineWidth(justified);
+        List<SchemaNode> children = r.getChildren();
+        double labelWidth = Layout.snap(children.stream()
+                                                .mapToDouble(n -> n.getLabelWidth())
+                                                .max()
+                                                .orElse(0));
+        columnSets.clear();
+        ColumnSet current = null;
+        double halfWidth = justifiedWidth / 2d;
+        for (SchemaNode child : children) {
+            double childWidth = labelWidth + child.layoutWidth();
+            if (childWidth > halfWidth || current == null) {
+                current = new ColumnSet(labelWidth);
+                columnSets.add(current);
+                current.add(child);
+                if (childWidth > halfWidth) {
+                    current = null;
+                }
+            } else {
+                current.add(child);
+            }
+        }
+        columnSets.forEach(cs -> cs.compress(averageCardinality,
+                                             justifiedWidth));
+        return justifiedWidth;
     }
 
     @Override
@@ -150,10 +189,10 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
     }
 
     @Override
-    public double outlineHeight(int cardinality, double elementHeight) {
-        return (cardinality
-                * (elementHeight + layout.getListCellVerticalInset()))
-               + layout.getListVerticalInset();
+    public double outlineHeight(int cardinality) {
+        return outlineHeight(cardinality, columnSets.stream()
+                                                    .mapToDouble(cs -> cs.getCellHeight())
+                                                    .sum());
     }
 
     @Override
@@ -173,6 +212,12 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
 
     @Override
     public double tableHeight(int cardinality, double elementHeight) {
+        return (cardinality
+                * (elementHeight + layout.getListCellVerticalInset()))
+               + layout.getListVerticalInset();
+    }
+
+    protected double outlineHeight(int cardinality, double elementHeight) {
         return (cardinality
                 * (elementHeight + layout.getListCellVerticalInset()))
                + layout.getListVerticalInset();

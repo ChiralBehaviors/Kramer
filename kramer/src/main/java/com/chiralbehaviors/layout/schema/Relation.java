@@ -43,7 +43,6 @@ public class Relation extends SchemaNode {
     private boolean                autoFold           = true;
     private int                    averageCardinality = 1;
     private final List<SchemaNode> children           = new ArrayList<>();
-    private final List<ColumnSet>  columnSets         = new ArrayList<>();
     private Relation               fold;
     private double                 outlineWidth       = 0;
     private RelationLayout         rLayout;
@@ -60,10 +59,27 @@ public class Relation extends SchemaNode {
         children.add(child);
     }
 
+    @Override
+    public void adjustHeight(double delta) {
+        if (isFold()) {
+            fold.adjustHeight(delta);
+            return;
+        }
+        super.adjustHeight(delta);
+        if (useTable) {
+            double subDelta = delta / children.size();
+            if (delta >= 1.0) {
+                children.forEach(f -> f.adjustHeight(subDelta));
+            }
+            return;
+        }
+        rLayout.adjustHeight(delta);
+    }
+
     public void autoLayout(int cardinality, Layout layout, double width) {
-        double snapped = Layout.snap(width);
-        layout(cardinality, snapped);
-        compress(snapped);
+        double justified = Layout.snap(width);
+        layout(cardinality, justified);
+        rLayout.compress(justified, averageCardinality);
         cellHeight(cardinality, width);
     }
 
@@ -99,7 +115,40 @@ public class Relation extends SchemaNode {
             return fold.buildOutline(extract(extractor),
                                      averageCardinality * cardinality);
         }
-        return rLayout.buildOutline(height, columnSets, extractor, cardinality);
+        return rLayout.buildOutline(height, extractor, cardinality);
+    }
+
+    @Override
+    public double cellHeight(int card, double width) {
+        if (isFold()) {
+            return fold.cellHeight(averageCardinality * card, width);
+        }
+        if (height > 0.0) {
+            return height;
+        }
+
+        int cardinality = singular ? 1 : card;
+        if (!useTable) {
+            height = rLayout.outlineHeight(cardinality);
+        } else {
+            double elementHeight = elementHeight();
+            rowHeight = rLayout.rowHeight(elementHeight);
+            height = rLayout.tableHeight(cardinality, elementHeight);
+        }
+        return height;
+    }
+
+    @Override
+    public void compress(double justified) {
+        if (isFold()) {
+            fold.compress(justified);
+            return;
+        }
+        if (useTable) {
+            justify(rLayout.baseOutlineWidth(justified));
+            return;
+        }
+        justifiedWidth = rLayout.compress(justified, averageCardinality);
     }
 
     @Override
@@ -130,7 +179,7 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public Double getHeight() {
+    public double getHeight() {
         return isFold() ? fold.getHeight() : height;
     }
 
@@ -174,6 +223,15 @@ public class Relation extends SchemaNode {
             return fold.isUseTable();
         }
         return useTable;
+    }
+
+    /* (non-Javadoc)
+     * @see com.chiralbehaviors.layout.schema.SchemaNode#layoutWidth(com.chiralbehaviors.layout.Layout)
+     */
+    @Override
+    public double layoutWidth() {
+        return useTable ? rLayout.tableColumnWidth(tableColumnWidth)
+                        : rLayout.outlineWidth(outlineWidth);
     }
 
     public void measure(JsonNode jsonNode, Layout layout) {
@@ -244,96 +302,6 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    void adjustHeight(double delta) {
-        if (isFold()) {
-            fold.adjustHeight(delta);
-            return;
-        }
-        super.adjustHeight(delta);
-        if (useTable) {
-            double subDelta = delta / children.size();
-            if (delta >= 1.0) {
-                children.forEach(f -> f.adjustHeight(subDelta));
-            }
-            return;
-        }
-        double subDelta = delta / columnSets.size();
-        if (subDelta >= 1.0) {
-            columnSets.forEach(c -> c.adjustHeight(subDelta));
-        }
-    }
-
-    @Override
-    double cellHeight(int card, double width) {
-        if (isFold()) {
-            return fold.cellHeight(averageCardinality * card, width);
-        }
-        if (height != null) {
-            return height;
-        }
-
-        int cardinality = singular ? 1 : card;
-        if (!useTable) {
-            height = rLayout.outlineHeight(cardinality, (columnSets.stream()
-                                                                   .mapToDouble(cs -> cs.getCellHeight())
-                                                                   .sum()));
-        } else {
-            double elementHeight = elementHeight();
-            rowHeight = rLayout.rowHeight(elementHeight);
-            height = rLayout.tableHeight(cardinality, elementHeight);
-        }
-        return height;
-    }
-
-    @Override
-    void compress(double justified) {
-        if (isFold()) {
-            fold.compress(justified);
-            return;
-        }
-        if (useTable) {
-            justify(rLayout.baseOutlineWidth(justified));
-            return;
-        }
-        justifiedWidth = rLayout.baseOutlineWidth(justified);
-        double labelWidth = Layout.snap(children.stream()
-                                                .mapToDouble(n -> n.getLabelWidth())
-                                                .max()
-                                                .orElse(0));
-        columnSets.clear();
-        ColumnSet current = null;
-        double halfWidth = justifiedWidth / 2d;
-        for (SchemaNode child : children) {
-            double childWidth = labelWidth + child.layoutWidth();
-            if (childWidth > halfWidth || current == null) {
-                current = new ColumnSet(labelWidth);
-                columnSets.add(current);
-                current.add(child);
-                if (childWidth > halfWidth) {
-                    current = null;
-                }
-            } else {
-                current.add(child);
-            }
-        }
-        columnSets.forEach(cs -> cs.compress(averageCardinality,
-                                             justifiedWidth));
-    }
-
-    @Override
-    Double getCalculatedHeight() {
-        if (isFold()) {
-            return fold.getCalculatedHeight();
-        }
-        return super.getCalculatedHeight();
-    }
-
-    // for testing
-    List<ColumnSet> getColumnSets() {
-        return columnSets;
-    }
-
-    @Override
     void justify(double width) {
         if (isFold()) {
             fold.justify(width);
@@ -357,7 +325,7 @@ public class Relation extends SchemaNode {
 
     @Override
     double layout(int cardinality, double width) {
-        height = null;
+        height = -1.0;
         useTable = false;
         rowHeight = 0;
         if (isFold()) {
@@ -385,15 +353,6 @@ public class Relation extends SchemaNode {
         return extended;
     }
 
-    /* (non-Javadoc)
-     * @see com.chiralbehaviors.layout.schema.SchemaNode#layoutWidth(com.chiralbehaviors.layout.Layout)
-     */
-    @Override
-    double layoutWidth() {
-        return useTable ? rLayout.tableColumnWidth(tableColumnWidth)
-                        : rLayout.outlineWidth(outlineWidth);
-    }
-
     @Override
     double measure(Relation parent, JsonNode data, boolean isSingular,
                    Layout layout) {
@@ -401,7 +360,7 @@ public class Relation extends SchemaNode {
         if (isAutoFoldable()) {
             fold = ((Relation) children.get(children.size() - 1));
         }
-        justifiedWidth = null;
+        justifiedWidth = -1.0;
         if (data.isNull() || children.size() == 0) {
             return 0;
         }

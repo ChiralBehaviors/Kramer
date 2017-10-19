@@ -56,8 +56,27 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
+    public double cellHeight(int cardinality, double justified) {
+        if (height > 0) {
+            return height;
+        }
+        height = pLayout.cellHeight(maxWidth, justified);
+        return height;
+    }
+
+    @Override
+    public void compress(double available) {
+        justifiedWidth = pLayout.baseOutlineWidth(available);
+    }
+
+    @Override
     public PrimitiveLayout getLayout() {
         return pLayout;
+    }
+
+    @Override
+    public double layoutWidth() {
+        return tableColumnWidth();
     }
 
     @Override
@@ -81,36 +100,14 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double cellHeight(int cardinality, double justified) {
-        if (height != null) {
-            return height;
-        }
-        height = pLayout.cellHeight(maxWidth, justified);
-        return height;
-    }
-
-    @Override
-    void compress(double available) {
-        justifiedWidth = pLayout.baseOutlineWidth(available);
-    }
-
-    @Override
     void justify(double available) {
         justifiedWidth = pLayout.baseTableColumnWidth(available);
     }
 
     @Override
     double layout(int cardinality, double width) {
-        height = null;
+        height = -1.0;
         return variableLength ? width : Math.min(width, columnWidth);
-    }
-
-    /* (non-Javadoc)
-     * @see com.chiralbehaviors.layout.schema.SchemaNode#layoutWidth(com.chiralbehaviors.layout.Layout)
-     */
-    @Override
-    double layoutWidth() {
-        return tableColumnWidth();
     }
 
     @Override
@@ -121,7 +118,7 @@ public class Primitive extends SchemaNode {
         double sum = 0;
         maxWidth = 0;
         columnWidth = 0;
-        justifiedWidth = null;
+        justifiedWidth = -1.0;
         for (JsonNode prim : SchemaNode.asList(data)) {
             List<JsonNode> rows = SchemaNode.asList(prim);
             double width = 0;

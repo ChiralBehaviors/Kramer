@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import com.chiralbehaviors.layout.Layout;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
+import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.geometry.Pos;
@@ -84,6 +85,7 @@ public class NestedTable extends JsonControl {
         return rowHeight;
     }
 
+    @Override
     public void setItem(JsonNode items) {
         rows.getItems()
             .setAll(itemsAsArray(items));
@@ -230,8 +232,8 @@ public class NestedTable extends JsonControl {
 
     private List<JsonNode> itemsAsArray(JsonNode items) {
         List<JsonNode> itemArray = new ArrayList<>();
-        Relation.asArray(items)
-                .forEach(n -> itemArray.add(n));
+        SchemaNode.asArray(items)
+                  .forEach(n -> itemArray.add(n));
         return itemArray;
     }
 }

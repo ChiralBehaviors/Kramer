@@ -24,7 +24,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.control.JsonControl;
-import com.chiralbehaviors.layout.schema.ColumnSet;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -91,6 +90,8 @@ public class Layout {
 
     public interface RelationLayout extends SchemaNodeLayout {
 
+        void adjustHeight(double delta);
+
         void apply(ListCell<JsonNode> cell);
 
         void apply(ListView<JsonNode> list);
@@ -101,9 +102,11 @@ public class Layout {
 
         JsonControl buildNestedTable(int cardinality);
 
-        JsonControl buildOutline(Double height, List<ColumnSet> columnSets,
+        JsonControl buildOutline(Double height,
                                  Function<JsonNode, JsonNode> extractor,
                                  int cardinality);
+
+        double compress(double justified, int averageCardinality);
 
         double outlineCellHeight(double baseHeight);
 
@@ -116,7 +119,7 @@ public class Layout {
                                                         boolean useTable,
                                                         double justified);
 
-        double outlineHeight(int cardinality, double elementHeight);
+        double outlineHeight(int cardinality);
 
         double outlineWidth(double outlineWidth);
 

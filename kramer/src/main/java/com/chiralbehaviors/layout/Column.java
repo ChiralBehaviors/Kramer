@@ -14,15 +14,17 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.schema;
+package com.chiralbehaviors.layout;
 
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.chiralbehaviors.layout.schema.SchemaNode;
+
 /**
- * 
+ *
  * @author halhildebrand
  *
  */
@@ -102,7 +104,7 @@ public class Column {
 
     void distributeHeight(double finalHeight) {
         double calculated = fields.stream()
-                                  .mapToDouble(f -> f.getCalculatedHeight())
+                                  .mapToDouble(f -> f.getHeight())
                                   .sum();
         if (calculated < finalHeight) {
             double delta = (finalHeight - calculated) / fields.size();

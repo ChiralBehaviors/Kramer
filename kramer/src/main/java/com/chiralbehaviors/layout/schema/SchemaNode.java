@@ -131,8 +131,8 @@ abstract public class SchemaNode {
 
     String field;
 
-    Double height;
-    Double justifiedWidth = 0D;
+    double height;
+    double justifiedWidth = 0D;
     String label;
 
     public SchemaNode() {
@@ -147,8 +147,16 @@ abstract public class SchemaNode {
         this.field = field;
     }
 
+    public void adjustHeight(double delta) {
+        this.height = Layout.snap(height + delta);
+    }
+
     abstract public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
                                                                  double rendered);
+
+    public abstract double cellHeight(int cardinality, double available);
+
+    public abstract void compress(double available);
 
     public Function<JsonNode, JsonNode> extract(Function<JsonNode, JsonNode> extractor) {
         return n -> {
@@ -165,7 +173,7 @@ abstract public class SchemaNode {
         return field;
     }
 
-    public Double getHeight() {
+    public double getHeight() {
         return height;
     }
 
@@ -187,24 +195,18 @@ abstract public class SchemaNode {
         return false;
     }
 
+    public abstract double layoutWidth();
+
+    public abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
+                                                                    double labelWidth,
+                                                                    Function<JsonNode, JsonNode> extractor,
+                                                                    double justified);
+
     public void setLabel(String label) {
         this.label = label;
     }
 
     abstract public String toString(int indent);
-
-    void adjustHeight(double delta) {
-        this.height = Layout.snap(height + delta);
-    }
-
-    abstract double cellHeight(int cardinality, double available);
-
-    abstract void compress(double available);
-
-    Double getCalculatedHeight() {
-        assert height != null : "cell height has not been calculated";
-        return height;
-    }
 
     boolean isUseTable() {
         return false;
@@ -218,15 +220,8 @@ abstract public class SchemaNode {
 
     abstract double layout(int cardinality, double width);
 
-    abstract double layoutWidth();
-
     abstract double measure(Relation parent, JsonNode data, boolean singular,
                             Layout layout);
-
-    public abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
-                                                             double labelWidth,
-                                                             Function<JsonNode, JsonNode> extractor,
-                                                             double justified);
 
     abstract double outlineWidth();
 

@@ -32,7 +32,7 @@ import javafx.scene.layout.VBox;
 import javafx.util.Pair;
 
 /**
- * 
+ *
  * @author halhildebrand
  *
  */
