@@ -24,14 +24,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.control.JsonControl;
-import com.chiralbehaviors.layout.control.NestedTable;
 import com.chiralbehaviors.layout.schema.ColumnSet;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
-import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.sun.javafx.scene.text.TextLayout;
 import com.sun.javafx.tk.FontLoader;
 import com.sun.javafx.tk.Toolkit;
@@ -313,30 +310,6 @@ public class Layout {
     public RelationLayout layout(Relation relation) {
         return relations.computeIfAbsent(relation,
                                          r -> new RelationLayoutImpl(this, r));
-    }
-
-    public void setItemsOf(Control control, JsonNode data) {
-        if (data == null) {
-            data = JsonNodeFactory.instance.arrayNode();
-        }
-        List<JsonNode> dataList = SchemaNode.asList(data);
-        if (control instanceof ListView) {
-            @SuppressWarnings("unchecked")
-            ListView<JsonNode> listView = (ListView<JsonNode>) control;
-            listView.getItems()
-                    .setAll(dataList);
-        } else if (control instanceof Label) {
-            Label label = (Label) control;
-            label.setText(SchemaNode.asText(data));
-        } else if (control instanceof TextArea) {
-            TextArea label = (TextArea) control;
-            label.setText(SchemaNode.asText(data));
-        } else if (control instanceof NestedTable) {
-            ((NestedTable) control).setItem(data);
-        } else {
-            throw new IllegalArgumentException(String.format("Unknown control %s",
-                                                             control));
-        }
     }
 
     @Override

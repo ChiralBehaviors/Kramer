@@ -51,34 +51,34 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
 
     @Override
     public void apply(ListCell<JsonNode> cell) {
-        this.layout.getModel()
-                   .apply(cell, r);
+        layout.getModel()
+              .apply(cell, r);
     }
 
     @Override
     public void apply(ListView<JsonNode> list) {
-        this.layout.getModel()
-                   .apply(list, r);
+        layout.getModel()
+              .apply(list, r);
     }
 
     @Override
     public double baseOutlineCellHeight(double cellHeight) {
-        return cellHeight - this.layout.getListCellVerticalInset();
+        return cellHeight - layout.getListCellVerticalInset();
     }
 
     @Override
     public double baseOutlineWidth(double width) {
-        return width - this.layout.getNestedInset();
+        return width - layout.getNestedInset();
     }
 
     @Override
     public double baseRowCellHeight(double extended) {
-        return extended - this.layout.getListCellVerticalInset();
+        return extended - layout.getListCellVerticalInset();
     }
 
     @Override
     public double baseTableColumnWidth(double width) {
-        return width - this.layout.getNestedInset();
+        return width - layout.getNestedInset();
     }
 
     @Override
@@ -95,17 +95,17 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
 
     @Override
     public Control label(double labelWidth, String label, double height) {
-        return this.layout.label(labelWidth, label, height);
+        return layout.label(labelWidth, label, height);
     }
 
     @Override
     public double labelWidth(String label) {
-        return this.layout.totalTextWidth(this.layout.textWidth(label));
+        return layout.totalTextWidth(layout.textWidth(label));
     }
 
     @Override
     public double outlineCellHeight(double baseHeight) {
-        return baseHeight + this.layout.getListCellVerticalInset();
+        return baseHeight + layout.getListCellVerticalInset();
     }
 
     @Override
@@ -152,29 +152,29 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
     @Override
     public double outlineHeight(int cardinality, double elementHeight) {
         return (cardinality
-                * (elementHeight + this.layout.getListCellVerticalInset()))
-               + this.layout.getListVerticalInset();
+                * (elementHeight + layout.getListCellVerticalInset()))
+               + layout.getListVerticalInset();
     }
 
     @Override
     public double outlineWidth(double outlineWidth) {
-        return outlineWidth + this.layout.getNestedInset();
+        return outlineWidth + layout.getNestedInset();
     }
 
     @Override
     public double rowHeight(double elementHeight) {
-        return elementHeight + this.layout.getListCellVerticalInset();
+        return elementHeight + layout.getListCellVerticalInset();
     }
 
     @Override
     public double tableColumnWidth(double width) {
-        return width + this.layout.getNestedInset();
+        return width + layout.getNestedInset();
     }
 
     @Override
     public double tableHeight(int cardinality, double elementHeight) {
         return (cardinality
-                * (elementHeight + this.layout.getListCellVerticalInset()))
-               + this.layout.getListVerticalInset();
+                * (elementHeight + layout.getListCellVerticalInset()))
+               + layout.getListVerticalInset();
     }
 }

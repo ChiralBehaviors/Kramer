@@ -47,12 +47,12 @@ public class PrimitiveLayoutImpl implements Layout.PrimitiveLayout {
 
     @Override
     public double baseOutlineWidth(double available) {
-        return this.layout.baseTextWidth(available);
+        return layout.baseTextWidth(available);
     }
 
     @Override
     public double baseTableColumnWidth(double width) {
-        return this.layout.baseTextWidth(width);
+        return layout.baseTextWidth(width);
     }
 
     @Override
@@ -63,18 +63,18 @@ public class PrimitiveLayoutImpl implements Layout.PrimitiveLayout {
     @Override
     public Double cellHeight(double maxWidth, double justified) {
         double rows = Math.ceil((maxWidth / justified) + 0.5);
-        return (this.layout.getTextLineHeight() * rows)
-               + this.layout.getTextVerticalInset();
+        return (layout.getTextLineHeight() * rows)
+               + layout.getTextVerticalInset();
     }
 
     @Override
     public Control label(double labelWidth, String label, double height) {
-        return this.layout.label(labelWidth, label, height);
+        return layout.label(labelWidth, label, height);
     }
 
     @Override
     public double labelWidth(String label) {
-        return this.layout.textWidth(label);
+        return layout.textWidth(label);
     }
 
     @Override
@@ -108,11 +108,11 @@ public class PrimitiveLayoutImpl implements Layout.PrimitiveLayout {
 
     @Override
     public double tableColumnWidth(double width) {
-        return this.layout.totalTextWidth(width);
+        return layout.totalTextWidth(width);
     }
 
     @Override
     public double width(JsonNode row) {
-        return this.layout.textWidth(Layout.toString(row));
+        return layout.textWidth(Layout.toString(row));
     }
 }
