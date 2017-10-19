@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.control;
+package com.chiralbehaviors.layout;
 
-import javafx.scene.control.SkinBase;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import javafx.scene.control.Control;
 
 /**
  * @author halhildebrand
  *
  */
-public class NestedTableSkin extends SkinBase<NestedTable> {
-
-    protected NestedTableSkin(NestedTable control) {
-        super(control);
-    }
+abstract public class JsonControl extends Control {
+    
+    abstract public void setItem(JsonNode item);
 }

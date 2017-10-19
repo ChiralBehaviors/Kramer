@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.control;
+package com.chiralbehaviors.layout;
 
 import javafx.scene.control.SkinBase;
 
@@ -22,9 +22,9 @@ import javafx.scene.control.SkinBase;
  * @author halhildebrand
  *
  */
-public class PrimitiveControlSkin extends SkinBase<PrimitiveControl> {
+public class NestedTableSkin extends SkinBase<NestedTable> {
 
-    protected PrimitiveControlSkin(PrimitiveControl control) {
+    protected NestedTableSkin(NestedTable control) {
         super(control);
     }
 }

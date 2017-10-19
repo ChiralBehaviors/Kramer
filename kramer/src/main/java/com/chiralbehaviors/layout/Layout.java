@@ -23,10 +23,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import com.chiralbehaviors.layout.control.JsonControl;
-import com.chiralbehaviors.layout.control.NestedTable;
-import com.chiralbehaviors.layout.control.Outline;
-import com.chiralbehaviors.layout.control.PrimitiveControl;
 import com.chiralbehaviors.layout.schema.ColumnSet;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
