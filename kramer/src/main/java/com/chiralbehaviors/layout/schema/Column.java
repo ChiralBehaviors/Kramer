@@ -24,7 +24,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.chiralbehaviors.layout.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Parent;
@@ -95,13 +94,12 @@ public class Column {
 
     Consumer<JsonNode> build(double cellHeight, VBox column, int cardinality,
                              Function<JsonNode, JsonNode> extractor,
-                             Layout layout, double labelWidth) {
+                             double labelWidth) {
         List<Consumer<JsonNode>> controls = new ArrayList<>();
         fields.forEach(field -> {
             Pair<Consumer<JsonNode>, Parent> master = field.outlineElement(cardinality,
                                                                            labelWidth,
                                                                            extractor,
-                                                                           layout,
                                                                            width);
             controls.add(master.getKey());
             column.getChildren()

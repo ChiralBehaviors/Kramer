@@ -24,25 +24,19 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
 import com.chiralbehaviors.layout.Layout.RelationLayout;
-import com.chiralbehaviors.layout.NestedTable;
+import com.chiralbehaviors.layout.control.JsonControl;
+import com.chiralbehaviors.layout.control.NestedTable;
+import com.chiralbehaviors.layout.control.Outline;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
-import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.Control;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import javafx.util.Pair;
 
 /**
@@ -79,18 +73,18 @@ public class Relation extends SchemaNode {
 
     @Override
     public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
-                                                        double rendered,
-                                                        Layout layout) {
-        return table.buildRelation(rendered, this, layout);
+                                                        double rendered) {
+        return table.buildRelation(rendered, this);
     }
 
-    public Control buildControl(int cardinality, Layout layout, double width) {
+    public JsonControl buildControl(int cardinality, Layout layout,
+                                    double width) {
         if (isFold()) {
             return fold.buildControl(averageCardinality * cardinality, layout,
                                      width);
         }
-        return useTable ? buildNestedTable(n -> n, cardinality, layout, width)
-                        : buildOutline(n -> n, cardinality, layout);
+        return useTable ? buildNestedTable(n -> n, cardinality, width)
+                        : buildOutline(n -> n, cardinality);
     }
 
     @Override
@@ -181,15 +175,14 @@ public class Relation extends SchemaNode {
                                                                             : null;
     }
 
-    @Override
-    public void setItems(Control control, JsonNode data, Layout layout) {
+    public void setItem(JsonControl control, JsonNode data) {
         if (data == null) {
             data = JsonNodeFactory.instance.arrayNode();
         }
         if (isFold()) {
-            fold.setItems(control, flatten(data), layout);
+            fold.setItem(control, flatten(data));
         } else {
-            super.setItems(control, data, layout);
+            control.setItem(data);
         }
     }
 
@@ -293,7 +286,8 @@ public class Relation extends SchemaNode {
                 current.add(child);
             }
         }
-        columnSets.forEach(cs -> cs.compress(averageCardinality, justifiedWidth));
+        columnSets.forEach(cs -> cs.compress(averageCardinality,
+                                             justifiedWidth));
     }
 
     @Override
@@ -431,18 +425,17 @@ public class Relation extends SchemaNode {
     Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                     double labelWidth,
                                                     Function<JsonNode, JsonNode> extractor,
-                                                    Layout layout,
                                                     double justified) {
         if (isFold()) {
             return fold.outlineElement(averageCardinality * cardinality,
-                                       labelWidth, extract(extractor), layout,
+                                       labelWidth, extract(extractor),
                                        justified);
         }
         double available = justified - labelWidth;
 
-        Control control = useTable ? buildNestedTable(n -> n, cardinality,
-                                                      layout, available)
-                                   : buildOutline(n -> n, cardinality, layout);
+        JsonControl control = useTable ? buildNestedTable(n -> n, cardinality,
+                                                          available)
+                                       : buildOutline(n -> n, cardinality);
 
         Label labelText = label(labelWidth);
         control.setPrefWidth(available);
@@ -462,10 +455,9 @@ public class Relation extends SchemaNode {
             if (item == null) {
                 return;
             }
-            JsonNode extracted = extractor.apply(item);
-            JsonNode extractedField = extracted == null ? null
-                                                        : extracted.get(field);
-            setItems(control, extractedField, layout);
+            control.setItem(extractor.apply(item) == null ? null
+                                                          : extractor.apply(item)
+                                                                     .get(field));
         }, box);
     }
 
@@ -494,42 +486,24 @@ public class Relation extends SchemaNode {
         return rLayout.tableColumnWidth(tableColumnWidth);
     }
 
-    private Control buildNestedTable(Function<JsonNode, JsonNode> extractor,
-                                     int cardinality, Layout layout,
-                                     double justified) {
+    private JsonControl buildNestedTable(Function<JsonNode, JsonNode> extractor,
+                                         int cardinality, double justified) {
         if (isFold()) {
             return fold.buildNestedTable(extract(extractor),
                                          averageCardinality * cardinality,
-                                         layout, justified);
+                                         justified);
         }
-        return new NestedTable(cardinality, this, layout);
+        return new NestedTable(cardinality, this);
     }
 
-    private ListView<JsonNode> buildOutline(Function<JsonNode, JsonNode> extractor,
-                                            int cardinality, Layout layout) {
+    private Outline buildOutline(Function<JsonNode, JsonNode> extractor,
+                                 int cardinality) {
         if (isFold()) {
             return fold.buildOutline(extract(extractor),
-                                     averageCardinality * cardinality, layout);
+                                     averageCardinality * cardinality);
         }
-
-        double cellHeight = rLayout.outlineCellHeight(columnSets.stream()
-                                                                .mapToDouble(cs -> cs.getCellHeight())
-                                                                .sum());
-        ListView<JsonNode> list = new ListView<>();
-        layout.getModel()
-              .apply(list, this);
-        list.setPrefHeight(height);
-        list.setFixedCellSize(cellHeight);
-        list.setCellFactory(c -> {
-            ListCell<JsonNode> cell = listCell(extractor,
-                                               rLayout.baseOutlineCellHeight(cellHeight),
-                                               layout);
-            layout.getModel()
-                  .apply(cell, this);
-            return cell;
-        });
-        list.setPlaceholder(new Text());
-        return list;
+        return new Outline(this).build(height, columnSets, extractor,
+                                       cardinality);
     }
 
     private double elementHeight() {
@@ -557,66 +531,6 @@ public class Relation extends SchemaNode {
     private boolean isAutoFoldable() {
         return fold == null && autoFold && children.size() == 1
                && children.get(children.size() - 1) instanceof Relation;
-    }
-
-    private ListCell<JsonNode> listCell(Function<JsonNode, JsonNode> extractor,
-                                        double cellHeight, Layout layout) {
-        return new ListCell<JsonNode>() {
-            VBox                     cell;
-            List<Consumer<JsonNode>> controls = new ArrayList<>();
-            {
-                itemProperty().addListener((obs, oldItem, newItem) -> {
-                    if (newItem != null) {
-                        if (cell == null) {
-                            initialize(extractor, layout);
-                        }
-                        setGraphic(cell);
-                    }
-                });
-                emptyProperty().addListener((obs, wasEmpty, isEmpty) -> {
-                    if (isEmpty) {
-                        setGraphic(null);
-                    } else {
-                        setGraphic(cell);
-                    }
-                });
-                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-                setAlignment(Pos.CENTER);
-            }
-
-            @Override
-            protected void updateItem(JsonNode item, boolean empty) {
-                if (item == getItem()) {
-                    return;
-                }
-                super.updateItem(item, empty);
-                super.setText(null);
-                if (empty) {
-                    super.setGraphic(null);
-                    return;
-                }
-                controls.forEach(child -> child.accept(item));
-            }
-
-            private void initialize(Function<JsonNode, JsonNode> extractor,
-                                    Layout layout) {
-                cell = new VBox();
-                cell.setMinHeight(cellHeight);
-                cell.setPrefHeight(cellHeight);
-                cell.setMinWidth(0);
-                cell.setPrefWidth(1);
-                columnSets.forEach(cs -> {
-                    Pair<Consumer<JsonNode>, Parent> master = cs.build(averageCardinality,
-                                                                       extractor,
-                                                                       layout);
-                    controls.add(master.getKey());
-                    Parent control = master.getValue();
-                    VBox.setVgrow(control, Priority.ALWAYS);
-                    cell.getChildren()
-                        .add(control);
-                });
-            }
-        };
     }
 
     private void nestTable() {

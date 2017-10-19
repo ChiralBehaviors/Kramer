@@ -21,6 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.chiralbehaviors.layout.control.JsonControl;
+import com.chiralbehaviors.layout.control.NestedTable;
+import com.chiralbehaviors.layout.control.PrimitiveControl;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -75,6 +78,10 @@ public class Layout {
 
     public interface RelationLayout extends SchemaNodeLayout {
 
+        void apply(ListCell<JsonNode> cell);
+
+        void apply(ListView<JsonNode> list);
+
         double baseOutlineCellHeight(double cellHeight);
 
         double baseRowCellHeight(double extended);
@@ -96,7 +103,7 @@ public class Layout {
 
         double baseTableColumnWidth(double available);
 
-        Control buildControl(int cardinality);
+        JsonControl buildControl(int cardinality);
 
         double labelWidth(String label);
 
@@ -287,7 +294,7 @@ public class Layout {
             TextArea label = (TextArea) control;
             label.setText(SchemaNode.asText(data));
         } else if (control instanceof NestedTable) {
-            ((NestedTable) control).setItems(data);
+            ((NestedTable) control).setItem(data);
         } else {
             throw new IllegalArgumentException(String.format("Unknown control %s",
                                                              control));
@@ -315,19 +322,8 @@ public class Layout {
             }
 
             @Override
-            public Label buildControl(int cardinality) {
-                Label text = new Label();
-                text.setWrapText(true);
-                text.setStyle("-fx-background-color: "
-                              + "         rgba(0,0,0,0.08),"
-                              + "        linear-gradient(#9a9a9a, #909090),"
-                              + "        white 0%;"
-                              + "    -fx-background-insets: 0 0 -1 0,0,1;"
-                              + "    -fx-background-radius: 5,5,4;"
-                              + "    -fx-padding: 3 30 3 30;"
-                              + "    -fx-text-fill: #242d35;"
-                              + "    -fx-font-size: 14px;");
-                return text;
+            public PrimitiveControl buildControl(int cardinality) {
+                return new PrimitiveControl(p);
             }
 
             @Override
@@ -357,6 +353,16 @@ public class Layout {
         return new RelationLayout() {
 
             @Override
+            public void apply(ListCell<JsonNode> cell) {
+                getModel().apply(cell, r);
+            }
+
+            @Override
+            public void apply(ListView<JsonNode> list) {
+                getModel().apply(list, r);
+            }
+
+            @Override
             public double baseOutlineCellHeight(double cellHeight) {
                 return cellHeight - getListCellVerticalInset();
             }
@@ -377,7 +383,7 @@ public class Layout {
             }
 
             @Override
-            public Control buildControl(int cardinality) {
+            public JsonControl buildControl(int cardinality) {
                 // TODO Auto-generated method stub
                 return null;
             }

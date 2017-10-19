@@ -120,9 +120,8 @@ public class ColumnSet {
         columns.forEach(c -> c.adjustHeight(delta));
     }
 
-    Pair<Consumer<JsonNode>, Parent> build(int cardinality,
-                                           Function<JsonNode, JsonNode> extractor,
-                                           Layout layout) {
+    public Pair<Consumer<JsonNode>, Parent> build(int cardinality,
+                                                  Function<JsonNode, JsonNode> extractor) {
         HBox span = new HBox();
         span.setPrefHeight(cellHeight);
         List<Consumer<JsonNode>> controls = new ArrayList<>();
@@ -133,7 +132,7 @@ public class ColumnSet {
             column.setPrefHeight(cellHeight);
             column.setPrefWidth(c.getWidth());
             controls.add(c.build(cardinality, column, cardinality, extractor,
-                                 layout, labelWidth));
+                                 labelWidth));
             span.getChildren()
                 .add(column);
         });

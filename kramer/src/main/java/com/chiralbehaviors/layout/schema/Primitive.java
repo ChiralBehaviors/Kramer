@@ -22,11 +22,11 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
 import com.chiralbehaviors.layout.Layout.PrimitiveLayout;
-import com.chiralbehaviors.layout.NestedTable;
+import com.chiralbehaviors.layout.control.JsonControl;
+import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Parent;
-import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -56,9 +56,8 @@ public class Primitive extends SchemaNode {
 
     @Override
     public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
-                                                        double rendered,
-                                                        Layout layout) {
-        return table.buildPrimitive(rendered, this, layout);
+                                                        double rendered) {
+        return table.buildPrimitive(rendered, this);
     }
 
     @Override
@@ -144,7 +143,6 @@ public class Primitive extends SchemaNode {
     Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                     double labelWidth,
                                                     Function<JsonNode, JsonNode> extractor,
-                                                    Layout layout,
                                                     double justified) {
         HBox box = new HBox();
         box.setPrefWidth(justified);
@@ -152,7 +150,7 @@ public class Primitive extends SchemaNode {
         VBox.setVgrow(box, Priority.ALWAYS);
 
         Label labelText = label(labelWidth);
-        Control control = buildControl(cardinality, layout);
+        JsonControl control = buildControl(cardinality);
         control.setPrefHeight(height);
         control.setPrefWidth(justified);
 
@@ -162,9 +160,8 @@ public class Primitive extends SchemaNode {
            .add(control);
 
         return new Pair<>(item -> {
-            JsonNode extracted = extractor.apply(item);
-            JsonNode extractedField = extracted.get(field);
-            setItems(control, extractedField, layout);
+            control.setItem(extractor.apply(item)
+                                     .get(field));
         }, box);
     }
 
@@ -183,7 +180,7 @@ public class Primitive extends SchemaNode {
         return pLayout.tableColumnWidth(columnWidth);
     }
 
-    private Control buildControl(int cardinality, Layout layout) {
+    private JsonControl buildControl(int cardinality) {
         return pLayout.buildControl(cardinality);
     }
 }

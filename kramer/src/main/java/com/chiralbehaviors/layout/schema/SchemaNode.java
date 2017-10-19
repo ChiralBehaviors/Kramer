@@ -24,14 +24,13 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout;
 import com.chiralbehaviors.layout.Layout.SchemaNodeLayout;
-import com.chiralbehaviors.layout.NestedTable;
+import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Region;
 import javafx.util.Pair;
@@ -150,8 +149,7 @@ abstract public class SchemaNode {
     }
 
     abstract public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
-                                                                 double rendered,
-                                                                 Layout layout);
+                                                                 double rendered);
 
     public Function<JsonNode, JsonNode> extract(Function<JsonNode, JsonNode> extractor) {
         return n -> {
@@ -188,10 +186,6 @@ abstract public class SchemaNode {
 
     public boolean isRelation() {
         return false;
-    }
-
-    public void setItems(Control control, JsonNode data, Layout layout) {
-        layout.setItemsOf(control, data);
     }
 
     public void setLabel(String label) {
@@ -239,7 +233,6 @@ abstract public class SchemaNode {
     abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                              double labelWidth,
                                                              Function<JsonNode, JsonNode> extractor,
-                                                             Layout layout,
                                                              double justified);
 
     abstract double outlineWidth();

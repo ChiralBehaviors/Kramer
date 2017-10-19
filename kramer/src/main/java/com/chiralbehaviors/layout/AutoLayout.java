@@ -20,6 +20,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.chiralbehaviors.layout.Layout.LayoutModel;
+import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -38,7 +39,7 @@ public class AutoLayout extends Control {
     private static final java.util.logging.Logger log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
 
     private SimpleObjectProperty<JsonNode>        data        = new SimpleObjectProperty<>();
-    private Control                               layout;
+    private JsonControl                           layout;
     private double                                layoutWidth = 0.0;
     private LayoutModel                           model;
     private final SimpleObjectProperty<Relation>  root        = new SimpleObjectProperty<>();
@@ -130,7 +131,7 @@ public class AutoLayout extends Control {
             }
             relation.autoLayout(zeeData.size(), style, width);
             layout = relation.buildControl(zeeData.size(), style, width);
-            relation.setItems(layout, zeeData, style);
+            relation.setItem(layout, zeeData);
             getChildren().add(layout);
         } catch (Throwable e) {
             log.log(Level.SEVERE,
@@ -141,9 +142,9 @@ public class AutoLayout extends Control {
     private void setContent() {
         try {
             if (layout != null) {
-                SchemaNode relation = root.get();
+                Relation relation = root.get();
                 if (relation != null) {
-                    relation.setItems(layout, data.get(), style);
+                    relation.setItem(layout, data.get());
                 }
             }
         } catch (Throwable e) {
