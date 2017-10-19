@@ -210,7 +210,7 @@ public class SinglePageApp extends Application implements LayoutModel {
               .add(getClass().getResource("/non-nested.css")
                              .toExternalForm());
         JsonNode data = pageContext.evaluate(endpoint);
-        layout.setData(data);
+        layout.setItem(data);
         layout.measure(data);
         AnchorPane.setTopAnchor(layout, 0.0);
         AnchorPane.setLeftAnchor(layout, 0.0);

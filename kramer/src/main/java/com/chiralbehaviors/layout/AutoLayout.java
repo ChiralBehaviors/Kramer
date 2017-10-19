@@ -27,14 +27,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
-import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
 
 /**
  * @author hhildebrand
  *
  */
-public class AutoLayout extends Control {
+public class AutoLayout extends JsonControl {
     private static final java.util.logging.Logger log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
 
     private SimpleObjectProperty<JsonNode>        data        = new SimpleObjectProperty<>();
@@ -100,7 +99,8 @@ public class AutoLayout extends Control {
         return root;
     }
 
-    public void setData(JsonNode node) {
+    @Override
+    public void setItem(JsonNode node) {
         data.set(node);
     }
 

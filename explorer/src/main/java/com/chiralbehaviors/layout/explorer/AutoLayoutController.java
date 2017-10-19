@@ -276,7 +276,7 @@ public class AutoLayoutController {
         schemaView.setRoot(schema);
         layout.setRoot(schema);
         layout.measure(data);
-        layout.setData(data);
+        layout.setItem(data);
         layout.autoLayout();
     }
 }
