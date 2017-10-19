@@ -130,7 +130,7 @@ public class Relation extends SchemaNode {
         if (isFold()) {
             return fold.getLabelWidth(layout);
         }
-        return layout.textWidth(label);
+        return rLayout.labelWidth(label);
     }
 
     @Override
@@ -269,7 +269,7 @@ public class Relation extends SchemaNode {
             return;
         }
         if (useTable) {
-            justify(layout.baseOutlineWidth(justified), layout);
+            justify(rLayout.baseOutlineWidth(justified), layout);
             return;
         }
         justifiedWidth = rLayout.baseOutlineWidth(justified);
@@ -425,8 +425,8 @@ public class Relation extends SchemaNode {
                                                                       : (int) Math.ceil(sum
                                                                                         / effectiveChildren)));
         tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth));
-        return layout.nestedTableColumnWidth(isFold() ? fold.tableColumnWidth
-                                                      : tableColumnWidth);
+        return rLayout.tableColumnWidth(isFold() ? fold.tableColumnWidth
+                                                 : tableColumnWidth);
     }
 
     @Override
@@ -473,7 +473,7 @@ public class Relation extends SchemaNode {
 
     @Override
     double outlineWidth(Layout layout) {
-        return layout.nestedOutlineWidth(outlineWidth);
+        return rLayout.outlineWidth(outlineWidth);
     }
 
     @Override
@@ -483,8 +483,8 @@ public class Relation extends SchemaNode {
                                   justifiedWidth);
         }
         double elementHeight = elementHeight(layout);
-        rowHeight = layout.rowHeight(elementHeight);
-        height = layout.tableHeight(cardinality, elementHeight);
+        rowHeight = rLayout.rowHeight(elementHeight);
+        height = rLayout.tableHeight(cardinality, elementHeight);
         return height;
     }
 
@@ -493,7 +493,7 @@ public class Relation extends SchemaNode {
         if (isFold()) {
             return fold.tableColumnWidth(layout);
         }
-        return layout.nestedTableColumnWidth(tableColumnWidth);
+        return rLayout.tableColumnWidth(tableColumnWidth);
     }
 
     private Control buildNestedTable(Function<JsonNode, JsonNode> extractor,
@@ -514,9 +514,9 @@ public class Relation extends SchemaNode {
                                      averageCardinality * cardinality, layout);
         }
 
-        double cellHeight = layout.outlineCellHeight(columnSets.stream()
-                                                               .mapToDouble(cs -> cs.getCellHeight())
-                                                               .sum());
+        double cellHeight = rLayout.outlineCellHeight(columnSets.stream()
+                                                                .mapToDouble(cs -> cs.getCellHeight())
+                                                                .sum());
         ListView<JsonNode> list = new ListView<>();
         layout.getModel()
               .apply(list, this);
@@ -524,7 +524,7 @@ public class Relation extends SchemaNode {
         list.setFixedCellSize(cellHeight);
         list.setCellFactory(c -> {
             ListCell<JsonNode> cell = listCell(extractor,
-                                               layout.baseOutlineCellHeight(cellHeight),
+                                               rLayout.baseOutlineCellHeight(cellHeight),
                                                layout);
             layout.getModel()
                   .apply(cell, this);

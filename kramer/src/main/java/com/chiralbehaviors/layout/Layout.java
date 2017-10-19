@@ -75,6 +75,12 @@ public class Layout {
 
     public interface RelationLayout extends SchemaNodeLayout {
 
+        double baseOutlineCellHeight(double cellHeight);
+
+        double baseRowCellHeight(double extended);
+
+        double outlineCellHeight(double baseHeight);
+
         double outlineHeight(int cardinality, double elementHeight);
 
         double outlineWidth(double outlineWidth);
@@ -186,26 +192,6 @@ public class Layout {
         }
     }
 
-    public double baseOutlineCellHeight(double cellHeight) {
-        return cellHeight - getListCellVerticalInset();
-    }
-
-    public double baseOutlineWidth(double width) {
-        return width - getNestedInset();
-    }
-
-    public double baseRowCellHeight(double extended) {
-        return extended - getListCellVerticalInset();
-    }
-
-    public double baseRowCellWidth(double width) {
-        return width - getListCellVerticalInset();
-    }
-
-    public Double baseTableColumnWidth(double width) {
-        return width - getNestedInset();
-    }
-
     public Double baseTextWidth(double width) {
         return width - getTextHorizontalInset();
     }
@@ -284,27 +270,6 @@ public class Layout {
         return relations.computeIfAbsent(relation, r -> getLayout(r));
     }
 
-    public double nestedOutlineWidth(double outlineWidth) {
-        return outlineWidth + getNestedInset();
-    }
-
-    public double nestedTableColumnWidth(double tableColumnWidth) {
-        return tableColumnWidth + getNestedInset();
-    }
-
-    public double outlineCellHeight(double baseHeight) {
-        return baseHeight + getListCellVerticalInset();
-    }
-
-    public Double outlineHeight(int cardinality, double elementHeight) {
-        return (cardinality * (elementHeight + getListCellVerticalInset()))
-               + getListVerticalInset();
-    }
-
-    public double rowHeight(double elementHeight) {
-        return elementHeight + getListCellVerticalInset();
-    }
-
     public void setItemsOf(Control control, JsonNode data) {
         if (data == null) {
             data = JsonNodeFactory.instance.arrayNode();
@@ -329,30 +294,11 @@ public class Layout {
         }
     }
 
-    public Double tableHeight(int cardinality, double elementHeight) {
-        return (cardinality * (elementHeight + getListCellVerticalInset()))
-               + getListVerticalInset();
-    }
-
-    public Double textHeight(double rows) {
-        return (getTextLineHeight() * rows) + getTextVerticalInset();
-    }
-
-    public double textWidth(String text) {
-        return snap(FONT_LOADER.computeStringWidth(String.format("W%sW\n",
-                                                                 text),
-                                                   textFont));
-    }
-
     @Override
     public String toString() {
         return String.format("Layout [model=%s\n listCellInsets=%s\n listInsets=%s\n styleSheets=%s\n textFont=%s\n textInsets=%s\n textLineHeight=%s]",
                              model, listCellInsets, listInsets, styleSheets,
                              textFont, textInsets, textLineHeight);
-    }
-
-    public double totalTextWidth(double justifiedWidth) {
-        return justifiedWidth + getTextHorizontalInset();
     }
 
     private PrimitiveLayout getLayout(Primitive p) {
@@ -387,7 +333,7 @@ public class Layout {
             @Override
             public Double cellHeight(double maxWidth, double justified) {
                 double rows = Math.ceil((maxWidth / justified) + 0.5);
-                return textHeight(rows);
+                return (getTextLineHeight() * rows) + getTextVerticalInset();
             }
 
             @Override
@@ -411,8 +357,18 @@ public class Layout {
         return new RelationLayout() {
 
             @Override
+            public double baseOutlineCellHeight(double cellHeight) {
+                return cellHeight - getListCellVerticalInset();
+            }
+
+            @Override
             public double baseOutlineWidth(double width) {
                 return width - getNestedInset();
+            }
+
+            @Override
+            public double baseRowCellHeight(double extended) {
+                return extended - getListCellVerticalInset();
             }
 
             @Override
@@ -429,6 +385,11 @@ public class Layout {
             @Override
             public double labelWidth(String label) {
                 return totalTextWidth(textWidth(label));
+            }
+
+            @Override
+            public double outlineCellHeight(double baseHeight) {
+                return baseHeight + getListCellVerticalInset();
             }
 
             @Override
@@ -492,5 +453,15 @@ public class Layout {
 
     private double getTextVerticalInset() {
         return textInsets.getTop() + textInsets.getBottom();
+    }
+
+    private double textWidth(String text) {
+        return snap(FONT_LOADER.computeStringWidth(String.format("W%sW\n",
+                                                                 text),
+                                                   textFont));
+    }
+
+    private double totalTextWidth(double justifiedWidth) {
+        return justifiedWidth + getTextHorizontalInset();
     }
 }

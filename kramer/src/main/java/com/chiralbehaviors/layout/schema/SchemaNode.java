@@ -150,10 +150,6 @@ abstract public class SchemaNode {
         return nodes;
     }
 
-    public static double labelHeight(Layout layout) {
-        return layout.textHeight(1);
-    }
-
     String field;
 
     Double height;
