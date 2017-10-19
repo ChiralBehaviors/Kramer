@@ -317,7 +317,7 @@ public class Relation extends SchemaNode {
             return;
         }
         assert useTable : "Not a nested table";
-        justifiedWidth = layout.baseTableColumnWidth(width);
+        justifiedWidth = rLayout.baseTableColumnWidth(width);
         double slack = Layout.snap(Math.max(0,
                                             justifiedWidth - tableColumnWidth));
         double total = Layout.snap(children.stream()
@@ -344,7 +344,7 @@ public class Relation extends SchemaNode {
                                                 .mapToDouble(child -> child.getLabelWidth(layout))
                                                 .max()
                                                 .getAsDouble());
-        double available = layout.baseOutlineWidth(width - labelWidth);
+        double available = rLayout.baseOutlineWidth(width - labelWidth);
         outlineWidth = Layout.snap(children.stream()
                                            .mapToDouble(child -> {
                                                return child.layout(cardinality,
@@ -354,7 +354,7 @@ public class Relation extends SchemaNode {
                                            .max()
                                            .orElse(0d)
                                    + labelWidth);
-        double extended = layout.nestedOutlineWidth(outlineWidth);
+        double extended = rLayout.outlineWidth(outlineWidth);
         double tableWidth = tableColumnWidth(layout);
         if (tableWidth <= extended) {
             nestTable();
@@ -368,8 +368,8 @@ public class Relation extends SchemaNode {
      */
     @Override
     double layoutWidth(Layout layout) {
-        return useTable ? layout.nestedTableColumnWidth(tableColumnWidth)
-                        : layout.nestedOutlineWidth(outlineWidth);
+        return useTable ? rLayout.tableColumnWidth(tableColumnWidth)
+                        : rLayout.outlineWidth(outlineWidth);
     }
 
     @Override
@@ -385,7 +385,7 @@ public class Relation extends SchemaNode {
         }
 
         singular = isSingular;
-        double labelWidth = layout.totalTextWidth(layout.textWidth(label));
+        double labelWidth = rLayout.labelWidth(label);
         double sum = 0;
         tableColumnWidth = 0;
         int singularChildren = 0;

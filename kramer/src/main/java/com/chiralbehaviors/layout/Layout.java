@@ -77,6 +77,8 @@ public class Layout {
 
         double outlineHeight(int cardinality, double elementHeight);
 
+        double outlineWidth(double outlineWidth);
+
         double rowHeight(double elementHeight);
 
         double tableHeight(int cardinality, double elementHeight);
@@ -415,8 +417,7 @@ public class Layout {
 
             @Override
             public double baseTableColumnWidth(double width) {
-                // TODO Auto-generated method stub
-                return 0;
+                return width - getNestedInset();
             }
 
             @Override
@@ -427,7 +428,7 @@ public class Layout {
 
             @Override
             public double labelWidth(String label) {
-                return textWidth(label);
+                return totalTextWidth(textWidth(label));
             }
 
             @Override
@@ -438,14 +439,18 @@ public class Layout {
             }
 
             @Override
+            public double outlineWidth(double outlineWidth) {
+                return outlineWidth + getNestedInset();
+            }
+
+            @Override
             public double rowHeight(double elementHeight) {
                 return elementHeight + getListCellVerticalInset();
             }
 
             @Override
             public double tableColumnWidth(double width) {
-                // TODO Auto-generated method stub
-                return 0;
+                return width + getNestedInset();
             }
 
             @Override
