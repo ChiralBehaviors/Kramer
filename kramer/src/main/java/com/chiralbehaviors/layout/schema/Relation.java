@@ -55,7 +55,7 @@ public class Relation extends SchemaNode {
     private final List<SchemaNode> children           = new ArrayList<>();
     private final List<ColumnSet>  columnSets         = new ArrayList<>();
     private Relation               fold;
-    private RelationLayout         layout;
+    private RelationLayout         rLayout;
     private double                 outlineWidth       = 0;
     private double                 rowHeight;
     private boolean                singular           = false;
@@ -135,7 +135,7 @@ public class Relation extends SchemaNode {
 
     @Override
     public RelationLayout getLayout() {
-        return layout;
+        return rLayout;
     }
 
     public double getRowHeight() {
@@ -251,14 +251,14 @@ public class Relation extends SchemaNode {
 
         int cardinality = singular ? 1 : card;
         if (!useTable) {
-            height = layout.outlineHeight(cardinality, (columnSets.stream()
-                                                                  .mapToDouble(cs -> cs.getCellHeight())
-                                                                  .sum()));
-            return height;
+            height = rLayout.outlineHeight(cardinality, (columnSets.stream()
+                                                                   .mapToDouble(cs -> cs.getCellHeight())
+                                                                   .sum()));
+        } else {
+            double elementHeight = elementHeight(layout);
+            rowHeight = rLayout.rowHeight(elementHeight);
+            height = rLayout.tableHeight(cardinality, elementHeight);
         }
-        double elementHeight = elementHeight(layout);
-        rowHeight = layout.rowHeight(elementHeight);
-        height = layout.tableHeight(cardinality, elementHeight);
         return height;
     }
 
@@ -272,7 +272,7 @@ public class Relation extends SchemaNode {
             justify(layout.baseOutlineWidth(justified), layout);
             return;
         }
-        justifiedWidth = layout.baseOutlineWidth(justified);
+        justifiedWidth = rLayout.baseOutlineWidth(justified);
         double labelWidth = Layout.snap(children.stream()
                                                 .mapToDouble(n -> n.getLabelWidth(layout))
                                                 .max()
@@ -375,6 +375,7 @@ public class Relation extends SchemaNode {
     @Override
     double measure(Relation parent, JsonNode data, boolean isSingular,
                    Layout layout) {
+        rLayout = layout.layout(this);
         if (isAutoFoldable()) {
             fold = ((Relation) children.get(children.size() - 1));
         }

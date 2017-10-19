@@ -41,8 +41,8 @@ import javafx.util.Pair;
 public class Primitive extends SchemaNode {
 
     private double          columnWidth       = 0;
-    private PrimitiveLayout pLayout;
     private double          maxWidth          = 0;
+    private PrimitiveLayout pLayout;
     private double          valueDefaultWidth = 0;
     private boolean         variableLength    = false;
 
@@ -183,7 +183,7 @@ public class Primitive extends SchemaNode {
         return pLayout.tableColumnWidth(columnWidth);
     }
 
-    private Label buildControl(int cardinality, Layout layout) {
+    private Control buildControl(int cardinality, Layout layout) {
         return pLayout.buildControl(cardinality);
     }
 }

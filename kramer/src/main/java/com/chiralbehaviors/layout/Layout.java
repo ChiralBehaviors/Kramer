@@ -74,15 +74,21 @@ public class Layout {
     }
 
     public interface RelationLayout extends SchemaNodeLayout {
+
+        double outlineHeight(int cardinality, double elementHeight);
+
+        double rowHeight(double elementHeight);
+
+        double tableHeight(int cardinality, double elementHeight);
     }
 
     public interface SchemaNodeLayout {
 
-        Double baseOutlineWidth(double available);
+        double baseOutlineWidth(double available);
 
-        Double baseTableColumnWidth(double available);
+        double baseTableColumnWidth(double available);
 
-        Label buildControl(int cardinality);
+        Control buildControl(int cardinality);
 
         double labelWidth(String label);
 
@@ -351,12 +357,12 @@ public class Layout {
         return new PrimitiveLayout() {
 
             @Override
-            public Double baseOutlineWidth(double available) {
+            public double baseOutlineWidth(double available) {
                 return baseTextWidth(available);
             }
 
             @Override
-            public Double baseTableColumnWidth(double width) {
+            public double baseTableColumnWidth(double width) {
                 return baseTextWidth(width);
             }
 
@@ -403,19 +409,18 @@ public class Layout {
         return new RelationLayout() {
 
             @Override
-            public Double baseOutlineWidth(double width) {
-                // TODO Auto-generated method stub
-                return null;
+            public double baseOutlineWidth(double width) {
+                return width - getNestedInset();
             }
 
             @Override
-            public Double baseTableColumnWidth(double width) {
+            public double baseTableColumnWidth(double width) {
                 // TODO Auto-generated method stub
-                return null;
+                return 0;
             }
 
             @Override
-            public Label buildControl(int cardinality) {
+            public Control buildControl(int cardinality) {
                 // TODO Auto-generated method stub
                 return null;
             }
@@ -426,9 +431,28 @@ public class Layout {
             }
 
             @Override
+            public double outlineHeight(int cardinality, double elementHeight) {
+                return (cardinality
+                        * (elementHeight + getListCellVerticalInset()))
+                       + getListVerticalInset();
+            }
+
+            @Override
+            public double rowHeight(double elementHeight) {
+                return elementHeight + getListCellVerticalInset();
+            }
+
+            @Override
             public double tableColumnWidth(double width) {
                 // TODO Auto-generated method stub
                 return 0;
+            }
+
+            @Override
+            public double tableHeight(int cardinality, double elementHeight) {
+                return (cardinality
+                        * (elementHeight + getListCellVerticalInset()))
+                       + getListVerticalInset();
             }
         };
     }
