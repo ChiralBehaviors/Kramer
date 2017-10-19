@@ -347,7 +347,7 @@ public class Relation extends SchemaNode {
                                            .max()
                                            .orElse(0d)
                                    + labelWidth);
-        double extended = layout.totalOutlineWidth(outlineWidth);
+        double extended = layout.nestedOutlineWidth(outlineWidth);
         double tableWidth = tableColumnWidth(layout);
         if (tableWidth <= extended) {
             nestTable();
@@ -361,8 +361,8 @@ public class Relation extends SchemaNode {
      */
     @Override
     double layoutWidth(Layout layout) {
-        return useTable ? layout.totalTableColumnWidth(tableColumnWidth)
-                        : layout.totalOutlineWidth(outlineWidth);
+        return useTable ? layout.nestedTableColumnWidth(tableColumnWidth)
+                        : layout.nestedOutlineWidth(outlineWidth);
     }
 
     @Override
@@ -417,7 +417,7 @@ public class Relation extends SchemaNode {
                                                                       : (int) Math.ceil(sum
                                                                                         / effectiveChildren)));
         tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth));
-        return layout.totalTableColumnWidth(isFold() ? fold.tableColumnWidth
+        return layout.nestedTableColumnWidth(isFold() ? fold.tableColumnWidth
                                                      : tableColumnWidth);
     }
 
@@ -465,7 +465,7 @@ public class Relation extends SchemaNode {
 
     @Override
     double outlineWidth(Layout layout) {
-        return layout.totalOutlineWidth(outlineWidth);
+        return layout.nestedOutlineWidth(outlineWidth);
     }
 
     @Override
@@ -485,7 +485,7 @@ public class Relation extends SchemaNode {
         if (isFold()) {
             return fold.tableColumnWidth(layout);
         }
-        return layout.totalTableColumnWidth(tableColumnWidth);
+        return layout.nestedTableColumnWidth(tableColumnWidth);
     }
 
     private Control buildNestedTable(Function<JsonNode, JsonNode> extractor,

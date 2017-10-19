@@ -46,6 +46,7 @@ import javafx.scene.text.TextBoundsType;
 
 @SuppressWarnings("restriction")
 public class Layout {
+
     public interface LayoutModel {
 
         default void apply(ListCell<JsonNode> cell, Relation relation) {
@@ -65,18 +66,12 @@ public class Layout {
     }
 
     public interface PrimitiveLayout extends SchemaNodeLayout {
-
-        double measure(JsonNode content);
     }
 
     public interface SchemaNodeLayout {
-        double getElementHeightInset();
+    }
 
-        double getOutlineInset();
-
-        double getRowHeightInset();
-
-        double getTableInset();
+    public interface RelationLayout extends SchemaNodeLayout {
     }
 
     private static final FontLoader FONT_LOADER = Toolkit.getToolkit()
@@ -118,7 +113,7 @@ public class Layout {
     @SuppressWarnings("unused")
     private final Map<Primitive, PrimitiveLayout> primitves      = new HashMap<>();
     @SuppressWarnings("unused")
-    private final Map<Relation, SchemaNodeLayout> relations      = new HashMap<>();
+    private final Map<Relation, RelationLayout>   relations      = new HashMap<>();
     private List<String>                          styleSheets;
     private Font                                  textFont       = Font.getDefault();
     private Insets                                textInsets     = ZERO_INSETS;
@@ -154,6 +149,10 @@ public class Layout {
 
     public double baseRowCellHeight(double extended) {
         return extended - getListCellVerticalInset();
+    }
+
+    public double baseRowCellWidth(double width) {
+        return width - getListCellVerticalInset();
     }
 
     public Double baseTableColumnWidth(double width) {
@@ -230,6 +229,14 @@ public class Layout {
         textInsets = new Insets(3, 20, 3, 20);
     }
 
+    public double nestedOutlineWidth(double outlineWidth) {
+        return outlineWidth + getNestedInset();
+    }
+
+    public double nestedTableColumnWidth(double tableColumnWidth) {
+        return tableColumnWidth + getNestedInset();
+    }
+
     public double outlineCellHeight(double baseHeight) {
         return baseHeight + getListCellVerticalInset();
     }
@@ -237,10 +244,6 @@ public class Layout {
     public Double outlineHeight(int cardinality, double elementHeight) {
         return (cardinality * (elementHeight + getListCellVerticalInset()))
                + getListVerticalInset();
-    }
-
-    public double rowCellWidth(double width) {
-        return width - getListCellVerticalInset();
     }
 
     public double rowHeight(double elementHeight) {
@@ -291,14 +294,6 @@ public class Layout {
         return String.format("Layout [model=%s\n listCellInsets=%s\n listInsets=%s\n styleSheets=%s\n textFont=%s\n textInsets=%s\n textLineHeight=%s]",
                              model, listCellInsets, listInsets, styleSheets,
                              textFont, textInsets, textLineHeight);
-    }
-
-    public double totalOutlineWidth(double outlineWidth) {
-        return outlineWidth + getNestedInset();
-    }
-
-    public double totalTableColumnWidth(double tableColumnWidth) {
-        return tableColumnWidth + getNestedInset();
     }
 
     public double totalTextWidth(double justifiedWidth) {
