@@ -82,19 +82,18 @@ public class Primitive extends SchemaNode {
         if (height != null) {
             return height;
         }
-        double rows = Math.ceil((maxWidth / justified) + 0.5);
-        height = layout.textHeight(rows);
+        height = pLayout.cellHeight(maxWidth, justified);
         return height;
     }
 
     @Override
     void compress(Layout layout, double available) {
-        justifiedWidth = layout.baseTextWidth(available);
+        justifiedWidth = pLayout.baseOutlineWidth(available);
     }
 
     @Override
-    void justify(double width, Layout layout) {
-        justifiedWidth = layout.baseTextWidth(width);
+    void justify(double available, Layout layout) {
+        justifiedWidth = pLayout.baseTableColumnWidth(available);
     }
 
     @Override
@@ -138,7 +137,7 @@ public class Primitive extends SchemaNode {
             variableLength = true;
         }
 
-        return layout.totalTextWidth(columnWidth);
+        return pLayout.tableColumnWidth(columnWidth);
     }
 
     @Override
@@ -181,20 +180,10 @@ public class Primitive extends SchemaNode {
 
     @Override
     double tableColumnWidth(Layout layout) {
-        return layout.totalTextWidth(columnWidth);
+        return pLayout.tableColumnWidth(columnWidth);
     }
 
     private Label buildControl(int cardinality, Layout layout) {
-        Label text = new Label();
-        text.setWrapText(true);
-        text.setStyle("-fx-background-color: " + "         rgba(0,0,0,0.08),"
-                      + "        linear-gradient(#9a9a9a, #909090),"
-                      + "        white 0%;"
-                      + "    -fx-background-insets: 0 0 -1 0,0,1;"
-                      + "    -fx-background-radius: 5,5,4;"
-                      + "    -fx-padding: 3 30 3 30;"
-                      + "    -fx-text-fill: #242d35;"
-                      + "    -fx-font-size: 14px;");
-        return text;
+        return pLayout.buildControl(cardinality);
     }
 }

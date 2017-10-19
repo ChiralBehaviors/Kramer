@@ -67,14 +67,26 @@ public class Layout {
     }
 
     public interface PrimitiveLayout extends SchemaNodeLayout {
+        Double cellHeight(double maxWidth, double justified);
+
         double width(JsonNode row);
+
     }
 
     public interface RelationLayout extends SchemaNodeLayout {
     }
 
     public interface SchemaNodeLayout {
+
+        Double baseOutlineWidth(double available);
+
+        Double baseTableColumnWidth(double available);
+
+        Label buildControl(int cardinality);
+
         double labelWidth(String label);
+
+        double tableColumnWidth(double columnWidth);
     }
 
     private static final FontLoader FONT_LOADER = Toolkit.getToolkit()
@@ -110,18 +122,6 @@ public class Layout {
                                    .getHeight();
     }
 
-    private Insets                                listCellInsets = ZERO_INSETS;
-    private Insets                                listInsets     = ZERO_INSETS;
-    private final LayoutModel                     model;
-    @SuppressWarnings("unused")
-    private final Map<Primitive, PrimitiveLayout> primitives     = new HashMap<>();
-    @SuppressWarnings("unused")
-    private final Map<Relation, RelationLayout>   relations      = new HashMap<>();
-    private List<String>                          styleSheets;
-    private Font                                  textFont       = Font.getDefault();
-    private Insets                                textInsets     = ZERO_INSETS;
-    private double                                textLineHeight = 0;
-
     private static String toString(JsonNode value) {
         if (value == null) {
             return "";
@@ -144,6 +144,19 @@ public class Layout {
             return value.asText();
         }
     }
+
+    private Insets                                listCellInsets = ZERO_INSETS;
+    private Insets                                listInsets     = ZERO_INSETS;
+    private final LayoutModel                     model;
+    @SuppressWarnings("unused")
+    private final Map<Primitive, PrimitiveLayout> primitives     = new HashMap<>();
+    @SuppressWarnings("unused")
+    private final Map<Relation, RelationLayout>   relations      = new HashMap<>();
+    private List<String>                          styleSheets;
+    private Font                                  textFont       = Font.getDefault();
+    private Insets                                textInsets     = ZERO_INSETS;
+
+    private double                                textLineHeight = 0;
 
     public Layout(LayoutModel model) {
         this(Collections.emptyList(), model, true);
@@ -259,33 +272,8 @@ public class Layout {
         return primitives.computeIfAbsent(primitive, p -> getLayout(p));
     }
 
-    private PrimitiveLayout getLayout(Primitive p) {
-        return new PrimitiveLayout() {
-
-            @Override
-            public double labelWidth(String label) {
-                return textWidth(label);
-            }
-
-            @Override
-            public double width(JsonNode row) {
-                return textWidth(Layout.toString(row));
-            }
-        };
-    }
-
     public RelationLayout layout(Relation relation) {
         return relations.computeIfAbsent(relation, r -> getLayout(r));
-    }
-
-    private RelationLayout getLayout(Relation r) {
-        return new RelationLayout() {
-
-            @Override
-            public double labelWidth(String label) {
-                return textWidth(label);
-            }
-        };
     }
 
     public double nestedOutlineWidth(double outlineWidth) {
@@ -357,6 +345,92 @@ public class Layout {
 
     public double totalTextWidth(double justifiedWidth) {
         return justifiedWidth + getTextHorizontalInset();
+    }
+
+    private PrimitiveLayout getLayout(Primitive p) {
+        return new PrimitiveLayout() {
+
+            @Override
+            public Double baseOutlineWidth(double available) {
+                return baseTextWidth(available);
+            }
+
+            @Override
+            public Double baseTableColumnWidth(double width) {
+                return baseTextWidth(width);
+            }
+
+            @Override
+            public Label buildControl(int cardinality) {
+                Label text = new Label();
+                text.setWrapText(true);
+                text.setStyle("-fx-background-color: "
+                              + "         rgba(0,0,0,0.08),"
+                              + "        linear-gradient(#9a9a9a, #909090),"
+                              + "        white 0%;"
+                              + "    -fx-background-insets: 0 0 -1 0,0,1;"
+                              + "    -fx-background-radius: 5,5,4;"
+                              + "    -fx-padding: 3 30 3 30;"
+                              + "    -fx-text-fill: #242d35;"
+                              + "    -fx-font-size: 14px;");
+                return text;
+            }
+
+            @Override
+            public Double cellHeight(double maxWidth, double justified) {
+                double rows = Math.ceil((maxWidth / justified) + 0.5);
+                return textHeight(rows);
+            }
+
+            @Override
+            public double labelWidth(String label) {
+                return textWidth(label);
+            }
+
+            @Override
+            public double tableColumnWidth(double width) {
+                return totalTextWidth(width);
+            }
+
+            @Override
+            public double width(JsonNode row) {
+                return textWidth(Layout.toString(row));
+            }
+        };
+    }
+
+    private RelationLayout getLayout(Relation r) {
+        return new RelationLayout() {
+
+            @Override
+            public Double baseOutlineWidth(double width) {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public Double baseTableColumnWidth(double width) {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public Label buildControl(int cardinality) {
+                // TODO Auto-generated method stub
+                return null;
+            }
+
+            @Override
+            public double labelWidth(String label) {
+                return textWidth(label);
+            }
+
+            @Override
+            public double tableColumnWidth(double width) {
+                // TODO Auto-generated method stub
+                return 0;
+            }
+        };
     }
 
     private double getListCellVerticalInset() {
