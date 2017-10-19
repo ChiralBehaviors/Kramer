@@ -72,9 +72,9 @@ public class Relation extends SchemaNode {
 
     public void autoLayout(int cardinality, Layout layout, double width) {
         double snapped = Layout.snap(width);
-        layout(cardinality, layout, snapped);
-        compress(layout, snapped);
-        cellHeight(cardinality, layout, width);
+        layout(cardinality, snapped);
+        compress(snapped);
+        cellHeight(cardinality, width);
     }
 
     @Override
@@ -126,9 +126,9 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public double getLabelWidth(Layout layout) {
+    public double getLabelWidth() {
         if (isFold()) {
-            return fold.getLabelWidth(layout);
+            return fold.getLabelWidth();
         }
         return rLayout.labelWidth(label);
     }
@@ -241,9 +241,9 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    double cellHeight(int card, Layout layout, double width) {
+    double cellHeight(int card, double width) {
         if (isFold()) {
-            return fold.cellHeight(averageCardinality * card, layout, width);
+            return fold.cellHeight(averageCardinality * card, width);
         }
         if (height != null) {
             return height;
@@ -255,7 +255,7 @@ public class Relation extends SchemaNode {
                                                                    .mapToDouble(cs -> cs.getCellHeight())
                                                                    .sum()));
         } else {
-            double elementHeight = elementHeight(layout);
+            double elementHeight = elementHeight();
             rowHeight = rLayout.rowHeight(elementHeight);
             height = rLayout.tableHeight(cardinality, elementHeight);
         }
@@ -263,25 +263,25 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    void compress(Layout layout, double justified) {
+    void compress(double justified) {
         if (isFold()) {
-            fold.compress(layout, justified);
+            fold.compress(justified);
             return;
         }
         if (useTable) {
-            justify(rLayout.baseOutlineWidth(justified), layout);
+            justify(rLayout.baseOutlineWidth(justified));
             return;
         }
         justifiedWidth = rLayout.baseOutlineWidth(justified);
         double labelWidth = Layout.snap(children.stream()
-                                                .mapToDouble(n -> n.getLabelWidth(layout))
+                                                .mapToDouble(n -> n.getLabelWidth())
                                                 .max()
                                                 .orElse(0));
         columnSets.clear();
         ColumnSet current = null;
         double halfWidth = justifiedWidth / 2d;
         for (SchemaNode child : children) {
-            double childWidth = labelWidth + child.layoutWidth(layout);
+            double childWidth = labelWidth + child.layoutWidth();
             if (childWidth > halfWidth || current == null) {
                 current = new ColumnSet(labelWidth);
                 columnSets.add(current);
@@ -293,8 +293,7 @@ public class Relation extends SchemaNode {
                 current.add(child);
             }
         }
-        columnSets.forEach(cs -> cs.compress(averageCardinality, layout,
-                                             justifiedWidth));
+        columnSets.forEach(cs -> cs.compress(averageCardinality, justifiedWidth));
     }
 
     @Override
@@ -311,9 +310,9 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    void justify(double width, Layout layout) {
+    void justify(double width) {
         if (isFold()) {
-            fold.justify(width, layout);
+            fold.justify(width);
             return;
         }
         assert useTable : "Not a nested table";
@@ -321,41 +320,40 @@ public class Relation extends SchemaNode {
         double slack = Layout.snap(Math.max(0,
                                             justifiedWidth - tableColumnWidth));
         double total = Layout.snap(children.stream()
-                                           .map(child -> child.tableColumnWidth(layout))
+                                           .map(child -> child.tableColumnWidth())
                                            .reduce((a, b) -> a + b)
                                            .orElse(0.0d));
         children.forEach(child -> {
-            double childWidth = child.tableColumnWidth(layout);
+            double childWidth = child.tableColumnWidth();
             double additional = Layout.snap(slack * (childWidth / total));
             double childJustified = additional + childWidth;
-            child.justify(childJustified, layout);
+            child.justify(childJustified);
         });
     }
 
     @Override
-    double layout(int cardinality, Layout layout, double width) {
+    double layout(int cardinality, double width) {
         height = null;
         useTable = false;
         rowHeight = 0;
         if (isFold()) {
-            return fold.layout(cardinality * averageCardinality, layout, width);
+            return fold.layout(cardinality * averageCardinality, width);
         }
         double labelWidth = Layout.snap(children.stream()
-                                                .mapToDouble(child -> child.getLabelWidth(layout))
+                                                .mapToDouble(child -> child.getLabelWidth())
                                                 .max()
                                                 .getAsDouble());
         double available = rLayout.baseOutlineWidth(width - labelWidth);
         outlineWidth = Layout.snap(children.stream()
                                            .mapToDouble(child -> {
                                                return child.layout(cardinality,
-                                                                   layout,
                                                                    available);
                                            })
                                            .max()
                                            .orElse(0d)
                                    + labelWidth);
         double extended = rLayout.outlineWidth(outlineWidth);
-        double tableWidth = tableColumnWidth(layout);
+        double tableWidth = tableColumnWidth();
         if (tableWidth <= extended) {
             nestTable();
             return tableWidth;
@@ -367,7 +365,7 @@ public class Relation extends SchemaNode {
      * @see com.chiralbehaviors.layout.schema.SchemaNode#layoutWidth(com.chiralbehaviors.layout.Layout)
      */
     @Override
-    double layoutWidth(Layout layout) {
+    double layoutWidth() {
         return useTable ? rLayout.tableColumnWidth(tableColumnWidth)
                         : rLayout.outlineWidth(outlineWidth);
     }
@@ -472,26 +470,26 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    double outlineWidth(Layout layout) {
+    double outlineWidth() {
         return rLayout.outlineWidth(outlineWidth);
     }
 
     @Override
-    double rowHeight(int cardinality, Layout layout, double justified) {
+    double rowHeight(int cardinality, double justified) {
         if (isFold()) {
-            return fold.rowHeight(cardinality * averageCardinality, layout,
+            return fold.rowHeight(cardinality * averageCardinality,
                                   justifiedWidth);
         }
-        double elementHeight = elementHeight(layout);
+        double elementHeight = elementHeight();
         rowHeight = rLayout.rowHeight(elementHeight);
         height = rLayout.tableHeight(cardinality, elementHeight);
         return height;
     }
 
     @Override
-    double tableColumnWidth(Layout layout) {
+    double tableColumnWidth() {
         if (isFold()) {
-            return fold.tableColumnWidth(layout);
+            return fold.tableColumnWidth();
         }
         return rLayout.tableColumnWidth(tableColumnWidth);
     }
@@ -534,10 +532,9 @@ public class Relation extends SchemaNode {
         return list;
     }
 
-    private double elementHeight(Layout layout) {
+    private double elementHeight() {
         return children.stream()
                        .mapToDouble(child -> Layout.snap(child.rowHeight(averageCardinality,
-                                                                         layout,
                                                                          justifiedWidth)))
                        .max()
                        .getAsDouble();

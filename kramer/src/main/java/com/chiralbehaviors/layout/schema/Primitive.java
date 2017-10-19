@@ -78,7 +78,7 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double cellHeight(int cardinality, Layout layout, double justified) {
+    double cellHeight(int cardinality, double justified) {
         if (height != null) {
             return height;
         }
@@ -87,17 +87,17 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    void compress(Layout layout, double available) {
+    void compress(double available) {
         justifiedWidth = pLayout.baseOutlineWidth(available);
     }
 
     @Override
-    void justify(double available, Layout layout) {
+    void justify(double available) {
         justifiedWidth = pLayout.baseTableColumnWidth(available);
     }
 
     @Override
-    double layout(int cardinality, Layout layout, double width) {
+    double layout(int cardinality, double width) {
         height = null;
         return variableLength ? width : Math.min(width, columnWidth);
     }
@@ -106,15 +106,15 @@ public class Primitive extends SchemaNode {
      * @see com.chiralbehaviors.layout.schema.SchemaNode#layoutWidth(com.chiralbehaviors.layout.Layout)
      */
     @Override
-    double layoutWidth(Layout layout) {
-        return tableColumnWidth(layout);
+    double layoutWidth() {
+        return tableColumnWidth();
     }
 
     @Override
     double measure(Relation parent, JsonNode data, boolean singular,
                    Layout layout) {
         pLayout = layout.layout(this);
-        double labelWidth = getLabelWidth(layout);
+        double labelWidth = getLabelWidth();
         double sum = 0;
         maxWidth = 0;
         columnWidth = 0;
@@ -169,17 +169,17 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double outlineWidth(Layout layout) {
-        return tableColumnWidth(layout);
+    double outlineWidth() {
+        return tableColumnWidth();
     }
 
     @Override
-    double rowHeight(int cardinality, Layout layout, double width) {
-        return cellHeight(cardinality, layout, width);
+    double rowHeight(int cardinality, double width) {
+        return cellHeight(cardinality, width);
     }
 
     @Override
-    double tableColumnWidth(Layout layout) {
+    double tableColumnWidth() {
         return pLayout.tableColumnWidth(columnWidth);
     }
 

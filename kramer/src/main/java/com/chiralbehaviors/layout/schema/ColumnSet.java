@@ -57,46 +57,42 @@ public class ColumnSet {
                .add(node);
     }
 
-    public void compress(int cardinality, Layout layout, double available) {
+    public void compress(int cardinality, double available) {
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
                                    .size(),
-                        max(1,
-                            (int) (available
-                                   / firstColumn.maxWidth(layout,
-                                                          labelWidth))));
+                        max(1, (int) (available
+                                      / firstColumn.maxWidth(labelWidth))));
         double fieldWidth = available - labelWidth;
         if (count == 1) {
             firstColumn.setWidth(available);
             firstColumn.getFields()
                        .forEach(f -> {
-                           f.compress(layout, fieldWidth);
+                           f.compress(fieldWidth);
                        });
-            cellHeight = firstColumn.cellHeight(cardinality, layout,
-                                                labelWidth);
+            cellHeight = firstColumn.cellHeight(cardinality, labelWidth);
             return;
         }
 
         // compression
         double columnWidth = available / count;
         firstColumn.getFields()
-                   .forEach(f -> f.compress(layout, columnWidth - labelWidth));
+                   .forEach(f -> f.compress(columnWidth - labelWidth));
         firstColumn.setWidth(columnWidth);
         IntStream.range(1, count)
                  .forEach(i -> columns.add(new Column(columnWidth)));
-        cellHeight = firstColumn.cellHeight(cardinality, layout, labelWidth);
+        cellHeight = firstColumn.cellHeight(cardinality, labelWidth);
         double lastHeight;
         do {
             lastHeight = cellHeight;
             for (int i = 0; i < columns.size() - 1; i++) {
                 while (columns.get(i)
                               .slideRight(cardinality, columns.get(i + 1),
-                                          layout, columnWidth, labelWidth)) {
+                                          columnWidth, labelWidth)) {
                 }
             }
             cellHeight = columns.stream()
                                 .mapToDouble(c -> c.cellHeight(cardinality,
-                                                               layout,
                                                                labelWidth))
                                 .max()
                                 .orElse(0d);

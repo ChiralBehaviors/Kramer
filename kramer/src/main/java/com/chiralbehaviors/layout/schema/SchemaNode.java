@@ -25,8 +25,6 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.Layout;
 import com.chiralbehaviors.layout.Layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.NestedTable;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -42,24 +40,7 @@ import javafx.util.Pair;
  * @author hhildebrand
  *
  */
-@JsonAutoDetect(fieldVisibility = Visibility.NONE, getterVisibility = Visibility.NONE)
 abstract public class SchemaNode {
-
-    protected static enum INDENT {
-        LEFT,
-        NONE,
-        RIGHT {
-
-            @Override
-            public boolean isRight() {
-                return true;
-            }
-        };
-
-        public boolean isRight() {
-            return false;
-        }
-    }
 
     public static ArrayNode asArray(JsonNode node) {
         if (node == null) {
@@ -199,7 +180,7 @@ abstract public class SchemaNode {
         return label;
     }
 
-    public double getLabelWidth(Layout layout) {
+    public double getLabelWidth() {
         return getLayout().labelWidth(label);
     }
 
@@ -223,10 +204,9 @@ abstract public class SchemaNode {
         this.height = Layout.snap(height + delta);
     }
 
-    abstract double cellHeight(int cardinality, Layout layout,
-                               double available);
+    abstract double cellHeight(int cardinality, double available);
 
-    abstract void compress(Layout layout, double available);
+    abstract void compress(double available);
 
     Double getCalculatedHeight() {
         assert height != null : "cell height has not been calculated";
@@ -237,7 +217,7 @@ abstract public class SchemaNode {
         return false;
     }
 
-    abstract void justify(double width, Layout layout);
+    abstract void justify(double width);
 
     Label label(double labelWidth) {
         Label labelText = new Label(label);
@@ -249,9 +229,9 @@ abstract public class SchemaNode {
         return labelText;
     }
 
-    abstract double layout(int cardinality, Layout layout, double width);
+    abstract double layout(int cardinality, double width);
 
-    abstract double layoutWidth(Layout layout);
+    abstract double layoutWidth();
 
     abstract double measure(Relation parent, JsonNode data, boolean singular,
                             Layout layout);
@@ -262,9 +242,9 @@ abstract public class SchemaNode {
                                                              Layout layout,
                                                              double justified);
 
-    abstract double outlineWidth(Layout layout);
+    abstract double outlineWidth();
 
-    abstract double rowHeight(int cardinality, Layout layout, double justified);
+    abstract double rowHeight(int cardinality, double justified);
 
-    abstract double tableColumnWidth(Layout layout);
+    abstract double tableColumnWidth();
 }
