@@ -17,18 +17,9 @@
 package com.chiralbehaviors.layout.schema;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.databind.JsonNode;
-
-import javafx.scene.Parent;
-import javafx.scene.layout.VBox;
-import javafx.util.Pair;
 
 /**
  * 
@@ -54,6 +45,16 @@ public class Column {
 
     public double cellHeight(int cardinality, double labelWidth) {
         return cellHeight(cardinality, fields, labelWidth);
+    }
+
+    public List<SchemaNode> getFields() {
+        return Arrays.stream(fields.toArray())
+                     .map(f -> (SchemaNode) f)
+                     .collect(Collectors.toList());
+    }
+
+    public double getWidth() {
+        return width;
     }
 
     public double maxWidth(double labelWidth) {
@@ -99,22 +100,6 @@ public class Column {
         }
     }
 
-    Consumer<JsonNode> build(double cellHeight, VBox column, int cardinality,
-                             Function<JsonNode, JsonNode> extractor,
-                             double labelWidth) {
-        List<Consumer<JsonNode>> controls = new ArrayList<>();
-        fields.forEach(field -> {
-            Pair<Consumer<JsonNode>, Parent> master = field.outlineElement(cardinality,
-                                                                           labelWidth,
-                                                                           extractor,
-                                                                           width);
-            controls.add(master.getKey());
-            column.getChildren()
-                  .add(master.getValue());
-        });
-        return item -> controls.forEach(m -> m.accept(item));
-    }
-
     void distributeHeight(double finalHeight) {
         double calculated = fields.stream()
                                   .mapToDouble(f -> f.getCalculatedHeight())
@@ -125,16 +110,6 @@ public class Column {
                 fields.forEach(f -> f.adjustHeight(delta));
             }
         }
-    }
-
-    List<SchemaNode> getFields() {
-        return Arrays.stream(fields.toArray())
-                     .map(f -> (SchemaNode) f)
-                     .collect(Collectors.toList());
-    }
-
-    double getWidth() {
-        return width;
     }
 
     private double cellHeight(int cardinality, ArrayDeque<SchemaNode> elements,

@@ -21,17 +21,9 @@ import static java.lang.Math.min;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import com.chiralbehaviors.layout.Layout;
-import com.fasterxml.jackson.databind.JsonNode;
-
-import javafx.scene.Parent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.util.Pair;
 
 /**
  * 
@@ -55,25 +47,6 @@ public class ColumnSet {
     public void add(SchemaNode node) {
         columns.get(0)
                .add(node);
-    }
-
-    public Pair<Consumer<JsonNode>, Parent> build(int cardinality,
-                                                  Function<JsonNode, JsonNode> extractor) {
-        HBox span = new HBox();
-        span.setPrefHeight(cellHeight);
-        List<Consumer<JsonNode>> controls = new ArrayList<>();
-        columns.forEach(c -> {
-            VBox column = new VBox();
-            column.getStyleClass()
-                  .add("column");
-            column.setPrefHeight(cellHeight);
-            column.setPrefWidth(c.getWidth());
-            controls.add(c.build(cardinality, column, cardinality, extractor,
-                                 labelWidth));
-            span.getChildren()
-                .add(column);
-        });
-        return new Pair<>(item -> controls.forEach(c -> c.accept(item)), span);
     }
 
     public void compress(int cardinality, double available) {
@@ -139,7 +112,11 @@ public class ColumnSet {
         columns.forEach(c -> c.adjustHeight(delta));
     }
 
-    List<Column> getColumns() {
+    public List<Column> getColumns() {
         return columns;
+    }
+
+    public double getLabelWidth() {
+        return labelWidth;
     }
 }

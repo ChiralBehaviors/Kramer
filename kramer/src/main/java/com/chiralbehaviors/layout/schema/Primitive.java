@@ -61,6 +61,15 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
+    public Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
+                                                           double labelWidth,
+                                                           Function<JsonNode, JsonNode> extractor,
+                                                           double justified) {
+        return pLayout.outlineElement(field, cardinality, height, label,
+                                      labelWidth, extractor, justified);
+    }
+
+    @Override
     public String toString() {
         return String.format("Primitive [%s:%.2f:%.2f]", label, columnWidth,
                              justifiedWidth);
@@ -132,15 +141,6 @@ public class Primitive extends SchemaNode {
         }
 
         return pLayout.tableColumnWidth(columnWidth);
-    }
-
-    @Override
-    Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
-                                                    double labelWidth,
-                                                    Function<JsonNode, JsonNode> extractor,
-                                                    double justified) {
-        return pLayout.outlineElement(field, cardinality, height, label,
-                                      labelWidth, extractor, justified);
     }
 
     @Override

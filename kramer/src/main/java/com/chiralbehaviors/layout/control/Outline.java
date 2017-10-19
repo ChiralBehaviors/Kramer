@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Layout.RelationLayout;
+import com.chiralbehaviors.layout.schema.Column;
 import com.chiralbehaviors.layout.schema.ColumnSet;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -34,6 +35,7 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Skin;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
@@ -67,9 +69,9 @@ public class Outline extends JsonControl {
         list.setPrefHeight(height);
         list.setFixedCellSize(cellHeight);
         list.setCellFactory(c -> {
-            ListCell<JsonNode> cell = listCell(averageCardinality, extractor,
+            ListCell<JsonNode> cell = listCell(columnSets, averageCardinality,
                                                layout.baseOutlineCellHeight(cellHeight),
-                                               layout, columnSets);
+                                               extractor, layout);
             layout.apply(cell);
             return cell;
         });
@@ -88,11 +90,11 @@ public class Outline extends JsonControl {
         return new OutlineSkin(this);
     }
 
-    private ListCell<JsonNode> listCell(int averageCardinality,
-                                        Function<JsonNode, JsonNode> extractor,
+    private ListCell<JsonNode> listCell(Collection<ColumnSet> columnSets,
+                                        int averageCardinality,
                                         double cellHeight,
-                                        RelationLayout layout,
-                                        Collection<ColumnSet> columnSets) {
+                                        Function<JsonNode, JsonNode> extractor,
+                                        RelationLayout layout) {
         return new ListCell<JsonNode>() {
             VBox                     cell;
             List<Consumer<JsonNode>> controls = new ArrayList<>();
@@ -138,8 +140,11 @@ public class Outline extends JsonControl {
                 cell.setMinWidth(0);
                 cell.setPrefWidth(1);
                 columnSets.forEach(cs -> {
-                    Pair<Consumer<JsonNode>, Parent> master = cs.build(averageCardinality,
-                                                                       extractor);
+                    Pair<Consumer<JsonNode>, Parent> master = build(cs.getColumns(),
+                                                                    averageCardinality,
+                                                                    cs.getCellHeight(),
+                                                                    extractor,
+                                                                    cs.getLabelWidth());
                     controls.add(master.getKey());
                     Parent control = master.getValue();
                     VBox.setVgrow(control, Priority.ALWAYS);
@@ -148,6 +153,43 @@ public class Outline extends JsonControl {
                 });
             }
         };
+    }
+
+    public Pair<Consumer<JsonNode>, Parent> build(List<Column> columns,
+                                                  int cardinality,
+                                                  double cellHeight,
+                                                  Function<JsonNode, JsonNode> extractor,
+                                                  double labelWidth) {
+        HBox span = new HBox();
+        span.setPrefHeight(cellHeight);
+        List<Consumer<JsonNode>> controls = new ArrayList<>();
+        columns.forEach(c -> {
+            VBox column = new VBox();
+            column.getStyleClass()
+                  .add("column");
+            column.setPrefHeight(cellHeight);
+            column.setPrefWidth(c.getWidth());
+            controls.add(build(c, cardinality, extractor, labelWidth, column));
+            span.getChildren()
+                .add(column);
+        });
+        return new Pair<>(item -> controls.forEach(c -> c.accept(item)), span);
+    }
+
+    private Consumer<JsonNode> build(Column c, int cardinality,
+                                     Function<JsonNode, JsonNode> extractor,
+                                     double labelWidth, VBox column) {
+        List<Consumer<JsonNode>> controls = new ArrayList<>();
+        c.getFields().forEach(field -> {
+            Pair<Consumer<JsonNode>, Parent> master = field.outlineElement(cardinality,
+                                                                           labelWidth,
+                                                                           extractor,
+                                                                           c.getWidth());
+            controls.add(master.getKey());
+            column.getChildren()
+                  .add(master.getValue());
+        });
+        return item -> controls.forEach(m -> m.accept(item));
     }
 
 }

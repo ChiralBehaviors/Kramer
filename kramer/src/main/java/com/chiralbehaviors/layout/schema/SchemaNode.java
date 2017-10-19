@@ -223,7 +223,7 @@ abstract public class SchemaNode {
     abstract double measure(Relation parent, JsonNode data, boolean singular,
                             Layout layout);
 
-    abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
+    public abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                              double labelWidth,
                                                              Function<JsonNode, JsonNode> extractor,
                                                              double justified);

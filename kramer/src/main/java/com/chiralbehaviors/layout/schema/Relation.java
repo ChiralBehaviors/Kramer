@@ -180,6 +180,21 @@ public class Relation extends SchemaNode {
         measure(null, jsonNode, !jsonNode.isArray(), layout);
     }
 
+    @Override
+    public Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
+                                                           double labelWidth,
+                                                           Function<JsonNode, JsonNode> extractor,
+                                                           double justified) {
+        if (isFold()) {
+            return fold.outlineElement(averageCardinality * cardinality,
+                                       labelWidth, extract(extractor),
+                                       justified);
+        }
+
+        return rLayout.outlineElement(field, cardinality, label, labelWidth,
+                                      extractor, height, useTable, justified);
+    }
+
     public void setAverageCardinality(int averageCardinality) {
         this.averageCardinality = averageCardinality;
     }
@@ -434,21 +449,6 @@ public class Relation extends SchemaNode {
         tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth));
         return rLayout.tableColumnWidth(isFold() ? fold.tableColumnWidth
                                                  : tableColumnWidth);
-    }
-
-    @Override
-    Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
-                                                    double labelWidth,
-                                                    Function<JsonNode, JsonNode> extractor,
-                                                    double justified) {
-        if (isFold()) {
-            return fold.outlineElement(averageCardinality * cardinality,
-                                       labelWidth, extract(extractor),
-                                       justified);
-        }
-
-        return rLayout.outlineElement(field, cardinality, label, labelWidth,
-                                      extractor, height, useTable, justified);
     }
 
     @Override
