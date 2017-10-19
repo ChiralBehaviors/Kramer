@@ -74,7 +74,7 @@ public class PrimitiveLayoutImpl implements Layout.PrimitiveLayout {
 
     @Override
     public double labelWidth(String label) {
-        return layout.textWidth(label);
+        return layout.labelWidth(label);
     }
 
     @Override

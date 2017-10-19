@@ -47,6 +47,7 @@ import javafx.util.Pair;
  */
 public class Outline extends JsonControl {
     private final ListView<JsonNode> list;
+    @SuppressWarnings("unused")
     private final Relation           relation;
 
     public Outline(Relation relation) {
@@ -58,13 +59,11 @@ public class Outline extends JsonControl {
 
     public Outline build(double height, Collection<ColumnSet> columnSets,
                          Function<JsonNode, JsonNode> extractor,
-                         int averageCardinality) {
+                         int averageCardinality, RelationLayout layout) {
 
-        double cellHeight = relation.getLayout()
-                                    .outlineCellHeight(columnSets.stream()
-                                                                 .mapToDouble(cs -> cs.getCellHeight())
-                                                                 .sum());
-        RelationLayout layout = relation.getLayout();
+        double cellHeight = layout.outlineCellHeight(columnSets.stream()
+                                                               .mapToDouble(cs -> cs.getCellHeight())
+                                                               .sum());
         layout.apply(list);
         list.setPrefHeight(height);
         list.setFixedCellSize(cellHeight);

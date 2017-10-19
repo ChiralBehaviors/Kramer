@@ -354,6 +354,10 @@ public class Layout {
         return labelText;
     }
 
+    double labelWidth(String label) {
+        return textWidth(label) + 20;
+    }
+
     double textWidth(String text) {
         return snap(FONT_LOADER.computeStringWidth(String.format("%s", text),
                                                    textFont));

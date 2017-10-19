@@ -93,19 +93,20 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
 
     @Override
     public JsonControl buildNestedTable(int cardinality) {
-        return new NestedTable(cardinality, r);
+        return new NestedTable(cardinality, r, this);
     }
 
     @Override
     public JsonControl buildOutline(Double height,
                                     Function<JsonNode, JsonNode> extractor,
                                     int cardinality) {
-        return new Outline(r).build(height, columnSets, extractor, cardinality);
+        return new Outline(r).build(height, columnSets, extractor, cardinality,
+                                    this);
     }
 
     @Override
     public double compress(double justified, int averageCardinality) {
-        if (r.isUseTable()) { 
+        if (r.isUseTable()) {
             return r.justify(baseOutlineWidth(justified));
         }
         double justifiedWidth = baseOutlineWidth(justified);
@@ -161,7 +162,7 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
 
     @Override
     public double labelWidth(String label) {
-        return layout.textWidth(label);
+        return layout.labelWidth(label);
     }
 
     @Override

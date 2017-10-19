@@ -86,7 +86,7 @@ public class Relation extends SchemaNode {
     @Override
     public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
                                                         double rendered) {
-        return table.buildRelation(rendered, this);
+        return table.buildRelation(rendered, this, rLayout);
     }
 
     public JsonControl buildControl(int cardinality, Layout layout,
