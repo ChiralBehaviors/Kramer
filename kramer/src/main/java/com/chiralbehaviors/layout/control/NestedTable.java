@@ -144,7 +144,7 @@ public class NestedTable extends JsonControl {
         double calculatedHeight = layout.getHeight();
         double deficit = Math.max(0, rendered - calculatedHeight);
         double childDeficit = Layout.snap(Math.max(0, deficit / cardinality));
-        double extended = Layout.snap(relation.getRowHeight() + childDeficit);
+        double extended = Layout.snap(layout.getRowHeight() + childDeficit);
 
         ListView<JsonNode> row = new ListView<>();
         layout.apply(row);

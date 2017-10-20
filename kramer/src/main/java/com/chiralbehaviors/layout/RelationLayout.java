@@ -294,5 +294,5 @@ public class RelationLayout extends SchemaNodeLayout {
         return (cardinality
                 * (elementHeight + layout.getListCellVerticalInset()))
                + layout.getListVerticalInset();
-    }
+    } 
 }

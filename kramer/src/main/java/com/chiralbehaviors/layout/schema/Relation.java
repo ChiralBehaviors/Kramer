@@ -44,9 +44,9 @@ public class Relation extends SchemaNode {
     private int                    averageCardinality = 1;
     private final List<SchemaNode> children           = new ArrayList<>();
     private Relation               fold;
-    private double                 outlineWidth       = 0;
     private RelationLayout         rLayout;
     private boolean                singular           = false;
+    private double                 outlineWidth       = 0;
     private double                 tableColumnWidth   = 0;
     private boolean                useTable           = false;
 
@@ -150,10 +150,6 @@ public class Relation extends SchemaNode {
     @Override
     public RelationLayout getLayout() {
         return rLayout;
-    }
-
-    public double getRowHeight() {
-        return isFold() ? fold.getRowHeight() : rLayout.getRowHeight();
     }
 
     @JsonProperty
@@ -307,7 +303,7 @@ public class Relation extends SchemaNode {
                    Layout layout) {
         rLayout = layout.layout(this);
         rLayout.clear();
-        
+
         if (isAutoFoldable()) {
             fold = ((Relation) children.get(children.size() - 1));
         }
