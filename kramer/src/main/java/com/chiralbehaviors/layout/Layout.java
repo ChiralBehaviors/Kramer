@@ -20,10 +20,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
-import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -35,7 +32,6 @@ import com.sun.javafx.tk.Toolkit;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
@@ -47,7 +43,6 @@ import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextBoundsType;
-import javafx.util.Pair;
 
 @SuppressWarnings("restriction")
 public class Layout {
@@ -68,79 +63,6 @@ public class Layout {
 
         default void apply(TextArea control, Primitive primitive) {
         }
-    }
-
-    public interface PrimitiveLayout extends SchemaNodeLayout {
-
-        JsonControl buildControl(int cardinality);
-
-        Double cellHeight(double maxWidth, double justified);
-
-        Pair<Consumer<JsonNode>, Parent> outlineElement(String field,
-                                                        int cardinality,
-                                                        Double height,
-                                                        String label,
-                                                        double labelWidth,
-                                                        Function<JsonNode, JsonNode> extractor,
-                                                        double justified);
-
-        double width(JsonNode row);
-
-    }
-
-    public interface RelationLayout extends SchemaNodeLayout {
-
-        void adjustHeight(double delta);
-
-        void apply(ListCell<JsonNode> cell);
-
-        void apply(ListView<JsonNode> list);
-
-        double baseOutlineCellHeight(double cellHeight);
-
-        double baseRowCellHeight(double extended);
-
-        JsonControl buildNestedTable(int cardinality);
-
-        JsonControl buildOutline(Double height,
-                                 Function<JsonNode, JsonNode> extractor,
-                                 int cardinality);
-
-        double compress(double justified, int averageCardinality);
-
-        double justify(double width, double tableColumnWidth);
-
-        double outlineCellHeight(double baseHeight);
-
-        Pair<Consumer<JsonNode>, Parent> outlineElement(String field,
-                                                        int cardinality,
-                                                        String label,
-                                                        double labelWidth,
-                                                        Function<JsonNode, JsonNode> extractor,
-                                                        double height,
-                                                        boolean useTable,
-                                                        double justified);
-
-        double outlineHeight(int cardinality);
-
-        double outlineWidth(double outlineWidth);
-
-        double rowHeight(double elementHeight);
-
-        double tableHeight(int cardinality, double elementHeight);
-    }
-
-    public interface SchemaNodeLayout {
-
-        double baseOutlineWidth(double available);
-
-        double baseTableColumnWidth(double available);
-
-        Control label(double labelWidth, String label, double height);
-
-        double labelWidth(String label);
-
-        double tableColumnWidth(double columnWidth);
     }
 
     private static final FontLoader FONT_LOADER = Toolkit.getToolkit()
@@ -204,9 +126,7 @@ public class Layout {
     private Insets                                listCellInsets = ZERO_INSETS;
     private Insets                                listInsets     = ZERO_INSETS;
     private final LayoutModel                     model;
-    @SuppressWarnings("unused")
     private final Map<Primitive, PrimitiveLayout> primitives     = new HashMap<>();
-    @SuppressWarnings("unused")
     private final Map<Relation, RelationLayout>   relations      = new HashMap<>();
     private List<String>                          styleSheets;
 
@@ -304,13 +224,12 @@ public class Layout {
 
     public PrimitiveLayout layout(Primitive primitive) {
         return primitives.computeIfAbsent(primitive,
-                                          p -> new PrimitiveLayoutImpl(this,
-                                                                       p));
+                                          p -> new PrimitiveLayout(this, p));
     }
 
     public RelationLayout layout(Relation relation) {
         return relations.computeIfAbsent(relation,
-                                         r -> new RelationLayoutImpl(this, r));
+                                         r -> new RelationLayout(this, r));
     }
 
     @Override

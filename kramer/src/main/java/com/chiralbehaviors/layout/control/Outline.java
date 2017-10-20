@@ -24,7 +24,7 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Column;
 import com.chiralbehaviors.layout.ColumnSet;
-import com.chiralbehaviors.layout.Layout.RelationLayout;
+import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;

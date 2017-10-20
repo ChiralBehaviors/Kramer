@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.Layout;
-import com.chiralbehaviors.layout.Layout.RelationLayout;
+import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;

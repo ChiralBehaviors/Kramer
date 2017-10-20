@@ -41,17 +41,16 @@ import javafx.util.Pair;
  * @author halhildebrand
  *
  */
-public class RelationLayoutImpl implements Layout.RelationLayout {
+public class RelationLayout extends SchemaNodeLayout {
     private final List<ColumnSet> columnSets = new ArrayList<>();
     private final Layout          layout;
     private final Relation        r;
 
-    public RelationLayoutImpl(Layout layout, Relation r) {
+    public RelationLayout(Layout layout, Relation r) {
         this.layout = layout;
         this.r = r;
     }
 
-    @Override
     public void adjustHeight(double delta) {
         double subDelta = delta / columnSets.size();
         if (subDelta >= 1.0) {
@@ -59,19 +58,16 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
         }
     }
 
-    @Override
     public void apply(ListCell<JsonNode> cell) {
         layout.getModel()
               .apply(cell, r);
     }
 
-    @Override
     public void apply(ListView<JsonNode> list) {
         layout.getModel()
               .apply(list, r);
     }
 
-    @Override
     public double baseOutlineCellHeight(double cellHeight) {
         return cellHeight - layout.getListCellVerticalInset();
     }
@@ -81,7 +77,6 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
         return width - layout.getNestedInset();
     }
 
-    @Override
     public double baseRowCellHeight(double extended) {
         return extended - layout.getListCellVerticalInset();
     }
@@ -91,12 +86,10 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
         return width - layout.getNestedInset();
     }
 
-    @Override
     public JsonControl buildNestedTable(int cardinality) {
         return new NestedTable(cardinality, r, this);
     }
 
-    @Override
     public JsonControl buildOutline(Double height,
                                     Function<JsonNode, JsonNode> extractor,
                                     int cardinality) {
@@ -104,7 +97,6 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
                                     this);
     }
 
-    @Override
     public double compress(double justified, int averageCardinality) {
         if (r.isUseTable()) {
             return r.justify(baseOutlineWidth(justified));
@@ -136,7 +128,6 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
         return justifiedWidth;
     }
 
-    @Override
     public double justify(double width, double tableColumnWidth) {
         double justifiedWidth = baseTableColumnWidth(width);
         double slack = Layout.snap(Math.max(0,
@@ -165,12 +156,10 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
         return layout.labelWidth(label);
     }
 
-    @Override
     public double outlineCellHeight(double baseHeight) {
         return baseHeight + layout.getListCellVerticalInset();
     }
 
-    @Override
     public Pair<Consumer<JsonNode>, Parent> outlineElement(String field,
                                                            int cardinality,
                                                            String label,
@@ -211,19 +200,16 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
         }, box);
     }
 
-    @Override
     public double outlineHeight(int cardinality) {
         return outlineHeight(cardinality, columnSets.stream()
                                                     .mapToDouble(cs -> cs.getCellHeight())
                                                     .sum());
     }
 
-    @Override
     public double outlineWidth(double outlineWidth) {
         return outlineWidth + layout.getNestedInset();
     }
 
-    @Override
     public double rowHeight(double elementHeight) {
         return elementHeight + layout.getListCellVerticalInset();
     }
@@ -233,7 +219,6 @@ public class RelationLayoutImpl implements Layout.RelationLayout {
         return width + layout.getNestedInset();
     }
 
-    @Override
     public double tableHeight(int cardinality, double elementHeight) {
         return (cardinality
                 * (elementHeight + layout.getListCellVerticalInset()))

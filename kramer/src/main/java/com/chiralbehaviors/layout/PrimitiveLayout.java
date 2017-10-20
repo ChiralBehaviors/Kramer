@@ -36,11 +36,11 @@ import javafx.util.Pair;
  * @author halhildebrand
  *
  */
-public class PrimitiveLayoutImpl implements Layout.PrimitiveLayout {
+public class PrimitiveLayout extends SchemaNodeLayout {
     private final Layout    layout;
     private final Primitive p;
 
-    public PrimitiveLayoutImpl(Layout layout, Primitive p) {
+    public PrimitiveLayout(Layout layout, Primitive p) {
         this.layout = layout;
         this.p = p;
     }
@@ -55,12 +55,10 @@ public class PrimitiveLayoutImpl implements Layout.PrimitiveLayout {
         return layout.baseTextWidth(width);
     }
 
-    @Override
     public PrimitiveControl buildControl(int cardinality) {
         return new PrimitiveControl(p);
     }
 
-    @Override
     public Double cellHeight(double maxWidth, double justified) {
         double rows = Math.ceil((maxWidth / justified) + 0.5);
         return (layout.getTextLineHeight() * rows)
@@ -77,7 +75,6 @@ public class PrimitiveLayoutImpl implements Layout.PrimitiveLayout {
         return layout.labelWidth(label);
     }
 
-    @Override
     public Pair<Consumer<JsonNode>, Parent> outlineElement(String field,
                                                            int cardinality,
                                                            Double height,
@@ -111,7 +108,6 @@ public class PrimitiveLayoutImpl implements Layout.PrimitiveLayout {
         return layout.totalTextWidth(width);
     }
 
-    @Override
     public double width(JsonNode row) {
         return layout.textWidth(Layout.toString(row));
     }
