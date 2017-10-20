@@ -104,7 +104,8 @@ public class Column {
 
     void distributeHeight(double finalHeight) {
         double calculated = fields.stream()
-                                  .mapToDouble(f -> f.getHeight())
+                                  .mapToDouble(f -> f.getLayout()
+                                                     .getHeight())
                                   .sum();
         if (calculated < finalHeight) {
             double delta = (finalHeight - calculated) / fields.size();

@@ -57,16 +57,12 @@ public class Primitive extends SchemaNode {
 
     @Override
     public double cellHeight(int cardinality, double justified) {
-        if (height > 0) {
-            return height;
-        }
-        height = pLayout.cellHeight(maxWidth, justified);
-        return height;
+        return pLayout.cellHeight(maxWidth, justified);
     }
 
     @Override
     public void compress(double available) {
-        justifiedWidth = pLayout.baseOutlineWidth(available);
+        pLayout.compress(available);
     }
 
     @Override
@@ -76,8 +72,7 @@ public class Primitive extends SchemaNode {
 
     @Override
     public double justify(double available) {
-        justifiedWidth = pLayout.baseTableColumnWidth(available);
-        return justifiedWidth;
+        return pLayout.justify(available);
     }
 
     @Override
@@ -90,8 +85,8 @@ public class Primitive extends SchemaNode {
                                                            double labelWidth,
                                                            Function<JsonNode, JsonNode> extractor,
                                                            double justified) {
-        return pLayout.outlineElement(field, cardinality, height, label,
-                                      labelWidth, extractor, justified);
+        return pLayout.outlineElement(field, cardinality, label, labelWidth,
+                                      extractor, justified);
     }
 
     @Override
@@ -101,8 +96,7 @@ public class Primitive extends SchemaNode {
 
     @Override
     public String toString() {
-        return String.format("Primitive [%s:%.2f:%.2f]", label, columnWidth,
-                             justifiedWidth);
+        return String.format("Primitive [%s:%.2f]", label, columnWidth);
     }
 
     @Override
@@ -112,7 +106,7 @@ public class Primitive extends SchemaNode {
 
     @Override
     double layout(int cardinality, double width) {
-        height = -1.0;
+        pLayout.clear();
         return variableLength ? width : Math.min(width, columnWidth);
     }
 
@@ -120,11 +114,12 @@ public class Primitive extends SchemaNode {
     double measure(Relation parent, JsonNode data, boolean singular,
                    Layout layout) {
         pLayout = layout.layout(this);
+        pLayout.clear();
+
         double labelWidth = getLabelWidth();
         double sum = 0;
         maxWidth = 0;
         columnWidth = 0;
-        justifiedWidth = -1.0;
         for (JsonNode prim : SchemaNode.asList(data)) {
             List<JsonNode> rows = SchemaNode.asList(prim);
             double width = 0;
@@ -152,7 +147,7 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double rowHeight(int cardinality, double width) {
+    public double rowHeight(int cardinality, double width) {
         return cellHeight(cardinality, width);
     }
 }

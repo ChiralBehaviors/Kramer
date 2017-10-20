@@ -23,13 +23,31 @@ import javafx.scene.control.Control;
  *
  */
 abstract public class SchemaNodeLayout {
+    protected double height         = -1.0;
+    protected double justifiedWidth = -1.0;
+
+    public void adjustHeight(double delta) {
+        this.height = Layout.snap(height + delta);
+    }
 
     abstract public double baseOutlineWidth(double available);
 
     abstract public double baseTableColumnWidth(double available);
 
-    abstract public Control label(double labelWidth, String label,
-                                  double height);
+    public void clear() {
+        height = -1.0;
+        justifiedWidth = -1.0;
+    }
+
+    public double getHeight() {
+        return height;
+    }
+
+    public double getJustifiedWidth() {
+        return justifiedWidth;
+    }
+
+    abstract public Control label(double labelWidth, String label);
 
     abstract public double labelWidth(String label);
 

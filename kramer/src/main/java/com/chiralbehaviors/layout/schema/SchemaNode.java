@@ -130,9 +130,6 @@ abstract public class SchemaNode {
     }
 
     String field;
-
-    double height;
-    double justifiedWidth = 0D;
     String label;
 
     public SchemaNode() {
@@ -148,7 +145,7 @@ abstract public class SchemaNode {
     }
 
     public void adjustHeight(double delta) {
-        this.height = Layout.snap(height + delta);
+        getLayout().adjustHeight(delta);
     }
 
     abstract public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
@@ -171,14 +168,6 @@ abstract public class SchemaNode {
 
     public String getField() {
         return field;
-    }
-
-    public double getHeight() {
-        return height;
-    }
-
-    public double getJustifiedWidth() {
-        return justifiedWidth;
     }
 
     public String getLabel() {
@@ -217,7 +206,7 @@ abstract public class SchemaNode {
     }
 
     Control label(double labelWidth) {
-        return getLayout().label(labelWidth, label, height);
+        return getLayout().label(labelWidth, label);
     }
 
     abstract double layout(int cardinality, double width);
@@ -227,5 +216,5 @@ abstract public class SchemaNode {
 
     abstract double outlineWidth();
 
-    abstract double rowHeight(int cardinality, double justified);
+    public abstract double rowHeight(int cardinality, double justified);
 }

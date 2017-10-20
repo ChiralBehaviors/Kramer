@@ -63,7 +63,8 @@ public class NestedTable extends JsonControl {
                                    .buildControl(1);
 
         double width = child.getLayout()
-                            .tableColumnWidth(child.getJustifiedWidth());
+                            .tableColumnWidth(child.getLayout()
+                                                   .getJustifiedWidth());
 
         control.setMinWidth(width);
         control.setMaxWidth(width);
@@ -104,13 +105,14 @@ public class NestedTable extends JsonControl {
     }
 
     private Pair<Consumer<JsonNode>, Region> buildColumn(double rendered,
-                                                         Relation relation) {
+                                                         Relation relation,
+                                                         RelationLayout layout) {
         HBox cell = new HBox();
         cell.getStyleClass()
             .add(relation.getField());
         HBox.setHgrow(cell, Priority.ALWAYS);
-        cell.setMinWidth(relation.getJustifiedWidth());
-        cell.setPrefWidth(relation.getJustifiedWidth());
+        cell.setMinWidth(layout.getJustifiedWidth());
+        cell.setPrefWidth(layout.getJustifiedWidth());
         cell.setMinHeight(rendered);
         cell.setMaxHeight(rendered);
         List<Consumer<JsonNode>> consumers = new ArrayList<>();
@@ -139,7 +141,7 @@ public class NestedTable extends JsonControl {
                                               RelationLayout layout) {
         int cardinality = relation.isSingular() ? 1
                                                 : relation.getAverageCardinality();
-        double calculatedHeight = relation.getHeight();
+        double calculatedHeight = layout.getHeight();
         double deficit = Math.max(0, rendered - calculatedHeight);
         double childDeficit = Layout.snap(Math.max(0, deficit / cardinality));
         double extended = Layout.snap(relation.getRowHeight() + childDeficit);
@@ -151,13 +153,14 @@ public class NestedTable extends JsonControl {
         row.setMinHeight(rendered);
         row.setMaxHeight(rendered);
 
-        double width = layout.tableColumnWidth(relation.getJustifiedWidth());
+        double width = layout.tableColumnWidth(layout.getJustifiedWidth());
         row.setMinWidth(width);
         row.setMaxWidth(width);
 
         row.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(extended),
-                                                               relation));
+                                                               relation,
+                                                               layout));
             double cellWidth = layout.baseTableColumnWidth(width);
 
             cell.setMinWidth(cellWidth);
@@ -204,22 +207,23 @@ public class NestedTable extends JsonControl {
         ListView<JsonNode> rows = new ListView<>();
         layout.apply(rows);
 
-        double rowHeight = relation.getRowHeight();
+        double rowHeight = layout.getRowHeight();
         rows.setFixedCellSize(rowHeight);
 
-        double width = layout.tableColumnWidth(relation.getJustifiedWidth());
+        double width = layout.tableColumnWidth(layout.getJustifiedWidth());
         rows.setMinWidth(width);
         rows.setMaxWidth(width);
 
-        rows.setMinHeight(relation.getHeight());
-        rows.setMaxHeight(relation.getHeight());
+        rows.setMinHeight(layout.getHeight());
+        rows.setMaxHeight(layout.getHeight());
 
         rows.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
-                                                               relation));
+                                                               relation,
+                                                               layout));
 
-            cell.setMinWidth(relation.getJustifiedWidth());
-            cell.setPrefWidth(relation.getJustifiedWidth());
+            cell.setMinWidth(layout.getJustifiedWidth());
+            cell.setPrefWidth(layout.getJustifiedWidth());
 
             cell.setMinHeight(rowHeight);
             cell.setMaxHeight(rowHeight);

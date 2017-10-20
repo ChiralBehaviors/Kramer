@@ -60,13 +60,26 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public Double cellHeight(double maxWidth, double justified) {
+        if (height > 0) {
+            return height;
+        }
         double rows = Math.ceil((maxWidth / justified) + 0.5);
-        return (layout.getTextLineHeight() * rows)
-               + layout.getTextVerticalInset();
+        height = (layout.getTextLineHeight() * rows)
+                 + layout.getTextVerticalInset();
+        return height;
+    }
+
+    public void compress(double available) {
+        justifiedWidth = baseOutlineWidth(available);
+    }
+
+    public double justify(double available) {
+        justifiedWidth = baseTableColumnWidth(available);
+        return justifiedWidth;
     }
 
     @Override
-    public Control label(double labelWidth, String label, double height) {
+    public Control label(double labelWidth, String label) {
         return layout.label(labelWidth, label, height);
     }
 
@@ -77,7 +90,6 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     public Pair<Consumer<JsonNode>, Parent> outlineElement(String field,
                                                            int cardinality,
-                                                           Double height,
                                                            String label,
                                                            double labelWidth,
                                                            Function<JsonNode, JsonNode> extractor,
@@ -87,7 +99,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         box.setPrefHeight(height);
         VBox.setVgrow(box, Priority.ALWAYS);
 
-        Control labelControl = label(labelWidth, label, height);
+        Control labelControl = label(labelWidth, label);
         JsonControl control = buildControl(cardinality);
         control.setPrefHeight(height);
         control.setPrefWidth(justified);
