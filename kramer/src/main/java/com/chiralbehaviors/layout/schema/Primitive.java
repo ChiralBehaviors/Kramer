@@ -16,7 +16,6 @@
 
 package com.chiralbehaviors.layout.schema;
 
-import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -35,11 +34,8 @@ import javafx.util.Pair;
  */
 public class Primitive extends SchemaNode {
 
-    private double          columnWidth       = 0;
-    private double          maxWidth          = 0;
-    private PrimitiveLayout pLayout;
-    private double          valueDefaultWidth = 0;
-    private boolean         variableLength    = false;
+    private PrimitiveLayout layout;
+    private double          defaultWidth = 0;
 
     public Primitive() {
         super();
@@ -57,22 +53,22 @@ public class Primitive extends SchemaNode {
 
     @Override
     public double cellHeight(int cardinality, double justified) {
-        return pLayout.cellHeight(maxWidth, justified);
+        return layout.cellHeight(justified);
     }
 
     @Override
     public void compress(double available) {
-        pLayout.compress(available);
+        layout.compress(available);
     }
 
     @Override
     public PrimitiveLayout getLayout() {
-        return pLayout;
+        return layout;
     }
 
     @Override
     public double justify(double available) {
-        return pLayout.justify(available);
+        return layout.justify(available);
     }
 
     @Override
@@ -85,18 +81,18 @@ public class Primitive extends SchemaNode {
                                                            double labelWidth,
                                                            Function<JsonNode, JsonNode> extractor,
                                                            double justified) {
-        return pLayout.outlineElement(field, cardinality, label, labelWidth,
-                                      extractor, justified);
+        return layout.outlineElement(field, cardinality, label, labelWidth,
+                                     extractor, justified);
     }
 
     @Override
     public double tableColumnWidth() {
-        return pLayout.tableColumnWidth(columnWidth);
+        return layout.tableColumnWidth();
     }
 
     @Override
     public String toString() {
-        return String.format("Primitive [%s:%.2f]", label, columnWidth);
+        return String.format("Primitive [%s]", label);
     }
 
     @Override
@@ -106,39 +102,14 @@ public class Primitive extends SchemaNode {
 
     @Override
     public double layout(int cardinality, double width) {
-        pLayout.clear();
-        return variableLength ? width : Math.min(width, columnWidth);
+        return layout.layout(cardinality, width);
     }
 
     @Override
     public double measure(Relation parent, JsonNode data, boolean singular,
-                          Layout layout) {
-        pLayout = layout.layout(this);
-        pLayout.clear();
-
-        double labelWidth = getLabelWidth();
-        double sum = 0;
-        maxWidth = 0;
-        columnWidth = 0;
-        for (JsonNode prim : SchemaNode.asList(data)) {
-            List<JsonNode> rows = SchemaNode.asList(prim);
-            double width = 0;
-            for (JsonNode row : rows) {
-                width += pLayout.width(row);
-                maxWidth = Math.max(maxWidth, width);
-            }
-            sum += rows.isEmpty() ? 1 : width / rows.size();
-        }
-        double averageWidth = data.size() == 0 ? 0 : (sum / data.size());
-
-        columnWidth = Layout.snap(Math.max(labelWidth,
-                                           Math.max(valueDefaultWidth,
-                                                    averageWidth)));
-        if (maxWidth > averageWidth) {
-            variableLength = true;
-        }
-
-        return pLayout.tableColumnWidth(columnWidth);
+                          Layout l) {
+        layout = l.layout(this);
+        return layout.measure(parent, data, singular);
     }
 
     @Override
@@ -149,5 +120,9 @@ public class Primitive extends SchemaNode {
     @Override
     public double rowHeight(int cardinality, double width) {
         return cellHeight(cardinality, width);
+    }
+
+    public double getDefaultWidth() {
+        return defaultWidth;
     }
 }

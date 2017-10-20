@@ -16,6 +16,9 @@
 
 package com.chiralbehaviors.layout;
 
+import com.chiralbehaviors.layout.schema.Relation;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import javafx.scene.control.Control;
 
 /**
@@ -34,11 +37,6 @@ abstract public class SchemaNodeLayout {
 
     abstract public double baseTableColumnWidth(double available);
 
-    public void clear() {
-        height = -1.0;
-        justifiedWidth = -1.0;
-    }
-
     public double getHeight() {
         return height;
     }
@@ -51,6 +49,16 @@ abstract public class SchemaNodeLayout {
 
     abstract public double labelWidth(String label);
 
+    abstract public double layout(int cardinality, double width);
+
+    abstract public double measure(Relation parent, JsonNode data,
+                                   boolean isSingular);
+
     abstract public double tableColumnWidth(double columnWidth);
+
+    protected void clear() {
+        height = -1.0;
+        justifiedWidth = -1.0;
+    }
 
 }

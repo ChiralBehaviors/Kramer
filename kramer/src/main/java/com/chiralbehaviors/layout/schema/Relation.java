@@ -43,7 +43,6 @@ public class Relation extends SchemaNode {
     private final List<SchemaNode> children = new ArrayList<>();
     private Relation               fold;
     private RelationLayout         rLayout;
-    private boolean                singular = false;
     private boolean                useTable = false;
 
     public Relation(String label) {
@@ -99,6 +98,10 @@ public class Relation extends SchemaNode {
 
     @Override
     public double cellHeight(int card, double width) {
+        if (isFold()) {
+            return fold.cellHeight(rLayout.getAverageCardinality() * card,
+                                   width);
+        }
         return rLayout.cellHeight(card, width);
     }
 
@@ -156,13 +159,6 @@ public class Relation extends SchemaNode {
         return true;
     }
 
-    public boolean isSingular() {
-        if (isFold()) {
-            return fold.isSingular();
-        }
-        return singular;
-    }
-
     @Override
     public boolean isUseTable() {
         if (isFold()) {
@@ -180,9 +176,6 @@ public class Relation extends SchemaNode {
         return rLayout.justify(width);
     }
 
-    /* (non-Javadoc)
-     * @see com.chiralbehaviors.layout.schema.SchemaNode#layoutWidth(com.chiralbehaviors.layout.Layout)
-     */
     @Override
     public double layoutWidth() {
         return rLayout.getLayoutWidth();
@@ -271,7 +264,6 @@ public class Relation extends SchemaNode {
     public double measure(Relation parent, JsonNode data, boolean isSingular,
                           Layout layout) {
         rLayout = layout.layout(this);
-        rLayout.clear();
 
         if (isAutoFoldable()) {
             fold = ((Relation) children.get(children.size() - 1));
@@ -280,9 +272,7 @@ public class Relation extends SchemaNode {
             return 0;
         }
 
-        singular = isSingular;
-
-        return rLayout.measure(parent, data, isSingular, layout);
+        return rLayout.measure(parent, data, isSingular);
     }
 
     @Override

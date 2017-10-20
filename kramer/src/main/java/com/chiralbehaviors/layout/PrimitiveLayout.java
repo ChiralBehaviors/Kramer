@@ -16,12 +16,15 @@
 
 package com.chiralbehaviors.layout;
 
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.PrimitiveControl;
 import com.chiralbehaviors.layout.schema.Primitive;
+import com.chiralbehaviors.layout.schema.Relation;
+import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Parent;
@@ -37,8 +40,11 @@ import javafx.util.Pair;
  *
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
+    private double          columnWidth;
     private final Layout    layout;
+    private double          maxWidth;
     private final Primitive p;
+    private boolean         variableLength;
 
     public PrimitiveLayout(Layout layout, Primitive p) {
         this.layout = layout;
@@ -59,7 +65,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return new PrimitiveControl(p);
     }
 
-    public Double cellHeight(double maxWidth, double justified) {
+    public Double cellHeight(double justified) {
         if (height > 0) {
             return height;
         }
@@ -88,6 +94,40 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return layout.labelWidth(label);
     }
 
+    public double layout(int cardinality, double width) {
+        clear();
+        return variableLength ? width : Math.min(width, columnWidth);
+    }
+
+    public double measure(Relation parent, JsonNode data, boolean singular) {
+        clear();
+
+        double labelWidth = labelWidth(p.getLabel());
+        double sum = 0;
+        maxWidth = 0;
+        columnWidth = 0;
+        for (JsonNode prim : SchemaNode.asList(data)) {
+            List<JsonNode> rows = SchemaNode.asList(prim);
+            double width = 0;
+            for (JsonNode row : rows) {
+                width += width(row);
+                maxWidth = Math.max(maxWidth, width);
+            }
+            sum += rows.isEmpty() ? 1 : width / rows.size();
+        }
+        double averageWidth = data.size() == 0 ? 0 : (sum / data.size());
+
+        columnWidth = Layout.snap(Math.max(labelWidth,
+                                           Math.max(p.getDefaultWidth(),
+                                                    averageWidth)));
+        if (maxWidth > averageWidth) {
+            variableLength = true;
+        }
+
+        return tableColumnWidth(columnWidth);
+
+    }
+
     public Pair<Consumer<JsonNode>, Parent> outlineElement(String field,
                                                            int cardinality,
                                                            String label,
@@ -113,6 +153,10 @@ public class PrimitiveLayout extends SchemaNodeLayout {
             control.setItem(extractor.apply(item)
                                      .get(field));
         }, box);
+    }
+
+    public double tableColumnWidth() {
+        return tableColumnWidth(columnWidth);
     }
 
     @Override

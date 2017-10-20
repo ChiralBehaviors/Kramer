@@ -51,6 +51,7 @@ public class RelationLayout extends SchemaNodeLayout {
     private double                outlineWidth     = 0;
     private final Relation        r;
     private double                rowHeight        = -1;
+    private boolean               singular;
     private double                tableColumnWidth = 0;
 
     public RelationLayout(Layout layout, Relation r) {
@@ -117,16 +118,8 @@ public class RelationLayout extends SchemaNodeLayout {
                                     this);
     }
 
-    public double cellHeight(int card, double width) {
-        if (r.isFold()) {
-            return r.getFold()
-                    .cellHeight(averageCardinality * card, width);
-        }
-        if (height > 0.0) {
-            return height;
-        }
-
-        int cardinality = r.isSingular() ? 1 : card;
+    public double cellHeight(int card, double width) { 
+        int cardinality = singular ? 1 : card;
         if (!r.isUseTable()) {
             height = outlineHeight(cardinality);
         } else {
@@ -137,17 +130,11 @@ public class RelationLayout extends SchemaNodeLayout {
         return height;
     }
 
-    @Override
-    public void clear() {
-        super.clear();
-        columnSets.clear();
-        rowHeight = -1.0;
-    }
-
     public double compress(double justified) {
         if (r.isUseTable()) {
             return r.justify(baseOutlineWidth(justified));
         }
+        columnSets.clear();
         justifiedWidth = baseOutlineWidth(justified);
         List<SchemaNode> children = r.getChildren();
         double labelWidth = Layout.snap(children.stream()
@@ -184,6 +171,10 @@ public class RelationLayout extends SchemaNodeLayout {
                 .getAsDouble();
     }
 
+    public int getAverageCardinality() {
+        return averageCardinality;
+    }
+
     public double getLayoutWidth() {
         return r.isUseTable() ? tableColumnWidth(tableColumnWidth)
                               : outlineWidth(outlineWidth);
@@ -195,6 +186,10 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public double getTableColumnWidth() {
         return tableColumnWidth;
+    }
+
+    public boolean isSingular() {
+        return singular;
     }
 
     public double justify(double width) {
@@ -226,7 +221,6 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double layout(int cardinality, double width) {
-        clear();
         List<SchemaNode> children = r.getChildren();
         double labelWidth = children.stream()
                                     .mapToDouble(child -> child.getLabelWidth())
@@ -249,11 +243,12 @@ public class RelationLayout extends SchemaNodeLayout {
         return extended;
     }
 
-    public double measure(Relation parent, JsonNode data, boolean isSingular,
-                          Layout layout) {
+    public double measure(Relation parent, JsonNode data, boolean isSingular) {
+        clear();
         double labelWidth = labelWidth(r.getLabel());
         double sum = 0;
         tableColumnWidth = 0;
+        singular = isSingular;
         int singularChildren = 0;
 
         for (SchemaNode child : r.getChildren()) {
@@ -380,13 +375,15 @@ public class RelationLayout extends SchemaNodeLayout {
                + layout.getListVerticalInset();
     }
 
+    @Override
+    protected void clear() {
+        super.clear();
+        rowHeight = -1.0;
+    }
+
     protected double outlineHeight(int cardinality, double elementHeight) {
         return (cardinality
                 * (elementHeight + layout.getListCellVerticalInset()))
                + layout.getListVerticalInset();
-    }
-
-    public int getAverageCardinality() {
-        return averageCardinality;
     }
 }
