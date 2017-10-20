@@ -37,8 +37,8 @@ import javafx.scene.control.Skin;
 public class AutoLayout extends JsonControl {
     private static final java.util.logging.Logger log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
 
+    private JsonControl                           control;
     private SimpleObjectProperty<JsonNode>        data        = new SimpleObjectProperty<>();
-    private JsonControl                           layout;
     private double                                layoutWidth = 0.0;
     private LayoutModel                           model;
     private final SimpleObjectProperty<Relation>  root        = new SimpleObjectProperty<>();
@@ -114,25 +114,33 @@ public class AutoLayout extends JsonControl {
         return new AutoLayoutSkin(this);
     }
 
+    private void autoLayout(JsonNode zeeData, Relation relation, double width) {
+        relation.autoLayout(zeeData.size(), width);
+        control = relation.buildControl(zeeData.size(), width);
+        relation.setItem(control, zeeData);
+        getChildren().add(control);
+    }
+
     private void resize(double width) {
+        if (layoutWidth == width) {
+            return;
+        }
+
+        layoutWidth = width;
+        getChildren().clear();
+
+        Relation relation = root.get();
+        if (relation == null) {
+            return;
+        }
+
+        JsonNode zeeData = data.get();
+        if (zeeData == null) {
+            return;
+        }
+
         try {
-            if (layoutWidth == width) {
-                return;
-            }
-            layoutWidth = width;
-            getChildren().clear();
-            Relation relation = root.get();
-            if (relation == null) {
-                return;
-            }
-            JsonNode zeeData = data.get();
-            if (zeeData == null) {
-                return;
-            }
-            relation.autoLayout(zeeData.size(), style, width);
-            layout = relation.buildControl(zeeData.size(), style, width);
-            relation.setItem(layout, zeeData);
-            getChildren().add(layout);
+            autoLayout(zeeData, relation, width);
         } catch (Throwable e) {
             log.log(Level.SEVERE,
                     String.format("Unable to resize to %s", width), e);
@@ -141,10 +149,10 @@ public class AutoLayout extends JsonControl {
 
     private void setContent() {
         try {
-            if (layout != null) {
+            if (control != null) {
                 Relation relation = root.get();
                 if (relation != null) {
-                    relation.setItem(layout, data.get());
+                    relation.setItem(control, data.get());
                 }
             }
         } catch (Throwable e) {

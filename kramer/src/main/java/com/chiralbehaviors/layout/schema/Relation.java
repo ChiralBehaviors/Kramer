@@ -76,7 +76,7 @@ public class Relation extends SchemaNode {
         rLayout.adjustHeight(delta);
     }
 
-    public void autoLayout(int cardinality, Layout layout, double width) {
+    public void autoLayout(int cardinality, double width) {
         double justified = Layout.snap(width);
         layout(cardinality, justified);
         rLayout.compress(justified, averageCardinality);
@@ -89,11 +89,9 @@ public class Relation extends SchemaNode {
         return table.buildRelation(rendered, this, rLayout);
     }
 
-    public JsonControl buildControl(int cardinality, Layout layout,
-                                    double width) {
+    public JsonControl buildControl(int cardinality, double width) {
         if (isFold()) {
-            return fold.buildControl(averageCardinality * cardinality, layout,
-                                     width);
+            return fold.buildControl(averageCardinality * cardinality, width);
         }
         return useTable ? buildNestedTable(n -> n, cardinality, width)
                         : buildOutline(n -> n, cardinality);
@@ -323,19 +321,18 @@ public class Relation extends SchemaNode {
         if (isFold()) {
             return fold.layout(cardinality * averageCardinality, width);
         }
-        double labelWidth = Layout.snap(children.stream()
-                                                .mapToDouble(child -> child.getLabelWidth())
-                                                .max()
-                                                .getAsDouble());
+        double labelWidth = children.stream()
+                                    .mapToDouble(child -> child.getLabelWidth())
+                                    .max()
+                                    .getAsDouble();
         double available = rLayout.baseOutlineWidth(width - labelWidth);
-        outlineWidth = Layout.snap(children.stream()
-                                           .mapToDouble(child -> {
-                                               return child.layout(cardinality,
-                                                                   available);
-                                           })
-                                           .max()
-                                           .orElse(0d)
-                                   + labelWidth);
+        outlineWidth = children.stream()
+                               .mapToDouble(child -> {
+                                   return child.layout(cardinality, available);
+                               })
+                               .max()
+                               .orElse(0d)
+                       + labelWidth;
         double extended = rLayout.outlineWidth(outlineWidth);
         double tableWidth = tableColumnWidth();
         if (tableWidth <= extended) {
@@ -397,7 +394,7 @@ public class Relation extends SchemaNode {
                                                effectiveChildren == 0 ? 1
                                                                       : (int) Math.ceil(sum
                                                                                         / effectiveChildren)));
-        tableColumnWidth = Layout.snap(Math.max(labelWidth, tableColumnWidth));
+        tableColumnWidth = Math.max(labelWidth, tableColumnWidth);
         return rLayout.tableColumnWidth(isFold() ? fold.tableColumnWidth
                                                  : tableColumnWidth);
     }
@@ -421,8 +418,8 @@ public class Relation extends SchemaNode {
 
     private double elementHeight() {
         return children.stream()
-                       .mapToDouble(child -> Layout.snap(child.rowHeight(averageCardinality,
-                                                                         justifiedWidth)))
+                       .mapToDouble(child -> child.rowHeight(averageCardinality,
+                                                             justifiedWidth))
                        .max()
                        .getAsDouble();
     }
