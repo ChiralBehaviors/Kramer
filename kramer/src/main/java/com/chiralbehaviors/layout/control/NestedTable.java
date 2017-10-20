@@ -140,7 +140,7 @@ public class NestedTable extends JsonControl {
                                               double rendered,
                                               RelationLayout layout) {
         int cardinality = relation.isSingular() ? 1
-                                                : relation.getAverageCardinality();
+                                                : layout.getAverageCardinality();
         double calculatedHeight = layout.getHeight();
         double deficit = Math.max(0, rendered - calculatedHeight);
         double childDeficit = Layout.snap(Math.max(0, deficit / cardinality));

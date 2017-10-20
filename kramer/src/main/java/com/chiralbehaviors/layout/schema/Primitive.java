@@ -105,14 +105,14 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    double layout(int cardinality, double width) {
+    public double layout(int cardinality, double width) {
         pLayout.clear();
         return variableLength ? width : Math.min(width, columnWidth);
     }
 
     @Override
-    double measure(Relation parent, JsonNode data, boolean singular,
-                   Layout layout) {
+    public double measure(Relation parent, JsonNode data, boolean singular,
+                          Layout layout) {
         pLayout = layout.layout(this);
         pLayout.clear();
 

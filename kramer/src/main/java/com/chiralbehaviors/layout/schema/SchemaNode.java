@@ -209,9 +209,9 @@ abstract public class SchemaNode {
         return getLayout().label(labelWidth, label);
     }
 
-    abstract double layout(int cardinality, double width);
+    public abstract double layout(int cardinality, double width);
 
-    abstract double measure(Relation parent, JsonNode data, boolean singular,
+    public abstract double measure(Relation parent, JsonNode data, boolean singular,
                             Layout layout);
 
     abstract double outlineWidth();
