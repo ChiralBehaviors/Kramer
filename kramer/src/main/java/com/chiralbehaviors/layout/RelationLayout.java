@@ -112,7 +112,7 @@ public class RelationLayout extends SchemaNodeLayout {
         HBox header = new HBox();
         r.getChildren()
          .forEach(c -> header.getChildren()
-                             .add(c.buildColumnHeader(indent(INDENT.NONE, c))
+                             .add(c.buildColumnHeader()
                                    .apply(columnHeaderHeight)));
         return header;
     }
@@ -148,8 +148,7 @@ public class RelationLayout extends SchemaNodeLayout {
     public Function<Double, Region> columnHeader() {
         List<Function<Double, Region>> nestedHeaders = r.getChildren()
                                                         .stream()
-                                                        .map(c -> c.buildColumnHeader(indent(indent,
-                                                                                             c)))
+                                                        .map(c -> c.buildColumnHeader())
                                                         .collect(Collectors.toList());
         return rendered -> {
             VBox columnHeader = new VBox();

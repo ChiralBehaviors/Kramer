@@ -152,7 +152,7 @@ abstract public class SchemaNode {
     abstract public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
                                                                  double rendered);
 
-    abstract public Function<Double, Region> buildColumnHeader(INDENT indent);
+    abstract public Function<Double, Region> buildColumnHeader();
 
     public abstract double cellHeight(int cardinality, double available);
 

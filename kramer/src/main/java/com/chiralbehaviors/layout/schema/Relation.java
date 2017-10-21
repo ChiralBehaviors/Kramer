@@ -68,9 +68,9 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public Function<Double, Region> buildColumnHeader(INDENT indent) {
+    public Function<Double, Region> buildColumnHeader() {
         if (isFold()) {
-            return fold.buildColumnHeader(indent);
+            return fold.buildColumnHeader();
         }
         return layout.columnHeader();
     }
