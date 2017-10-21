@@ -298,4 +298,8 @@ public class LayoutProvider {
     double getTextHorizontalInset() {
         return textInsets.getLeft() + textInsets.getRight();
     }
+
+    public double getListHorizontalInset() {
+        return listInsets.getLeft() + listInsets.getRight();
+    }
 }

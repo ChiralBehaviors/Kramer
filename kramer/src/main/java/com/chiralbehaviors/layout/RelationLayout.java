@@ -49,6 +49,7 @@ import javafx.util.Pair;
  */
 public class RelationLayout extends SchemaNodeLayout {
     private int                   averageCardinality;
+    private int                   maxCardinality;
     private double                columnHeaderHeight;
     private final List<ColumnSet> columnSets       = new ArrayList<>();
     private double                outlineWidth     = 0;
@@ -128,7 +129,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double cellHeight(int card, double width) {
-        int cardinality = singular ? 1 : card;
+        int cardinality = Math.min(singular ? 1 : card, maxCardinality);
         if (!r.isUseTable()) {
             height = outlineHeight(cardinality);
         } else {
@@ -158,8 +159,7 @@ public class RelationLayout extends SchemaNodeLayout {
             columnHeader.setMaxHeight(rendered);
             double half = LayoutProvider.snap(rendered / 2.0);
             columnHeader.getChildren()
-                        .add(layout.label(justifiedWidth + indentation(indent)
-                                          + layout.getNestedInset(),
+                        .add(layout.label(tableColumnWidth(justifiedWidth),
                                           r.getLabel(), half));
             columnHeader.getChildren()
                         .add(nested);
@@ -302,7 +302,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double measure(JsonNode data, boolean isSingular,
+    public double measure(JsonNode datum, boolean isSingular,
                           INDENT indentation) {
         clear();
         indent = indentation;
@@ -311,17 +311,18 @@ public class RelationLayout extends SchemaNodeLayout {
         tableColumnWidth = 0;
         singular = isSingular;
         int singularChildren = 0;
+        maxCardinality = 0;
 
         for (SchemaNode child : r.getChildren()) {
             ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
             int cardSum = 0;
             boolean childSingular = false;
-            List<JsonNode> datas = data.isArray() ? new ArrayList<>(data.size())
-                                                  : Arrays.asList(data);
-            if (data.isArray()) {
-                data.forEach(n -> datas.add(n));
+            List<JsonNode> data = datum.isArray() ? new ArrayList<>(datum.size())
+                                                  : Arrays.asList(datum);
+            if (datum.isArray()) {
+                datum.forEach(n -> data.add(n));
             }
-            for (JsonNode node : datas) {
+            for (JsonNode node : data) {
                 JsonNode sub = node.get(child.getField());
                 if (sub instanceof ArrayNode) {
                     childSingular = false;
@@ -335,9 +336,9 @@ public class RelationLayout extends SchemaNodeLayout {
             if (childSingular) {
                 singularChildren += 1;
             } else {
-                sum += datas.size() == 0 ? 1
-                                         : Math.round(cardSum / datas.size());
+                sum += data.size() == 0 ? 1 : Math.round(cardSum / data.size());
             }
+            maxCardinality = Math.max(maxCardinality, data.size());
             tableColumnWidth += child.measure(aggregate, childSingular, layout,
                                               indent(indent, child));
         }
@@ -470,6 +471,10 @@ public class RelationLayout extends SchemaNodeLayout {
         if (child.equals(children.get(children.size() - 1)))
             return INDENT.RIGHT;
         return INDENT.NONE;
+    }
+ 
+    public double rowWidth() { 
+        return tableColumnWidth(justifiedWidth) - layout.getListHorizontalInset();
     }
 
 }

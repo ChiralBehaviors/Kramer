@@ -133,23 +133,19 @@ public class NestedTable extends JsonControl {
         layout.apply(row);
 
         row.setFixedCellSize(extended);
-        row.setMinHeight(rendered);
-        row.setMaxHeight(rendered);
 
         double width = layout.tableColumnWidth(layout.getJustifiedWidth());
-        row.setMinWidth(width);
-        row.setMaxWidth(width);
+
+        row.setMinSize(width, rendered);
+        row.setMaxSize(width, rendered);
 
         row.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(extended),
                                                                layout));
-            double cellWidth = layout.baseTableColumnWidth(width);
+            double cellWidth = layout.rowWidth();
 
-            cell.setMinWidth(cellWidth);
-            cell.setMaxWidth(cellWidth);
-
-            cell.setMinHeight(extended);
-            cell.setMaxHeight(extended);
+            cell.setMinSize(cellWidth, extended);
+            cell.setMaxSize(cellWidth, extended);
 
             return cell;
         });
@@ -189,18 +185,17 @@ public class NestedTable extends JsonControl {
         layout.apply(rows);
 
         double rowHeight = layout.getRowHeight();
+
         rows.setFixedCellSize(rowHeight);
 
-        double width = layout.tableColumnWidth(layout.getJustifiedWidth());
-        double height = layout.getHeight() - layout.getColumnHeaderHeight();
-
-        rows.setPrefSize(width, height);
+        double width = layout.getJustifiedWidth();
+        rows.setPrefSize(layout.tableColumnWidth(width),
+                         layout.getHeight() - layout.getColumnHeaderHeight());
 
         rows.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
                                                                layout));
-
-            cell.setPrefSize(layout.getJustifiedWidth(), rowHeight);
+            cell.setPrefSize(layout.rowWidth(), rowHeight);
             return cell;
         });
         return rows;
