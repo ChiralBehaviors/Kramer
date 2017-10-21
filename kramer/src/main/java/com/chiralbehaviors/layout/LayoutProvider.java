@@ -275,7 +275,8 @@ public class LayoutProvider {
         Label labelText = new Label(label);
         labelText.setAlignment(Pos.CENTER);
         labelText.setMinWidth(labelWidth);
-        labelText.setPrefHeight(height);
+        labelText.setMinHeight(height);
+        labelText.setMaxHeight(height);
         labelText.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;\n"
                            + "    -fx-background-insets: 0, 1;");
         return labelText;

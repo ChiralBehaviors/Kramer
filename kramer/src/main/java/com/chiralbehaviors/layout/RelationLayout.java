@@ -277,6 +277,8 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public double layout(int cardinality, double width) {
+        rowHeight = -1.0;
+        columnHeaderHeight = -1.0;
         List<SchemaNode> children = r.getChildren();
         double labelWidth = children.stream()
                                     .mapToDouble(child -> child.getLabelWidth())
@@ -419,13 +421,6 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     protected double baseOutlineWidth(double width) {
         return width - layout.getNestedInset();
-    }
-
-    @Override
-    protected void clear() {
-        super.clear();
-        rowHeight = -1.0;
-        columnHeaderHeight = -1.0;
     }
 
     protected double elementHeight() {
