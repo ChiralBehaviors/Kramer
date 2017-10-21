@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import com.chiralbehaviors.layout.Layout;
+import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
@@ -143,8 +143,8 @@ public class NestedTable extends JsonControl {
                                                 : layout.getAverageCardinality();
         double calculatedHeight = layout.getHeight();
         double deficit = Math.max(0, rendered - calculatedHeight);
-        double childDeficit = Layout.snap(Math.max(0, deficit / cardinality));
-        double extended = Layout.snap(layout.getRowHeight() + childDeficit);
+        double childDeficit = LayoutProvider.snap(Math.max(0, deficit / cardinality));
+        double extended = LayoutProvider.snap(layout.getRowHeight() + childDeficit);
 
         ListView<JsonNode> row = new ListView<>();
         layout.apply(row);

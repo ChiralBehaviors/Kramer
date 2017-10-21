@@ -50,7 +50,7 @@ public class ColumnSet {
     }
 
     public void adjustHeight(double delta) {
-        cellHeight = Layout.snap(cellHeight + delta);
+        cellHeight = LayoutProvider.snap(cellHeight + delta);
         columns.forEach(c -> c.adjustHeight(delta));
     }
 

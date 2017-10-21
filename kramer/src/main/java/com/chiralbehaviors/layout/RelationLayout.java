@@ -47,14 +47,14 @@ import javafx.util.Pair;
 public class RelationLayout extends SchemaNodeLayout {
     private int                   averageCardinality;
     private final List<ColumnSet> columnSets       = new ArrayList<>();
-    private final Layout          layout;
+    private final LayoutProvider          layout;
     private double                outlineWidth     = 0;
     private final Relation        r;
     private double                rowHeight        = -1;
     private boolean               singular;
     private double                tableColumnWidth = 0;
 
-    public RelationLayout(Layout layout, Relation r) {
+    public RelationLayout(LayoutProvider layout, Relation r) {
         this.layout = layout;
         this.r = r;
     }
@@ -137,7 +137,7 @@ public class RelationLayout extends SchemaNodeLayout {
         columnSets.clear();
         justifiedWidth = baseOutlineWidth(justified);
         List<SchemaNode> children = r.getChildren();
-        double labelWidth = Layout.snap(children.stream()
+        double labelWidth = LayoutProvider.snap(children.stream()
                                                 .mapToDouble(n -> n.getLabelWidth())
                                                 .max()
                                                 .orElse(0));
@@ -194,16 +194,16 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public double justify(double width) {
         justifiedWidth = baseTableColumnWidth(width);
-        double slack = Layout.snap(Math.max(0,
+        double slack = LayoutProvider.snap(Math.max(0,
                                             justifiedWidth - tableColumnWidth));
         List<SchemaNode> children = r.getChildren();
-        double total = Layout.snap(children.stream()
+        double total = LayoutProvider.snap(children.stream()
                                            .map(child -> child.tableColumnWidth())
                                            .reduce((a, b) -> a + b)
                                            .orElse(0.0d));
         children.forEach(child -> {
             double childWidth = child.tableColumnWidth();
-            double additional = Layout.snap(slack * (childWidth / total));
+            double additional = LayoutProvider.snap(slack * (childWidth / total));
             double childJustified = additional + childWidth;
             child.justify(childJustified);
         });

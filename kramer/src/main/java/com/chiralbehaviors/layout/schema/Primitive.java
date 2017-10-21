@@ -19,7 +19,7 @@ package com.chiralbehaviors.layout.schema;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import com.chiralbehaviors.layout.Layout;
+import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -107,8 +107,8 @@ public class Primitive extends SchemaNode {
 
     @Override
     public double measure(Relation parent, JsonNode data, boolean singular,
-                          Layout l) {
-        layout = l.layout(this);
+                          LayoutProvider provider) {
+        layout = provider.layout(this);
         return layout.measure(parent, data, singular);
     }
 

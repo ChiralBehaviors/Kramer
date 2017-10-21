@@ -45,7 +45,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextBoundsType;
 
 @SuppressWarnings("restriction")
-public class Layout {
+public class LayoutProvider {
 
     public interface LayoutModel {
 
@@ -136,19 +136,19 @@ public class Layout {
 
     private double                                textLineHeight = 0;
 
-    public Layout(LayoutModel model) {
+    public LayoutProvider(LayoutModel model) {
         this(Collections.emptyList(), model, true);
     }
 
-    public Layout(LayoutModel model, boolean initialize) {
+    public LayoutProvider(LayoutModel model, boolean initialize) {
         this(Collections.emptyList(), model, initialize);
     }
 
-    public Layout(List<String> styleSheets, LayoutModel model) {
+    public LayoutProvider(List<String> styleSheets, LayoutModel model) {
         this(styleSheets, model, true);
     }
 
-    public Layout(List<String> styleSheets, LayoutModel model,
+    public LayoutProvider(List<String> styleSheets, LayoutModel model,
                   boolean initialize) {
         this.model = model;
         if (initialize) {

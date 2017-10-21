@@ -30,7 +30,7 @@ abstract public class SchemaNodeLayout {
     protected double justifiedWidth = -1.0;
 
     public void adjustHeight(double delta) {
-        this.height = Layout.snap(height + delta);
+        this.height = LayoutProvider.snap(height + delta);
     }
 
     abstract public double baseOutlineWidth(double available);
