@@ -198,7 +198,7 @@ abstract public class SchemaNode {
     public abstract double layoutWidth();
 
     public abstract double measure(JsonNode data, boolean singular,
-                                   LayoutProvider layout);
+                                   LayoutProvider layout, INDENT indent);
 
     public abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                                     double labelWidth,

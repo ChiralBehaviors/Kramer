@@ -87,9 +87,9 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public double measure(JsonNode data, boolean singular, LayoutProvider provider) {
+    public double measure(JsonNode data, boolean singular, LayoutProvider provider, INDENT indent) {
         layout = provider.layout(this);
-        return layout.measure(data, singular);
+        return layout.measure(data, singular, indent);
     }
 
     @Override

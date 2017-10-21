@@ -72,7 +72,7 @@ public class Relation extends SchemaNode {
         if (isFold()) {
             return fold.buildColumnHeader(indent);
         }
-        return layout.columnHeader(indent);
+        return layout.columnHeader();
     }
 
     public JsonControl buildControl(int cardinality, double width) {
@@ -217,11 +217,12 @@ public class Relation extends SchemaNode {
     }
 
     public void measure(JsonNode jsonNode, LayoutProvider layout) {
-        measure(jsonNode, !jsonNode.isArray(), layout);
+        measure(jsonNode, !jsonNode.isArray(), layout, INDENT.NONE);
     }
 
     @Override
-    public double measure(JsonNode data, boolean isSingular, LayoutProvider provider) {
+    public double measure(JsonNode data, boolean isSingular,
+                          LayoutProvider provider, INDENT indent) {
         layout = provider.layout(this);
 
         if (isAutoFoldable()) {
@@ -231,7 +232,7 @@ public class Relation extends SchemaNode {
             return 0;
         }
 
-        return layout.measure(data, isSingular);
+        return layout.measure(data, isSingular, indent);
     }
 
     public void nestTable() {

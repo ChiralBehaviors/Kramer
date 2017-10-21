@@ -100,9 +100,9 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double measure(JsonNode data, boolean singular) {
+    public double measure(JsonNode data, boolean singular, INDENT indentation) {
         clear();
-
+        indent = indentation;
         double labelWidth = labelWidth(p.getLabel());
         double sum = 0;
         maxWidth = 0;

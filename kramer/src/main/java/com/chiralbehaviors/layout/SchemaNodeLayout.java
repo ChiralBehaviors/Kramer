@@ -34,6 +34,7 @@ abstract public class SchemaNodeLayout {
     }
 
     protected double               height         = -1.0;
+    protected INDENT               indent;
     protected double               justifiedWidth = -1.0;
     protected final LayoutProvider layout;
 
@@ -65,7 +66,8 @@ abstract public class SchemaNodeLayout {
 
     abstract public double layout(int cardinality, double width);
 
-    abstract public double measure(JsonNode data, boolean isSingular);
+    abstract public double measure(JsonNode data, boolean isSingular,
+                                   INDENT indent);
 
     abstract public double tableColumnWidth(double columnWidth);
 

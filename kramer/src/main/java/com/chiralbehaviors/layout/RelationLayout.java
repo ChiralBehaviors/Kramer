@@ -145,7 +145,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return height;
     }
 
-    public Function<Double, Region> columnHeader(INDENT indent) {
+    public Function<Double, Region> columnHeader() {
         List<Function<Double, Region>> nestedHeaders = r.getChildren()
                                                         .stream()
                                                         .map(c -> c.buildColumnHeader(indent(indent,
@@ -301,8 +301,10 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double measure(JsonNode data, boolean isSingular) {
+    public double measure(JsonNode data, boolean isSingular,
+                          INDENT indentation) {
         clear();
+        indent = indentation;
         double labelWidth = labelWidth(r.getLabel());
         double sum = 0;
         tableColumnWidth = 0;
@@ -335,7 +337,8 @@ public class RelationLayout extends SchemaNodeLayout {
                 sum += datas.size() == 0 ? 1
                                          : Math.round(cardSum / datas.size());
             }
-            tableColumnWidth += child.measure(aggregate, childSingular, layout);
+            tableColumnWidth += child.measure(aggregate, childSingular, layout,
+                                              indent(indent, child));
         }
         int effectiveChildren = r.getChildren()
                                  .size()
