@@ -69,7 +69,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return height;
     }
 
-    public Function<Double, Region> columnHeader(INDENT indent) {
+    public Function<Double, Region> columnHeader() {
         return rendered -> layout.label(layout.totalTextWidth(justifiedWidth)
                                         + indentation(indent), p.getLabel(),
                                         rendered);

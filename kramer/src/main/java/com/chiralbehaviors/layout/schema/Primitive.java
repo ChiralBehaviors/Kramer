@@ -123,6 +123,6 @@ public class Primitive extends SchemaNode {
 
     @Override
     public Function<Double, Region> buildColumnHeader(INDENT indent) {
-        return layout.columnHeader(indent);
+        return layout.columnHeader();
     }
 }
