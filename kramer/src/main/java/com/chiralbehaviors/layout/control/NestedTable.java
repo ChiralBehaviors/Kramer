@@ -194,18 +194,13 @@ public class NestedTable extends JsonControl {
         double width = layout.tableColumnWidth(layout.getJustifiedWidth());
         double height = layout.getHeight() - layout.getColumnHeaderHeight();
 
-        rows.setMinSize(width, height);
-        rows.setMaxSize(width, height);
+        rows.setPrefSize(width, height);
 
         rows.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
                                                                layout));
 
-            cell.setMinWidth(layout.getJustifiedWidth());
-            cell.setPrefWidth(layout.getJustifiedWidth());
-
-            cell.setMinHeight(rowHeight);
-            cell.setMaxHeight(rowHeight);
+            cell.setPrefSize(layout.getJustifiedWidth(), rowHeight);
             return cell;
         });
         return rows;

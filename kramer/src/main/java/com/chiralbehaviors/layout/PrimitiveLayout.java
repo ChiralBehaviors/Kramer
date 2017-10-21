@@ -137,14 +137,12 @@ public class PrimitiveLayout extends SchemaNodeLayout {
                                                            Function<JsonNode, JsonNode> extractor,
                                                            double justified) {
         HBox box = new HBox();
-        box.setPrefWidth(justified);
-        box.setPrefHeight(height);
+        box.setPrefSize(justified, height);
         VBox.setVgrow(box, Priority.ALWAYS);
 
         Control labelControl = label(labelWidth, label);
         JsonControl control = buildControl(cardinality);
-        control.setPrefHeight(height);
-        control.setPrefWidth(justified);
+        control.setPrefSize(justified, height);
 
         box.getChildren()
            .add(labelControl);
