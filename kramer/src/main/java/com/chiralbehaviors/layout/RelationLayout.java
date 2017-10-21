@@ -105,7 +105,7 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public double baseTableColumnWidth(double width) {
-        return width - layout.getNestedInset();
+        return width - indentation(indent);
     }
 
     public Region buildColumnHeader() {
