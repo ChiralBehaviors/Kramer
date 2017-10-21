@@ -132,9 +132,15 @@ public class RelationLayout extends SchemaNodeLayout {
         if (!r.isUseTable()) {
             height = outlineHeight(cardinality);
         } else {
+            columnHeaderHeight = r.getChildren()
+                                  .stream()
+                                  .mapToDouble(c -> c.columnHeaderHeight())
+                                  .max()
+                                  .orElse(0.0);
             double elementHeight = elementHeight();
             rowHeight = rowHeight(elementHeight);
-            height = tableHeight(cardinality, elementHeight);
+            height = tableHeight(cardinality, elementHeight)
+                     + columnHeaderHeight;
         }
         return height;
     }
@@ -212,8 +218,16 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double getColumnHeaderHeight() {
-        return 2.0
-               * (layout.getTextLineHeight() + layout.getTextVerticalInset());
+        if (columnHeaderHeight <= 0) {
+            columnHeaderHeight = (layout.getTextLineHeight()
+                                  + layout.getTextVerticalInset())
+                                 + r.getChildren()
+                                    .stream()
+                                    .mapToDouble(c -> c.columnHeaderHeight())
+                                    .max()
+                                    .orElse(0.0);
+        }
+        return columnHeaderHeight;
     }
 
     public double getLayoutWidth() {
@@ -280,12 +294,6 @@ public class RelationLayout extends SchemaNodeLayout {
         double tableWidth = tableColumnWidth();
         if (tableWidth <= extended) {
             r.nestTable();
-
-            columnHeaderHeight = r.getChildren()
-                                  .stream()
-                                  .mapToDouble(c -> c.columnHeaderHeight())
-                                  .max()
-                                  .orElse(0.0);
             return tableWidth;
         }
         return extended;
@@ -403,7 +411,7 @@ public class RelationLayout extends SchemaNodeLayout {
     public double tableHeight(int cardinality, double elementHeight) {
         return (cardinality
                 * (elementHeight + layout.getListCellVerticalInset()))
-               + layout.getListVerticalInset() + columnHeaderHeight;
+               + layout.getListVerticalInset();
     }
 
     @Override
@@ -415,6 +423,7 @@ public class RelationLayout extends SchemaNodeLayout {
     protected void clear() {
         super.clear();
         rowHeight = -1.0;
+        columnHeaderHeight = -1.0;
     }
 
     protected double elementHeight() {

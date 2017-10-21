@@ -60,7 +60,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return new PrimitiveControl(p);
     }
 
-    public Double cellHeight(double justified) {
+    public double cellHeight(double justified) {
         if (height > 0) {
             return height;
         }
