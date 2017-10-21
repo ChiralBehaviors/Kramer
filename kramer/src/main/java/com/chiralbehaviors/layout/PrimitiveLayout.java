@@ -31,6 +31,7 @@ import javafx.scene.Parent;
 import javafx.scene.control.Control;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
 
@@ -40,14 +41,13 @@ import javafx.util.Pair;
  *
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
-    private double               columnWidth;
-    private final LayoutProvider layout;
-    private double               maxWidth;
-    private final Primitive      p;
-    private boolean              variableLength;
+    private double          columnWidth;
+    private double          maxWidth;
+    private final Primitive p;
+    private boolean         variableLength;
 
     public PrimitiveLayout(LayoutProvider layout, Primitive p) {
-        this.layout = layout;
+        super(layout);
         this.p = p;
     }
 
@@ -70,6 +70,10 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return height;
     }
 
+    public Function<Double, Region> columnHeader() {
+        return rendered -> layout.label(layout.totalTextWidth(justifiedWidth), p.getLabel(), rendered);
+    }
+
     public void compress(double available) {
         justifiedWidth = baseOutlineWidth(available);
     }
@@ -84,11 +88,13 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return layout.labelWidth(label);
     }
 
+    @Override
     public double layout(int cardinality, double width) {
         clear();
         return variableLength ? width : Math.min(width, columnWidth);
     }
 
+    @Override
     public double measure(Relation parent, JsonNode data, boolean singular) {
         clear();
 

@@ -26,14 +26,23 @@ import javafx.scene.control.Control;
  *
  */
 abstract public class SchemaNodeLayout {
-    protected double height         = -1.0;
-    protected double justifiedWidth = -1.0;
+    protected double               height         = -1.0;
+    protected double               justifiedWidth = -1.0;
+    protected final LayoutProvider layout;
+
+    public SchemaNodeLayout(LayoutProvider layout) {
+        this.layout = layout;
+    }
 
     public void adjustHeight(double delta) {
         this.height = LayoutProvider.snap(height + delta);
     }
 
     abstract public double baseTableColumnWidth(double available);
+
+    public double columnHeaderHeight() {
+        return layout.getTextLineHeight() + layout.getTextVerticalInset();
+    }
 
     public double getHeight() {
         return height;

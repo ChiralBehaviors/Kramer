@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.NestedTable;
@@ -37,6 +38,8 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.util.Pair;
 
 /**
@@ -46,8 +49,8 @@ import javafx.util.Pair;
  */
 public class RelationLayout extends SchemaNodeLayout {
     private int                   averageCardinality;
+    private double                columnHeaderHeight;
     private final List<ColumnSet> columnSets       = new ArrayList<>();
-    private final LayoutProvider  layout;
     private double                outlineWidth     = 0;
     private final Relation        r;
     private double                rowHeight        = -1;
@@ -55,10 +58,11 @@ public class RelationLayout extends SchemaNodeLayout {
     private double                tableColumnWidth = 0;
 
     public RelationLayout(LayoutProvider layout, Relation r) {
-        this.layout = layout;
+        super(layout);
         this.r = r;
     }
 
+    @Override
     public void adjustHeight(double delta) {
         if (r.isFold()) {
             r.getFold()
@@ -103,6 +107,15 @@ public class RelationLayout extends SchemaNodeLayout {
         return width - layout.getNestedInset();
     }
 
+    public Region buildColumnHeader() {
+        HBox header = new HBox();
+        r.getChildren()
+         .forEach(c -> header.getChildren()
+                             .add(c.buildColumnHeader()
+                                   .apply(columnHeaderHeight)));
+        return header;
+    }
+
     public JsonControl buildNestedTable(int cardinality) {
         return new NestedTable(cardinality, r, this);
     }
@@ -123,6 +136,27 @@ public class RelationLayout extends SchemaNodeLayout {
             height = tableHeight(cardinality, elementHeight);
         }
         return height;
+    }
+
+    public Function<Double, Region> columnHeader() {
+        List<Function<Double, Region>> nestedHeaders = r.getChildren()
+                                                        .stream()
+                                                        .map(c -> c.buildColumnHeader())
+                                                        .collect(Collectors.toList());
+        return rendered -> {
+            VBox columnHeader = new VBox();
+            columnHeader.setMinHeight(rendered);
+            columnHeader.setMaxHeight(rendered);
+            double half = LayoutProvider.snap(rendered / 2.0);
+            columnHeader.getChildren()
+                        .add(layout.label(justifiedWidth, r.getLabel(), half));
+            HBox nested = new HBox();
+            nestedHeaders.forEach(n -> {
+                nested.getChildren()
+                      .add(n.apply(half));
+            });
+            return columnHeader;
+        };
     }
 
     public double compress(double justified) {
@@ -159,6 +193,11 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public int getAverageCardinality() {
         return averageCardinality;
+    }
+
+    public double getColumnHeaderHeight() {
+        return 2.0
+               * (layout.getTextLineHeight() + layout.getTextVerticalInset());
     }
 
     public double getLayoutWidth() {
@@ -202,6 +241,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return layout.labelWidth(label);
     }
 
+    @Override
     public double layout(int cardinality, double width) {
         List<SchemaNode> children = r.getChildren();
         double labelWidth = children.stream()
@@ -220,11 +260,18 @@ public class RelationLayout extends SchemaNodeLayout {
         double tableWidth = tableColumnWidth();
         if (tableWidth <= extended) {
             r.nestTable();
+
+            columnHeaderHeight = r.getChildren()
+                                  .stream()
+                                  .mapToDouble(c -> c.columnHeaderHeight())
+                                  .max()
+                                  .orElse(0.0);
             return tableWidth;
         }
         return extended;
     }
 
+    @Override
     public double measure(Relation parent, JsonNode data, boolean isSingular) {
         clear();
         double labelWidth = labelWidth(r.getLabel());
@@ -317,10 +364,6 @@ public class RelationLayout extends SchemaNodeLayout {
         }, box);
     }
 
-    public double rowHeight(double elementHeight) {
-        return elementHeight + layout.getListCellVerticalInset();
-    }
-
     public double rowHeight(int cardinality, double justified) {
         double elementHeight = elementHeight();
         rowHeight = rowHeight(elementHeight);
@@ -340,7 +383,7 @@ public class RelationLayout extends SchemaNodeLayout {
     public double tableHeight(int cardinality, double elementHeight) {
         return (cardinality
                 * (elementHeight + layout.getListCellVerticalInset()))
-               + layout.getListVerticalInset();
+               + layout.getListVerticalInset() + columnHeaderHeight;
     }
 
     @Override
@@ -382,5 +425,9 @@ public class RelationLayout extends SchemaNodeLayout {
 
     protected double outlineWidth(double outlineWidth) {
         return outlineWidth + layout.getNestedInset();
+    }
+
+    protected double rowHeight(double elementHeight) {
+        return elementHeight + layout.getListCellVerticalInset();
     }
 }

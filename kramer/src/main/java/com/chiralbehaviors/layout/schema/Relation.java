@@ -66,6 +66,14 @@ public class Relation extends SchemaNode {
         return table.buildRelation(rendered, this, layout);
     }
 
+    @Override
+    public Function<Double, Region> buildColumnHeader() {
+        if (isFold()) {
+            return fold.buildColumnHeader();
+        }
+        return layout.columnHeader();
+    }
+
     public JsonControl buildControl(int cardinality, double width) {
         if (isFold()) {
             return fold.buildControl(layout.getAverageCardinality()
@@ -103,6 +111,14 @@ public class Relation extends SchemaNode {
                                    width);
         }
         return layout.cellHeight(card, width);
+    }
+
+    @Override
+    public double columnHeaderHeight() {
+        if (isFold()) {
+            return fold.columnHeaderHeight();
+        }
+        return layout.getColumnHeaderHeight();
     }
 
     @Override

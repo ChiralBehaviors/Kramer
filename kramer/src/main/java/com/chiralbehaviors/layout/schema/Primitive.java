@@ -120,4 +120,9 @@ public class Primitive extends SchemaNode {
     public String toString(int indent) {
         return toString();
     }
+
+    @Override
+    public Function<Double, Region> buildColumnHeader() {
+        return layout.columnHeader();
+    }
 }

@@ -129,6 +129,7 @@ abstract public class SchemaNode {
     }
 
     String field;
+
     String label;
 
     public SchemaNode() {
@@ -150,7 +151,13 @@ abstract public class SchemaNode {
     abstract public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
                                                                  double rendered);
 
+    abstract public Function<Double, Region> buildColumnHeader();
+
     public abstract double cellHeight(int cardinality, double available);
+
+    public double columnHeaderHeight() {
+        return getLayout().columnHeaderHeight();
+    }
 
     public abstract void compress(double available);
 
@@ -204,6 +211,6 @@ abstract public class SchemaNode {
     }
 
     public abstract double tableColumnWidth();
-
+ 
     abstract public String toString(int indent);
 }

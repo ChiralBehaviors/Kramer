@@ -50,8 +50,8 @@ public class NestedTable extends JsonControl {
     public NestedTable(int cardinality, Relation relation,
                        RelationLayout layout) {
         getStyleClass().add(relation.getLabel());
-        HBox header = buildHeader(relation);
         this.rows = buildRows(cardinality, relation, layout);
+        Region header = layout.buildColumnHeader();
         VBox frame = new VBox(header, rows);
         this.getChildren()
             .add(frame);
@@ -127,13 +127,6 @@ public class NestedTable extends JsonControl {
         return new Pair<>(node -> consumers.forEach(c -> {
             c.accept(node);
         }), cell);
-    }
-
-    private HBox buildHeader(Relation relation) {
-        HBox header = new HBox();
-        header.getStyleClass()
-              .add("header");
-        return header;
     }
 
     private ListView<JsonNode> buildNestedRow(Relation relation,
