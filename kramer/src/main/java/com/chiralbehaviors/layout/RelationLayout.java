@@ -301,7 +301,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double measure(Relation parent, JsonNode data, boolean isSingular) {
+    public double measure(JsonNode data, boolean isSingular) {
         clear();
         double labelWidth = labelWidth(r.getLabel());
         double sum = 0;
@@ -335,8 +335,7 @@ public class RelationLayout extends SchemaNodeLayout {
                 sum += datas.size() == 0 ? 1
                                          : Math.round(cardSum / datas.size());
             }
-            tableColumnWidth += child.measure(null, aggregate, childSingular,
-                                              layout);
+            tableColumnWidth += child.measure(aggregate, childSingular, layout);
         }
         int effectiveChildren = r.getChildren()
                                  .size()

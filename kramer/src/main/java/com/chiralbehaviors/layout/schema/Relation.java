@@ -217,12 +217,11 @@ public class Relation extends SchemaNode {
     }
 
     public void measure(JsonNode jsonNode, LayoutProvider layout) {
-        measure(null, jsonNode, !jsonNode.isArray(), layout);
+        measure(jsonNode, !jsonNode.isArray(), layout);
     }
 
     @Override
-    public double measure(Relation parent, JsonNode data, boolean isSingular,
-                          LayoutProvider provider) {
+    public double measure(JsonNode data, boolean isSingular, LayoutProvider provider) {
         layout = provider.layout(this);
 
         if (isAutoFoldable()) {
@@ -232,7 +231,7 @@ public class Relation extends SchemaNode {
             return 0;
         }
 
-        return layout.measure(parent, data, isSingular);
+        return layout.measure(data, isSingular);
     }
 
     public void nestTable() {

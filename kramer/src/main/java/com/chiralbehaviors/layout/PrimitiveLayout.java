@@ -23,7 +23,6 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.PrimitiveControl;
 import com.chiralbehaviors.layout.schema.Primitive;
-import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -101,7 +100,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double measure(Relation parent, JsonNode data, boolean singular) {
+    public double measure(JsonNode data, boolean singular) {
         clear();
 
         double labelWidth = labelWidth(p.getLabel());
