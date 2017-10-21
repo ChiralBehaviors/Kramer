@@ -21,9 +21,8 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.LayoutProvider;
+import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.schema.Primitive;
-import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -47,10 +46,9 @@ public class NestedTable extends JsonControl {
     private double                   rowHeight;
     private final ListView<JsonNode> rows;
 
-    public NestedTable(int cardinality, Relation relation,
-                       RelationLayout layout) {
-        getStyleClass().add(relation.getLabel());
-        this.rows = buildRows(cardinality, relation, layout);
+    public NestedTable(int cardinality, RelationLayout layout) {
+        getStyleClass().add(layout.getStyleClass());
+        this.rows = buildRows(cardinality, layout);
         Region header = layout.buildColumnHeader();
         VBox frame = new VBox(header, rows);
         this.getChildren()
@@ -58,30 +56,22 @@ public class NestedTable extends JsonControl {
     }
 
     public Pair<Consumer<JsonNode>, Region> buildPrimitive(double rendered,
-                                                           Primitive child) {
-        JsonControl control = child.getLayout()
-                                   .buildControl(1);
+                                                           PrimitiveLayout layout) {
+        JsonControl control = layout.buildControl(1);
 
-        double width = child.getLayout()
-                            .tableColumnWidth(child.getLayout()
-                                                   .getJustifiedWidth());
+        double width = layout.tableColumnWidth(layout.getJustifiedWidth());
+        control.setMinSize(width, rendered);
+        control.setMaxSize(width, rendered);
 
-        control.setMinWidth(width);
-        control.setMaxWidth(width);
-
-        control.setMinHeight(rendered);
-        control.setMaxHeight(rendered);
-
-        return new Pair<>(node -> control.setItem(child.extractFrom(node)),
+        return new Pair<>(node -> control.setItem(layout.extractFrom(node)),
                           control);
     }
 
     public Pair<Consumer<JsonNode>, Region> buildRelation(double rendered,
-                                                          Relation child,
                                                           RelationLayout layout) {
-        ListView<JsonNode> column = buildNestedRow(child, rendered, layout);
+        ListView<JsonNode> column = buildNestedRow(rendered, layout);
         return new Pair<>(node -> column.getItems()
-                                        .setAll(itemsAsArray(child.extractFrom(node))),
+                                        .setAll(itemsAsArray(layout.extractFrom(node))),
                           column);
     }
 
@@ -105,32 +95,30 @@ public class NestedTable extends JsonControl {
     }
 
     private Pair<Consumer<JsonNode>, Region> buildColumn(double rendered,
-                                                         Relation relation,
                                                          RelationLayout layout) {
         HBox cell = new HBox();
         cell.getStyleClass()
-            .add(relation.getField());
+            .add(layout.getStyleClass());
         HBox.setHgrow(cell, Priority.ALWAYS);
         cell.setMinWidth(layout.getJustifiedWidth());
         cell.setPrefWidth(layout.getJustifiedWidth());
         cell.setMinHeight(rendered);
         cell.setMaxHeight(rendered);
         List<Consumer<JsonNode>> consumers = new ArrayList<>();
-        relation.getChildren()
-                .forEach(child -> {
-                    Pair<Consumer<JsonNode>, Region> column = child.buildColumn(this,
-                                                                                rendered);
-                    consumers.add(column.getKey());
-                    cell.getChildren()
-                        .add(column.getValue());
-                });
+        Consumer<? super SchemaNode> action = child -> {
+            Pair<Consumer<JsonNode>, Region> column = child.buildColumn(this,
+                                                                        rendered);
+            consumers.add(column.getKey());
+            cell.getChildren()
+                .add(column.getValue());
+        };
+        layout.forEach(action);
         return new Pair<>(node -> consumers.forEach(c -> {
             c.accept(node);
         }), cell);
     }
 
-    private ListView<JsonNode> buildNestedRow(Relation relation,
-                                              double rendered,
+    private ListView<JsonNode> buildNestedRow(double rendered,
                                               RelationLayout layout) {
         int cardinality = layout.isSingular() ? 1
                                               : layout.getAverageCardinality();
@@ -154,7 +142,6 @@ public class NestedTable extends JsonControl {
 
         row.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(extended),
-                                                               relation,
                                                                layout));
             double cellWidth = layout.baseTableColumnWidth(width);
 
@@ -197,8 +184,7 @@ public class NestedTable extends JsonControl {
         };
     }
 
-    private ListView<JsonNode> buildRows(int card, Relation relation,
-                                         RelationLayout layout) {
+    private ListView<JsonNode> buildRows(int card, RelationLayout layout) {
         ListView<JsonNode> rows = new ListView<>();
         layout.apply(rows);
 
@@ -206,15 +192,13 @@ public class NestedTable extends JsonControl {
         rows.setFixedCellSize(rowHeight);
 
         double width = layout.tableColumnWidth(layout.getJustifiedWidth());
-        rows.setMinWidth(width);
-        rows.setMaxWidth(width);
-
-        rows.setMinHeight(layout.getHeight());
-        rows.setMaxHeight(layout.getHeight());
+        rows.setMinSize(width,
+                        layout.getHeight() - layout.getColumnHeaderHeight());
+        rows.setMaxSize(width,
+                        layout.getHeight() - layout.getColumnHeaderHeight());
 
         rows.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
-                                                               relation,
                                                                layout));
 
             cell.setMinWidth(layout.getJustifiedWidth());

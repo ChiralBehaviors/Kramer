@@ -24,6 +24,7 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
+import com.chiralbehaviors.layout.SchemaNodeLayout.INDENT;
 import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -151,7 +152,7 @@ abstract public class SchemaNode {
     abstract public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
                                                                  double rendered);
 
-    abstract public Function<Double, Region> buildColumnHeader();
+    abstract public Function<Double, Region> buildColumnHeader(INDENT indent);
 
     public abstract double cellHeight(int cardinality, double available);
 
@@ -211,6 +212,6 @@ abstract public class SchemaNode {
     }
 
     public abstract double tableColumnWidth();
- 
+
     abstract public String toString(int indent);
 }

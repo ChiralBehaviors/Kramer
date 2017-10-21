@@ -55,6 +55,7 @@ public class RelationLayout extends SchemaNodeLayout {
     private final Relation        r;
     private double                rowHeight        = -1;
     private boolean               singular;
+
     private double                tableColumnWidth = 0;
 
     public RelationLayout(LayoutProvider layout, Relation r) {
@@ -111,13 +112,13 @@ public class RelationLayout extends SchemaNodeLayout {
         HBox header = new HBox();
         r.getChildren()
          .forEach(c -> header.getChildren()
-                             .add(c.buildColumnHeader()
+                             .add(c.buildColumnHeader(indent(c))
                                    .apply(columnHeaderHeight)));
         return header;
     }
 
     public JsonControl buildNestedTable(int cardinality) {
-        return new NestedTable(cardinality, r, this);
+        return new NestedTable(cardinality, this);
     }
 
     public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
@@ -138,19 +139,25 @@ public class RelationLayout extends SchemaNodeLayout {
         return height;
     }
 
-    public Function<Double, Region> columnHeader() {
+    public Function<Double, Region> columnHeader(INDENT indent) {
         List<Function<Double, Region>> nestedHeaders = r.getChildren()
                                                         .stream()
-                                                        .map(c -> c.buildColumnHeader())
+                                                        .map(c -> c.buildColumnHeader(indent(c)))
                                                         .collect(Collectors.toList());
         return rendered -> {
             VBox columnHeader = new VBox();
+            HBox nested = new HBox();
+
             columnHeader.setMinHeight(rendered);
             columnHeader.setMaxHeight(rendered);
             double half = LayoutProvider.snap(rendered / 2.0);
             columnHeader.getChildren()
-                        .add(layout.label(justifiedWidth, r.getLabel(), half));
-            HBox nested = new HBox();
+                        .add(layout.label(justifiedWidth + indentation(indent)
+                                          + layout.getNestedInset(),
+                                          r.getLabel(), half));
+            columnHeader.getChildren()
+                        .add(nested);
+
             nestedHeaders.forEach(n -> {
                 nested.getChildren()
                       .add(n.apply(half));
@@ -191,6 +198,15 @@ public class RelationLayout extends SchemaNodeLayout {
         return justifiedWidth;
     }
 
+    public JsonNode extractFrom(JsonNode node) {
+        return r.extractFrom(node);
+    }
+
+    public void forEach(Consumer<? super SchemaNode> action) {
+        r.getChildren()
+         .forEach(action);
+    }
+
     public int getAverageCardinality() {
         return averageCardinality;
     }
@@ -207,6 +223,10 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public double getRowHeight() {
         return rowHeight;
+    }
+
+    public String getStyleClass() {
+        return r.getField();
     }
 
     public double getTableColumnWidth() {
@@ -430,4 +450,17 @@ public class RelationLayout extends SchemaNodeLayout {
     protected double rowHeight(double elementHeight) {
         return elementHeight + layout.getListCellVerticalInset();
     }
+
+    private INDENT indent(SchemaNode child) {
+        List<SchemaNode> children = r.getChildren();
+        if (children.size() == 1) {
+            return INDENT.SINGULAR;
+        }
+        if (child.equals(children.get(0)))
+            return INDENT.LEFT;
+        if (child.equals(children.get(children.size() - 1)))
+            return INDENT.RIGHT;
+        return INDENT.NONE;
+    }
+
 }

@@ -70,12 +70,18 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return height;
     }
 
-    public Function<Double, Region> columnHeader() {
-        return rendered -> layout.label(layout.totalTextWidth(justifiedWidth), p.getLabel(), rendered);
+    public Function<Double, Region> columnHeader(INDENT indent) {
+        return rendered -> layout.label(layout.totalTextWidth(justifiedWidth)
+                                        + indentation(indent), p.getLabel(),
+                                        rendered);
     }
 
     public void compress(double available) {
         justifiedWidth = baseOutlineWidth(available);
+    }
+
+    public JsonNode extractFrom(JsonNode node) {
+        return p.extractFrom(node);
     }
 
     public double justify(double available) {

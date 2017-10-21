@@ -255,6 +255,14 @@ public class LayoutProvider {
         return getNestedLeftInset() + getNestedRightInset();
     }
 
+    double getNestedLeftInset() {
+        return listInsets.getLeft() + listCellInsets.getLeft();
+    }
+
+    double getNestedRightInset() {
+        return listInsets.getRight() + listCellInsets.getRight();
+    }
+
     double getTextLineHeight() {
         return textLineHeight;
     }
@@ -286,15 +294,7 @@ public class LayoutProvider {
         return justifiedWidth + getTextHorizontalInset();
     }
 
-    private double getNestedLeftInset() {
-        return listInsets.getLeft() + listCellInsets.getLeft();
-    }
-
-    private double getNestedRightInset() {
-        return listInsets.getRight() + listCellInsets.getRight();
-    }
-
-    private double getTextHorizontalInset() {
+    double getTextHorizontalInset() {
         return textInsets.getLeft() + textInsets.getRight();
     }
 }

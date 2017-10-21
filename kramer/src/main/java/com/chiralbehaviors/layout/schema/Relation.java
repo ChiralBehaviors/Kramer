@@ -23,6 +23,7 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.SchemaNodeLayout.INDENT;
 import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -63,15 +64,15 @@ public class Relation extends SchemaNode {
     @Override
     public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
                                                         double rendered) {
-        return table.buildRelation(rendered, this, layout);
+        return table.buildRelation(rendered, layout);
     }
 
     @Override
-    public Function<Double, Region> buildColumnHeader() {
+    public Function<Double, Region> buildColumnHeader(INDENT indent) {
         if (isFold()) {
-            return fold.buildColumnHeader();
+            return fold.buildColumnHeader(indent);
         }
-        return layout.columnHeader();
+        return layout.columnHeader(indent);
     }
 
     public JsonControl buildControl(int cardinality, double width) {

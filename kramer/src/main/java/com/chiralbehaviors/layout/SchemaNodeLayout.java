@@ -26,6 +26,13 @@ import javafx.scene.control.Control;
  *
  */
 abstract public class SchemaNodeLayout {
+    public enum INDENT {
+        LEFT,
+        NONE,
+        RIGHT,
+        SINGULAR;
+    }
+
     protected double               height         = -1.0;
     protected double               justifiedWidth = -1.0;
     protected final LayoutProvider layout;
@@ -43,6 +50,8 @@ abstract public class SchemaNodeLayout {
     public double columnHeaderHeight() {
         return layout.getTextLineHeight() + layout.getTextVerticalInset();
     }
+
+    abstract public JsonNode extractFrom(JsonNode node);
 
     public double getHeight() {
         return height;
@@ -66,6 +75,19 @@ abstract public class SchemaNodeLayout {
     protected void clear() {
         height = -1.0;
         justifiedWidth = -1.0;
+    }
+
+    protected double indentation(INDENT indent) {
+        switch (indent) {
+            case LEFT:
+                return layout.getNestedLeftInset();
+            case RIGHT:
+                return layout.getNestedRightInset();
+            case SINGULAR:
+                return layout.getNestedInset();
+            default:
+                return 0;
+        }
     }
 
     abstract protected Control label(double labelWidth, String label);
