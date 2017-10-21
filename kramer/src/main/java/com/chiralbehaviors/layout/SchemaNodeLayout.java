@@ -30,7 +30,8 @@ abstract public class SchemaNodeLayout {
         LEFT,
         NONE,
         RIGHT,
-        SINGULAR;
+        SINGULAR,
+        SINGULAR_RIGHT;
     }
 
     protected double               height         = -1.0;
@@ -85,6 +86,8 @@ abstract public class SchemaNodeLayout {
                 return layout.getNestedRightInset();
             case SINGULAR:
                 return layout.getNestedInset();
+            case SINGULAR_RIGHT:
+                return layout.getNestedInset() + layout.getNestedRightInset();
             default:
                 return 0;
         }
