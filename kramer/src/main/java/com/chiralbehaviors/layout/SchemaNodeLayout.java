@@ -93,6 +93,9 @@ abstract public class SchemaNodeLayout {
         }
     }
 
-    abstract protected Control label(double labelWidth, String label);
+    protected Control label(double labelWidth, String label) {
+        return layout.label(labelWidth, label, height);
+    }
+
 
 }

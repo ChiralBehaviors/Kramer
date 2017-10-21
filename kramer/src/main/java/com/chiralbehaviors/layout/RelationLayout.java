@@ -431,12 +431,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                                       justifiedWidth))
                 .max()
                 .getAsDouble();
-    }
-
-    @Override
-    protected Control label(double labelWidth, String label) {
-        return layout.label(labelWidth, label, height);
-    }
+    } 
 
     protected double outlineHeight(int cardinality) {
         return outlineHeight(cardinality, columnSets.stream()
