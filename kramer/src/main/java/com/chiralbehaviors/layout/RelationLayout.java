@@ -159,8 +159,8 @@ public class RelationLayout extends SchemaNodeLayout {
             columnHeader.setMaxHeight(rendered);
             double half = LayoutProvider.snap(rendered / 2.0);
             columnHeader.getChildren()
-                        .add(layout.label(tableColumnWidth(justifiedWidth),
-                                          r.getLabel(), half));
+                        .add(layout.columnHeader(tableColumnWidth(justifiedWidth),
+                                                 r.getLabel(), half));
             columnHeader.getChildren()
                         .add(nested);
 
@@ -431,7 +431,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                                       justifiedWidth))
                 .max()
                 .getAsDouble();
-    } 
+    }
 
     protected double outlineHeight(int cardinality) {
         return outlineHeight(cardinality, columnSets.stream()
@@ -467,9 +467,10 @@ public class RelationLayout extends SchemaNodeLayout {
             return INDENT.RIGHT;
         return INDENT.NONE;
     }
- 
-    public double rowWidth() { 
-        return tableColumnWidth(justifiedWidth) - layout.getListHorizontalInset();
+
+    public double rowWidth() {
+        return tableColumnWidth(justifiedWidth)
+               - layout.getListHorizontalInset();
     }
 
 }
