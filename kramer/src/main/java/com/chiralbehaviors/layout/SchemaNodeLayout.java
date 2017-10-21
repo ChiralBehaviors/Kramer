@@ -33,8 +33,6 @@ abstract public class SchemaNodeLayout {
         this.height = LayoutProvider.snap(height + delta);
     }
 
-    abstract public double baseOutlineWidth(double available);
-
     abstract public double baseTableColumnWidth(double available);
 
     public double getHeight() {
@@ -45,8 +43,6 @@ abstract public class SchemaNodeLayout {
         return justifiedWidth;
     }
 
-    abstract public Control label(double labelWidth, String label);
-
     abstract public double labelWidth(String label);
 
     abstract public double layout(int cardinality, double width);
@@ -56,9 +52,13 @@ abstract public class SchemaNodeLayout {
 
     abstract public double tableColumnWidth(double columnWidth);
 
+    abstract protected double baseOutlineWidth(double available);
+
     protected void clear() {
         height = -1.0;
         justifiedWidth = -1.0;
     }
+
+    abstract protected Control label(double labelWidth, String label);
 
 }

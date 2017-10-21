@@ -149,7 +149,7 @@ public class LayoutProvider {
     }
 
     public LayoutProvider(List<String> styleSheets, LayoutModel model,
-                  boolean initialize) {
+                          boolean initialize) {
         this.model = model;
         if (initialize) {
             initialize(styleSheets);

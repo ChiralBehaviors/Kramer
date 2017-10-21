@@ -136,6 +136,10 @@ public class Relation extends SchemaNode {
         return isFold() ? fold.getChildren() : children;
     }
 
+    public Relation getFold() {
+        return fold;
+    }
+
     @Override
     public double getLabelWidth() {
         if (isFold()) {
@@ -149,6 +153,11 @@ public class Relation extends SchemaNode {
         return layout;
     }
 
+    public double getTableColumnWidth() {
+        return isFold() ? fold.getTableColumnWidth()
+                        : layout.getTableColumnWidth();
+    }
+
     @JsonProperty
     public boolean isFold() {
         return fold != null;
@@ -159,7 +168,6 @@ public class Relation extends SchemaNode {
         return true;
     }
 
-    @Override
     public boolean isUseTable() {
         if (isFold()) {
             return fold.isUseTable();
@@ -177,12 +185,46 @@ public class Relation extends SchemaNode {
     }
 
     @Override
+    public double layout(int cardinality, double width) {
+        useTable = false;
+        if (isFold()) {
+            return fold.layout(cardinality * layout.getAverageCardinality(),
+                               width);
+        }
+        return layout.layout(cardinality, width);
+    }
+
+    @Override
     public double layoutWidth() {
         return layout.getLayoutWidth();
     }
 
     public void measure(JsonNode jsonNode, LayoutProvider layout) {
         measure(null, jsonNode, !jsonNode.isArray(), layout);
+    }
+
+    @Override
+    public double measure(Relation parent, JsonNode data, boolean isSingular,
+                          LayoutProvider provider) {
+        layout = provider.layout(this);
+
+        if (isAutoFoldable()) {
+            fold = ((Relation) children.get(children.size() - 1));
+        }
+        if (data.isNull() || children.size() == 0) {
+            return 0;
+        }
+
+        return layout.measure(parent, data, isSingular);
+    }
+
+    public void nestTable() {
+        useTable = true;
+        children.forEach(child -> {
+            if (child.isRelation()) {
+                ((Relation) child).nestTable();
+            }
+        });
     }
 
     @Override
@@ -198,6 +240,15 @@ public class Relation extends SchemaNode {
 
         return layout.outlineElement(field, cardinality, label, labelWidth,
                                      extractor, useTable, justified);
+    }
+
+    @Override
+    public double rowHeight(int cardinality, double justified) {
+        if (isFold()) {
+            return fold.rowHeight(cardinality * layout.getAverageCardinality(),
+                                  justified);
+        }
+        return layout.rowHeight(cardinality, justified);
     }
 
     public void setFold(boolean fold) {
@@ -250,45 +301,6 @@ public class Relation extends SchemaNode {
         return buf.toString();
     }
 
-    @Override
-    public double layout(int cardinality, double width) {
-        useTable = false;
-        if (isFold()) {
-            return fold.layout(cardinality * layout.getAverageCardinality(),
-                               width);
-        }
-        return layout.layout(cardinality, width);
-    }
-
-    @Override
-    public double measure(Relation parent, JsonNode data, boolean isSingular,
-                          LayoutProvider provider) {
-        layout = provider.layout(this);
-
-        if (isAutoFoldable()) {
-            fold = ((Relation) children.get(children.size() - 1));
-        }
-        if (data.isNull() || children.size() == 0) {
-            return 0;
-        }
-
-        return layout.measure(parent, data, isSingular);
-    }
-
-    @Override
-    double outlineWidth() {
-        return layout.outlineWidth();
-    }
-
-    @Override
-    public double rowHeight(int cardinality, double justified) {
-        if (isFold()) {
-            return fold.rowHeight(cardinality * layout.getAverageCardinality(),
-                                  justified);
-        }
-        return layout.rowHeight(cardinality, justified);
-    }
-
     private ArrayNode flatten(JsonNode data) {
         ArrayNode flattened = JsonNodeFactory.instance.arrayNode();
         if (data != null) {
@@ -306,23 +318,5 @@ public class Relation extends SchemaNode {
     private boolean isAutoFoldable() {
         return fold == null && autoFold && children.size() == 1
                && children.get(children.size() - 1) instanceof Relation;
-    }
-
-    public void nestTable() {
-        useTable = true;
-        children.forEach(child -> {
-            if (child.isRelation()) {
-                ((Relation) child).nestTable();
-            }
-        });
-    }
-
-    public Relation getFold() {
-        return fold;
-    }
-
-    public double getTableColumnWidth() {
-        return isFold() ? fold.getTableColumnWidth()
-                        : layout.getTableColumnWidth();
     }
 }

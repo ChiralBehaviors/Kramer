@@ -42,7 +42,7 @@ public class AutoLayout extends JsonControl {
     private double                                layoutWidth = 0.0;
     private LayoutModel                           model;
     private final SimpleObjectProperty<Relation>  root        = new SimpleObjectProperty<>();
-    private LayoutProvider                                style;
+    private LayoutProvider                        style;
 
     public AutoLayout() {
         this(null);
@@ -60,7 +60,7 @@ public class AutoLayout extends JsonControl {
         widthProperty().addListener((o, p, c) -> resize(c.doubleValue()));
         data.addListener((o, p, c) -> setContent());
         getStylesheets().addListener((ListChangeListener<String>) c -> style = new LayoutProvider(getStylesheets(),
-                                                                                          AutoLayout.this.model));
+                                                                                                  AutoLayout.this.model));
     }
 
     public void autoLayout() {

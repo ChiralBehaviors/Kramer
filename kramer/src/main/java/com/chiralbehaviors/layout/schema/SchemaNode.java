@@ -30,7 +30,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import javafx.scene.Parent;
-import javafx.scene.control.Control;
 import javafx.scene.layout.Region;
 import javafx.util.Pair;
 
@@ -186,12 +185,19 @@ abstract public class SchemaNode {
 
     public abstract double justify(double width);
 
+    public abstract double layout(int cardinality, double width);
+
     public abstract double layoutWidth();
+
+    public abstract double measure(Relation parent, JsonNode data,
+                                   boolean singular, LayoutProvider layout);
 
     public abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                                     double labelWidth,
                                                                     Function<JsonNode, JsonNode> extractor,
                                                                     double justified);
+
+    public abstract double rowHeight(int cardinality, double justified);
 
     public void setLabel(String label) {
         this.label = label;
@@ -200,21 +206,4 @@ abstract public class SchemaNode {
     public abstract double tableColumnWidth();
 
     abstract public String toString(int indent);
-
-    boolean isUseTable() {
-        return false;
-    }
-
-    Control label(double labelWidth) {
-        return getLayout().label(labelWidth, label);
-    }
-
-    public abstract double layout(int cardinality, double width);
-
-    public abstract double measure(Relation parent, JsonNode data, boolean singular,
-                            LayoutProvider layout);
-
-    abstract double outlineWidth();
-
-    public abstract double rowHeight(int cardinality, double justified);
 }

@@ -40,20 +40,15 @@ import javafx.util.Pair;
  *
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
-    private double          columnWidth;
-    private final LayoutProvider    layout;
-    private double          maxWidth;
-    private final Primitive p;
-    private boolean         variableLength;
+    private double               columnWidth;
+    private final LayoutProvider layout;
+    private double               maxWidth;
+    private final Primitive      p;
+    private boolean              variableLength;
 
     public PrimitiveLayout(LayoutProvider layout, Primitive p) {
         this.layout = layout;
         this.p = p;
-    }
-
-    @Override
-    public double baseOutlineWidth(double available) {
-        return layout.baseTextWidth(available);
     }
 
     @Override
@@ -85,11 +80,6 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public Control label(double labelWidth, String label) {
-        return layout.label(labelWidth, label, height);
-    }
-
-    @Override
     public double labelWidth(String label) {
         return layout.labelWidth(label);
     }
@@ -118,8 +108,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         double averageWidth = data.size() == 0 ? 0 : (sum / data.size());
 
         columnWidth = LayoutProvider.snap(Math.max(labelWidth,
-                                           Math.max(p.getDefaultWidth(),
-                                                    averageWidth)));
+                                                   Math.max(p.getDefaultWidth(),
+                                                            averageWidth)));
         if (maxWidth > averageWidth) {
             variableLength = true;
         }
@@ -166,5 +156,15 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     public double width(JsonNode row) {
         return layout.textWidth(LayoutProvider.toString(row));
+    }
+
+    @Override
+    protected double baseOutlineWidth(double available) {
+        return layout.baseTextWidth(available);
+    }
+
+    @Override
+    protected Control label(double labelWidth, String label) {
+        return layout.label(labelWidth, label, height);
     }
 }

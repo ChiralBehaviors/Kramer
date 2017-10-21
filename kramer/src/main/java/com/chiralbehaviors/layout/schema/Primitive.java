@@ -34,8 +34,8 @@ import javafx.util.Pair;
  */
 public class Primitive extends SchemaNode {
 
-    private PrimitiveLayout layout;
     private double          defaultWidth = 0;
+    private PrimitiveLayout layout;
 
     public Primitive() {
         super();
@@ -61,6 +61,10 @@ public class Primitive extends SchemaNode {
         layout.compress(available);
     }
 
+    public double getDefaultWidth() {
+        return defaultWidth;
+    }
+
     @Override
     public PrimitiveLayout getLayout() {
         return layout;
@@ -72,8 +76,20 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
+    public double layout(int cardinality, double width) {
+        return layout.layout(cardinality, width);
+    }
+
+    @Override
     public double layoutWidth() {
         return tableColumnWidth();
+    }
+
+    @Override
+    public double measure(Relation parent, JsonNode data, boolean singular,
+                          LayoutProvider provider) {
+        layout = provider.layout(this);
+        return layout.measure(parent, data, singular);
     }
 
     @Override
@@ -83,6 +99,11 @@ public class Primitive extends SchemaNode {
                                                            double justified) {
         return layout.outlineElement(field, cardinality, label, labelWidth,
                                      extractor, justified);
+    }
+
+    @Override
+    public double rowHeight(int cardinality, double width) {
+        return cellHeight(cardinality, width);
     }
 
     @Override
@@ -98,31 +119,5 @@ public class Primitive extends SchemaNode {
     @Override
     public String toString(int indent) {
         return toString();
-    }
-
-    @Override
-    public double layout(int cardinality, double width) {
-        return layout.layout(cardinality, width);
-    }
-
-    @Override
-    public double measure(Relation parent, JsonNode data, boolean singular,
-                          LayoutProvider provider) {
-        layout = provider.layout(this);
-        return layout.measure(parent, data, singular);
-    }
-
-    @Override
-    double outlineWidth() {
-        return tableColumnWidth();
-    }
-
-    @Override
-    public double rowHeight(int cardinality, double width) {
-        return cellHeight(cardinality, width);
-    }
-
-    public double getDefaultWidth() {
-        return defaultWidth;
     }
 }
