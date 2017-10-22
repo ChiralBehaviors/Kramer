@@ -51,6 +51,7 @@ public class RelationLayout extends SchemaNodeLayout {
     private int                   averageCardinality;
     private double                columnHeaderHeight;
     private final List<ColumnSet> columnSets       = new ArrayList<>();
+    private int                   maxCardinality;
     private double                outlineWidth     = 0;
     private final Relation        r;
     private double                rowHeight        = -1;
@@ -118,20 +119,28 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public JsonControl buildNestedTable(int cardinality) {
-        return new NestedTable(cardinality, this);
+        NestedTable table = new NestedTable(singular ? 1
+                                                     : Math.min(cardinality,
+                                                                maxCardinality),
+                                            this);
+        table.setPrefSize(tableColumnWidth(getJustifiedWidth()), height);
+        return table;
     }
 
     public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
                                     int cardinality) {
         Outline outline = new Outline(r).build(height, columnSets, extractor,
-                                               cardinality, this);
+                                               singular ? 1
+                                                        : Math.min(cardinality,
+                                                                   maxCardinality),
+                                               this);
         double width = outlineWidth(justifiedWidth);
         outline.setPrefWidth(width);
         return outline;
     }
 
     public double cellHeight(int card, double width) {
-        int cardinality = singular ? 1 : card;
+        int cardinality = singular ? 1 : Math.min(maxCardinality, card);
         if (!r.isUseTable()) {
             height = outlineHeight(cardinality);
         } else {
@@ -305,7 +314,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double measure(JsonNode data, boolean isSingular,
+    public double measure(JsonNode datum, boolean isSingular,
                           INDENT indentation) {
         clear();
         indent = indentation;
@@ -314,17 +323,18 @@ public class RelationLayout extends SchemaNodeLayout {
         tableColumnWidth = 0;
         singular = isSingular;
         int singularChildren = 0;
+        maxCardinality = 0;
 
         for (SchemaNode child : r.getChildren()) {
             ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
             int cardSum = 0;
             boolean childSingular = false;
-            List<JsonNode> datas = data.isArray() ? new ArrayList<>(data.size())
-                                                  : Arrays.asList(data);
-            if (data.isArray()) {
-                data.forEach(n -> datas.add(n));
+            List<JsonNode> data = datum.isArray() ? new ArrayList<>(datum.size())
+                                                  : Arrays.asList(datum);
+            if (datum.isArray()) {
+                datum.forEach(n -> data.add(n));
             }
-            for (JsonNode node : datas) {
+            for (JsonNode node : data) {
                 JsonNode sub = node.get(child.getField());
                 if (sub instanceof ArrayNode) {
                     childSingular = false;
@@ -338,11 +348,11 @@ public class RelationLayout extends SchemaNodeLayout {
             if (childSingular) {
                 singularChildren += 1;
             } else {
-                sum += datas.size() == 0 ? 1
-                                         : Math.round(cardSum / datas.size());
+                sum += data.size() == 0 ? 1 : Math.round(cardSum / data.size());
             }
             tableColumnWidth += child.measure(aggregate, childSingular, layout,
                                               indent(indent, child));
+            maxCardinality = Math.max(maxCardinality, data.size());
         }
         int effectiveChildren = r.getChildren()
                                  .size()
@@ -353,6 +363,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                                                       : (int) Math.ceil(sum
                                                                                         / effectiveChildren)));
         tableColumnWidth = Math.max(labelWidth, tableColumnWidth);
+        maxCardinality = Math.max(1, maxCardinality);
         return tableColumnWidth(r.getTableColumnWidth());
     }
 
@@ -370,10 +381,7 @@ public class RelationLayout extends SchemaNodeLayout {
 
         double available = justified - labelWidth;
 
-        JsonControl control = useTable ? r.buildNestedTable(extractor,
-                                                            cardinality,
-                                                            justified)
-                                       : r.buildOutline(extractor, cardinality);
+        JsonControl control = r.buildControl(cardinality, extractor);
 
         Control labelControl = label(labelWidth, label);
         control.setPrefWidth(available);
@@ -397,6 +405,10 @@ public class RelationLayout extends SchemaNodeLayout {
                                                           : extractor.apply(item)
                                                                      .get(field));
         }, box);
+    }
+
+    public double outlineWidth(double outlineWidth) {
+        return outlineWidth + layout.getNestedInset();
     }
 
     public double rowHeight(int cardinality, double justified) {
@@ -450,10 +462,6 @@ public class RelationLayout extends SchemaNodeLayout {
         return (cardinality
                 * (elementHeight + layout.getListCellVerticalInset()))
                + layout.getListVerticalInset();
-    }
-
-    public double outlineWidth(double outlineWidth) {
-        return outlineWidth + layout.getNestedInset();
     }
 
     protected double rowHeight(double elementHeight) {

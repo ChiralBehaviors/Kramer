@@ -31,6 +31,7 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Skin;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -51,8 +52,11 @@ public class NestedTable extends JsonControl {
         this.rows = buildRows(cardinality, layout);
         Region header = layout.buildColumnHeader();
         VBox frame = new VBox(header, rows);
-        this.getChildren()
-            .add(frame);
+        AnchorPane.setLeftAnchor(frame, 0d);
+        AnchorPane.setRightAnchor(frame, 0d);
+        AnchorPane.setTopAnchor(frame, 0d);
+        AnchorPane.setBottomAnchor(frame, 0d);
+        getChildren().add(new AnchorPane(frame));
     }
 
     public Pair<Consumer<JsonNode>, Region> buildPrimitive(double rendered,

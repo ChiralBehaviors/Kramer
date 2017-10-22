@@ -58,6 +58,10 @@ public class AutoLayout extends JsonControl {
         style = new LayoutProvider(this.model);
         this.root.set(root);
         widthProperty().addListener((o, p, c) -> resize(c.doubleValue()));
+        heightProperty().addListener((o, p, c) -> {
+            if (control != null)
+                control.setPrefHeight(c.doubleValue());
+        });
         data.addListener((o, p, c) -> setContent());
         getStylesheets().addListener((ListChangeListener<String>) c -> style = new LayoutProvider(getStylesheets(),
                                                                                                   AutoLayout.this.model));
@@ -117,6 +121,7 @@ public class AutoLayout extends JsonControl {
     private void autoLayout(JsonNode zeeData, Relation relation, double width) {
         relation.autoLayout(zeeData.size(), width);
         control = relation.buildControl(zeeData.size(), width);
+        control.setPrefWidth(width);
         relation.setItem(control, zeeData);
         getChildren().add(control);
     }

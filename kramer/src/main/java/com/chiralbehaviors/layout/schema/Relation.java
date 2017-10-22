@@ -79,29 +79,13 @@ public class Relation extends SchemaNode {
             return fold.buildControl(layout.getAverageCardinality()
                                      * cardinality, width);
         }
-        return useTable ? buildNestedTable(n -> n, cardinality, width)
-                        : buildOutline(n -> n, cardinality);
+        return buildControl(cardinality, n -> n);
     }
 
-    public JsonControl buildNestedTable(Function<JsonNode, JsonNode> extractor,
-                                        int cardinality, double justified) {
-        if (isFold()) {
-            return fold.buildNestedTable(extract(extractor),
-                                         layout.getAverageCardinality()
-                                                             * cardinality,
-                                         justified);
-        }
-        return layout.buildNestedTable(cardinality);
-    }
-
-    public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
-                                    int cardinality) {
-        if (isFold()) {
-            return fold.buildOutline(extract(extractor),
-                                     layout.getAverageCardinality()
-                                                         * cardinality);
-        }
-        return layout.buildOutline(extractor, cardinality);
+    public JsonControl buildControl(int cardinality,
+                                    Function<JsonNode, JsonNode> extractor) {
+        return useTable ? buildNestedTable(extractor, cardinality)
+                        : buildOutline(extractor, cardinality);
     }
 
     @Override
@@ -215,10 +199,6 @@ public class Relation extends SchemaNode {
         return layout.getLayoutWidth();
     }
 
-    public void measure(JsonNode jsonNode, LayoutProvider layout) {
-        measure(jsonNode, !jsonNode.isArray(), layout, INDENT.NONE);
-    }
-
     @Override
     public double measure(JsonNode data, boolean isSingular,
                           LayoutProvider provider, INDENT indent) {
@@ -232,6 +212,10 @@ public class Relation extends SchemaNode {
         }
 
         return layout.measure(data, isSingular, indent);
+    }
+
+    public void measure(JsonNode jsonNode, LayoutProvider layout) {
+        measure(jsonNode, !jsonNode.isArray(), layout, INDENT.NONE);
     }
 
     public void nestTable() {
@@ -315,6 +299,26 @@ public class Relation extends SchemaNode {
             buf.append('\n');
         });
         return buf.toString();
+    }
+
+    protected JsonControl buildNestedTable(Function<JsonNode, JsonNode> extractor,
+                                           int cardinality) {
+        if (isFold()) {
+            return fold.buildNestedTable(extract(extractor),
+                                         layout.getAverageCardinality()
+                                                             * cardinality);
+        }
+        return layout.buildNestedTable(cardinality);
+    }
+
+    protected JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
+                                       int cardinality) {
+        if (isFold()) {
+            return fold.buildOutline(extract(extractor),
+                                     layout.getAverageCardinality()
+                                                         * cardinality);
+        }
+        return layout.buildOutline(extractor, cardinality);
     }
 
     private ArrayNode flatten(JsonNode data) {
