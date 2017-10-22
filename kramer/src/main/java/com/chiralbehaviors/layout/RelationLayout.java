@@ -119,24 +119,19 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public JsonControl buildNestedTable(int cardinality) {
-        NestedTable table = new NestedTable(singular ? 1
-                                                     : Math.min(cardinality,
-                                                                maxCardinality),
-                                            this);
-        table.setPrefSize(tableColumnWidth(getJustifiedWidth()), height);
-        return table;
+        return new NestedTable(this).build(singular ? 1
+                                                    : Math.min(cardinality,
+                                                               maxCardinality),
+                                           this);
     }
 
     public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
                                     int cardinality) {
-        Outline outline = new Outline(r).build(height, columnSets, extractor,
-                                               singular ? 1
-                                                        : Math.min(cardinality,
-                                                                   maxCardinality),
-                                               this);
-        double width = outlineWidth(justifiedWidth);
-        outline.setPrefWidth(width);
-        return outline;
+        return new Outline(this).build(height, columnSets, extractor,
+                                       singular ? 1
+                                                : Math.min(cardinality,
+                                                           maxCardinality),
+                                       this);
     }
 
     public double cellHeight(int card, double width) {

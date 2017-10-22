@@ -44,12 +44,15 @@ import javafx.util.Pair;
  */
 public class NestedTable extends JsonControl {
 
-    private double                   rowHeight;
-    private final ListView<JsonNode> rows;
+    private double             rowHeight;
+    private ListView<JsonNode> rows;
 
-    public NestedTable(int cardinality, RelationLayout layout) {
+    public NestedTable(RelationLayout layout) {
         getStyleClass().add(layout.getStyleClass());
-        this.rows = buildRows(cardinality, layout);
+    }
+
+    public JsonControl build(int cardinality, RelationLayout layout) {
+        buildRows(cardinality, layout);
         Region header = layout.buildColumnHeader();
         VBox frame = new VBox(header, rows);
         AnchorPane.setLeftAnchor(frame, 0d);
@@ -57,6 +60,7 @@ public class NestedTable extends JsonControl {
         AnchorPane.setTopAnchor(frame, 0d);
         AnchorPane.setBottomAnchor(frame, 0d);
         getChildren().add(new AnchorPane(frame));
+        return this;
     }
 
     public Pair<Consumer<JsonNode>, Region> buildPrimitive(double rendered,
@@ -188,7 +192,7 @@ public class NestedTable extends JsonControl {
     }
 
     private ListView<JsonNode> buildRows(int card, RelationLayout layout) {
-        ListView<JsonNode> rows = new ListView<>();
+        rows = new ListView<>();
         layout.apply(rows);
 
         double rowHeight = layout.getRowHeight();

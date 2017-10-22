@@ -25,7 +25,6 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.Column;
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -48,18 +47,15 @@ import javafx.util.Pair;
  */
 public class Outline extends JsonControl {
     private final ListView<JsonNode> list;
-    @SuppressWarnings("unused")
-    private final Relation           relation;
 
-    public Outline(Relation relation) {
-        getStyleClass().add(relation.getField());
+    public Outline(RelationLayout layout) {
+        getStyleClass().add(layout.getStyleClass());
         list = new ListView<>();
         AnchorPane.setLeftAnchor(list, 0d);
         AnchorPane.setRightAnchor(list, 0d);
         AnchorPane.setTopAnchor(list, 0d);
         AnchorPane.setBottomAnchor(list, 0d);
-        getChildren().add(new AnchorPane(list)); 
-        this.relation = relation;
+        getChildren().add(new AnchorPane(list));
     }
 
     public Outline build(double height, Collection<ColumnSet> columnSets,
@@ -70,7 +66,6 @@ public class Outline extends JsonControl {
                                                                .mapToDouble(cs -> cs.getCellHeight())
                                                                .sum());
         layout.apply(list);
-        list.setPrefHeight(height);
         list.setFixedCellSize(cellHeight);
         list.setCellFactory(c -> {
             ListCell<JsonNode> cell = listCell(columnSets, averageCardinality,
