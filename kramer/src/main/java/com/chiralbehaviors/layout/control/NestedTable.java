@@ -31,7 +31,6 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Skin;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -55,11 +54,7 @@ public class NestedTable extends JsonControl {
         buildRows(cardinality, layout);
         Region header = layout.buildColumnHeader();
         VBox frame = new VBox(header, rows);
-        AnchorPane.setLeftAnchor(frame, 0d);
-        AnchorPane.setRightAnchor(frame, 0d);
-        AnchorPane.setTopAnchor(frame, 0d);
-        AnchorPane.setBottomAnchor(frame, 0d);
-        getChildren().add(new AnchorPane(frame));
+        getChildren().add(frame);
         return this;
     }
 
@@ -107,7 +102,6 @@ public class NestedTable extends JsonControl {
         cell.getStyleClass()
             .add(layout.getStyleClass());
         HBox.setHgrow(cell, Priority.ALWAYS);
-        cell.setMinWidth(layout.getJustifiedWidth());
         cell.setPrefWidth(layout.getJustifiedWidth());
         cell.setMinHeight(rendered);
         cell.setMaxHeight(rendered);
@@ -140,26 +134,11 @@ public class NestedTable extends JsonControl {
         layout.apply(row);
 
         row.setFixedCellSize(extended);
-        row.setMinHeight(rendered);
-        row.setMaxHeight(rendered);
+        row.setPrefSize(layout.tableColumnWidth(layout.getJustifiedWidth()),
+                        rendered);
 
-        double width = layout.tableColumnWidth(layout.getJustifiedWidth());
-        row.setMinWidth(width);
-        row.setMaxWidth(width);
-
-        row.setCellFactory(listView -> {
-            ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(extended),
-                                                               layout));
-            double cellWidth = layout.baseTableColumnWidth(width);
-
-            cell.setMinWidth(cellWidth);
-            cell.setMaxWidth(cellWidth);
-
-            cell.setMinHeight(extended);
-            cell.setMaxHeight(extended);
-
-            return cell;
-        });
+        row.setCellFactory(listView -> buildRowCell(buildColumn(layout.baseRowCellHeight(extended),
+                                                                layout)));
         return row;
     }
 
