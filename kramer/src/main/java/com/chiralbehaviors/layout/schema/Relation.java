@@ -57,8 +57,7 @@ public class Relation extends SchemaNode {
     public void autoLayout(int cardinality, double width) {
         double justified = LayoutProvider.snap(width);
         layout(cardinality, justified);
-        layout.compress(justified);
-        cellHeight(cardinality, width);
+        compress(justified);
     }
 
     @Override

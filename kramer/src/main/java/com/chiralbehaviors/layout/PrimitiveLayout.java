@@ -56,7 +56,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public PrimitiveControl buildControl(int cardinality) {
-        return new PrimitiveControl(p);
+        return new PrimitiveControl(p.getField());
     }
 
     public double cellHeight(double justified) {

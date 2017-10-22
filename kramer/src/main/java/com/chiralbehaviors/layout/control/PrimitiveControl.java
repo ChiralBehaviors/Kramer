@@ -16,7 +16,6 @@
 
 package com.chiralbehaviors.layout.control;
 
-import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -32,9 +31,9 @@ public class PrimitiveControl extends JsonControl {
 
     private final Label label;
 
-    public PrimitiveControl(Primitive primitive) {
+    public PrimitiveControl(String style) {
         super();
-        getStyleClass().add(primitive.getField());
+        getStyleClass().add(style);
         label = new Label();
         label.setWrapText(true);
         label.setStyle("-fx-background-color: " + "         rgba(0,0,0,0.08),"

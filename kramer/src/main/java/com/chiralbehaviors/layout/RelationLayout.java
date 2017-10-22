@@ -123,9 +123,10 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
                                     int cardinality) {
-        Outline outline = new Outline(r).build(height, columnSets, extractor, cardinality,
-                                                                    this);
-        outline.setPrefWidth(outlineWidth(justifiedWidth));
+        Outline outline = new Outline(r).build(height, columnSets, extractor,
+                                               cardinality, this);
+        double width = outlineWidth(justifiedWidth);
+        outline.setPrefWidth(width);
         return outline;
     }
 
@@ -472,10 +473,6 @@ public class RelationLayout extends SchemaNodeLayout {
         if (child.equals(children.get(children.size() - 1)))
             return INDENT.RIGHT;
         return INDENT.NONE;
-    }
- 
-    public double outlineCellWidth() { 
-        return outlineWidth(justifiedWidth) - layout.getListCellHorizontalInset();
     }
 
 }
