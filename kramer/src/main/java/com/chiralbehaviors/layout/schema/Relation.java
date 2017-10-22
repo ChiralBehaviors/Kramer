@@ -150,7 +150,7 @@ public class Relation extends SchemaNode {
     }
 
     public List<SchemaNode> getChildren() {
-        return isFold() ? fold.getChildren() : children;
+        return children;
     }
 
     public Relation getFold() {
