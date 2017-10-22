@@ -243,6 +243,10 @@ public class LayoutProvider {
         return width - getTextHorizontalInset();
     }
 
+    double getListCellHorizontalInset() {
+        return listCellInsets.getLeft() + listCellInsets.getRight();
+    }
+
     double getListCellVerticalInset() {
         return listCellInsets.getTop() + listCellInsets.getBottom();
     }
@@ -261,6 +265,10 @@ public class LayoutProvider {
 
     double getNestedRightInset() {
         return listInsets.getRight() + listCellInsets.getRight();
+    }
+
+    double getTextHorizontalInset() {
+        return textInsets.getLeft() + textInsets.getRight();
     }
 
     double getTextLineHeight() {
@@ -282,17 +290,6 @@ public class LayoutProvider {
         return labelText;
     }
 
-    Control columnHeader(double labelWidth, String label, double height) {
-        Label labelText = new Label(label);
-        labelText.setAlignment(Pos.CENTER);
-        labelText.setPrefWidth(labelWidth);
-        labelText.setMinHeight(height);
-        labelText.setMaxHeight(height);
-        labelText.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;\n"
-                           + "    -fx-background-insets: 0, 1;");
-        return labelText;
-    }
-
     double labelWidth(String label) {
         return textWidth(label) + 20;
     }
@@ -304,13 +301,5 @@ public class LayoutProvider {
 
     double totalTextWidth(double justifiedWidth) {
         return justifiedWidth + getTextHorizontalInset();
-    }
-
-    double getTextHorizontalInset() {
-        return textInsets.getLeft() + textInsets.getRight();
-    }
-
-    public double getListHorizontalInset() {
-        return listInsets.getLeft() + listInsets.getRight();
     }
 }

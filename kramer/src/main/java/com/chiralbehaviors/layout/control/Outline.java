@@ -67,6 +67,9 @@ public class Outline extends JsonControl {
         layout.apply(list);
         list.setPrefHeight(height);
         list.setFixedCellSize(cellHeight);
+        double width = layout.outlineWidth(layout.getJustifiedWidth());
+        list.setMinWidth(width);
+        list.setMaxWidth(width);
         list.setCellFactory(c -> {
             ListCell<JsonNode> cell = listCell(columnSets, averageCardinality,
                                                layout.baseOutlineCellHeight(cellHeight),

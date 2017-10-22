@@ -133,17 +133,23 @@ public class NestedTable extends JsonControl {
         layout.apply(row);
 
         row.setFixedCellSize(extended);
+        row.setMinHeight(rendered);
+        row.setMaxHeight(rendered);
 
         double width = layout.tableColumnWidth(layout.getJustifiedWidth());
-
-        row.setPrefSize(width, rendered);
+        row.setMinWidth(width);
+        row.setMaxWidth(width);
 
         row.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(extended),
                                                                layout));
-            double cellWidth = layout.rowWidth();
+            double cellWidth = layout.baseTableColumnWidth(width);
 
-            cell.setPrefSize(cellWidth, extended);
+            cell.setMinWidth(cellWidth);
+            cell.setMaxWidth(cellWidth);
+
+            cell.setMinHeight(extended);
+            cell.setMaxHeight(extended);
 
             return cell;
         });
@@ -183,18 +189,18 @@ public class NestedTable extends JsonControl {
         layout.apply(rows);
 
         double rowHeight = layout.getRowHeight();
-
         rows.setFixedCellSize(rowHeight);
 
-        double width = layout.getJustifiedWidth();
-        
-        rows.setPrefSize(layout.tableColumnWidth(width),
-                         layout.getHeight() - layout.getColumnHeaderHeight());
+        double width = layout.tableColumnWidth(layout.getJustifiedWidth());
+        double height = layout.getHeight() - layout.getColumnHeaderHeight();
+
+        rows.setPrefSize(width, height);
 
         rows.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
                                                                layout));
-            cell.setPrefSize(layout.rowWidth(), rowHeight);
+
+            cell.setPrefSize(layout.getJustifiedWidth(), rowHeight);
             return cell;
         });
         return rows;

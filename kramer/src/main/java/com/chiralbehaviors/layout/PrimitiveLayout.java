@@ -171,4 +171,9 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     protected double baseOutlineWidth(double available) {
         return layout.baseTextWidth(available);
     }
+
+    @Override
+    protected Control label(double labelWidth, String label) {
+        return layout.label(labelWidth, label, height);
+    }
 }
