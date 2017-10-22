@@ -193,12 +193,12 @@ abstract public class SchemaNode {
 
     public abstract double justify(double width);
 
-    public abstract double layout(int cardinality, double width);
+    public abstract double layout(double width);
 
     public abstract double layoutWidth();
 
     public abstract double measure(JsonNode data, boolean singular,
-                                   LayoutProvider layout, INDENT indent);
+                                   LayoutProvider layout);
 
     public abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                                     double labelWidth,
@@ -212,6 +212,8 @@ abstract public class SchemaNode {
     }
 
     public abstract double tableColumnWidth();
+
+    abstract public double tableColumnWidth(INDENT indent);
 
     abstract public String toString(int indent);
 }

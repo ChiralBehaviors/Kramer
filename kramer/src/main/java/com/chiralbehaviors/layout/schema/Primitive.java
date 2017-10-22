@@ -53,6 +53,11 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
+    public Function<Double, Region> buildColumnHeader() {
+        return layout.columnHeader();
+    }
+
+    @Override
     public double cellHeight(int cardinality, double justified) {
         return layout.cellHeight(justified);
     }
@@ -77,8 +82,8 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public double layout(int cardinality, double width) {
-        return layout.layout(cardinality, width);
+    public double layout(double width) {
+        return layout.layout(width);
     }
 
     @Override
@@ -87,9 +92,10 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public double measure(JsonNode data, boolean singular, LayoutProvider provider, INDENT indent) {
+    public double measure(JsonNode data, boolean singular,
+                          LayoutProvider provider) {
         layout = provider.layout(this);
-        return layout.measure(data, singular, indent);
+        return layout.measure(data, singular);
     }
 
     @Override
@@ -112,6 +118,11 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
+    public double tableColumnWidth(INDENT indent) {
+        return layout.tableColumnWidth(indent);
+    }
+
+    @Override
     public String toString() {
         return String.format("Primitive [%s]", label);
     }
@@ -119,10 +130,5 @@ public class Primitive extends SchemaNode {
     @Override
     public String toString(int indent) {
         return toString();
-    }
-
-    @Override
-    public Function<Double, Region> buildColumnHeader() {
-        return layout.columnHeader();
     }
 }

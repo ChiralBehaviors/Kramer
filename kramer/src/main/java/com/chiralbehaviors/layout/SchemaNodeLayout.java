@@ -26,6 +26,7 @@ import javafx.scene.control.Control;
  */
 abstract public class SchemaNodeLayout {
     public enum INDENT {
+        TOP,
         LEFT,
         NONE,
         RIGHT,
@@ -64,10 +65,9 @@ abstract public class SchemaNodeLayout {
 
     abstract public double labelWidth(String label);
 
-    abstract public double layout(int cardinality, double width);
+    abstract public double layout(double width);
 
-    abstract public double measure(JsonNode data, boolean isSingular,
-                                   INDENT indent);
+    abstract public double measure(JsonNode data, boolean isSingular);
 
     abstract public double tableColumnWidth(double columnWidth);
 
@@ -79,7 +79,7 @@ abstract public class SchemaNodeLayout {
     }
 
     protected double indentation(INDENT indent) {
-        switch (indent) {
+        switch (indent) { 
             case LEFT:
                 return layout.getNestedLeftInset();
             case RIGHT:
@@ -87,7 +87,7 @@ abstract public class SchemaNodeLayout {
             case SINGULAR:
                 return layout.getNestedInset();
             case SINGULAR_RIGHT:
-                return layout.getNestedInset() + layout.getNestedRightInset();
+                return layout.getNestedRightInset();
             default:
                 return 0;
         }

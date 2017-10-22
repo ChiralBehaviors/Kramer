@@ -54,9 +54,9 @@ public class Relation extends SchemaNode {
         children.add(child);
     }
 
-    public void autoLayout(int cardinality, double width) {
+    public void autoLayout(double width) {
         double justified = LayoutProvider.snap(width);
-        layout(cardinality, justified);
+        layout(justified);
         compress(justified);
     }
 
@@ -184,14 +184,14 @@ public class Relation extends SchemaNode {
         return layout.justify(width);
     }
 
+    public double justifyTable(double width) {
+        return isFold() ? fold.justifyTable(width) : layout.justifyTable(width);
+    }
+
     @Override
-    public double layout(int cardinality, double width) {
+    public double layout(double width) {
         useTable = false;
-        if (isFold()) {
-            return fold.layout(cardinality * layout.getAverageCardinality(),
-                               width);
-        }
-        return layout.layout(cardinality, width);
+        return isFold() ? fold.layout(width) : layout.layout(width);
     }
 
     @Override
@@ -201,21 +201,21 @@ public class Relation extends SchemaNode {
 
     @Override
     public double measure(JsonNode data, boolean isSingular,
-                          LayoutProvider provider, INDENT indent) {
+                          LayoutProvider provider) {
         layout = provider.layout(this);
 
         if (isAutoFoldable()) {
             fold = ((Relation) children.get(children.size() - 1));
         }
         if (data.isNull() || children.size() == 0) {
-            return 0;
+            return 24;
         }
 
-        return layout.measure(data, isSingular, indent);
+        return layout.measure(data, isSingular);
     }
 
     public void measure(JsonNode jsonNode, LayoutProvider layout) {
-        measure(jsonNode, !jsonNode.isArray(), layout, INDENT.NONE);
+        measure(jsonNode, !jsonNode.isArray(), layout);
     }
 
     public void nestTable() {
@@ -240,6 +240,10 @@ public class Relation extends SchemaNode {
 
         return layout.outlineElement(field, cardinality, label, labelWidth,
                                      extractor, useTable, justified);
+    }
+
+    public double outlineWidth() {
+        return isFold() ? fold.outlineWidth() : layout.outlineWidth();
     }
 
     @Override
@@ -278,6 +282,12 @@ public class Relation extends SchemaNode {
             return fold.tableColumnWidth();
         }
         return layout.tableColumnWidth();
+    }
+
+    @Override
+    public double tableColumnWidth(INDENT indent) {
+        return isFold() ? fold.tableColumnWidth(indent)
+                        : layout.tableColumnWidth(indent);
     }
 
     @Override

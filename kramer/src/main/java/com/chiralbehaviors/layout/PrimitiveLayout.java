@@ -70,9 +70,15 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public Function<Double, Region> columnHeader() {
-        return rendered -> layout.label(layout.totalTextWidth(justifiedWidth)
-                                        + indentation(indent), p.getLabel(),
-                                        rendered);
+        return rendered -> {
+            double width = layout.totalTextWidth(justifiedWidth)
+                                                + indentation(indent);
+            Control columnHeader = layout.label(width,
+                                                p.getLabel(), rendered);
+            columnHeader.setMinSize(width, rendered);
+            columnHeader.setMaxSize(width, rendered);
+            return columnHeader;
+        };
     }
 
     public void compress(double available) {
@@ -94,15 +100,14 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double layout(int cardinality, double width) {
+    public double layout(double width) {
         clear();
         return variableLength ? width : Math.min(width, columnWidth);
     }
 
     @Override
-    public double measure(JsonNode data, boolean singular, INDENT indentation) {
+    public double measure(JsonNode data, boolean singular) {
         clear();
-        indent = indentation;
         double labelWidth = labelWidth(p.getLabel());
         double sum = 0;
         maxWidth = 0;
@@ -164,6 +169,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return layout.totalTextWidth(width);
     }
 
+    public double tableColumnWidth(INDENT i) {
+        indent = i;
+        return tableColumnWidth() + indentation(indent);
+    }
+
     public double width(JsonNode row) {
         return layout.textWidth(LayoutProvider.toString(row));
     }
@@ -171,5 +181,5 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     protected double baseOutlineWidth(double available) {
         return layout.baseTextWidth(available);
-    } 
+    }
 }

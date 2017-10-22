@@ -115,7 +115,7 @@ public class AutoLayout extends JsonControl {
     }
 
     private void autoLayout(JsonNode zeeData, Relation relation, double width) {
-        relation.autoLayout(zeeData.size(), width);
+        relation.autoLayout(width);
         control = relation.buildControl(zeeData.size(), width);
         control.setPrefWidth(width);
         relation.setItem(control, zeeData);
