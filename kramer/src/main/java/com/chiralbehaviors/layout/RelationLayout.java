@@ -238,7 +238,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double getLayoutWidth() {
-        return r.isUseTable() ? tableColumnWidth(tableColumnWidth)
+        return r.isUseTable() ? tableColumnWidth + layout.getNestedInset()
                               : outlineWidth(outlineWidth);
     }
 
@@ -302,6 +302,7 @@ public class RelationLayout extends SchemaNodeLayout {
         double extended = outlineWidth(outlineWidth);
         double tableWidth = tableColumnWidth();
         if (tableWidth <= extended) {
+            indent = INDENT.NONE;
             r.nestTable();
             return tableWidth;
         }
@@ -357,7 +358,8 @@ public class RelationLayout extends SchemaNodeLayout {
                                                effectiveChildren == 0 ? 1
                                                                       : (int) Math.ceil(sum
                                                                                         / effectiveChildren)));
-        tableColumnWidth = Math.max(labelWidth, tableColumnWidth);
+        tableColumnWidth = LayoutProvider.snap(Math.max(labelWidth,
+                                                        tableColumnWidth));
         maxCardinality = Math.max(1, maxCardinality);
         return tableColumnWidth(r.getTableColumnWidth());
     }
@@ -419,7 +421,7 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public double tableColumnWidth(double width) {
-        return width + layout.getNestedInset();
+        return width + indentation(indent);
     }
 
     public double tableHeight(int cardinality, double elementHeight) {
@@ -430,7 +432,7 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     protected double baseOutlineWidth(double width) {
-        return width - layout.getNestedInset();
+        return LayoutProvider.snap(width - layout.getNestedInset());
     }
 
     protected double elementHeight() {
@@ -440,11 +442,6 @@ public class RelationLayout extends SchemaNodeLayout {
                                                       justifiedWidth))
                 .max()
                 .getAsDouble();
-    }
-
-    @Override
-    protected Control label(double labelWidth, String label) {
-        return layout.label(labelWidth, label, height);
     }
 
     protected double outlineHeight(int cardinality) {

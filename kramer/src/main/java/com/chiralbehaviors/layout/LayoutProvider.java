@@ -282,7 +282,7 @@ public class LayoutProvider {
     Control label(double labelWidth, String label, double height) {
         Label labelText = new Label(label);
         labelText.setAlignment(Pos.CENTER);
-        labelText.setMinWidth(labelWidth);
+        labelText.setPrefWidth(labelWidth);
         labelText.setMinHeight(height);
         labelText.setMaxHeight(height);
         labelText.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;\n"
@@ -300,6 +300,6 @@ public class LayoutProvider {
     }
 
     double totalTextWidth(double justifiedWidth) {
-        return justifiedWidth + getTextHorizontalInset();
+        return LayoutProvider.snap(justifiedWidth + getTextHorizontalInset());
     }
 }

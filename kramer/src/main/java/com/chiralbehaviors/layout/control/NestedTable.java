@@ -32,7 +32,6 @@ import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
@@ -101,7 +100,6 @@ public class NestedTable extends JsonControl {
         HBox cell = new HBox();
         cell.getStyleClass()
             .add(layout.getStyleClass());
-        HBox.setHgrow(cell, Priority.ALWAYS);
         cell.setPrefWidth(layout.getJustifiedWidth());
         cell.setMinHeight(rendered);
         cell.setMaxHeight(rendered);

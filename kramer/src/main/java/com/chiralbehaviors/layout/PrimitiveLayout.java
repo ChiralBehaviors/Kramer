@@ -140,6 +140,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         VBox.setVgrow(box, Priority.ALWAYS);
 
         Control labelControl = label(labelWidth, label);
+        labelControl.setMinWidth(labelWidth);
         JsonControl control = buildControl(cardinality);
         control.setPrefSize(justified, height);
 
@@ -170,10 +171,5 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     protected double baseOutlineWidth(double available) {
         return layout.baseTextWidth(available);
-    }
-
-    @Override
-    protected Control label(double labelWidth, String label) {
-        return layout.label(labelWidth, label, height);
-    }
+    } 
 }
