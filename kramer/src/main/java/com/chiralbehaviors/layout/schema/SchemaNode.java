@@ -200,6 +200,8 @@ abstract public class SchemaNode {
     public abstract double measure(JsonNode data, boolean singular,
                                    LayoutProvider layout);
 
+    abstract public double nestTable(INDENT indent);
+
     public abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                                     double labelWidth,
                                                                     Function<JsonNode, JsonNode> extractor,

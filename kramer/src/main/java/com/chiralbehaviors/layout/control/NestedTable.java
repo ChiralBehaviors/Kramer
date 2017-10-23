@@ -100,9 +100,8 @@ public class NestedTable extends JsonControl {
         HBox cell = new HBox();
         cell.getStyleClass()
             .add(layout.getStyleClass());
-        cell.setPrefWidth(layout.getJustifiedWidth());
-        cell.setMinHeight(rendered);
-        cell.setMaxHeight(rendered);
+        cell.setMinSize(layout.getJustifiedWidth(), rendered);
+        cell.setMaxSize(layout.getJustifiedWidth(), rendered);
         List<Consumer<JsonNode>> consumers = new ArrayList<>();
         Consumer<? super SchemaNode> action = child -> {
             Pair<Consumer<JsonNode>, Region> column = child.buildColumn(this,
@@ -132,10 +131,10 @@ public class NestedTable extends JsonControl {
         layout.apply(row);
 
         row.setFixedCellSize(extended);
-        row.setMaxSize(layout.tableColumnWidth(layout.getJustifiedWidth()),
-                        rendered);
-        row.setMinSize(layout.tableColumnWidth(layout.getJustifiedWidth()),
-                       rendered);
+        double width = layout.tableColumnWidth(layout.getJustifiedWidth());
+
+        row.setMinSize(width, rendered);
+        row.setMaxSize(width, rendered);
 
         row.setCellFactory(listView -> buildRowCell(buildColumn(layout.baseRowCellHeight(extended),
                                                                 layout)));
@@ -186,7 +185,7 @@ public class NestedTable extends JsonControl {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
                                                                layout));
 
-            cell.setPrefSize(layout.getJustifiedWidth(), rowHeight);
+            cell.setPrefSize(layout.getRowCellWidth(), rowHeight);
             return cell;
         });
         return rows;

@@ -72,9 +72,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     public Function<Double, Region> columnHeader() {
         return rendered -> {
             double width = layout.totalTextWidth(justifiedWidth)
-                                                + indentation(indent);
-            Control columnHeader = layout.label(width,
-                                                p.getLabel(), rendered);
+                           + indentation(indent);
+            Control columnHeader = layout.label(width, p.getLabel(), rendered);
             columnHeader.setMinSize(width, rendered);
             columnHeader.setMaxSize(width, rendered);
             return columnHeader;
@@ -105,6 +104,10 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return variableLength ? width : Math.min(width, columnWidth);
     }
 
+    public double layoutWidth() {
+        return layout.totalTextWidth(columnWidth);
+    }
+
     @Override
     public double measure(JsonNode data, boolean singular) {
         clear();
@@ -130,8 +133,13 @@ public class PrimitiveLayout extends SchemaNodeLayout {
             variableLength = true;
         }
 
-        return tableColumnWidth(columnWidth);
+        return layout.totalTextWidth(columnWidth);
 
+    }
+
+    public double nestTable(INDENT i) {
+        indent = i;
+        return tableColumnWidth() + indentation(indent);
     }
 
     public Pair<Consumer<JsonNode>, Parent> outlineElement(String field,
@@ -161,17 +169,16 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public double tableColumnWidth() {
-        return tableColumnWidth(columnWidth);
+        return tableColumnWidth(justifiedWidth > 0 ? justifiedWidth : columnWidth);
     }
 
     @Override
     public double tableColumnWidth(double width) {
-        return layout.totalTextWidth(width);
+        return layout.totalTextWidth(width) + indentation(indent);
     }
 
-    public double tableColumnWidth(INDENT i) {
-        indent = i;
-        return tableColumnWidth() + indentation(indent);
+    public double tableColumnWidth(INDENT indent) {
+        return layout.totalTextWidth(columnWidth) + indentation(indent);
     }
 
     public double width(JsonNode row) {

@@ -88,7 +88,7 @@ public class Primitive extends SchemaNode {
 
     @Override
     public double layoutWidth() {
-        return tableColumnWidth();
+        return layout.layoutWidth();
     }
 
     @Override
@@ -115,6 +115,11 @@ public class Primitive extends SchemaNode {
     @Override
     public double tableColumnWidth() {
         return layout.tableColumnWidth();
+    }
+
+    @Override
+    public double nestTable(INDENT indent) {
+        return layout.nestTable(indent);
     }
 
     @Override

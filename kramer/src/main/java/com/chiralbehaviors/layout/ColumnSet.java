@@ -54,15 +54,15 @@ public class ColumnSet {
         columns.forEach(c -> c.adjustHeight(delta));
     }
 
-    public void compress(int cardinality, double available) {
+    public void compress(int cardinality, double justified) {
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
-                                   .size(),
-                        max(1, (int) (available
-                                      / firstColumn.maxWidth(labelWidth))));
-        double fieldWidth = available - labelWidth;
+                                      .size(),
+                           max(1, (int) (justified
+                                         / firstColumn.maxWidth(labelWidth))));
+        double fieldWidth = justified - labelWidth;
         if (count == 1) {
-            firstColumn.setWidth(available);
+            firstColumn.setWidth(justified);
             firstColumn.getFields()
                        .forEach(f -> {
                            f.compress(fieldWidth);
@@ -72,11 +72,14 @@ public class ColumnSet {
         }
 
         // compression
-        double columnWidth = available / count;
-        firstColumn.getFields()
-                   .forEach(f -> f.compress(columnWidth - labelWidth));
+        double columnWidth = justified / (double) count;
         firstColumn.setWidth(columnWidth);
-        IntStream.range(1, count)
+        double compressed = columnWidth - labelWidth;
+        firstColumn.getFields()
+                   .forEach(f -> {
+                    f.compress(compressed);
+                });
+        IntStream.range(1,  count)
                  .forEach(i -> columns.add(new Column(columnWidth)));
         cellHeight = firstColumn.cellHeight(cardinality, labelWidth);
         double lastHeight;

@@ -174,8 +174,7 @@ public class RelationLayout extends SchemaNodeLayout {
             columnHeader.setMaxSize(width, rendered);
             double half = LayoutProvider.snap(rendered / 2.0);
             columnHeader.getChildren()
-                        .add(layout.label(width,
-                                          r.getLabel(), half));
+                        .add(layout.label(width, r.getLabel(), half));
             columnHeader.getChildren()
                         .add(nested);
 
@@ -191,13 +190,11 @@ public class RelationLayout extends SchemaNodeLayout {
         if (r.isUseTable()) {
             return r.justifyTable(justified);
         }
+        System.out.println(String.format("Compress: %s: %s", r.getLabel(),
+                                         justified));
         columnSets.clear();
         justifiedWidth = baseOutlineWidth(justified);
         List<SchemaNode> children = r.getChildren();
-        double labelWidth = LayoutProvider.snap(children.stream()
-                                                        .mapToDouble(n -> n.getLabelWidth())
-                                                        .max()
-                                                        .orElse(0));
         columnSets.clear();
         ColumnSet current = null;
         double halfWidth = justifiedWidth / 2d;
@@ -246,8 +243,11 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double getLayoutWidth() {
-        return r.isUseTable() ? tableColumnWidth + indentation(indent)
-                              : outlineWidth(outlineWidth);
+        return r.isUseTable() ? getTableWidth() : outlineWidth(outlineWidth);
+    }
+
+    public double getRowCellWidth() {
+        return justifiedWidth + layout.getListCellHorizontalInset();
     }
 
     public double getRowHeight() {
@@ -263,7 +263,8 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double getTableWidth() {
-        return justifiedWidth + layout.getNestedInset();
+        return (justifiedWidth > 0 ? justifiedWidth : tableColumnWidth)
+               + layout.getNestedInset();
     }
 
     public boolean isSingular() {
@@ -272,12 +273,12 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public double justify(double width) {
         justifiedWidth = baseTableColumnWidth(width);
-        return justified();
+        return width;
     }
 
     public double justifyTable(double width) {
         justifiedWidth = width - layout.getNestedInset();
-        return justified();
+        return width;
     }
 
     @Override
@@ -289,16 +290,15 @@ public class RelationLayout extends SchemaNodeLayout {
     public double layout(double width) {
         clear();
         double available = width - labelWidth;
+        assert available > 0;
         double extended = r.getChildren()
                            .stream()
                            .mapToDouble(c -> c.layout(available))
                            .max()
                            .orElse(0.0)
                           + labelWidth;
-        double tableWidth = tableWidth();
-        if (tableWidth <= extended) {
-            r.nestTable();
-            return tableWidth;
+        if (tableWidth() <= extended) {
+            return r.nestTable();
         }
         return extended;
     }
@@ -359,6 +359,30 @@ public class RelationLayout extends SchemaNodeLayout {
         return r.isFold() ? r.getFold()
                              .outlineWidth()
                           : r.outlineWidth();
+    }
+
+    public double nestTable() {
+        rowHeight = -1.0;
+        columnHeaderHeight = -1.0;
+        height = -1.0;
+        indent = INDENT.TOP;
+        tableColumnWidth = r.getChildren()
+                            .stream()
+                            .mapToDouble(c -> c.nestTable(indent(indent, c)))
+                            .sum();
+        return tableColumnWidth + layout.getNestedInset();
+    }
+
+    public double nestTable(INDENT i) {
+        rowHeight = -1.0;
+        columnHeaderHeight = -1.0;
+        height = -1.0;
+        indent = i;
+        tableColumnWidth = r.getChildren()
+                            .stream()
+                            .mapToDouble(c -> c.nestTable(indent(indent, c)))
+                            .sum();
+        return tableColumnWidth(tableColumnWidth);
     }
 
     public double outlineCellHeight(double baseHeight) {
@@ -428,17 +452,12 @@ public class RelationLayout extends SchemaNodeLayout {
         return width + indentation(indent);
     }
 
-    public double tableColumnWidth(INDENT i) {
-        rowHeight = -1.0;
-        columnHeaderHeight = -1.0;
-        height = -1.0;
-        indent = i;
-        return tableColumnWidth = r.getChildren()
-                                   .stream()
-                                   .mapToDouble(c -> c.tableColumnWidth(indent(indent,
-                                                                               c)))
-                                   .sum()
-                                  + indentation(indent);
+    public double tableColumnWidth(INDENT indent) {
+        return r.getChildren()
+                .stream()
+                .mapToDouble(c -> c.tableColumnWidth(indent(indent, c)))
+                .sum()
+               + indentation(indent);
     }
 
     @Override
@@ -477,7 +496,11 @@ public class RelationLayout extends SchemaNodeLayout {
         return INDENT.NONE;
     }
 
-    protected double justified() {
+    protected void justified() {
+        assert justifiedWidth >= tableColumnWidth : String.format("%s justified width incorrect %s < %s",
+                                                                  r.getLabel(),
+                                                                  justifiedWidth,
+                                                                  tableColumnWidth);
         double slack = LayoutProvider.snap(Math.max(0, justifiedWidth
                                                        - tableColumnWidth));
         List<SchemaNode> children = r.getChildren();
@@ -485,14 +508,21 @@ public class RelationLayout extends SchemaNodeLayout {
                                                    .map(child -> child.tableColumnWidth())
                                                    .reduce((a, b) -> a + b)
                                                    .orElse(0.0d));
-        children.forEach(child -> {
-            double childWidth = child.tableColumnWidth();
-            double additional = LayoutProvider.snap(slack
-                                                    * (childWidth / total));
-            double childJustified = additional + childWidth;
-            child.justify(childJustified);
-        });
-        return justifiedWidth;
+        double childrenWidth = children.stream()
+                                       .mapToDouble(child -> {
+                                           double childWidth = child.tableColumnWidth();
+                                           double additional = LayoutProvider.snap(slack
+                                                                                   * (childWidth
+                                                                                      / total));
+                                           System.out.println(String.format("%s additional: %s",
+                                                                            r.getLabel(),
+                                                                            additional));
+                                           double childJustified = additional
+                                                                   + childWidth;
+                                           return child.justify(childJustified);
+                                       })
+                                       .sum();
+        assert justifiedWidth >= childrenWidth + indentation(indent);
     }
 
     protected double outlineHeight(int cardinality) {
@@ -512,15 +542,15 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     protected double tableWidth() {
-        rowHeight = -1.0;
-        columnHeaderHeight = -1.0;
-        indent = INDENT.TOP;
-        tableColumnWidth = r.getChildren()
-                            .stream()
-                            .mapToDouble(c -> c.tableColumnWidth(indent(indent,
-                                                                        c)))
-                            .sum();
-        return tableColumnWidth + layout.getNestedInset();
+        double tableWidth = r.getChildren()
+                             .stream()
+                             .mapToDouble(c -> c.tableColumnWidth(indent(INDENT.TOP,
+                                                                         c)))
+                             .sum()
+                            + layout.getNestedInset();
+        System.out.println(String.format("T* %s tcw: %s", r.getLabel(),
+                                         tableWidth));
+        return tableWidth;
     }
 
 }

@@ -67,7 +67,7 @@ public class Column {
     }
 
     public void setWidth(double width) {
-        this.width = width;
+        this.width = width; 
     }
 
     public boolean slideRight(int cardinality, Column column,

@@ -109,9 +109,9 @@ public class Relation extends SchemaNode {
     public void compress(double justified) {
         if (isFold()) {
             fold.compress(justified);
-            return;
+        } else {
+            layout.compress(justified);
         }
-        layout.compress(justified);
     }
 
     @Override
@@ -196,7 +196,7 @@ public class Relation extends SchemaNode {
 
     @Override
     public double layoutWidth() {
-        return layout.getLayoutWidth();
+        return isFold() ? fold.layoutWidth() : layout.getLayoutWidth();
     }
 
     @Override
@@ -218,13 +218,14 @@ public class Relation extends SchemaNode {
         measure(jsonNode, !jsonNode.isArray(), layout);
     }
 
-    public void nestTable() {
+    public double nestTable() {
         useTable = true;
-        children.forEach(child -> {
-            if (child.isRelation()) {
-                ((Relation) child).nestTable();
-            }
-        });
+        return layout.nestTable();
+    }
+
+    public double nestTable(INDENT indent) {
+        useTable = true;
+        return isFold() ? fold.nestTable(indent) : layout.nestTable(indent);
     }
 
     @Override
