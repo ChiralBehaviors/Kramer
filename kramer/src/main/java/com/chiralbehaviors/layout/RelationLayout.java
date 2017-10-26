@@ -189,8 +189,6 @@ public class RelationLayout extends SchemaNodeLayout {
         if (r.isUseTable()) {
             return r.justifyTable(justified);
         }
-        System.out.println(String.format("Compress: %s: %s", r.getLabel(),
-                                         justified));
         columnSets.clear();
         justifiedWidth = baseOutlineWidth(justified);
         List<SchemaNode> children = r.getChildren();
@@ -199,9 +197,6 @@ public class RelationLayout extends SchemaNodeLayout {
         double halfWidth = justifiedWidth / 2d;
         for (SchemaNode child : children) {
             double childWidth = labelWidth + child.layoutWidth();
-            System.out.println(String.format("Child width: %s: %s (%s)",
-                                             child.getLabel(), childWidth,
-                                             labelWidth));
             if (childWidth > halfWidth || current == null) {
                 current = new ColumnSet();
                 columnSets.add(current);
@@ -533,8 +528,6 @@ public class RelationLayout extends SchemaNodeLayout {
                     double childWidth = child.tableColumnWidth();
                     double additional = LayoutProvider.snap(slack * (childWidth
                                                                      / total));
-                    System.out.println(String.format("%s additional: %s",
-                                                     child.getLabel(), additional));
                     double childJustified = additional + childWidth;
                     child.justify(childJustified);
                 });
@@ -557,15 +550,11 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     protected double tableWidth() {
-        double tableWidth = r.getChildren()
-                             .stream()
-                             .mapToDouble(c -> c.tableColumnWidth(indent(INDENT.TOP,
-                                                                         c)))
-                             .sum()
-                            + layout.getNestedInset();
-        System.out.println(String.format("T* %s tcw: %s", r.getLabel(),
-                                         tableWidth));
-        return tableWidth;
+        return r.getChildren()
+                .stream()
+                .mapToDouble(c -> c.tableColumnWidth(indent(INDENT.TOP, c)))
+                .sum()
+               + layout.getNestedInset();
     }
 
 }

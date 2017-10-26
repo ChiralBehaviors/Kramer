@@ -89,7 +89,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public double justify(double available) {
-        justifiedWidth = baseTableColumnWidth(available);
+        justifiedWidth = baseTableColumnWidth(available) - indentation(indent);
         return justifiedWidth;
     }
 
