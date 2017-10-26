@@ -100,8 +100,6 @@ public class NestedTable extends JsonControl {
         HBox cell = new HBox();
         cell.getStyleClass()
             .add(layout.getStyleClass());
-        cell.setMinSize(layout.getJustifiedWidth(), rendered);
-        cell.setMaxSize(layout.getJustifiedWidth(), rendered);
         List<Consumer<JsonNode>> consumers = new ArrayList<>();
         Consumer<? super SchemaNode> action = child -> {
             Pair<Consumer<JsonNode>, Region> column = child.buildColumn(this,
