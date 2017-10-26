@@ -153,11 +153,6 @@ public class Relation extends SchemaNode {
         return layout;
     }
 
-    public double getTableColumnWidth() {
-        return isFold() ? fold.getTableColumnWidth()
-                        : layout.getTableColumnWidth();
-    }
-
     @JsonProperty
     public boolean isFold() {
         return fold != null;
@@ -279,10 +274,7 @@ public class Relation extends SchemaNode {
 
     @Override
     public double tableColumnWidth() {
-        if (isFold()) {
-            return fold.tableColumnWidth();
-        }
-        return layout.tableColumnWidth();
+        return isFold() ? fold.tableColumnWidth() : layout.tableColumnWidth();
     }
 
     @Override

@@ -73,13 +73,15 @@ abstract public class SchemaNodeLayout {
 
     abstract protected double baseOutlineWidth(double available);
 
+    abstract public double justifiedTableColumnWidth();
+
     protected void clear() {
         height = -1.0;
         justifiedWidth = -1.0;
     }
 
     protected double indentation(INDENT indent) {
-        switch (indent) { 
+        switch (indent) {
             case LEFT:
                 return layout.getNestedLeftInset();
             case RIGHT:

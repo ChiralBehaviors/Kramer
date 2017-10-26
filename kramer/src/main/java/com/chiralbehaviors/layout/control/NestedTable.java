@@ -131,7 +131,7 @@ public class NestedTable extends JsonControl {
         layout.apply(row);
 
         row.setFixedCellSize(extended);
-        double width = layout.tableColumnWidth(layout.getJustifiedWidth());
+        double width = layout.justifiedTableColumnWidth();
 
         row.setMinSize(width, rendered);
         row.setMaxSize(width, rendered);
@@ -176,7 +176,7 @@ public class NestedTable extends JsonControl {
         double rowHeight = layout.getRowHeight();
         rows.setFixedCellSize(rowHeight);
 
-        double width = layout.getTableWidth();
+        double width = layout.getJustifiedTableWidth();
         double height = layout.getHeight() - layout.getColumnHeaderHeight();
 
         rows.setMaxSize(width, height);

@@ -34,14 +34,9 @@ public class ColumnSet {
 
     private double             cellHeight;
     private final List<Column> columns = new ArrayList<>();
-    private final double       labelWidth;
 
     {
         columns.add(new Column(0d));
-    }
-
-    public ColumnSet(double labelWidth) {
-        this.labelWidth = labelWidth;
     }
 
     public void add(SchemaNode node) {
@@ -54,12 +49,12 @@ public class ColumnSet {
         columns.forEach(c -> c.adjustHeight(delta));
     }
 
-    public void compress(int cardinality, double justified) {
+    public void compress(int cardinality, double justified, double labelWidth) {
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
-                                      .size(),
-                           max(1, (int) (justified
-                                         / firstColumn.maxWidth(labelWidth))));
+                                   .size(),
+                        max(1, (int) (justified
+                                      / firstColumn.maxWidth(labelWidth))));
         double fieldWidth = justified - labelWidth;
         if (count == 1) {
             firstColumn.setWidth(justified);
@@ -77,9 +72,9 @@ public class ColumnSet {
         double compressed = columnWidth - labelWidth;
         firstColumn.getFields()
                    .forEach(f -> {
-                    f.compress(compressed);
-                });
-        IntStream.range(1,  count)
+                       f.compress(compressed);
+                   });
+        IntStream.range(1, count)
                  .forEach(i -> columns.add(new Column(columnWidth)));
         cellHeight = firstColumn.cellHeight(cardinality, labelWidth);
         double lastHeight;
@@ -106,10 +101,6 @@ public class ColumnSet {
 
     public List<Column> getColumns() {
         return columns;
-    }
-
-    public double getLabelWidth() {
-        return labelWidth;
     }
 
     public double getWidth() {

@@ -167,9 +167,13 @@ public class PrimitiveLayout extends SchemaNodeLayout {
                                      .get(field));
         }, box);
     }
+    
+    public double justifiedTableColumnWidth() {
+        return tableColumnWidth(justifiedWidth);
+    }
 
     public double tableColumnWidth() {
-        return tableColumnWidth(justifiedWidth > 0 ? justifiedWidth : columnWidth);
+        return tableColumnWidth(columnWidth);
     }
 
     @Override

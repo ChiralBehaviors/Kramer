@@ -181,7 +181,7 @@ public class Outline extends JsonControl {
                                                                     averageCardinality,
                                                                     cs.getCellHeight(),
                                                                     extractor,
-                                                                    cs.getLabelWidth());
+                                                                    layout.getLabelWidth());
                     controls.add(master.getKey());
                     Parent control = master.getValue();
                     VBox.setVgrow(control, Priority.ALWAYS);
