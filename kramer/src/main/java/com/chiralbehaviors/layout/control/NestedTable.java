@@ -182,8 +182,6 @@ public class NestedTable extends JsonControl {
         rows.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
                                                                layout));
-
-            cell.setPrefSize(layout.getRowCellWidth(), rowHeight);
             return cell;
         });
         return rows;
