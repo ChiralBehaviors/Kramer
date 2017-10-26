@@ -185,9 +185,10 @@ public class RelationLayout extends SchemaNodeLayout {
         };
     }
 
-    public double compress(double justified) {
+    public void compress(double justified) {
         if (r.isUseTable()) {
-            return r.justifyTable(justified);
+            r.justifyTable(justified);
+            return;
         }
         columnSets.clear();
         justifiedWidth = baseOutlineWidth(justified);
@@ -210,7 +211,6 @@ public class RelationLayout extends SchemaNodeLayout {
         }
         columnSets.forEach(cs -> cs.compress(averageCardinality, justifiedWidth,
                                              labelWidth));
-        return justifiedWidth;
     }
 
     public JsonNode extractFrom(JsonNode node) {
@@ -271,16 +271,14 @@ public class RelationLayout extends SchemaNodeLayout {
         return tableColumnWidth(justifiedWidth);
     }
 
-    public double justify(double width) {
+    public void justify(double width) {
         justifiedWidth = baseTableColumnWidth(width);
         justified();
-        return width;
     }
 
-    public double justifyTable(double width) {
-        justifiedWidth = width - layout.getNestedInset();
+    public void justifyTable(double width) {
+        justifiedWidth = baseTableWidth(width);
         justified();
-        return width;
     }
 
     @Override
@@ -473,7 +471,11 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     protected double baseOutlineWidth(double width) {
-        return LayoutProvider.snap(width - layout.getNestedInset());
+        return LayoutProvider.snap(baseTableWidth(width));
+    }
+
+    protected double baseTableWidth(double width) {
+        return width - layout.getNestedInset();
     }
 
     @Override
@@ -531,6 +533,15 @@ public class RelationLayout extends SchemaNodeLayout {
                     double childJustified = additional + childWidth;
                     child.justify(childJustified);
                 });
+        
+        // This is a hack until I can has maths learning
+        double remaining = justifiedWidth - children.stream()
+                                                    .mapToDouble(c -> c.justifiedTableColumnWidth())
+                                                    .sum();
+        if (remaining > 0.0) {
+            SchemaNode last = children.get(children.size() - 1);
+            last.justify(last.justifiedTableColumnWidth() + remaining);
+        }
     }
 
     protected double outlineHeight(int cardinality) {

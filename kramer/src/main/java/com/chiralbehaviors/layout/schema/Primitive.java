@@ -77,8 +77,13 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public double justify(double available) {
-        return layout.justify(available);
+    public double justifiedTableColumnWidth() {
+        return layout.justifiedTableColumnWidth();
+    }
+
+    @Override
+    public void justify(double available) {
+        layout.justify(available);
     }
 
     @Override
@@ -99,6 +104,11 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
+    public double nestTable(INDENT indent) {
+        return layout.nestTable(indent);
+    }
+
+    @Override
     public Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                            double labelWidth,
                                                            Function<JsonNode, JsonNode> extractor,
@@ -115,11 +125,6 @@ public class Primitive extends SchemaNode {
     @Override
     public double tableColumnWidth() {
         return layout.tableColumnWidth();
-    }
-
-    @Override
-    public double nestTable(INDENT indent) {
-        return layout.nestTable(indent);
     }
 
     @Override

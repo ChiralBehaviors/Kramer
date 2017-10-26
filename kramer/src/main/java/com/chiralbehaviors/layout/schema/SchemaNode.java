@@ -191,7 +191,9 @@ abstract public class SchemaNode {
         return false;
     }
 
-    public abstract double justify(double width);
+    abstract public double justifiedTableColumnWidth();
+
+    public abstract void justify(double width);
 
     public abstract double layout(double width);
 
