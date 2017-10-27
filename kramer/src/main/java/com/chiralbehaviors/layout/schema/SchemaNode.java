@@ -129,9 +129,9 @@ abstract public class SchemaNode {
         return nodes;
     }
 
-    String field;
-
-    String label;
+    String  field;
+    String  label;
+    boolean useTable = false;
 
     public SchemaNode() {
     }
@@ -189,6 +189,10 @@ abstract public class SchemaNode {
 
     public boolean isRelation() {
         return false;
+    }
+
+    public boolean isUseTable() {
+        return useTable;
     }
 
     abstract public double justifiedTableColumnWidth();

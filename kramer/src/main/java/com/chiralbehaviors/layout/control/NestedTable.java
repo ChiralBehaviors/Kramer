@@ -61,8 +61,8 @@ public class NestedTable extends JsonControl {
                                                            PrimitiveLayout layout) {
         JsonControl control = layout.buildControl(1);
 
-        double width = layout.tableColumnWidth(layout.getJustifiedWidth());
-        control.setPrefSize(width, rendered);
+        control.setMinSize(layout.getJustifiedWidth(), rendered);
+        control.setMaxSize(layout.getJustifiedWidth(), rendered);
 
         return new Pair<>(node -> control.setItem(layout.extractFrom(node)),
                           control);

@@ -27,11 +27,14 @@ import javafx.scene.control.Control;
 abstract public class SchemaNodeLayout {
     public enum INDENT {
         TOP,
+        TOP_LEFT,
+        TOP_RIGHT,
         LEFT,
         NONE,
         RIGHT,
         SINGULAR,
-        SINGULAR_RIGHT;
+        SINGULAR_RIGHT,
+        SINGULAR_LEFT;
     }
 
     protected double               height         = -1.0;
@@ -88,6 +91,8 @@ abstract public class SchemaNodeLayout {
                 return layout.getNestedRightInset();
             case SINGULAR:
                 return layout.getNestedInset();
+            case SINGULAR_LEFT:
+                return layout.getNestedLeftInset();
             case SINGULAR_RIGHT:
                 return layout.getNestedRightInset();
             default:

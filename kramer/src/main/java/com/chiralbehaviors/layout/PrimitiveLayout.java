@@ -43,7 +43,9 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     private double          columnWidth;
     private double          maxWidth;
     private final Primitive p;
+    @SuppressWarnings("unused")
     private boolean         variableLength;
+    private double          labelWidth;
 
     public PrimitiveLayout(LayoutProvider layout, Primitive p) {
         super(layout);
@@ -101,17 +103,19 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public double layout(double width) {
         clear();
-        return variableLength ? width : Math.min(width, columnWidth);
+        return width;
     }
 
     public double layoutWidth() {
-        return layout.totalTextWidth(columnWidth);
+        return p.isUseTable() ? tableColumnWidth()
+                              : layout.totalTextWidth(columnWidth)
+                                + layout.getNestedInset();
     }
 
     @Override
     public double measure(JsonNode data, boolean singular) {
         clear();
-        double labelWidth = labelWidth(p.getLabel());
+        labelWidth = labelWidth(p.getLabel());
         double sum = 0;
         maxWidth = 0;
         columnWidth = 0;
@@ -167,13 +171,13 @@ public class PrimitiveLayout extends SchemaNodeLayout {
                                      .get(field));
         }, box);
     }
-    
+
     public double justifiedTableColumnWidth() {
         return tableColumnWidth(justifiedWidth);
     }
 
     public double tableColumnWidth() {
-        return tableColumnWidth(columnWidth);
+        return tableColumnWidth(Math.max(columnWidth, labelWidth));
     }
 
     @Override
@@ -182,7 +186,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public double tableColumnWidth(INDENT indent) {
-        return layout.totalTextWidth(columnWidth) + indentation(indent);
+        return layout.totalTextWidth(Math.max(columnWidth, labelWidth))
+               + indentation(indent);
     }
 
     public double width(JsonNode row) {

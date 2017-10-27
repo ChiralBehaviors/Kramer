@@ -105,6 +105,7 @@ public class Primitive extends SchemaNode {
 
     @Override
     public double nestTable(INDENT indent) {
+        useTable = true;
         return layout.nestTable(indent);
     }
 

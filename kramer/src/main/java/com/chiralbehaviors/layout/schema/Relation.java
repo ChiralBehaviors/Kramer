@@ -44,7 +44,6 @@ public class Relation extends SchemaNode {
     private final List<SchemaNode> children = new ArrayList<>();
     private Relation               fold;
     private RelationLayout         layout;
-    private boolean                useTable = false;
 
     public Relation(String label) {
         super(label);

@@ -298,7 +298,7 @@ public class RelationLayout extends SchemaNodeLayout {
                         .orElse(0.0)
                        + labelWidth;
         double tableWidth = tableWidth();
-        if ((tableWidth <= width) && (tableWidth <= outlineWidth)) {
+        if (tableWidth <= outlineWidth) {
             return r.nestTable();
         }
         return outlineWidth(outlineWidth);
@@ -500,17 +500,52 @@ public class RelationLayout extends SchemaNodeLayout {
 
     protected INDENT indent(INDENT parent, SchemaNode child) {
         List<SchemaNode> children = r.getChildren();
-        if (children.size() == 1) {
-            if (parent.equals(INDENT.RIGHT)) {
-                return INDENT.SINGULAR_RIGHT;
+
+        boolean isFirst = child.equals(children.get(0));
+        boolean isLast = child.equals(children.get(children.size() - 1));
+        if (isFirst && isLast) {
+            switch (parent) {
+                case RIGHT:
+                case TOP_RIGHT:
+                case SINGULAR_RIGHT:
+                    return INDENT.SINGULAR_RIGHT;
+                case LEFT:
+                case TOP_LEFT:
+                case SINGULAR_LEFT:
+                    return INDENT.SINGULAR_LEFT;
+                default:
+                    return INDENT.SINGULAR;
             }
-            return INDENT.SINGULAR;
         }
-        if (child.equals(children.get(0)))
-            return INDENT.LEFT;
-        if (child.equals(children.get(children.size() - 1)))
-            return INDENT.RIGHT;
-        return INDENT.NONE;
+
+        switch (parent) {
+            case LEFT:
+            case SINGULAR_LEFT:
+            case TOP_LEFT:
+            case NONE:
+            case RIGHT:
+            case SINGULAR_RIGHT:
+            case TOP_RIGHT:
+            case SINGULAR:
+                if (isFirst) {
+                    return INDENT.LEFT;
+                } else if (isLast) {
+                    return INDENT.RIGHT;
+                } else {
+                    return INDENT.NONE;
+                }
+            case TOP:
+                if (isFirst) {
+                    return INDENT.TOP_LEFT;
+                } else if (isLast) {
+                    return INDENT.TOP_RIGHT;
+                } else {
+                    return INDENT.NONE;
+                }
+            default:
+                return INDENT.NONE;
+
+        }
     }
 
     protected void justified() {
@@ -533,7 +568,7 @@ public class RelationLayout extends SchemaNodeLayout {
                     double childJustified = additional + childWidth;
                     child.justify(childJustified);
                 });
-        
+
         // This is a hack until I can has maths learning
         double remaining = justifiedWidth - children.stream()
                                                     .mapToDouble(c -> c.justifiedTableColumnWidth())
