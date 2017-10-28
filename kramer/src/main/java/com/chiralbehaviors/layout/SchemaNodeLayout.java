@@ -80,9 +80,8 @@ abstract public class SchemaNodeLayout {
             case LEFT:
                 switch (child) {
                     case LEFT:
-                        return indentation + layout.getNestedLeftInset();
                     case SINGULAR:
-                        return indentation + layout.getNestedInset();
+                        return indentation + layout.getNestedLeftInset();
                     case RIGHT:
                         return layout.getNestedRightInset();
                     default:
@@ -92,10 +91,9 @@ abstract public class SchemaNodeLayout {
                 switch (child) {
                     case LEFT:
                         return layout.getNestedLeftInset();
-                    case RIGHT:
-                        return indentation + layout.getNestedRightInset();
                     case SINGULAR:
-                        return indentation + layout.getNestedInset();
+                    case RIGHT: 
+                        return indentation + layout.getNestedRightInset();
                     default:
                         return 0;
                 }
