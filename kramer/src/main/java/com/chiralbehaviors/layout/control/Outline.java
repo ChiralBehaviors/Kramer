@@ -113,8 +113,8 @@ public class Outline extends JsonControl {
             VBox column = new VBox();
             column.getStyleClass()
                   .add("column");
-            column.setMinSize(c.getWidth(), cellHeight); 
-            column.setMaxSize(c.getWidth(), cellHeight); 
+            column.setMinSize(c.getWidth(), cellHeight);
+            column.setMaxSize(c.getWidth(), cellHeight);
             controls.add(build(c, cardinality, extractor, labelWidth, column));
             span.getChildren()
                 .add(column);

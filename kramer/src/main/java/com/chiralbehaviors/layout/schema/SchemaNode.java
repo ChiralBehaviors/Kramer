@@ -206,7 +206,7 @@ abstract public class SchemaNode {
     public abstract double measure(JsonNode data, boolean singular,
                                    LayoutProvider layout);
 
-    abstract public double nestTable(INDENT indent);
+    abstract public double nestTable(INDENT indent, double indentation);
 
     public abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                                     double labelWidth,
@@ -219,9 +219,9 @@ abstract public class SchemaNode {
         this.label = label;
     }
 
-    public abstract double tableColumnWidth();
+    abstract public double tableColumnWidth();
 
-    abstract public double tableColumnWidth(INDENT indent);
+    abstract public double tableColumnWidth(INDENT child, double indentation);
 
     abstract public String toString(int indent);
 }

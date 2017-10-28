@@ -41,6 +41,7 @@ import javafx.util.Pair;
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
     private double          columnWidth;
+    private double          indentation;
     private double          labelWidth;
     private double          maxWidth;
     private final Primitive p;
@@ -68,7 +69,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     public Function<Double, Region> columnHeader() {
         return rendered -> {
-            double width = justifiedTableColumnWidth() + indentation(indent);
+            double width = tableColumnWidth();
             Control columnHeader = layout.label(width, p.getLabel(), rendered);
             columnHeader.setMinSize(width, rendered);
             columnHeader.setMaxSize(width, rendered);
@@ -80,10 +81,12 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         justifiedWidth = available;
     }
 
+    @Override
     public JsonNode extractFrom(JsonNode node) {
         return p.extractFrom(node);
     }
 
+    @Override
     public double justifiedTableColumnWidth() {
         return justifiedWidth;
     }
@@ -133,8 +136,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     }
 
-    public double nestTable(INDENT i) {
-        indent = i;
+    public double nestTable(INDENT i, double indentation) {
+        this.indentation = indentation;
         return tableColumnWidth();
     }
 
@@ -166,11 +169,17 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public double tableColumnWidth() {
-        return columnWidth;
+        return columnWidth + indentation;
     }
 
-    public double tableColumnWidth(INDENT indent) {
-        return columnWidth;
+    public double tableColumnWidth(INDENT indent, double indentation) {
+        return columnWidth + indentation;
+    }
+
+    @Override
+    protected void clear() {
+        super.clear();
+        indentation = 0;
     }
 
     protected double width(JsonNode row) {

@@ -30,15 +30,10 @@ abstract public class SchemaNodeLayout {
         NONE,
         RIGHT,
         SINGULAR,
-        SINGULAR_LEFT,
-        SINGULAR_RIGHT,
-        TOP,
-        TOP_LEFT,
-        TOP_RIGHT;
+        TOP;
     }
 
     protected double               height         = -1.0;
-    protected INDENT               indent;
     protected double               justifiedWidth = -1.0;
     protected final LayoutProvider layout;
 
@@ -79,22 +74,54 @@ abstract public class SchemaNodeLayout {
         justifiedWidth = -1.0;
     }
 
-    protected double indentation(INDENT indent) {
-        switch (indent) {
-            case TOP_LEFT:
+    protected double indentation(INDENT parent, double indentation,
+                                 INDENT child) {
+        switch (parent) {
             case LEFT:
-                return layout.getNestedLeftInset();
-            case TOP_RIGHT:
+                switch (child) {
+                    case LEFT:
+                        return indentation + layout.getNestedLeftInset();
+                    case SINGULAR:
+                        return indentation + layout.getNestedInset();
+                    case RIGHT:
+                        return layout.getNestedRightInset();
+                    default:
+                        return 0;
+                }
             case RIGHT:
-                return layout.getNestedRightInset();
+                switch (child) {
+                    case LEFT:
+                        return layout.getNestedLeftInset();
+                    case RIGHT:
+                        return indentation + layout.getNestedRightInset();
+                    case SINGULAR:
+                        return indentation + layout.getNestedInset();
+                    default:
+                        return 0;
+                }
             case SINGULAR:
-                return layout.getNestedInset();
-            case SINGULAR_LEFT:
-                return layout.getNestedInset() + layout.getNestedLeftInset();
-            case SINGULAR_RIGHT:
-                return layout.getNestedInset() + layout.getNestedRightInset();
+                double half = indentation / 2;
+                switch (child) {
+                    case LEFT:
+                        return half + layout.getNestedLeftInset();
+                    case RIGHT:
+                        return half + layout.getNestedRightInset();
+                    case SINGULAR:
+                        return indentation + layout.getNestedInset();
+                    default:
+                        return 0;
+                }
             default:
-                return 0;
+                switch (child) {
+                    case LEFT:
+                        return layout.getNestedLeftInset();
+                    case RIGHT:
+                        return layout.getNestedRightInset();
+                    case SINGULAR:
+                        return layout.getNestedInset();
+                    default:
+                        return 0;
+                }
         }
     }
 

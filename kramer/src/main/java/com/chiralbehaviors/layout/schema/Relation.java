@@ -162,11 +162,18 @@ public class Relation extends SchemaNode {
         return true;
     }
 
+    @Override
     public boolean isUseTable() {
         if (isFold()) {
             return fold.isUseTable();
         }
         return useTable;
+    }
+
+    @Override
+    public double justifiedTableColumnWidth() {
+        return isFold() ? fold.justifiedTableColumnWidth()
+                        : layout.justifiedTableColumnWidth();
     }
 
     @Override
@@ -222,9 +229,11 @@ public class Relation extends SchemaNode {
         return layout.nestTable();
     }
 
-    public double nestTable(INDENT indent) {
+    @Override
+    public double nestTable(INDENT indent, double indentation) {
         useTable = true;
-        return isFold() ? fold.nestTable(indent) : layout.nestTable(indent);
+        return isFold() ? fold.nestTable(indent, indentation)
+                        : layout.nestTable(indent, indentation);
     }
 
     @Override
@@ -282,15 +291,9 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public double justifiedTableColumnWidth() {
-        return isFold() ? fold.justifiedTableColumnWidth()
-                        : layout.justifiedTableColumnWidth();
-    }
-
-    @Override
-    public double tableColumnWidth(INDENT indent) {
-        return isFold() ? fold.tableColumnWidth(indent)
-                        : layout.tableColumnWidth(indent);
+    public double tableColumnWidth(INDENT indent, double indentation) {
+        return isFold() ? fold.tableColumnWidth(indent, indentation)
+                        : layout.tableColumnWidth(indent, indentation);
     }
 
     @Override

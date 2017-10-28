@@ -48,6 +48,7 @@ import javafx.util.Pair;
  *
  */
 public class RelationLayout extends SchemaNodeLayout {
+    protected INDENT              indent;
     private int                   averageCardinality;
     private double                columnHeaderHeight;
     private final List<ColumnSet> columnSets       = new ArrayList<>();
@@ -163,7 +164,7 @@ public class RelationLayout extends SchemaNodeLayout {
             VBox columnHeader = new VBox();
             HBox nested = new HBox();
 
-            double width = justifiedTableColumnWidth() + indentation(indent);
+            double width = justifiedTableColumnWidth();
             columnHeader.setMinSize(width, rendered);
             columnHeader.setMaxSize(width, rendered);
             double half = LayoutProvider.snap(rendered / 2.0);
@@ -208,6 +209,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                              labelWidth));
     }
 
+    @Override
     public JsonNode extractFrom(JsonNode node) {
         return r.extractFrom(node);
     }
@@ -262,6 +264,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return singular;
     }
 
+    @Override
     public double justifiedTableColumnWidth() {
         return justifiedWidth;
     }
@@ -355,19 +358,24 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double nestTable() {
-        return nestTable(INDENT.TOP);
+        return tableColumnWidth = nestTable(INDENT.TOP, 0);
     }
 
-    public double nestTable(INDENT i) {
+    public double nestTable(INDENT i, double indentation) {
         rowHeight = -1.0;
         columnHeaderHeight = -1.0;
         height = -1.0;
         indent = i;
         tableColumnWidth = r.getChildren()
                             .stream()
-                            .mapToDouble(c -> c.nestTable(indent(indent, c)))
-                            .sum()
-                           + layout.getNestedInset();
+                            .mapToDouble(c -> {
+                                INDENT child = indent(indent, c);
+                                return c.nestTable(child,
+                                                   indentation(indent,
+                                                               indentation,
+                                                               child));
+                            })
+                            .sum();
         return tableColumnWidth;
     }
 
@@ -430,10 +438,15 @@ public class RelationLayout extends SchemaNodeLayout {
         return tableColumnWidth;
     }
 
-    public double tableColumnWidth(INDENT indent) {
+    public double tableColumnWidth(INDENT indent, double indentation) {
         return r.getChildren()
                 .stream()
-                .mapToDouble(c -> c.tableColumnWidth(indent(indent, c)))
+                .mapToDouble(c -> {
+                    INDENT child = indent(indent, c);
+                    return c.tableColumnWidth(child,
+                                              indentation(indent, indentation,
+                                                          child));
+                })
                 .sum()
                + layout.getNestedInset();
     }
@@ -476,50 +489,17 @@ public class RelationLayout extends SchemaNodeLayout {
     protected INDENT indent(INDENT parent, SchemaNode child) {
         List<SchemaNode> children = r.getChildren();
 
-        boolean isFirst = child.equals(children.get(0));
-        boolean isLast = child.equals(children.get(children.size() - 1));
+        boolean isFirst = isFirst(child, children);
+        boolean isLast = isLast(child, children);
         if (isFirst && isLast) {
-            switch (parent) {
-                case RIGHT:
-                case TOP_RIGHT:
-                case SINGULAR_RIGHT:
-                    return INDENT.SINGULAR_RIGHT;
-                case LEFT:
-                case TOP_LEFT:
-                case SINGULAR_LEFT:
-                    return INDENT.SINGULAR_LEFT;
-                default:
-                    return INDENT.SINGULAR;
-            }
+            return INDENT.SINGULAR;
         }
-
-        switch (parent) {
-            case TOP:
-                if (isFirst) {
-                    return INDENT.TOP_LEFT;
-                } else if (isLast) {
-                    return INDENT.TOP_RIGHT;
-                } else {
-                    return INDENT.NONE;
-                }
-            case LEFT:
-            case SINGULAR_LEFT:
-            case TOP_LEFT:
-            case NONE:
-            case RIGHT:
-            case SINGULAR_RIGHT:
-            case TOP_RIGHT:
-            case SINGULAR:
-                if (isFirst) {
-                    return INDENT.LEFT;
-                } else if (isLast) {
-                    return INDENT.RIGHT;
-                } else {
-                    return INDENT.NONE;
-                }
-            default:
-                return INDENT.NONE;
-
+        if (isFirst) {
+            return INDENT.LEFT;
+        } else if (isLast) {
+            return INDENT.RIGHT;
+        } else {
+            return INDENT.NONE;
         }
     }
 
@@ -531,15 +511,12 @@ public class RelationLayout extends SchemaNodeLayout {
         double slack = LayoutProvider.snap(Math.max(0, justifiedWidth
                                                        - tableColumnWidth));
         List<SchemaNode> children = r.getChildren();
-        double total = LayoutProvider.snap(children.stream()
-                                                   .map(child -> child.tableColumnWidth())
-                                                   .reduce((a, b) -> a + b)
-                                                   .orElse(0.0d));
         children.stream()
                 .forEach(child -> {
                     double childWidth = child.tableColumnWidth();
-                    double additional = LayoutProvider.snap(slack * (childWidth
-                                                                     / total));
+                    double additional = LayoutProvider.snap(slack
+                                                            * (childWidth
+                                                               / tableColumnWidth));
                     double childJustified = additional + childWidth;
                     child.justify(childJustified);
                 });
@@ -575,10 +552,15 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     protected double tableWidth() {
-        return r.getChildren()
-                .stream()
-                .mapToDouble(c -> c.tableColumnWidth(indent(INDENT.TOP, c)))
-                .sum();
+        return tableColumnWidth(INDENT.TOP, 0);
+    }
+
+    private boolean isFirst(SchemaNode child, List<SchemaNode> children) {
+        return child.equals(children.get(0));
+    }
+
+    private boolean isLast(SchemaNode child, List<SchemaNode> children) {
+        return child.equals(children.get(children.size() - 1));
     }
 
 }
