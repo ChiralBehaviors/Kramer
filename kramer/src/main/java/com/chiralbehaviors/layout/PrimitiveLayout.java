@@ -69,7 +69,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     public Function<Double, Region> columnHeader() {
         return rendered -> {
-            double width = tableColumnWidth();
+            double width = justifiedTableColumnWidth();
             Control columnHeader = layout.label(width, p.getLabel(), rendered);
             columnHeader.setMinSize(width, rendered);
             columnHeader.setMaxSize(width, rendered);
@@ -88,12 +88,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double justifiedTableColumnWidth() {
-        return justifiedWidth;
+        return justifiedWidth + indentation;
     }
 
     public double justify(double available) {
-        //        justifiedWidth = available;
-        justifiedWidth = columnWidth;
+        justifiedWidth = available - indentation;
         return justifiedWidth;
     }
 

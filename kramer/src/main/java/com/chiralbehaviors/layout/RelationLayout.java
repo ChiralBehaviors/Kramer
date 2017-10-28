@@ -270,14 +270,12 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public void justify(double width) {
-        //        justifiedWidth = baseTableColumnWidth(width);
-        justifiedWidth = tableColumnWidth;
+        justifiedWidth = width;
         justified();
     }
 
     public void justifyTable(double width) {
-        //        justifiedWidth = baseTableWidth(width);
-        justifiedWidth = tableColumnWidth;
+        justifiedWidth = width;
         justified();
     }
 
