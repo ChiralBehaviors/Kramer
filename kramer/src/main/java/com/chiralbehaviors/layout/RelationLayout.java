@@ -118,26 +118,21 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public JsonControl buildNestedTable(int cardinality) {
-        return new NestedTable(this).build(singular ? 1
-                                                    : Math.min(cardinality,
-                                                               maxCardinality),
+        return new NestedTable(this).build(resolveCardinality(cardinality),
                                            this);
     }
 
     public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
                                     int cardinality) {
         return new Outline(this).build(height, columnSets, extractor,
-                                       singular ? 1
-                                                : Math.min(cardinality,
-                                                           maxCardinality),
-                                       this);
+                                       resolveCardinality(cardinality), this);
     }
 
     public double cellHeight(int card, double width) {
         if (height > 0) {
             return height;
         }
-        int cardinality = singular ? 1 : Math.min(maxCardinality, card);
+        int cardinality = resolveCardinality(card);
         if (!r.isUseTable()) {
             height = outlineHeight(cardinality);
         } else {
@@ -445,8 +440,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                               indentation(indent, indentation,
                                                           child));
                 })
-                .sum()
-               + layout.getNestedInset();
+                .sum();
     }
 
     @Override
@@ -543,6 +537,10 @@ public class RelationLayout extends SchemaNodeLayout {
 
     protected double outlineWidth(double outlineWidth) {
         return outlineWidth + layout.getNestedInset();
+    }
+
+    protected int resolveCardinality(int cardinality) {
+        return singular ? 1 : Math.min(cardinality, maxCardinality);
     }
 
     protected double rowHeight(double elementHeight) {
