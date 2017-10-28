@@ -114,8 +114,7 @@ public class Primitive extends SchemaNode {
                                                            double labelWidth,
                                                            Function<JsonNode, JsonNode> extractor,
                                                            double justified) {
-        return layout.outlineElement(field, cardinality, label, labelWidth,
-                                     extractor, justified);
+        return layout.outlineElement(cardinality, labelWidth, extractor, justified);
     }
 
     @Override

@@ -61,11 +61,15 @@ abstract public class SchemaNodeLayout {
 
     abstract public double justifiedTableColumnWidth();
 
+    abstract public void justify(double width);
+
     public double labelWidth(String label) {
         return layout.labelWidth(label);
     }
 
     abstract public double layout(double width);
+
+    abstract public double layoutWidth();
 
     abstract public double measure(JsonNode data, boolean isSingular);
 
@@ -92,7 +96,7 @@ abstract public class SchemaNodeLayout {
                     case LEFT:
                         return layout.getNestedLeftInset();
                     case SINGULAR:
-                    case RIGHT: 
+                    case RIGHT:
                         return indentation + layout.getNestedRightInset();
                     default:
                         return 0;

@@ -91,9 +91,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return justifiedWidth + indentation;
     }
 
-    public double justify(double available) {
+    public void justify(double available) {
         justifiedWidth = available - indentation;
-        return justifiedWidth;
     }
 
     @Override
@@ -140,9 +139,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return tableColumnWidth();
     }
 
-    public Pair<Consumer<JsonNode>, Parent> outlineElement(String field,
-                                                           int cardinality,
-                                                           String label,
+    public Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                            double labelWidth,
                                                            Function<JsonNode, JsonNode> extractor,
                                                            double justified) {
@@ -150,7 +147,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         box.setPrefSize(justified, height);
         VBox.setVgrow(box, Priority.ALWAYS);
 
-        Control labelControl = label(labelWidth, label);
+        Control labelControl = label(labelWidth, p.getLabel());
         labelControl.setMinWidth(labelWidth);
         labelControl.setMaxWidth(labelWidth);
         JsonControl control = buildControl(cardinality);
@@ -163,7 +160,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
         return new Pair<>(item -> {
             control.setItem(extractor.apply(item)
-                                     .get(field));
+                                     .get(p.getField()));
         }, box);
     }
 

@@ -202,7 +202,7 @@ public class Relation extends SchemaNode {
 
     @Override
     public double layoutWidth() {
-        return isFold() ? fold.layoutWidth() : layout.getLayoutWidth();
+        return isFold() ? fold.layoutWidth() : layout.layoutWidth();
     }
 
     @Override
@@ -247,8 +247,7 @@ public class Relation extends SchemaNode {
                                        extract(extractor), justified);
         }
 
-        return layout.outlineElement(field, cardinality, label, labelWidth,
-                                     extractor, useTable, justified);
+        return layout.outlineElement(cardinality, labelWidth, extractor, justified);
     }
 
     public double outlineWidth() {

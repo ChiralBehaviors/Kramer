@@ -239,7 +239,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return labelWidth;
     }
 
-    public double getLayoutWidth() {
+    public double layoutWidth() {
         return r.isUseTable() ? getTableWidth() : outlineWidth(outlineWidth);
     }
 
@@ -264,6 +264,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return justifiedWidth;
     }
 
+    @Override
     public void justify(double width) {
         justifiedWidth = width;
         justified();
@@ -376,26 +377,23 @@ public class RelationLayout extends SchemaNodeLayout {
         return baseHeight + layout.getListCellVerticalInset();
     }
 
-    public Pair<Consumer<JsonNode>, Parent> outlineElement(String field,
-                                                           int cardinality,
-                                                           String label,
+    public Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                            double labelWidth,
                                                            Function<JsonNode, JsonNode> extractor,
-                                                           boolean useTable,
                                                            double justified) {
 
         double available = justified - labelWidth;
 
         JsonControl control = r.buildControl(cardinality, extractor);
 
-        Control labelControl = label(labelWidth, label);
+        Control labelControl = label(labelWidth, r.getLabel());
         labelControl.setMinWidth(labelWidth);
         control.setPrefWidth(available);
         control.setMinHeight(height);
 
         Pane box = new HBox();
         box.getStyleClass()
-           .add(field);
+           .add(r.getField());
         box.setPrefWidth(justified);
         box.setPrefHeight(height);
         box.getChildren()
@@ -409,7 +407,7 @@ public class RelationLayout extends SchemaNodeLayout {
             }
             control.setItem(extractor.apply(item) == null ? null
                                                           : extractor.apply(item)
-                                                                     .get(field));
+                                                                     .get(r.getField()));
         }, box);
     }
 
