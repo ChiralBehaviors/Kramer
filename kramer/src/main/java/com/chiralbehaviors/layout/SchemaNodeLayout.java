@@ -26,15 +26,15 @@ import javafx.scene.control.Control;
  */
 abstract public class SchemaNodeLayout {
     public enum INDENT {
-        TOP,
-        TOP_LEFT,
-        TOP_RIGHT,
         LEFT,
         NONE,
         RIGHT,
         SINGULAR,
+        SINGULAR_LEFT,
         SINGULAR_RIGHT,
-        SINGULAR_LEFT;
+        TOP,
+        TOP_LEFT,
+        TOP_RIGHT;
     }
 
     protected double               height         = -1.0;
@@ -50,8 +50,6 @@ abstract public class SchemaNodeLayout {
         this.height = LayoutProvider.snap(height + delta);
     }
 
-    abstract public double baseTableColumnWidth(double available);
-
     public double columnHeaderHeight() {
         return layout.getTextLineHeight() + layout.getTextVerticalInset();
     }
@@ -66,17 +64,15 @@ abstract public class SchemaNodeLayout {
         return justifiedWidth;
     }
 
-    abstract public double labelWidth(String label);
+    abstract public double justifiedTableColumnWidth();
+
+    public double labelWidth(String label) {
+        return layout.labelWidth(label);
+    }
 
     abstract public double layout(double width);
 
     abstract public double measure(JsonNode data, boolean isSingular);
-
-    abstract public double tableColumnWidth(double columnWidth);
-
-    abstract protected double baseOutlineWidth(double available);
-
-    abstract public double justifiedTableColumnWidth();
 
     protected void clear() {
         height = -1.0;
@@ -85,16 +81,18 @@ abstract public class SchemaNodeLayout {
 
     protected double indentation(INDENT indent) {
         switch (indent) {
+            case TOP_LEFT:
             case LEFT:
                 return layout.getNestedLeftInset();
+            case TOP_RIGHT:
             case RIGHT:
                 return layout.getNestedRightInset();
             case SINGULAR:
                 return layout.getNestedInset();
             case SINGULAR_LEFT:
-                return layout.getNestedLeftInset();
+                return layout.getNestedInset() + layout.getNestedLeftInset();
             case SINGULAR_RIGHT:
-                return layout.getNestedRightInset();
+                return layout.getNestedInset() + layout.getNestedRightInset();
             default:
                 return 0;
         }
@@ -103,5 +101,4 @@ abstract public class SchemaNodeLayout {
     protected Control label(double labelWidth, String label) {
         return layout.label(labelWidth, label, height);
     }
-
 }
