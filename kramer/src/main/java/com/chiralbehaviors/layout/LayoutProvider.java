@@ -251,6 +251,10 @@ public class LayoutProvider {
         return listCellInsets.getTop() + listCellInsets.getBottom();
     }
 
+    double getListHorizontalInset() { 
+        return listInsets.getLeft() + listInsets.getRight();
+    }
+
     double getListVerticalInset() {
         return listInsets.getTop() + listInsets.getBottom();
     }

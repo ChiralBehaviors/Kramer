@@ -110,10 +110,9 @@ public class RelationLayout extends SchemaNodeLayout {
         r.getChildren()
          .forEach(c -> header.getChildren()
                              .add(c.buildColumnHeader()
-                                   .apply(columnHeaderHeight)));
-        double width = getJustifiedTableWidth();
-        header.setMinSize(width, columnHeaderHeight);
-        header.setMaxSize(width, columnHeaderHeight);
+                                   .apply(columnHeaderHeight))); 
+        header.setMinSize(justifiedWidth, columnHeaderHeight);
+        header.setMaxSize(justifiedWidth, columnHeaderHeight);
         return header;
     }
 
@@ -232,7 +231,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double getJustifiedTableWidth() {
-        return justifiedWidth;
+        return justifiedWidth + layout.getListHorizontalInset();
     }
 
     public double getLabelWidth() {
