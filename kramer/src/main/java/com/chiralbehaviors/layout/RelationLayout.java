@@ -231,10 +231,6 @@ public class RelationLayout extends SchemaNodeLayout {
         return labelWidth;
     }
 
-    public double layoutWidth() {
-        return r.isUseTable() ? getTableWidth() : outlineWidth(outlineWidth);
-    }
-
     public double getRowCellWidth() {
         return justifiedWidth - layout.getNestedInset();
     }
@@ -280,7 +276,7 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public double layout(double width) {
         clear();
-        double available = width - labelWidth;
+        double available = snap(width - labelWidth);
         assert available > 0;
         outlineWidth = r.getChildren()
                         .stream()
@@ -293,6 +289,11 @@ public class RelationLayout extends SchemaNodeLayout {
             return r.nestTable();
         }
         return outlineWidth(outlineWidth);
+    }
+
+    @Override
+    public double layoutWidth() {
+        return r.isUseTable() ? getTableWidth() : outlineWidth(outlineWidth);
     }
 
     @Override
@@ -417,6 +418,10 @@ public class RelationLayout extends SchemaNodeLayout {
         return outlineWidth(outlineWidth);
     }
 
+    public int resolvedCardinality() {
+        return resolveCardinality(averageCardinality);
+    }
+
     public double rowHeight(int cardinality, double justified) {
         rowHeight = rowHeight(elementHeight());
         height = (cardinality * rowHeight) + layout.getListVerticalInset();
@@ -493,6 +498,10 @@ public class RelationLayout extends SchemaNodeLayout {
         }
     }
 
+    protected boolean isScroll() {
+        return averageCardinality < maxCardinality;
+    }
+
     protected double outlineHeight(int cardinality) {
         return outlineHeight(cardinality, columnSets.stream()
                                                     .mapToDouble(cs -> cs.getCellHeight())
@@ -527,10 +536,6 @@ public class RelationLayout extends SchemaNodeLayout {
 
     private boolean isLast(SchemaNode child, List<SchemaNode> children) {
         return child.equals(children.get(children.size() - 1));
-    }
-
-    public int resolvedCardinality() {
-        return resolveCardinality(averageCardinality);
     }
 
 }

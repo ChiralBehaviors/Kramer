@@ -16,7 +16,8 @@
 
 package com.chiralbehaviors.layout;
 
-import static com.chiralbehaviors.layout.LayoutProvider.*;
+import static com.chiralbehaviors.layout.LayoutProvider.snap;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Control;

@@ -30,13 +30,17 @@ import com.sun.javafx.tk.FontLoader;
 import com.sun.javafx.tk.Toolkit;
 
 import javafx.collections.ObservableList;
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ScrollBar;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -123,11 +127,24 @@ public class LayoutProvider {
         }
     }
 
+    private static ScrollBar getScrollBar(Control source) {
+        ScrollBar scrollBar = null;
+        for (Node node : source.lookupAll(".scroll-bar")) {
+            if (node instanceof ScrollBar && ((ScrollBar) node).getOrientation()
+                                                               .equals(Orientation.HORIZONTAL)) {
+                scrollBar = (ScrollBar) node;
+            }
+        }
+        return scrollBar;
+    }
+
     private Insets                                listCellInsets = ZERO_INSETS;
     private Insets                                listInsets     = ZERO_INSETS;
+    private Bounds                                listScroll;
     private final LayoutModel                     model;
     private final Map<Primitive, PrimitiveLayout> primitives     = new HashMap<>();
     private final Map<Relation, RelationLayout>   relations      = new HashMap<>();
+
     private List<String>                          styleSheets;
 
     private Font                                  textFont       = Font.getDefault();
@@ -191,7 +208,9 @@ public class LayoutProvider {
         labelText.layout();
 
         ObservableList<String> listItems = outlineList.getItems();
-        listItems.add("Lorem ipsum");
+        for (int i = 0; i < 100; i++) {
+            listItems.add("Lorem ipsum");
+        }
         outlineList.setItems(null);
         outlineList.setItems(listItems);
         outlineList.requestLayout();
@@ -205,6 +224,7 @@ public class LayoutProvider {
         outlineListCell.applyCss();
         outlineListCell.layout();
 
+        listScroll = getScrollBar(outlineList).getLayoutBounds();
         listCellInsets = new Insets(outlineListCell.snappedTopInset(),
                                     outlineListCell.snappedRightInset(),
                                     outlineListCell.snappedBottomInset(),
@@ -297,6 +317,10 @@ public class LayoutProvider {
 
     double labelWidth(String label) {
         return textWidth(label) + 20;
+    }
+
+    double scrollWidth() {
+        return listScroll.getWidth();
     }
 
     double textWidth(String text) {

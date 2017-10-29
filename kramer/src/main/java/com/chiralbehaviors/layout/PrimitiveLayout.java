@@ -16,7 +16,8 @@
 
 package com.chiralbehaviors.layout;
 
-import static com.chiralbehaviors.layout.LayoutProvider.*;
+import static com.chiralbehaviors.layout.LayoutProvider.snap;
+
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -92,6 +93,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return snap(justifiedWidth + indentation);
     }
 
+    @Override
     public double justify(double available) {
         justifiedWidth = snap(available - indentation);
         return justifiedTableColumnWidth();
@@ -103,6 +105,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return width;
     }
 
+    @Override
     public double layoutWidth() {
         return columnWidth;
     }
