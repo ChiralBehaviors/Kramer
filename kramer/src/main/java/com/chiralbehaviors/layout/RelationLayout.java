@@ -69,6 +69,11 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public void adjustHeight(double delta) {
+        if (r.isFold()) {
+            r.getFold()
+             .adjustHeight(delta);
+            return;
+        }
         super.adjustHeight(delta);
         if (r.isUseTable()) {
             List<SchemaNode> children = r.getChildren();
@@ -182,7 +187,7 @@ public class RelationLayout extends SchemaNodeLayout {
         List<SchemaNode> children = r.getChildren();
         columnSets.clear();
         ColumnSet current = null;
-        double halfWidth = snap(justifiedWidth / 2d);
+        double halfWidth = justifiedWidth / 2d;
         for (SchemaNode child : children) {
             double childWidth = labelWidth + child.layoutWidth();
             if (childWidth > halfWidth || current == null) {
@@ -225,6 +230,10 @@ public class RelationLayout extends SchemaNodeLayout {
                                     .orElse(0.0);
         }
         return columnHeaderHeight;
+    }
+
+    public double getJustifiedTableWidth() {
+        return justifiedWidth + layout.getListHorizontalInset();
     }
 
     public double getLabelWidth() {
@@ -418,8 +427,11 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double rowHeight(int cardinality, double justified) {
-        rowHeight = rowHeight(elementHeight());
-        height = (cardinality * rowHeight) + layout.getListVerticalInset();
+        double elementHeight = elementHeight();
+        rowHeight = rowHeight(elementHeight);
+        height = (cardinality
+                  * (elementHeight + layout.getListCellVerticalInset()))
+                 + layout.getListVerticalInset();
         return height;
     }
 
@@ -449,7 +461,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     protected double baseOutlineWidth(double width) {
-        return snap(baseTableWidth(width));
+        return LayoutProvider.snap(baseTableWidth(width));
     }
 
     protected double baseTableWidth(double width) {
@@ -527,10 +539,6 @@ public class RelationLayout extends SchemaNodeLayout {
 
     private boolean isLast(SchemaNode child, List<SchemaNode> children) {
         return child.equals(children.get(children.size() - 1));
-    }
-
-    public int resolvedCardinality() {
-        return resolveCardinality(averageCardinality);
     }
 
 }

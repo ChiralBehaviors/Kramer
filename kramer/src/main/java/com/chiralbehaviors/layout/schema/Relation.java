@@ -53,15 +53,6 @@ public class Relation extends SchemaNode {
         children.add(child);
     }
 
-    @Override
-    public void adjustHeight(double delta) {
-        if (isFold()) {
-            fold.adjustHeight(delta);
-        } else {
-            layout.adjustHeight(delta);
-        }
-    }
-
     public void autoLayout(double width) {
         double justified = LayoutProvider.snap(width);
         layout(justified);

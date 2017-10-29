@@ -118,7 +118,8 @@ public class NestedTable extends JsonControl {
 
     private ListView<JsonNode> buildNestedRow(double rendered,
                                               RelationLayout layout) {
-        int cardinality = layout.resolvedCardinality();
+        int cardinality = layout.isSingular() ? 1
+                                              : layout.getAverageCardinality();
         double calculatedHeight = layout.getHeight();
         double deficit = Math.max(0, rendered - calculatedHeight);
         double childDeficit = LayoutProvider.snap(Math.max(0, deficit
@@ -181,8 +182,13 @@ public class NestedTable extends JsonControl {
         rows.setMinSize(width, height);
         rows.setMaxSize(width, height);
 
-        rows.setCellFactory(listView -> buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
-                                                                 layout)));
+        rows.setCellFactory(listView -> {
+            ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
+                                                               layout));
+            cell.setMinWidth(0);
+            cell.setPrefWidth(1);
+            return cell;
+        });
         return rows;
     }
 
