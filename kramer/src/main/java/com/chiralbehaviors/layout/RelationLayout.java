@@ -69,11 +69,6 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public void adjustHeight(double delta) {
-        if (r.isFold()) {
-            r.getFold()
-             .adjustHeight(delta);
-            return;
-        }
         super.adjustHeight(delta);
         if (r.isUseTable()) {
             List<SchemaNode> children = r.getChildren();
@@ -423,11 +418,8 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double rowHeight(int cardinality, double justified) {
-        double elementHeight = elementHeight();
-        rowHeight = rowHeight(elementHeight);
-        height = (cardinality
-                  * (elementHeight + layout.getListCellVerticalInset()))
-                 + layout.getListVerticalInset();
+        rowHeight = rowHeight(elementHeight());
+        height = (cardinality * rowHeight) + layout.getListVerticalInset();
         return height;
     }
 
@@ -535,6 +527,10 @@ public class RelationLayout extends SchemaNodeLayout {
 
     private boolean isLast(SchemaNode child, List<SchemaNode> children) {
         return child.equals(children.get(children.size() - 1));
+    }
+
+    public int resolvedCardinality() {
+        return resolveCardinality(averageCardinality);
     }
 
 }
