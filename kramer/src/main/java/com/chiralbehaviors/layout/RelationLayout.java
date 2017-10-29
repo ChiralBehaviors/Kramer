@@ -187,7 +187,7 @@ public class RelationLayout extends SchemaNodeLayout {
         List<SchemaNode> children = r.getChildren();
         columnSets.clear();
         ColumnSet current = null;
-        double halfWidth = justifiedWidth / 2d;
+        double halfWidth = snap(justifiedWidth / 2d);
         for (SchemaNode child : children) {
             double childWidth = labelWidth + child.layoutWidth();
             if (childWidth > halfWidth || current == null) {
@@ -230,10 +230,6 @@ public class RelationLayout extends SchemaNodeLayout {
                                     .orElse(0.0);
         }
         return columnHeaderHeight;
-    }
-
-    public double getJustifiedTableWidth() {
-        return justifiedWidth + layout.getListHorizontalInset();
     }
 
     public double getLabelWidth() {
@@ -461,7 +457,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     protected double baseOutlineWidth(double width) {
-        return LayoutProvider.snap(baseTableWidth(width));
+        return snap(baseTableWidth(width));
     }
 
     protected double baseTableWidth(double width) {
