@@ -16,6 +16,7 @@
 
 package com.chiralbehaviors.layout;
 
+import static com.chiralbehaviors.layout.LayoutProvider.*;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Control;
@@ -61,10 +62,10 @@ abstract public class SchemaNodeLayout {
 
     abstract public double justifiedTableColumnWidth();
 
-    abstract public void justify(double width);
+    abstract public double justify(double width);
 
     public double labelWidth(String label) {
-        return layout.labelWidth(label);
+        return snap(layout.labelWidth(label));
     }
 
     abstract public double layout(double width);

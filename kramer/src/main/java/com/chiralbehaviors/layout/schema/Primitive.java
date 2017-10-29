@@ -82,8 +82,8 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public void justify(double available) {
-        layout.justify(available);
+    public double justify(double available) {
+        return layout.justify(available);
     }
 
     @Override
@@ -114,7 +114,8 @@ public class Primitive extends SchemaNode {
                                                            double labelWidth,
                                                            Function<JsonNode, JsonNode> extractor,
                                                            double justified) {
-        return layout.outlineElement(cardinality, labelWidth, extractor, justified);
+        return layout.outlineElement(cardinality, labelWidth, extractor,
+                                     justified);
     }
 
     @Override

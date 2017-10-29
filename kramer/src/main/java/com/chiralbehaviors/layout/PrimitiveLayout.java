@@ -16,6 +16,7 @@
 
 package com.chiralbehaviors.layout;
 
+import static com.chiralbehaviors.layout.LayoutProvider.*;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -78,7 +79,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public void compress(double available) {
-        justifiedWidth = available;
+        justifiedWidth = snap(available);
     }
 
     @Override
@@ -88,11 +89,12 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double justifiedTableColumnWidth() {
-        return justifiedWidth + indentation;
+        return snap(justifiedWidth + indentation);
     }
 
-    public void justify(double available) {
-        justifiedWidth = available - indentation;
+    public double justify(double available) {
+        justifiedWidth = snap(available - indentation);
+        return justifiedTableColumnWidth();
     }
 
     @Override
@@ -123,9 +125,9 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         }
         double averageWidth = data.size() == 0 ? 0 : (sum / data.size());
 
-        columnWidth = Math.max(labelWidth,
-                               layout.totalTextWidth(LayoutProvider.snap(Math.max(p.getDefaultWidth(),
-                                                                                  averageWidth))));
+        columnWidth = snap(Math.max(labelWidth,
+                                    layout.totalTextWidth(LayoutProvider.snap(Math.max(p.getDefaultWidth(),
+                                                                                       averageWidth)))));
         if (maxWidth > averageWidth) {
             variableLength = true;
         }
@@ -165,11 +167,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public double tableColumnWidth() {
-        return columnWidth + indentation;
+        return snap(columnWidth + indentation);
     }
 
     public double tableColumnWidth(INDENT indent, double indentation) {
-        return columnWidth + indentation;
+        return snap(columnWidth + indentation);
     }
 
     @Override

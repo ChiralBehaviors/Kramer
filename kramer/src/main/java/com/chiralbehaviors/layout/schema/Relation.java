@@ -177,20 +177,12 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public void justify(double width) {
+    public double justify(double width) {
         if (isFold()) {
-            fold.justify(width);
+            return fold.justify(width);
         } else {
             assert useTable : "Not a nested table";
-            layout.justify(width);
-        }
-    }
-
-    public void justifyTable(double width) {
-        if (isFold()) {
-            fold.justifyTable(width);
-        } else {
-            layout.justifyTable(width);
+            return layout.justify(width);
         }
     }
 
@@ -247,7 +239,8 @@ public class Relation extends SchemaNode {
                                        extract(extractor), justified);
         }
 
-        return layout.outlineElement(cardinality, labelWidth, extractor, justified);
+        return layout.outlineElement(cardinality, labelWidth, extractor,
+                                     justified);
     }
 
     public double outlineWidth() {

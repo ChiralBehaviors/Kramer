@@ -251,7 +251,7 @@ public class LayoutProvider {
         return listCellInsets.getTop() + listCellInsets.getBottom();
     }
 
-    double getListHorizontalInset() { 
+    double getListHorizontalInset() {
         return listInsets.getLeft() + listInsets.getRight();
     }
 
@@ -300,8 +300,7 @@ public class LayoutProvider {
     }
 
     double textWidth(String text) {
-        return snap(FONT_LOADER.computeStringWidth(String.format("%s", text),
-                                                   textFont));
+        return snap(FONT_LOADER.computeStringWidth(text, textFont));
     }
 
     double totalTextWidth(double justifiedWidth) {
