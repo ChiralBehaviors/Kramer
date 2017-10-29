@@ -155,12 +155,11 @@ public class RelationLayout extends SchemaNodeLayout {
             VBox columnHeader = new VBox();
             HBox nested = new HBox();
 
-            double width = justifiedTableColumnWidth();
-            columnHeader.setMinSize(width, rendered);
-            columnHeader.setMaxSize(width, rendered);
+            columnHeader.setMinSize(justifiedWidth, rendered);
+            columnHeader.setMaxSize(justifiedWidth, rendered);
             double half = LayoutProvider.snap(rendered / 2.0);
             columnHeader.getChildren()
-                        .add(layout.label(width, r.getLabel(), half));
+                        .add(layout.label(justifiedWidth, r.getLabel(), half));
             columnHeader.getChildren()
                         .add(nested);
 
@@ -245,11 +244,6 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public boolean isSingular() {
         return singular;
-    }
-
-    @Override
-    public double justifiedTableColumnWidth() {
-        return justifiedWidth;
     }
 
     @Override

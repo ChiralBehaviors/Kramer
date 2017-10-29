@@ -37,6 +37,7 @@ abstract public class SchemaNodeLayout {
 
     protected double               height         = -1.0;
     protected double               justifiedWidth = -1.0;
+    protected double               lastScroll     = 0.0;
     protected final LayoutProvider layout;
 
     public SchemaNodeLayout(LayoutProvider layout) {
@@ -61,8 +62,6 @@ abstract public class SchemaNodeLayout {
         return justifiedWidth;
     }
 
-    abstract public double justifiedTableColumnWidth();
-
     abstract public double justify(double width);
 
     public double labelWidth(String label) {
@@ -78,6 +77,7 @@ abstract public class SchemaNodeLayout {
     protected void clear() {
         height = -1.0;
         justifiedWidth = -1.0;
+        lastScroll = 0.0;
     }
 
     protected double indentation(INDENT parent, double indentation,

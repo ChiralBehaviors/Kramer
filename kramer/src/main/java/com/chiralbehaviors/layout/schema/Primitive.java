@@ -77,11 +77,6 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public double justifiedTableColumnWidth() {
-        return layout.justifiedTableColumnWidth();
-    }
-
-    @Override
     public double justify(double available) {
         return layout.justify(available);
     }

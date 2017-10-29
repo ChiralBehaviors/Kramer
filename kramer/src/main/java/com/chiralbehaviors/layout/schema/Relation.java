@@ -180,12 +180,6 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public double justifiedTableColumnWidth() {
-        return isFold() ? fold.justifiedTableColumnWidth()
-                        : layout.justifiedTableColumnWidth();
-    }
-
-    @Override
     public double justify(double width) {
         if (isFold()) {
             return fold.justify(width);

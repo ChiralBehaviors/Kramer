@@ -89,11 +89,6 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double justifiedTableColumnWidth() {
-        return snap(justifiedWidth + indentation);
-    }
-
-    @Override
     public double justify(double available) {
         justifiedWidth = snap(available - indentation);
         return justifiedTableColumnWidth();
@@ -181,6 +176,10 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     protected void clear() {
         super.clear();
         indentation = 0;
+    }
+
+    protected double justifiedTableColumnWidth() {
+        return snap(justifiedWidth + indentation);
     }
 
     protected double width(JsonNode row) {
