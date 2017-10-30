@@ -25,7 +25,6 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
-import com.chiralbehaviors.layout.SchemaNodeLayout.INDENT;
 import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -205,7 +204,7 @@ abstract public class SchemaNode {
     public abstract double measure(JsonNode data, boolean singular,
                                    LayoutProvider layout);
 
-    abstract public double nestTable(INDENT indent, double indentation);
+    abstract public double nestTableColumn();
 
     public abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                                     double labelWidth,
@@ -220,7 +219,7 @@ abstract public class SchemaNode {
 
     abstract public double tableColumnWidth();
 
-    abstract public double tableColumnWidth(INDENT child, double indentation);
+    abstract public double calculateTableColumnWidth();
 
     abstract public String toString(int indent);
 }

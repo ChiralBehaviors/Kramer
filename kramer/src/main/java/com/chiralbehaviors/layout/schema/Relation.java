@@ -24,7 +24,6 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.SchemaNodeLayout.INDENT;
 import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -226,10 +225,10 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public double nestTable(INDENT indent, double indentation) {
+    public double nestTableColumn() {
         useTable = true;
-        return isFold() ? fold.nestTable(indent, indentation)
-                        : layout.nestTable(indent, indentation);
+        return isFold() ? fold.nestTableColumn()
+                        : layout.nestTableColumn();
     }
 
     @Override
@@ -287,9 +286,9 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public double tableColumnWidth(INDENT indent, double indentation) {
-        return isFold() ? fold.tableColumnWidth(indent, indentation)
-                        : layout.tableColumnWidth(indent, indentation);
+    public double calculateTableColumnWidth() {
+        return isFold() ? fold.calculateTableColumnWidth()
+                        : layout.calculateTableColumnWidth();
     }
 
     @Override

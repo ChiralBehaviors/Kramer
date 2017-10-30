@@ -27,13 +27,6 @@ import javafx.scene.control.Control;
  *
  */
 abstract public class SchemaNodeLayout {
-    public enum INDENT {
-        LEFT,
-        NONE,
-        RIGHT,
-        SINGULAR,
-        TOP;
-    }
 
     protected double               height         = -1.0;
     protected double               justifiedWidth = -1.0;
@@ -76,55 +69,6 @@ abstract public class SchemaNodeLayout {
     protected void clear() {
         height = -1.0;
         justifiedWidth = -1.0;
-    }
-
-    protected double indentation(INDENT parent, double indentation,
-                                 INDENT child) {
-        switch (parent) {
-            case LEFT:
-                switch (child) {
-                    case LEFT:
-                    case SINGULAR:
-                        return indentation + layout.getNestedLeftInset();
-                    case RIGHT:
-                        return layout.getNestedRightInset();
-                    default:
-                        return 0;
-                }
-            case RIGHT:
-                switch (child) {
-                    case LEFT:
-                        return layout.getNestedLeftInset();
-                    case SINGULAR:
-                    case RIGHT:
-                        return indentation + layout.getNestedRightInset();
-                    default:
-                        return 0;
-                }
-            case SINGULAR:
-                double half = indentation / 2.0;
-                switch (child) {
-                    case LEFT:
-                        return half + layout.getNestedLeftInset();
-                    case RIGHT:
-                        return half + layout.getNestedRightInset();
-                    case SINGULAR:
-                        return indentation + layout.getNestedInset();
-                    default:
-                        return 0;
-                }
-            default:
-                switch (child) {
-                    case LEFT:
-                        return layout.getNestedLeftInset();
-                    case RIGHT:
-                        return layout.getNestedRightInset();
-                    case SINGULAR:
-                        return layout.getNestedInset();
-                    default:
-                        return 0;
-                }
-        }
     }
 
     protected Control label(double labelWidth, String label) {

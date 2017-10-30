@@ -54,6 +54,8 @@ public class NestedTable extends JsonControl {
         buildRows(cardinality, layout);
         Region header = layout.buildColumnHeader();
         VBox frame = new VBox(header, rows);
+        frame.setPrefWidth(layout.getJustifiedWidth());
+        frame.setMaxWidth(USE_PREF_SIZE);
         getChildren().add(frame);
         return this;
     }
@@ -61,6 +63,8 @@ public class NestedTable extends JsonControl {
     public Pair<Consumer<JsonNode>, Region> buildPrimitive(double rendered,
                                                            PrimitiveLayout layout) {
         JsonControl control = layout.buildControl(1);
+        control.setPrefWidth(layout.getJustifiedWidth());
+        control.setMaxWidth(USE_PREF_SIZE);
         return new Pair<>(node -> control.setItem(layout.extractFrom(node)),
                           control);
     }
@@ -140,7 +144,7 @@ public class NestedTable extends JsonControl {
         row.setMinHeight(rendered);
         row.setMaxHeight(rendered); 
 
-        row.setPrefSize(layout.getJustifiedWidth(),
+        row.setPrefSize(layout.getJustifiedTableColumnWidth(),
                            rendered);
         row.setMaxSize(USE_COMPUTED_SIZE,
                            rendered);
@@ -190,17 +194,17 @@ public class NestedTable extends JsonControl {
         double rowHeight = layout.getRowHeight();
         rows.setFixedCellSize(rowHeight);
 
-        double width = layout.getJustifiedWidth();
+        double width = layout.getJustifiedTableColumnWidth();
         double height = layout.getHeight() - layout.getColumnHeaderHeight();
 
-        rows.setMinSize(width, height);
+        rows.setPrefSize(width, height);
         rows.setMaxSize(USE_COMPUTED_SIZE, height);
 
         rows.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
                                                                layout));
-            cell.setPrefWidth(layout.getJustifiedWidth());
-            cell.setMaxWidth(layout.getJustifiedWidth());
+            cell.setMinWidth(0);
+            cell.setPrefWidth(1);
             return cell;
         });
         return rows;
