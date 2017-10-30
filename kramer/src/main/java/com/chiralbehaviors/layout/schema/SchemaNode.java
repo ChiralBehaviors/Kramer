@@ -25,6 +25,7 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
+import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
 import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -131,7 +132,6 @@ abstract public class SchemaNode {
 
     String  field;
     String  label;
-    boolean useTable = false;
 
     public SchemaNode() {
     }
@@ -191,10 +191,6 @@ abstract public class SchemaNode {
         return false;
     }
 
-    public boolean isUseTable() {
-        return useTable;
-    }
-
     public abstract double justify(double width);
 
     public abstract double layout(double width);
@@ -204,7 +200,7 @@ abstract public class SchemaNode {
     public abstract double measure(JsonNode data, boolean singular,
                                    LayoutProvider layout);
 
-    abstract public double nestTableColumn();
+    abstract public double nestTableColumn(Indent indent, double indentation);
 
     public abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
                                                                     double labelWidth,

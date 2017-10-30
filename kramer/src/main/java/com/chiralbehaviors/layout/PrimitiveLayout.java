@@ -43,10 +43,12 @@ import javafx.util.Pair;
  *
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
+    protected double        indentation = 0.0;
     private double          columnWidth;
     private double          labelWidth;
     private double          maxWidth;
     private final Primitive p;
+
     @SuppressWarnings("unused")
     private boolean         variableLength;
 
@@ -57,6 +59,10 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     public PrimitiveControl buildControl(int cardinality) {
         return new PrimitiveControl(p.getField());
+    }
+
+    public double calculateTableColumnWidth() {
+        return columnWidth;
     }
 
     public double cellHeight(double justified) {
@@ -71,7 +77,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     public BiFunction<Double, Boolean, Region> columnHeader() {
         return (rendered, last) -> {
-            double width = justifiedTableColumnWidth();
+            double width = getJustifiedTableColumnWidth();
             Control columnHeader = layout.label(width, p.getLabel(), rendered);
             columnHeader.setPrefSize(width, rendered);
             columnHeader.setMaxSize(Region.USE_COMPUTED_SIZE, rendered);
@@ -88,10 +94,14 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return p.extractFrom(node);
     }
 
+    public double getJustifiedTableColumnWidth() {
+        return justifiedWidth + indentation;
+    }
+
     @Override
     public double justify(double available) {
-        justifiedWidth = snap(available);
-        return justifiedTableColumnWidth();
+        justifiedWidth = snap(available - indentation);
+        return getJustifiedTableColumnWidth();
     }
 
     @Override
@@ -134,8 +144,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     }
 
-    public double nestTableColumn() {
-        //        this.indentation = indentation;
+    public double nestTableColumn(Indent indent, double indentation) {
+        this.indentation = indentation;
         return tableColumnWidth();
     }
 
@@ -165,15 +175,13 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public double tableColumnWidth() {
-        return columnWidth;
+        return columnWidth + indentation;
     }
 
-    public double calculateTableColumnWidth() {
-        return columnWidth;
-    }
-
-    protected double justifiedTableColumnWidth() {
-        return justifiedWidth;
+    @Override
+    protected void clear() {
+        super.clear();
+        indentation = 0.0;
     }
 
     protected double width(JsonNode row) {

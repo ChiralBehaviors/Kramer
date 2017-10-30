@@ -24,6 +24,7 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
 import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -40,6 +41,7 @@ import javafx.util.Pair;
  *
  */
 public class Relation extends SchemaNode {
+    boolean                        useTable = false;
     private boolean                autoFold = true;
     private final List<SchemaNode> children = new ArrayList<>();
     private Relation               fold;
@@ -75,7 +77,7 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public BiFunction<Double,Boolean, Region> buildColumnHeader() {
+    public BiFunction<Double, Boolean, Region> buildColumnHeader() {
         if (isFold()) {
             return fold.buildColumnHeader();
         }
@@ -94,6 +96,12 @@ public class Relation extends SchemaNode {
                                     Function<JsonNode, JsonNode> extractor) {
         return useTable ? buildNestedTable(extractor, cardinality)
                         : buildOutline(extractor, cardinality);
+    }
+
+    @Override
+    public double calculateTableColumnWidth() {
+        return isFold() ? fold.calculateTableColumnWidth()
+                        : layout.calculateTableColumnWidth();
     }
 
     @Override
@@ -171,7 +179,6 @@ public class Relation extends SchemaNode {
         return true;
     }
 
-    @Override
     public boolean isUseTable() {
         if (isFold()) {
             return fold.isUseTable();
@@ -225,10 +232,10 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public double nestTableColumn() {
+    public double nestTableColumn(Indent indent, double indentation) {
         useTable = true;
-        return isFold() ? fold.nestTableColumn()
-                        : layout.nestTableColumn();
+        return isFold() ? fold.nestTableColumn(indent, indentation)
+                        : layout.nestTableColumn(indent, indentation);
     }
 
     @Override
@@ -283,12 +290,6 @@ public class Relation extends SchemaNode {
     @Override
     public double tableColumnWidth() {
         return isFold() ? fold.tableColumnWidth() : layout.tableColumnWidth();
-    }
-
-    @Override
-    public double calculateTableColumnWidth() {
-        return isFold() ? fold.calculateTableColumnWidth()
-                        : layout.calculateTableColumnWidth();
     }
 
     @Override

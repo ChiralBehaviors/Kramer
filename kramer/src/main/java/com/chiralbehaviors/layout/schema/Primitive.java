@@ -22,6 +22,7 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.PrimitiveLayout;
+import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
 import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -99,9 +100,8 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public double nestTableColumn() {
-        useTable = true;
-        return layout.nestTableColumn();
+    public double nestTableColumn(Indent indent,double indentation) { 
+        return layout.nestTableColumn(indent, indentation);
     }
 
     @Override

@@ -28,6 +28,96 @@ import javafx.scene.control.Control;
  */
 abstract public class SchemaNodeLayout {
 
+    public enum Indent {
+        LEFT {
+            @Override
+            public double indent(Indent child, LayoutProvider layout,
+                                 double indentation) {
+                switch (child) {
+                    case LEFT:
+                    case SINGULAR:
+                        return indentation + layout.getNestedLeftInset();
+                    case RIGHT:
+                        return layout.getNestedRightInset();
+                    default:
+                        return 0;
+                }
+            }
+
+            @Override
+            public double indent(LayoutProvider layout, double indentation) {
+                return indentation + layout.getNestedLeftInset();
+            }
+        },
+        NONE,
+        RIGHT {
+            @Override
+            public double indent(Indent child, LayoutProvider layout,
+                                 double indentation) {
+                switch (child) {
+                    case LEFT:
+                        return layout.getNestedLeftInset();
+                    case SINGULAR:
+                    case RIGHT:
+                        return indentation + layout.getNestedRightInset();
+                    default:
+                        return 0;
+                }
+            }
+
+            @Override
+            public double indent(LayoutProvider layout, double indentation) {
+                return indentation + layout.getNestedRightInset();
+            }
+        },
+        SINGULAR {
+            @Override
+            public double indent(Indent child, LayoutProvider layout,
+                                 double indentation) {
+                double half = indentation / 2;
+                switch (child) {
+                    case LEFT:
+                        return half + layout.getNestedLeftInset();
+                    case RIGHT:
+                        return half + layout.getNestedRightInset();
+                    case SINGULAR:
+                        return indentation + layout.getNestedInset();
+                    default:
+                        return 0;
+                }
+            }
+
+            @Override
+            public double indent(LayoutProvider layout, double indentation) {
+                return indentation + layout.getNestedInset();
+            }
+        },
+        TOP {
+            public double indent(Indent child, LayoutProvider layout,
+                                 double indentation) {
+                return 0;
+            };
+        };
+
+        public double indent(Indent child, LayoutProvider layout,
+                             double indentation) {
+            switch (child) {
+                case LEFT:
+                    return layout.getNestedLeftInset();
+                case RIGHT:
+                    return layout.getNestedRightInset();
+                case SINGULAR:
+                    return layout.getNestedInset();
+                default:
+                    return 0;
+            }
+        };
+
+        public double indent(LayoutProvider layout, double indentation) {
+            return indentation;
+        };
+    }
+
     protected double               height         = -1.0;
     protected double               justifiedWidth = -1.0;
     protected final LayoutProvider layout;
@@ -49,6 +139,8 @@ abstract public class SchemaNodeLayout {
     public double getHeight() {
         return height;
     }
+
+    abstract public double getJustifiedTableColumnWidth();
 
     public double getJustifiedWidth() {
         return justifiedWidth;

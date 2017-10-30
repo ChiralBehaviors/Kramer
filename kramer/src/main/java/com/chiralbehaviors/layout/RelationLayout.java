@@ -127,6 +127,14 @@ public class RelationLayout extends SchemaNodeLayout {
                                        resolveCardinality(cardinality), this);
     }
 
+    public double calculateTableColumnWidth() {
+        return r.getChildren()
+                .stream()
+                .mapToDouble(c -> c.calculateTableColumnWidth())
+                .sum()
+               + layout.getNestedInset();
+    }
+
     public double cellHeight(int card, double width) {
         if (height > 0) {
             return height;
@@ -229,6 +237,10 @@ public class RelationLayout extends SchemaNodeLayout {
                                     .orElse(0.0);
         }
         return columnHeaderHeight;
+    }
+
+    public double getJustifiedTableColumnWidth() {
+        return justifiedWidth + layout.getNestedInset();
     }
 
     public double getLabelWidth() {
@@ -354,18 +366,23 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double nestTable() {
-        tableColumnWidth = nestTableColumn();
-        return tableColumnWidth + layout.getNestedInset();
+        tableColumnWidth = nestTableColumn(Indent.TOP,
+                                           0);
+        return tableColumnWidth;
     }
 
-    public double nestTableColumn() {
+    public double nestTableColumn(Indent indent, double indentation) {
         rowHeight = -1.0;
         columnHeaderHeight = -1.0;
         height = -1.0;
         tableColumnWidth = snap(r.getChildren()
                                  .stream()
                                  .mapToDouble(c -> {
-                                     return c.nestTableColumn();
+                                     Indent child = indent(indent, c);
+                                     return c.nestTableColumn(child,
+                                                              indent.indent(child,
+                                                                            layout,
+                                                                            indentation));
                                  })
                                  .sum());
         return tableColumnWidth;
@@ -428,13 +445,6 @@ public class RelationLayout extends SchemaNodeLayout {
         return tableColumnWidth;
     }
 
-    public double calculateTableColumnWidth() {
-        return r.getChildren()
-                .stream()
-                .mapToDouble(c -> c.calculateTableColumnWidth())
-                .sum();
-    }
-
     @Override
     public String toString() {
         return String.format("RelationLayout [r=%s x %s:%s, {%s, %s, %s} ]",
@@ -456,6 +466,10 @@ public class RelationLayout extends SchemaNodeLayout {
         return rendered -> header.apply(rendered, last);
     }
 
+    protected double calculateTableWidth() {
+        return calculateTableColumnWidth();
+    }
+
     @Override
     protected void clear() {
         super.clear();
@@ -474,6 +488,23 @@ public class RelationLayout extends SchemaNodeLayout {
     protected double getTableWidth() {
         assert tableColumnWidth > 0.0;
         return tableColumnWidth;
+    }
+
+    protected Indent indent(Indent parent, SchemaNode child) {
+        List<SchemaNode> children = r.getChildren();
+
+        boolean isFirst = isFirst(child, children);
+        boolean isLast = isLast(child, children);
+        if (isFirst && isLast) {
+            return Indent.SINGULAR;
+        }
+        if (isFirst) {
+            return Indent.LEFT;
+        } else if (isLast) {
+            return Indent.RIGHT;
+        } else {
+            return Indent.NONE;
+        }
     }
 
     protected boolean isFirst(SchemaNode child, List<SchemaNode> children) {
@@ -507,13 +538,4 @@ public class RelationLayout extends SchemaNodeLayout {
     protected double rowHeight(double elementHeight) {
         return elementHeight + layout.getListCellVerticalInset();
     }
-
-    protected double calculateTableWidth() {
-        return calculateTableColumnWidth() + layout.getNestedInset();
-    }
-
-    public double getJustifiedTableColumnWidth() {
-        return justifiedWidth + layout.getNestedInset();
-    }
-
 }
