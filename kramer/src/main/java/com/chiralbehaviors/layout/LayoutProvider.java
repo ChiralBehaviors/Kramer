@@ -275,8 +275,20 @@ public class LayoutProvider {
         return listInsets.getLeft() + listInsets.getRight();
     }
 
+    double getListLeftHorizontalInset() {
+        return listInsets.getLeft();
+    }
+
+    double getListRightHorizontalInset() {
+        return listInsets.getRight();
+    }
+
     double getListVerticalInset() {
         return listInsets.getTop() + listInsets.getBottom();
+    }
+
+    double getNestedCellInset() {
+        return getNestedRightInset() + getNestedLeftInset();
     }
 
     double getNestedInset() {
@@ -287,8 +299,16 @@ public class LayoutProvider {
         return listInsets.getLeft() + listCellInsets.getLeft();
     }
 
+    double getNestedListInset() {
+        return getNestedLeftInset() + getNestedRightInset();
+    }
+
     double getNestedRightInset() {
         return listInsets.getRight() + listCellInsets.getRight();
+    }
+
+    double getScrollWidth() {
+        return listScroll.getWidth();
     }
 
     double getTextHorizontalInset() {
@@ -317,10 +337,6 @@ public class LayoutProvider {
 
     double labelWidth(String label) {
         return textWidth(label) + 20;
-    }
-
-    double scrollWidth() {
-        return listScroll.getWidth();
     }
 
     double textWidth(String text) {

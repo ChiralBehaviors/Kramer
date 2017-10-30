@@ -71,6 +71,8 @@ public class Outline extends JsonControl {
             ListCell<JsonNode> cell = listCell(columnSets, averageCardinality,
                                                layout.baseOutlineCellHeight(cellHeight),
                                                extractor, layout);
+            cell.setPrefWidth(layout.getJustifiedWidth());
+            cell.setMaxWidth(USE_COMPUTED_SIZE);
             layout.apply(cell);
             return cell;
         });
@@ -114,7 +116,7 @@ public class Outline extends JsonControl {
             column.getStyleClass()
                   .add("column");
             column.setMinSize(c.getWidth(), cellHeight);
-            column.setMaxSize(c.getWidth(), cellHeight);
+            column.setMaxSize(USE_COMPUTED_SIZE, cellHeight);
             controls.add(build(c, cardinality, extractor, labelWidth, column));
             span.getChildren()
                 .add(column);

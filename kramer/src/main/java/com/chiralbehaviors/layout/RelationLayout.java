@@ -21,6 +21,8 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -104,11 +106,13 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public Region buildColumnHeader() {
         HBox header = new HBox();
-        r.getChildren()
-         .forEach(c -> header.getChildren()
-                             .add(c.buildColumnHeader()
-                                   .apply(columnHeaderHeight)));
-        header.setMinSize(justifiedWidth, columnHeaderHeight);
+        List<SchemaNode> children = r.getChildren();
+        children.forEach(c -> header.getChildren()
+                                    .add(c.buildColumnHeader()
+                                          .apply(columnHeaderHeight,
+                                                 isLast(c, children))));
+        header.setMinSize(justifiedWidth - layout.getScrollWidth(),
+                          columnHeaderHeight);
         header.setMaxSize(justifiedWidth, columnHeaderHeight);
         return header;
     }
@@ -146,12 +150,14 @@ public class RelationLayout extends SchemaNodeLayout {
         return height;
     }
 
-    public Function<Double, Region> columnHeader() {
-        List<Function<Double, Region>> nestedHeaders = r.getChildren()
-                                                        .stream()
-                                                        .map(c -> c.buildColumnHeader())
-                                                        .collect(Collectors.toList());
-        return rendered -> {
+    public BiFunction<Double, Boolean, Region> columnHeader() {
+        List<SchemaNode> children = r.getChildren();
+        List<Function<Double, Region>> nestedHeaders = children.stream()
+                                                               .map(c -> buildColumnHeader(c,
+                                                                                           isLast(c,
+                                                                                                  children)))
+                                                               .collect(Collectors.toList());
+        return (rendered, last) -> {
             VBox columnHeader = new VBox();
             HBox nested = new HBox();
 
@@ -173,7 +179,7 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public void compress(double justified) {
         if (r.isUseTable()) {
-            r.justify(justified);
+            r.justify(baseOutlineWidth(justified));
             return;
         }
         columnSets.clear();
@@ -204,9 +210,9 @@ public class RelationLayout extends SchemaNodeLayout {
         return r.extractFrom(node);
     }
 
-    public void forEach(Consumer<? super SchemaNode> action) {
-        r.getChildren()
-         .forEach(action);
+    public void forEach(BiConsumer<? super SchemaNode, Boolean> action) {
+        List<SchemaNode> children = r.getChildren();
+        children.forEach(c -> action.accept(c, isLast(c, children)));
     }
 
     public int getAverageCardinality() {
@@ -253,17 +259,17 @@ public class RelationLayout extends SchemaNodeLayout {
                                                          tableColumnWidth);
         double slack = Math.max(0, width - tableColumnWidth);
         List<SchemaNode> children = r.getChildren();
-        justifiedWidth = children.stream()
-                                 .mapToDouble(child -> {
-                                     double childWidth = child.tableColumnWidth();
-                                     double additional = snap(slack
+        justifiedWidth = snap(children.stream()
+                                      .mapToDouble(child -> {
+                                          double childWidth = child.tableColumnWidth();
+                                          double additional = slack
                                                               * (childWidth
-                                                                 / tableColumnWidth));
-                                     double childJustified = snap(additional
-                                                                  + childWidth);
-                                     return child.justify(childJustified);
-                                 })
-                                 .sum();
+                                                                 / tableColumnWidth);
+                                          double childJustified = snap(additional
+                                                                       + childWidth);
+                                          return child.justify(childJustified);
+                                      })
+                                      .sum());
         return justifiedWidth;
     }
 
@@ -278,7 +284,7 @@ public class RelationLayout extends SchemaNodeLayout {
                         .max()
                         .orElse(0.0)
                        + labelWidth;
-        double tableWidth = tableWidth();
+        double tableWidth = calculateTableWidth();
         if (tableWidth <= outlineWidth) {
             return r.nestTable();
         }
@@ -349,7 +355,8 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double nestTable() {
-        return tableColumnWidth = snap(nestTable(INDENT.TOP, 0));
+        tableColumnWidth = nestTable(INDENT.TOP, 0);
+        return tableColumnWidth;
     }
 
     public double nestTable(INDENT i, double indentation) {
@@ -428,16 +435,15 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double tableColumnWidth(INDENT indent, double indentation) {
-        return snap(r.getChildren()
-                     .stream()
-                     .mapToDouble(c -> {
-                         INDENT child = indent(indent, c);
-                         return c.tableColumnWidth(child,
-                                                   indentation(indent,
-                                                               indentation,
-                                                               child));
-                     })
-                     .sum());
+        return r.getChildren()
+                .stream()
+                .mapToDouble(c -> {
+                    INDENT child = indent(indent, c);
+                    return c.tableColumnWidth(child,
+                                              indentation(indent, indentation,
+                                                          child));
+                })
+                .sum();
     }
 
     @Override
@@ -453,6 +459,12 @@ public class RelationLayout extends SchemaNodeLayout {
 
     protected double baseTableWidth(double width) {
         return width - layout.getNestedInset();
+    }
+
+    protected Function<Double, Region> buildColumnHeader(SchemaNode c,
+                                                         boolean last) {
+        BiFunction<Double, Boolean, Region> header = c.buildColumnHeader();
+        return rendered -> header.apply(rendered, last);
     }
 
     @Override
@@ -492,8 +504,12 @@ public class RelationLayout extends SchemaNodeLayout {
         }
     }
 
-    protected boolean isScroll() {
-        return averageCardinality < maxCardinality;
+    protected boolean isFirst(SchemaNode child, List<SchemaNode> children) {
+        return child.equals(children.get(0));
+    }
+
+    protected boolean isLast(SchemaNode child, List<SchemaNode> children) {
+        return child.equals(children.get(children.size() - 1));
     }
 
     protected double outlineHeight(int cardinality) {
@@ -520,16 +536,8 @@ public class RelationLayout extends SchemaNodeLayout {
         return elementHeight + layout.getListCellVerticalInset();
     }
 
-    protected double tableWidth() {
-        return tableColumnWidth(INDENT.TOP, 0) + layout.getListVerticalInset();
-    }
-
-    private boolean isFirst(SchemaNode child, List<SchemaNode> children) {
-        return child.equals(children.get(0));
-    }
-
-    private boolean isLast(SchemaNode child, List<SchemaNode> children) {
-        return child.equals(children.get(children.size() - 1));
+    protected double calculateTableWidth() {
+        return tableColumnWidth(INDENT.TOP, 0);
     }
 
 }

@@ -19,6 +19,7 @@ package com.chiralbehaviors.layout;
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -69,12 +70,12 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return height;
     }
 
-    public Function<Double, Region> columnHeader() {
-        return rendered -> {
+    public BiFunction<Double, Boolean, Region> columnHeader() {
+        return (rendered, last) -> {
             double width = justifiedTableColumnWidth();
             Control columnHeader = layout.label(width, p.getLabel(), rendered);
-            columnHeader.setMinSize(width, rendered);
-            columnHeader.setMaxSize(width, rendered);
+            columnHeader.setPrefSize(width, rendered);
+            columnHeader.setMaxSize(Region.USE_COMPUTED_SIZE, rendered);
             return columnHeader;
         };
     }
@@ -123,9 +124,9 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         }
         double averageWidth = data.size() == 0 ? 0 : (sum / data.size());
 
-        columnWidth = snap(Math.max(labelWidth,
-                                    layout.totalTextWidth(LayoutProvider.snap(Math.max(p.getDefaultWidth(),
-                                                                                       averageWidth)))));
+        columnWidth = Math.max(labelWidth,
+                               layout.totalTextWidth(LayoutProvider.snap(Math.max(p.getDefaultWidth(),
+                                                                                  averageWidth))));
         if (maxWidth > averageWidth) {
             variableLength = true;
         }
@@ -165,11 +166,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public double tableColumnWidth() {
-        return snap(columnWidth + indentation);
+        return columnWidth + indentation;
     }
 
     public double tableColumnWidth(INDENT indent, double indentation) {
-        return snap(columnWidth + indentation);
+        return columnWidth + indentation;
     }
 
     @Override
@@ -179,7 +180,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     protected double justifiedTableColumnWidth() {
-        return snap(justifiedWidth + indentation);
+        return justifiedWidth + indentation;
     }
 
     protected double width(JsonNode row) {

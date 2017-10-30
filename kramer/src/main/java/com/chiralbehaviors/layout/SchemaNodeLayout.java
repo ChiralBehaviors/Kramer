@@ -37,7 +37,6 @@ abstract public class SchemaNodeLayout {
 
     protected double               height         = -1.0;
     protected double               justifiedWidth = -1.0;
-    protected double               lastScroll     = 0.0;
     protected final LayoutProvider layout;
 
     public SchemaNodeLayout(LayoutProvider layout) {
@@ -77,7 +76,6 @@ abstract public class SchemaNodeLayout {
     protected void clear() {
         height = -1.0;
         justifiedWidth = -1.0;
-        lastScroll = 0.0;
     }
 
     protected double indentation(INDENT parent, double indentation,
@@ -104,7 +102,7 @@ abstract public class SchemaNodeLayout {
                         return 0;
                 }
             case SINGULAR:
-                double half = indentation / 2;
+                double half = indentation / 2.0;
                 switch (child) {
                     case LEFT:
                         return half + layout.getNestedLeftInset();

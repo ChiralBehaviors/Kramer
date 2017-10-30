@@ -18,6 +18,7 @@ package com.chiralbehaviors.layout.schema;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -75,7 +76,7 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public Function<Double, Region> buildColumnHeader() {
+    public BiFunction<Double,Boolean, Region> buildColumnHeader() {
         if (isFold()) {
             return fold.buildColumnHeader();
         }

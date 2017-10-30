@@ -18,6 +18,7 @@ package com.chiralbehaviors.layout.control;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.LayoutProvider;
@@ -60,10 +61,6 @@ public class NestedTable extends JsonControl {
     public Pair<Consumer<JsonNode>, Region> buildPrimitive(double rendered,
                                                            PrimitiveLayout layout) {
         JsonControl control = layout.buildControl(1);
-
-        control.setMinSize(layout.getJustifiedWidth(), rendered);
-        control.setMaxSize(layout.getJustifiedWidth(), rendered);
-
         return new Pair<>(node -> control.setItem(layout.extractFrom(node)),
                           control);
     }
@@ -103,12 +100,21 @@ public class NestedTable extends JsonControl {
         cell.setMinSize(layout.getRowCellWidth(), rendered);
         cell.setMaxSize(layout.getRowCellWidth(), rendered);
         List<Consumer<JsonNode>> consumers = new ArrayList<>();
-        Consumer<? super SchemaNode> action = child -> {
+        BiConsumer<? super SchemaNode, Boolean> action = (child, last) -> {
             Pair<Consumer<JsonNode>, Region> column = child.buildColumn(this,
                                                                         rendered);
             consumers.add(column.getKey());
+            Region control = column.getValue();
+//            control.setMinSize(child.getLayout()
+//                                    .getJustifiedWidth()
+//                               - layout.scrollWidth(last), rendered); 
+            control.setPrefSize(child.getLayout()
+                               .getJustifiedWidth(),
+                          rendered);
+            control.setMaxSize(USE_COMPUTED_SIZE,
+                               rendered);
             cell.getChildren()
-                .add(column.getValue());
+                .add(control);
         };
         layout.forEach(action);
         return new Pair<>(node -> consumers.forEach(c -> {
@@ -130,13 +136,22 @@ public class NestedTable extends JsonControl {
         layout.apply(row);
 
         row.setFixedCellSize(extended);
-        double width = layout.getJustifiedWidth();
+        
+        row.setMinHeight(rendered);
+        row.setMaxHeight(rendered); 
 
-        row.setMinSize(width, rendered);
-        row.setMaxSize(width, rendered);
+        row.setPrefSize(layout.getJustifiedWidth(),
+                           rendered);
+        row.setMaxSize(USE_COMPUTED_SIZE,
+                           rendered);
 
-        row.setCellFactory(listView -> buildRowCell(buildColumn(layout.baseRowCellHeight(extended),
-                                                                layout)));
+        row.setCellFactory(listView -> {
+            ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(extended),
+                                                                    layout));
+            cell.setMinWidth(0);
+            cell.setPrefWidth(1);
+            return cell;
+        });
         return row;
     }
 
@@ -179,13 +194,13 @@ public class NestedTable extends JsonControl {
         double height = layout.getHeight() - layout.getColumnHeaderHeight();
 
         rows.setMinSize(width, height);
-        rows.setMaxSize(width, height);
+        rows.setMaxSize(USE_COMPUTED_SIZE, height);
 
         rows.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
                                                                layout));
-            cell.setMinWidth(0);
-            cell.setPrefWidth(1);
+            cell.setPrefWidth(layout.getJustifiedWidth());
+            cell.setMaxWidth(layout.getJustifiedWidth());
             return cell;
         });
         return rows;

@@ -19,6 +19,7 @@ package com.chiralbehaviors.layout.schema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -152,7 +153,7 @@ abstract public class SchemaNode {
     abstract public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
                                                                  double rendered);
 
-    abstract public Function<Double, Region> buildColumnHeader();
+    abstract public BiFunction<Double, Boolean, Region> buildColumnHeader();
 
     public abstract double cellHeight(int cardinality, double available);
 
