@@ -95,7 +95,16 @@ abstract public class SchemaNodeLayout {
         TOP {
             public double indent(Indent child, LayoutProvider layout,
                                  double indentation) {
-                return 0;
+                switch (child) {
+                    case LEFT:
+                        return layout.getListLeftHorizontalInset();
+                    case RIGHT:
+                        return layout.getListRightHorizontalInset();
+                    case SINGULAR:
+                        return layout.getListHorizontalInset();
+                    default:
+                        return 0;
+                }
             };
         };
 

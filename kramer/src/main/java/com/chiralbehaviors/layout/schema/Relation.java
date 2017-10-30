@@ -18,12 +18,13 @@ package com.chiralbehaviors.layout.schema;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiFunction;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
 import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.NestedTable;
@@ -77,11 +78,11 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public BiFunction<Double, Boolean, Region> buildColumnHeader() {
+    public Function<Double, Region> buildColumnHeader(Map<SchemaNodeLayout, Region> headers) {
         if (isFold()) {
-            return fold.buildColumnHeader();
+            return fold.buildColumnHeader(headers);
         }
-        return layout.columnHeader();
+        return layout.columnHeader(headers);
     }
 
     public JsonControl buildControl(int cardinality, double width) {

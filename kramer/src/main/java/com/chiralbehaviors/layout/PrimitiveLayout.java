@@ -19,7 +19,7 @@ package com.chiralbehaviors.layout;
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.List;
-import java.util.function.BiFunction;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -75,12 +75,13 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return height;
     }
 
-    public BiFunction<Double, Boolean, Region> columnHeader() {
-        return (rendered, last) -> {
+    public Function<Double, Region> columnHeader(Map<SchemaNodeLayout, Region> headers) {
+        return rendered -> {
             double width = getJustifiedTableColumnWidth();
             Control columnHeader = layout.label(width, p.getLabel(), rendered);
-            columnHeader.setPrefSize(width, rendered);
-            columnHeader.setMaxSize(Region.USE_COMPUTED_SIZE, rendered);
+            columnHeader.setMinSize(width, rendered);
+            columnHeader.setMaxSize(width, rendered);
+            headers.put(this, columnHeader);
             return columnHeader;
         };
     }
@@ -92,6 +93,10 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public JsonNode extractFrom(JsonNode node) {
         return p.extractFrom(node);
+    }
+
+    public double getIndentation() {
+        return indentation;
     }
 
     public double getJustifiedTableColumnWidth() {

@@ -21,9 +21,10 @@ import static javafx.scene.layout.Region.USE_PREF_SIZE;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -104,16 +105,15 @@ public class RelationLayout extends SchemaNodeLayout {
         return extended - layout.getListCellVerticalInset();
     }
 
-    public Region buildColumnHeader() {
+    public Map<SchemaNodeLayout, Region> buildColumnHeader() {
+        Map<SchemaNodeLayout, Region> headers = new HashMap<>();
         HBox header = new HBox();
+        headers.put(this, header);
         List<SchemaNode> children = r.getChildren();
         children.forEach(c -> header.getChildren()
-                                    .add(c.buildColumnHeader()
-                                          .apply(columnHeaderHeight,
-                                                 isLast(c, children))));
-        header.setMinSize(justifiedWidth, columnHeaderHeight);
-        header.setMaxSize(USE_PREF_SIZE, columnHeaderHeight);
-        return header;
+                                    .add(c.buildColumnHeader(headers)
+                                          .apply(columnHeaderHeight)));
+        return headers;
     }
 
     public JsonControl buildNestedTable(int cardinality) {
@@ -157,19 +157,17 @@ public class RelationLayout extends SchemaNodeLayout {
         return height;
     }
 
-    public BiFunction<Double, Boolean, Region> columnHeader() {
+    public Function<Double, Region> columnHeader(Map<SchemaNodeLayout, Region> headers) {
         List<SchemaNode> children = r.getChildren();
         List<Function<Double, Region>> nestedHeaders = children.stream()
-                                                               .map(c -> buildColumnHeader(c,
-                                                                                           isLast(c,
-                                                                                                  children)))
+                                                               .map(c -> c.buildColumnHeader(headers))
                                                                .collect(Collectors.toList());
-        return (rendered, last) -> {
+        return rendered -> {
             VBox columnHeader = new VBox();
             HBox nested = new HBox();
 
-            columnHeader.setPrefSize(justifiedWidth, rendered);
-            columnHeader.setMaxSize(USE_PREF_SIZE, rendered);
+            columnHeader.setMinSize(justifiedWidth, rendered);
+            columnHeader.setMaxSize(justifiedWidth, rendered);
             double half = LayoutProvider.snap(rendered / 2.0);
             columnHeader.getChildren()
                         .add(layout.label(justifiedWidth, r.getLabel(), half));
@@ -180,6 +178,7 @@ public class RelationLayout extends SchemaNodeLayout {
                 nested.getChildren()
                       .add(n.apply(half));
             });
+            headers.put(this, columnHeader);
             return columnHeader;
         };
     }
@@ -366,8 +365,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double nestTable() {
-        tableColumnWidth = nestTableColumn(Indent.TOP,
-                                           0);
+        tableColumnWidth = nestTableColumn(Indent.TOP, 0);
         return tableColumnWidth;
     }
 
@@ -458,12 +456,6 @@ public class RelationLayout extends SchemaNodeLayout {
 
     protected double baseTableWidth(double width) {
         return width - layout.getNestedInset();
-    }
-
-    protected Function<Double, Region> buildColumnHeader(SchemaNode c,
-                                                         boolean last) {
-        BiFunction<Double, Boolean, Region> header = c.buildColumnHeader();
-        return rendered -> header.apply(rendered, last);
     }
 
     protected double calculateTableWidth() {
