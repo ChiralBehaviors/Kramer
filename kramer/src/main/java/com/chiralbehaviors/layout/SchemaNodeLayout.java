@@ -92,21 +92,7 @@ abstract public class SchemaNodeLayout {
                 return indentation + layout.getNestedInset();
             }
         },
-        TOP {
-            public double indent(Indent child, LayoutProvider layout,
-                                 double indentation) {
-                switch (child) {
-                    case LEFT:
-                        return layout.getListLeftHorizontalInset();
-                    case RIGHT:
-                        return layout.getListRightHorizontalInset();
-                    case SINGULAR:
-                        return layout.getListHorizontalInset();
-                    default:
-                        return 0;
-                }
-            };
-        };
+        TOP;
 
         public double indent(Indent child, LayoutProvider layout,
                              double indentation) {

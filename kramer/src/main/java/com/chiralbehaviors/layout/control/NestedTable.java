@@ -19,7 +19,6 @@ package com.chiralbehaviors.layout.control;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.LayoutProvider;
@@ -68,8 +67,9 @@ public class NestedTable extends JsonControl {
                                                            PrimitiveLayout layout) {
         JsonControl control = layout.buildControl(1);
         double width = layout.getJustifiedWidth();
-        control.setPrefWidth(width);
-        control.setMaxWidth(USE_COMPUTED_SIZE);
+        control.setMinWidth(width);
+        control.setMaxWidth(width);
+//        control.setMaxWidth(USE_COMPUTED_SIZE);
         Region header = columnHeaders.get(layout);
         control.widthProperty()
                .addListener((o, p, n) -> {
@@ -121,15 +121,14 @@ public class NestedTable extends JsonControl {
         cell.getStyleClass()
             .add(layout.getStyleClass());
         List<Consumer<JsonNode>> consumers = new ArrayList<>();
-        BiConsumer<? super SchemaNode, Boolean> action = (child, last) -> {
+        layout.forEach(child -> {
             Pair<Consumer<JsonNode>, Region> column = child.buildColumn(this,
                                                                         rendered);
             consumers.add(column.getKey());
             Region control = column.getValue();
             cell.getChildren()
                 .add(control);
-        };
-        layout.forEach(action);
+        });
         return new Pair<>(node -> consumers.forEach(c -> {
             c.accept(node);
         }), cell);
@@ -221,18 +220,18 @@ public class NestedTable extends JsonControl {
         rows.setPrefSize(width, height);
         rows.setMaxSize(USE_COMPUTED_SIZE, height);
 
-//        Region header = columnHeaders.get(layout);
-//        rows.widthProperty()
-//            .addListener((o, p, n) -> {
-//                double w = o.getValue()
-//                            .doubleValue();
-//                header.setMinWidth(w);
-//                header.setMaxWidth(w);
-//                header.setPrefWidth(w);
-//            });
-//        header.setMinWidth(width);
-//        header.setMaxWidth(width);
-//        header.setPrefWidth(width);
+        //        Region header = columnHeaders.get(layout);
+        //        rows.widthProperty()
+        //            .addListener((o, p, n) -> {
+        //                double w = o.getValue()
+        //                            .doubleValue();
+        //                header.setMinWidth(w);
+        //                header.setMaxWidth(w);
+        //                header.setPrefWidth(w);
+        //            });
+        //        header.setMinWidth(width);
+        //        header.setMaxWidth(width);
+        //        header.setPrefWidth(width);
 
         rows.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),

@@ -17,14 +17,12 @@
 package com.chiralbehaviors.layout;
 
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
-import static javafx.scene.layout.Region.USE_PREF_SIZE;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -216,9 +214,9 @@ public class RelationLayout extends SchemaNodeLayout {
         return r.extractFrom(node);
     }
 
-    public void forEach(BiConsumer<? super SchemaNode, Boolean> action) {
+    public void forEach(Consumer<? super SchemaNode> action) {
         List<SchemaNode> children = r.getChildren();
-        children.forEach(c -> action.accept(c, isLast(c, children)));
+        children.forEach(c -> action.accept(c));
     }
 
     public int getAverageCardinality() {
