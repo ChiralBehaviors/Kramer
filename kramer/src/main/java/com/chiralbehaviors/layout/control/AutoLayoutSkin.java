@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout;
+package com.chiralbehaviors.layout.control;
 
 import javafx.scene.control.SkinBase;
 
-/**
- *
- * @author hhildebrand
- *
- */
-public class RelationTableRowSkin extends SkinBase<RelationTableRow> {
+public class AutoLayoutSkin extends SkinBase<AutoLayout> {
 
-    protected RelationTableRowSkin(RelationTableRow control) {
+    protected AutoLayoutSkin(AutoLayout control) {
         super(control);
     }
 }

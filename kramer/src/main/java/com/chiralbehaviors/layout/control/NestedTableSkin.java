@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016 Chiral Behaviors, LLC, all rights reserved.
+ * Copyright (c) 2017 Chiral Behaviors, LLC, all rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,17 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout;
+package com.chiralbehaviors.layout.control;
 
 import javafx.scene.control.SkinBase;
 
-public class AutoLayoutSkin extends SkinBase<AutoLayoutView> {
+/**
+ * @author halhildebrand
+ *
+ */
+public class NestedTableSkin extends SkinBase<NestedTable> {
 
-    protected AutoLayoutSkin(AutoLayoutView control) {
+    protected NestedTableSkin(NestedTable control) {
         super(control);
     }
 }

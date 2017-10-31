@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout;
+package com.chiralbehaviors.layout.control;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.chiralbehaviors.layout.Layout.LayoutModel;
+import com.chiralbehaviors.layout.LayoutProvider;
+import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -27,40 +28,39 @@ import com.fasterxml.jackson.databind.JsonNode;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
-import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
 
 /**
  * @author hhildebrand
  *
  */
-public class AutoLayoutView extends Control {
-    private static final java.util.logging.Logger log         = Logger.getLogger(AutoLayoutView.class.getCanonicalName());
+public class AutoLayout extends JsonControl {
+    private static final java.util.logging.Logger log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
 
+    private JsonControl                           control;
     private SimpleObjectProperty<JsonNode>        data        = new SimpleObjectProperty<>();
-    private Control                               layout;
     private double                                layoutWidth = 0.0;
     private LayoutModel                           model;
     private final SimpleObjectProperty<Relation>  root        = new SimpleObjectProperty<>();
-    private Layout                                style;
+    private LayoutProvider                        style;
 
-    public AutoLayoutView() {
+    public AutoLayout() {
         this(null);
     }
 
-    public AutoLayoutView(Relation root) {
+    public AutoLayout(Relation root) {
         this(root, new LayoutModel() {
         });
     }
 
-    public AutoLayoutView(Relation root, LayoutModel model) {
+    public AutoLayout(Relation root, LayoutModel model) {
         this.model = model;
-        style = new Layout(this.model);
+        style = new LayoutProvider(this.model);
         this.root.set(root);
         widthProperty().addListener((o, p, c) -> resize(c.doubleValue()));
         data.addListener((o, p, c) -> setContent());
-        getStylesheets().addListener((ListChangeListener<String>) c -> style = new Layout(getStylesheets(),
-                                                                                          AutoLayoutView.this.model));
+        getStylesheets().addListener((ListChangeListener<String>) c -> style = new LayoutProvider(getStylesheets(),
+                                                                                                  AutoLayout.this.model));
     }
 
     public void autoLayout() {
@@ -100,7 +100,8 @@ public class AutoLayoutView extends Control {
         return root;
     }
 
-    public void setData(JsonNode node) {
+    @Override
+    public void setItem(JsonNode node) {
         data.set(node);
     }
 
@@ -113,25 +114,34 @@ public class AutoLayoutView extends Control {
         return new AutoLayoutSkin(this);
     }
 
+    private void autoLayout(JsonNode zeeData, Relation relation, double width) {
+        relation.autoLayout(width);
+        control = relation.buildControl(zeeData.size(), width);
+        control.setPrefWidth(width);
+        relation.setItem(control, zeeData);
+        getChildren().add(control);
+    }
+
     private void resize(double width) {
+        if (layoutWidth == width) {
+            return;
+        }
+
+        layoutWidth = width;
+        getChildren().clear();
+
+        Relation relation = root.get();
+        if (relation == null) {
+            return;
+        }
+
+        JsonNode zeeData = data.get();
+        if (zeeData == null) {
+            return;
+        }
+
         try {
-            if (layoutWidth == width) {
-                return;
-            }
-            layoutWidth = width;
-            getChildren().clear();
-            Relation relation = root.get();
-            if (relation == null) {
-                return;
-            }
-            JsonNode zeeData = data.get();
-            if (zeeData == null) {
-                return;
-            }
-            relation.autoLayout(zeeData.size(), style, width);
-            layout = relation.buildControl(zeeData.size(), style, width);
-            relation.setItems(layout, zeeData, style);
-            getChildren().add(layout);
+            autoLayout(zeeData, relation, width);
         } catch (Throwable e) {
             log.log(Level.SEVERE,
                     String.format("Unable to resize to %s", width), e);
@@ -140,10 +150,10 @@ public class AutoLayoutView extends Control {
 
     private void setContent() {
         try {
-            if (layout != null) {
-                SchemaNode relation = root.get();
+            if (control != null) {
+                Relation relation = root.get();
                 if (relation != null) {
-                    relation.setItems(layout, data.get(), style);
+                    relation.setItem(control, data.get());
                 }
             }
         } catch (Throwable e) {

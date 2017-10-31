@@ -29,8 +29,8 @@ import javax.ws.rs.client.WebTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.chiralbehaviors.layout.AutoLayoutView;
-import com.chiralbehaviors.layout.Layout.LayoutModel;
+import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
+import com.chiralbehaviors.layout.control.AutoLayout;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil.QueryException;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.toy.Page.Route;
@@ -71,7 +71,7 @@ public class SinglePageApp extends Application implements LayoutModel {
     private WebTarget                endpoint;
     private final Stack<PageContext> forward = new Stack<>();
     private Button                   forwardButton;
-    private AutoLayoutView           layout;
+    private AutoLayout           layout;
     private Stage                    primaryStage;
     private Button                   reloadButton;
 
@@ -204,13 +204,13 @@ public class SinglePageApp extends Application implements LayoutModel {
         displayCurrentPage();
     }
 
-    private AutoLayoutView layout(PageContext pageContext) throws QueryException {
-        AutoLayoutView layout = new AutoLayoutView(pageContext.getRoot(), this);
+    private AutoLayout layout(PageContext pageContext) throws QueryException {
+        AutoLayout layout = new AutoLayout(pageContext.getRoot(), this);
         layout.getStylesheets()
               .add(getClass().getResource("/non-nested.css")
                              .toExternalForm());
         JsonNode data = pageContext.evaluate(endpoint);
-        layout.setData(data);
+        layout.setItem(data);
         layout.measure(data);
         AnchorPane.setTopAnchor(layout, 0.0);
         AnchorPane.setLeftAnchor(layout, 0.0);

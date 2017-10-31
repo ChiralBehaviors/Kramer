@@ -10,7 +10,7 @@
 It's all about levels.
 
 ### Building
-Kramer requires [maven 3.3+](https://maven.apache.org =800x600), Java 1.8+.  To build Kramer, cd to the top level directory:
+Kramer requires [maven 3.3+](https://maven.apache.org), Java 1.8+.  To build Kramer, cd to the top level directory:
 
     mvn clean install
     

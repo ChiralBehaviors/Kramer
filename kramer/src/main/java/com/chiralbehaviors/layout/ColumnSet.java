@@ -14,27 +14,19 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.schema;
+package com.chiralbehaviors.layout;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import com.chiralbehaviors.layout.Layout;
-import com.fasterxml.jackson.databind.JsonNode;
-
-import javafx.scene.Parent;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.util.Pair;
+import com.chiralbehaviors.layout.schema.SchemaNode;
 
 /**
- * 
+ *
  * @author halhildebrand
  *
  */
@@ -42,14 +34,9 @@ public class ColumnSet {
 
     private double             cellHeight;
     private final List<Column> columns = new ArrayList<>();
-    private final double       labelWidth;
 
     {
         columns.add(new Column(0d));
-    }
-
-    public ColumnSet(double labelWidth) {
-        this.labelWidth = labelWidth;
     }
 
     public void add(SchemaNode node) {
@@ -57,46 +44,50 @@ public class ColumnSet {
                .add(node);
     }
 
-    public void compress(int cardinality, Layout layout, double available) {
+    public void adjustHeight(double delta) {
+        cellHeight = LayoutProvider.snap(cellHeight + delta);
+        columns.forEach(c -> c.adjustHeight(delta));
+    }
+
+    public void compress(int cardinality, double justified, double labelWidth) {
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
                                    .size(),
-                        max(1,
-                            (int) (available
-                                   / firstColumn.maxWidth(layout,
-                                                          labelWidth))));
-        double fieldWidth = available - labelWidth;
+                        max(1, (int) (justified
+                                      / firstColumn.maxWidth(labelWidth))));
+        double fieldWidth = justified - labelWidth;
         if (count == 1) {
-            firstColumn.setWidth(available);
+            firstColumn.setWidth(justified);
             firstColumn.getFields()
                        .forEach(f -> {
-                           f.compress(layout, fieldWidth);
+                           f.compress(fieldWidth);
                        });
-            cellHeight = firstColumn.cellHeight(cardinality, layout,
-                                                labelWidth);
+            cellHeight = firstColumn.cellHeight(cardinality, labelWidth);
             return;
         }
 
         // compression
-        double columnWidth = available / count;
-        firstColumn.getFields()
-                   .forEach(f -> f.compress(layout, columnWidth - labelWidth));
+        double columnWidth = justified / count;
         firstColumn.setWidth(columnWidth);
+        double compressed = columnWidth - labelWidth;
+        firstColumn.getFields()
+                   .forEach(f -> {
+                       f.compress(compressed);
+                   });
         IntStream.range(1, count)
                  .forEach(i -> columns.add(new Column(columnWidth)));
-        cellHeight = firstColumn.cellHeight(cardinality, layout, labelWidth);
+        cellHeight = firstColumn.cellHeight(cardinality, labelWidth);
         double lastHeight;
         do {
             lastHeight = cellHeight;
             for (int i = 0; i < columns.size() - 1; i++) {
                 while (columns.get(i)
                               .slideRight(cardinality, columns.get(i + 1),
-                                          layout, columnWidth, labelWidth)) {
+                                          columnWidth, labelWidth)) {
                 }
             }
             cellHeight = columns.stream()
                                 .mapToDouble(c -> c.cellHeight(cardinality,
-                                                               layout,
                                                                labelWidth))
                                 .max()
                                 .orElse(0d);
@@ -108,6 +99,10 @@ public class ColumnSet {
         return cellHeight;
     }
 
+    public List<Column> getColumns() {
+        return columns;
+    }
+
     public double getWidth() {
         return columns.stream()
                       .mapToDouble(c -> c.getWidth())
@@ -117,32 +112,5 @@ public class ColumnSet {
     @Override
     public String toString() {
         return String.format("ColumnSet [%s] [%s]", cellHeight, columns);
-    }
-
-    void adjustHeight(double delta) {
-        cellHeight = Layout.snap(cellHeight + delta);
-        columns.forEach(c -> c.adjustHeight(delta));
-    }
-
-    Pair<Consumer<JsonNode>, Parent> build(int cardinality,
-                                           Function<JsonNode, JsonNode> extractor,
-                                           Layout layout) {
-        HBox span = new HBox();
-        span.setPrefHeight(cellHeight);
-        List<Consumer<JsonNode>> controls = new ArrayList<>();
-        columns.forEach(c -> {
-            VBox cell = new VBox();
-            cell.setPrefHeight(cellHeight);
-            cell.setPrefWidth(c.getWidth());
-            controls.add(c.build(cardinality, cell, cardinality, extractor,
-                                 layout, labelWidth));
-            span.getChildren()
-                .add(cell);
-        });
-        return new Pair<>(item -> controls.forEach(c -> c.accept(item)), span);
-    }
-
-    List<Column> getColumns() {
-        return columns;
     }
 }

@@ -16,22 +16,19 @@
 
 package com.chiralbehaviors.layout.schema;
 
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import com.chiralbehaviors.layout.Layout;
+import com.chiralbehaviors.layout.LayoutProvider;
+import com.chiralbehaviors.layout.PrimitiveLayout;
+import com.chiralbehaviors.layout.SchemaNodeLayout;
+import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
+import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import javafx.scene.Parent;
-import javafx.scene.control.Control;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.Region;
 import javafx.util.Pair;
 
 /**
@@ -40,10 +37,8 @@ import javafx.util.Pair;
  */
 public class Primitive extends SchemaNode {
 
-    private double  columnWidth       = 0;
-    private double  maxWidth          = 0;
-    private double  valueDefaultWidth = 0;
-    private boolean variableLength    = false;
+    private double          defaultWidth = 0;
+    private PrimitiveLayout layout;
 
     public Primitive() {
         super();
@@ -54,194 +49,93 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
+    public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
+                                                        double rendered) {
+        return table.buildPrimitive(rendered, layout);
+    }
+
+    @Override
+    public Function<Double, Region> buildColumnHeader(Map<SchemaNodeLayout, Region> headers) {
+        return layout.columnHeader(headers);
+    }
+
+    @Override
+    public double cellHeight(int cardinality, double justified) {
+        return layout.cellHeight(justified);
+    }
+
+    @Override
+    public void compress(double available) {
+        layout.compress(available);
+    }
+
+    public double getDefaultWidth() {
+        return defaultWidth;
+    }
+
+    @Override
+    public PrimitiveLayout getLayout() {
+        return layout;
+    }
+
+    @Override
+    public double justify(double available) {
+        return layout.justify(available);
+    }
+
+    @Override
+    public double layout(double width) {
+        return layout.layout(width);
+    }
+
+    @Override
+    public double layoutWidth() {
+        return layout.layoutWidth();
+    }
+
+    @Override
+    public double measure(JsonNode data, boolean singular,
+                          LayoutProvider provider) {
+        layout = provider.layout(this);
+        return layout.measure(data, singular);
+    }
+
+    @Override
+    public double nestTableColumn(Indent indent, double indentation) {
+        return layout.nestTableColumn(indent, indentation);
+    }
+
+    @Override
+    public Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
+                                                           double labelWidth,
+                                                           Function<JsonNode, JsonNode> extractor,
+                                                           double justified) {
+        return layout.outlineElement(cardinality, labelWidth, extractor,
+                                     justified);
+    }
+
+    @Override
+    public double rowHeight(int cardinality, double width) {
+        return cellHeight(cardinality, width);
+    }
+
+    @Override
+    public double tableColumnWidth() {
+        return layout.tableColumnWidth();
+    }
+
+    @Override
+    public double calculateTableColumnWidth() {
+        return layout.calculateTableColumnWidth();
+    }
+
+    @Override
     public String toString() {
-        return String.format("Primitive [%s:%.2f:%.2f]", label, columnWidth,
-                             justifiedWidth);
+        return String.format("Primitive [%s]", label);
     }
 
     @Override
     public String toString(int indent) {
         return toString();
-    }
-
-    @Override
-    Function<Double, Pair<Consumer<JsonNode>, Control>> buildColumn(int cardinality,
-                                                                    Function<JsonNode, JsonNode> extractor,
-                                                                    Map<SchemaNode, TableColumn<JsonNode, ?>> columnMap,
-                                                                    Layout layout,
-                                                                    double inset,
-                                                                    INDENT indent) {
-        return resolvedHeight -> {
-            Label control = buildControl(1, layout);
-            control.setPrefHeight(resolvedHeight);
-            bind(control, columnMap.get(this), inset);
-            //            layout.getModel()
-            //                  .apply(control, Primitive.this);
-            return new Pair<>(node -> setItems(control, extractFrom(node),
-                                               layout),
-                              control);
-        };
-    }
-
-    @Override
-    TableColumn<JsonNode, JsonNode> buildColumn(Layout layout, double inset,
-                                                INDENT indent) {
-        TableColumn<JsonNode, JsonNode> column = super.buildColumn(layout,
-                                                                   inset,
-                                                                   indent);
-        column.setPrefWidth(justifiedWidth + inset);
-        return column;
-    }
-
-    @Override
-    double cellHeight(int cardinality, Layout layout, double justified) {
-        if (height != null) {
-            return height;
-        }
-        double rows = Math.ceil((maxWidth / justified) + 0.5);
-        height = Layout.snap(layout.getTextLineHeight() * rows)
-                 + layout.getTextVerticalInset();
-        return height;
-    }
-
-    @Override
-    void justify(double width, Layout layout) {
-        justifiedWidth = Layout.snap(width);
-    }
-
-    @Override
-    double layout(int cardinality, Layout layout, double width) {
-        height = null;
-        return variableLength ? width : Math.min(width, columnWidth);
-    }
-
-    /* (non-Javadoc)
-     * @see com.chiralbehaviors.layout.schema.SchemaNode#layoutWidth(com.chiralbehaviors.layout.Layout)
-     */
-    @Override
-    double layoutWidth(Layout layout) {
-        return tableColumnWidth(layout);
-    }
-
-    @Override
-    double measure(JsonNode data, boolean singular, Layout layout,
-                   INDENT indent) {
-        double labelWidth = getLabelWidth(layout);
-        double sum = 0;
-        maxWidth = 0;
-        columnWidth = 0;
-        for (JsonNode prim : SchemaNode.asList(data)) {
-            List<JsonNode> rows = SchemaNode.asList(prim);
-            double width = 0;
-            for (JsonNode row : rows) {
-                width += layout.textWidth(toString(row));
-                maxWidth = Math.max(maxWidth, width);
-            }
-            sum += rows.isEmpty() ? 1 : width / rows.size();
-        }
-        double averageWidth = data.size() == 0 ? 0 : (sum / data.size());
-
-        columnWidth = Layout.snap(Math.max(labelWidth,
-                                           Math.max(valueDefaultWidth,
-                                                    averageWidth)));
-        columnWidth += indent == INDENT.RIGHT ? 26 : 0;
-        if (maxWidth > averageWidth) {
-            variableLength = true;
-        }
-
-        return columnWidth + layout.getTextHorizontalInset();
-    }
-
-    @Override
-    Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
-                                                    double labelWidth,
-                                                    Function<JsonNode, JsonNode> extractor,
-                                                    Layout layout,
-                                                    double justified) {
-        HBox box = new HBox();
-        box.setPrefWidth(justified);
-        box.setPrefHeight(height);
-        VBox.setVgrow(box, Priority.ALWAYS);
-
-        Label labelText = label(labelWidth);
-        Control control = buildControl(cardinality, layout);
-        control.setPrefHeight(height);
-        control.setPrefWidth(justified);
-
-        box.getChildren()
-           .add(labelText);
-        box.getChildren()
-           .add(control);
-
-        return new Pair<>(item -> {
-            JsonNode extracted = extractor.apply(item);
-            JsonNode extractedField = extracted.get(field);
-            setItems(control, extractedField, layout);
-        }, box);
-    }
-
-    @Override
-    double outlineWidth(Layout layout) {
-        return tableColumnWidth(layout);
-    }
-
-    @Override
-    double rowHeight(int cardinality, Layout layout, double width) {
-        return cellHeight(cardinality, layout, width);
-    }
-
-    @Override
-    double tableColumnWidth(Layout layout) {
-        return columnWidth + layout.getTextHorizontalInset();
-    }
-
-    private void bind(Control control, TableColumn<JsonNode, ?> column,
-                      double inset) {
-        column.widthProperty()
-              .addListener((o, prev, cur) -> {
-                  double width = cur.doubleValue() - inset;
-                  control.setMinWidth(width);
-                  control.setMaxWidth(width);
-              });
-        double width = column.getWidth() - inset;
-        control.setMinWidth(width);
-        control.setPrefWidth(width);
-    }
-
-    private Label buildControl(int cardinality, Layout layout) {
-        Label text = new Label();
-        text.setWrapText(true);
-        text.setStyle("-fx-background-color: " + "         rgba(0,0,0,0.08),"
-                      + "        linear-gradient(#9a9a9a, #909090),"
-                      + "        white 0%;"
-                      + "    -fx-background-insets: 0 0 -1 0,0,1;"
-                      + "    -fx-background-radius: 5,5,4;"
-                      + "    -fx-padding: 3 30 3 30;"
-                      + "    -fx-text-fill: #242d35;"
-                      + "    -fx-font-size: 14px;");
-        return text;
-    }
-
-    private String toString(JsonNode value) {
-        if (value == null) {
-            return "";
-        }
-        if (value instanceof ArrayNode) {
-            StringBuilder builder = new StringBuilder();
-            boolean first = true;
-            for (JsonNode e : value) {
-                if (first) {
-                    first = false;
-                    builder.append('[');
-                } else {
-                    builder.append(", ");
-                }
-                builder.append(e.asText());
-            }
-            builder.append(']');
-            return builder.toString();
-        } else {
-            return value.asText();
-        }
     }
 }
