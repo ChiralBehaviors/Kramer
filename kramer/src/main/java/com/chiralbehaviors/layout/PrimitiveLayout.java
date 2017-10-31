@@ -62,7 +62,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public double calculateTableColumnWidth() {
-        return columnWidth;
+        return baseColumnWidth();
     }
 
     public double cellHeight(double justified) {
@@ -117,7 +117,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double layoutWidth() {
-        return columnWidth;
+        return baseColumnWidth();
     }
 
     @Override
@@ -180,7 +180,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public double tableColumnWidth() {
-        return columnWidth + indentation;
+        return baseColumnWidth() + indentation;
     }
 
     @Override
@@ -191,5 +191,9 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     protected double width(JsonNode row) {
         return layout.textWidth(LayoutProvider.toString(row));
+    }
+    
+    protected double baseColumnWidth() {
+        return Math.max(columnWidth, labelWidth);
     }
 }
