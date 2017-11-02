@@ -18,9 +18,12 @@ package com.chiralbehaviors.layout;
 
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
+import java.util.function.Function;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Control;
+import javafx.scene.layout.Region;
 
 /**
  * @author halhildebrand
@@ -116,7 +119,6 @@ abstract public class SchemaNodeLayout {
     protected double               height         = -1.0;
     protected double               justifiedWidth = -1.0;
     protected final LayoutProvider layout;
-    protected double               scroll         = 0.0;
 
     public SchemaNodeLayout(LayoutProvider layout) {
         this.layout = layout;
@@ -125,6 +127,8 @@ abstract public class SchemaNodeLayout {
     public void adjustHeight(double delta) {
         this.height = LayoutProvider.snap(height + delta);
     }
+
+    abstract public Function<Double, Region> columnHeader();
 
     public double columnHeaderHeight() {
         return layout.getTextLineHeight() + layout.getTextVerticalInset();
@@ -161,7 +165,6 @@ abstract public class SchemaNodeLayout {
     protected void clear() {
         height = -1.0;
         justifiedWidth = -1.0;
-        scroll = 0.0;
     }
 
     protected Control label(double labelWidth, String label) {

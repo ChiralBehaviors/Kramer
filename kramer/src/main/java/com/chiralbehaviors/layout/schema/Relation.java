@@ -215,10 +215,6 @@ public class Relation extends SchemaNode {
         measure(jsonNode, !jsonNode.isArray(), layout);
     }
 
-    public double nestTable() {
-        return layout.nestTable();
-    }
-
     @Override
     public double nestTableColumn(Indent indent, double indentation) {
         return isFold() ? fold.nestTableColumn(indent, indentation)
@@ -257,6 +253,17 @@ public class Relation extends SchemaNode {
         this.fold = (fold && children.size() == 1 && children.get(0)
                                                              .isRelation()) ? (Relation) children.get(0)
                                                                             : null;
+    }
+
+    public void setItem(JsonControl control, JsonNode data) {
+        if (data == null) {
+            data = JsonNodeFactory.instance.arrayNode();
+        }
+        if (isFold()) {
+            fold.setItem(control, flatten(data));
+        } else {
+            control.setItem(data);
+        }
     }
 
     @Override

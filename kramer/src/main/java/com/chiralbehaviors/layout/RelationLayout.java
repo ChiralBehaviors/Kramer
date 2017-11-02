@@ -50,6 +50,7 @@ import javafx.util.Pair;
  *
  */
 public class RelationLayout extends SchemaNodeLayout {
+    boolean                       useTable         = false;
     private int                   averageCardinality;
     private double                columnHeaderHeight;
     private final List<ColumnSet> columnSets       = new ArrayList<>();
@@ -59,7 +60,6 @@ public class RelationLayout extends SchemaNodeLayout {
     private final Relation        r;
     private double                rowHeight        = -1;
     private double                scroll           = 0.0;
-    boolean                       useTable         = false;
     private boolean               singular;
     private double                tableColumnWidth = 0;
 
@@ -112,6 +112,12 @@ public class RelationLayout extends SchemaNodeLayout {
         return header;
     }
 
+    public JsonControl buildControl(int cardinality,
+                                    Function<JsonNode, JsonNode> extractor) {
+        return useTable ? r.buildNestedTable(extractor, cardinality)
+                        : r.buildOutline(extractor, cardinality);
+    }
+
     public JsonControl buildNestedTable(int cardinality) {
         return new NestedTable(this).build(resolveCardinality(cardinality),
                                            this);
@@ -153,6 +159,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return height;
     }
 
+    @Override
     public Function<Double, Region> columnHeader() {
         List<SchemaNode> children = r.getChildren();
         List<Function<Double, Region>> nestedHeaders = children.stream()
@@ -237,6 +244,10 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public double getJustifiedTableColumnWidth() {
         return justifiedWidth + layout.getNestedInset();
+    }
+
+    public double getJustifiedTableWidth() {
+        return justifiedWidth - layout.getListHorizontalInset();
     }
 
     public double getLabelWidth() {
@@ -362,11 +373,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return r.outlineWidth();
     }
 
-    public double nestTable() {
-        tableColumnWidth = nestTableColumn(Indent.TOP, 0);
-        return tableColumnWidth;
-    }
-
+    @Override
     public double nestTableColumn(Indent indent, double indentation) {
         useTable = true;
         rowHeight = -1.0;
@@ -507,6 +514,11 @@ public class RelationLayout extends SchemaNodeLayout {
         return child.equals(children.get(children.size() - 1));
     }
 
+    protected double nestTable() {
+        tableColumnWidth = nestTableColumn(Indent.TOP, 0);
+        return tableColumnWidth;
+    }
+
     protected double outlineHeight(int cardinality) {
         return outlineHeight(cardinality, columnSets.stream()
                                                     .mapToDouble(cs -> cs.getCellHeight())
@@ -529,15 +541,5 @@ public class RelationLayout extends SchemaNodeLayout {
 
     protected double rowHeight(double elementHeight) {
         return elementHeight + layout.getListCellVerticalInset();
-    }
-
-    public double getJustifiedTableWidth() {
-        return justifiedWidth - layout.getListHorizontalInset();
-    }
- 
-    public JsonControl buildControl(int cardinality,
-                                    Function<JsonNode, JsonNode> extractor) {
-        return useTable ? r.buildNestedTable(extractor, cardinality)
-                        : r.buildOutline(extractor, cardinality);
     }
 }

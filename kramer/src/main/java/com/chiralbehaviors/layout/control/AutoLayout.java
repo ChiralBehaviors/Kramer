@@ -118,7 +118,7 @@ public class AutoLayout extends JsonControl {
         relation.autoLayout(width);
         control = relation.buildControl(zeeData.size(), width);
         control.setPrefWidth(width);
-        control.setItem(zeeData);
+        relation.setItem(control, zeeData);
         getChildren().add(control);
     }
 
@@ -151,7 +151,10 @@ public class AutoLayout extends JsonControl {
     private void setContent() {
         try {
             if (control != null) {
-                control.setItem(data.get());
+                Relation relation = root.get();
+                if (relation != null) {
+                    relation.setItem(control, data.get());
+                }
             }
         } catch (Throwable e) {
             log.log(Level.SEVERE, "cannot set content", e);
