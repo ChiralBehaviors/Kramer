@@ -40,7 +40,6 @@ import javafx.util.Pair;
  *
  */
 public class Relation extends SchemaNode {
-    boolean                        useTable = false;
     private boolean                autoFold = true;
     private final List<SchemaNode> children = new ArrayList<>();
     private Relation               fold;
@@ -93,8 +92,7 @@ public class Relation extends SchemaNode {
 
     public JsonControl buildControl(int cardinality,
                                     Function<JsonNode, JsonNode> extractor) {
-        return useTable ? buildNestedTable(extractor, cardinality)
-                        : buildOutline(extractor, cardinality);
+        return layout.buildControl(cardinality, extractor);
     }
 
     @Override
@@ -178,26 +176,17 @@ public class Relation extends SchemaNode {
         return true;
     }
 
-    public boolean isUseTable() {
-        if (isFold()) {
-            return fold.isUseTable();
-        }
-        return useTable;
-    }
-
     @Override
     public double justify(double width) {
         if (isFold()) {
             return fold.justify(width);
         } else {
-            assert useTable : "Not a nested table";
             return layout.justify(width);
         }
     }
 
     @Override
     public double layout(double width) {
-        useTable = false;
         return isFold() ? fold.layout(width) : layout.layout(width);
     }
 
@@ -227,13 +216,11 @@ public class Relation extends SchemaNode {
     }
 
     public double nestTable() {
-        useTable = true;
         return layout.nestTable();
     }
 
     @Override
     public double nestTableColumn(Indent indent, double indentation) {
-        useTable = true;
         return isFold() ? fold.nestTableColumn(indent, indentation)
                         : layout.nestTableColumn(indent, indentation);
     }
@@ -272,10 +259,6 @@ public class Relation extends SchemaNode {
                                                                             : null;
     }
 
-    public void setUseTable(boolean useTable) {
-        this.useTable = useTable;
-    }
-
     @Override
     public double tableColumnWidth() {
         return isFold() ? fold.tableColumnWidth() : layout.tableColumnWidth();
@@ -302,8 +285,8 @@ public class Relation extends SchemaNode {
         return buf.toString();
     }
 
-    protected JsonControl buildNestedTable(Function<JsonNode, JsonNode> extractor,
-                                           int cardinality) {
+    public JsonControl buildNestedTable(Function<JsonNode, JsonNode> extractor,
+                                        int cardinality) {
         if (isFold()) {
             return fold.buildNestedTable(extract(extractor),
                                          layout.getAverageCardinality()
@@ -312,8 +295,8 @@ public class Relation extends SchemaNode {
         return layout.buildNestedTable(cardinality);
     }
 
-    protected JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
-                                       int cardinality) {
+    public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
+                                    int cardinality) {
         if (isFold()) {
             return fold.buildOutline(extract(extractor),
                                      layout.getAverageCardinality()
