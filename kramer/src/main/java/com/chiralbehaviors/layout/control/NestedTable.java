@@ -52,8 +52,8 @@ public class NestedTable extends JsonControl {
         Region header = layout.buildColumnHeader();
         buildRows(cardinality, layout);
         VBox frame = new VBox(header, rows);
-        frame.setPrefWidth(layout.getJustifiedWidth());
-        frame.setMaxWidth(USE_COMPUTED_SIZE);
+        frame.setMinWidth(layout.getJustifiedWidth());
+        frame.setMaxWidth(layout.getJustifiedWidth());
         getChildren().add(frame);
         return this;
     }
