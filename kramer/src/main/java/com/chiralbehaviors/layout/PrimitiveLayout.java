@@ -19,7 +19,6 @@ package com.chiralbehaviors.layout;
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -75,19 +74,22 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return height;
     }
 
-    public Function<Double, Region> columnHeader(Map<SchemaNodeLayout, Region> headers) {
+    public Function<Double, Region> columnHeader() {
         return rendered -> {
             double width = getJustifiedTableColumnWidth();
             Control columnHeader = layout.label(width, p.getLabel(), rendered);
             columnHeader.setMinSize(width, rendered);
             columnHeader.setMaxSize(width, rendered);
-            headers.put(this, columnHeader);
             return columnHeader;
         };
     }
 
-    public void compress(double available) {
+    @Override
+    public void compress(double available, boolean scrolled) {
         justifiedWidth = snap(available);
+        if (scrolled) {
+            scroll = layout.getScrollWidth();
+        }
     }
 
     @Override
@@ -99,6 +101,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return indentation;
     }
 
+    @Override
     public double getJustifiedTableColumnWidth() {
         return justifiedWidth + indentation;
     }
@@ -183,6 +186,10 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return baseColumnWidth() + indentation;
     }
 
+    protected double baseColumnWidth() {
+        return Math.max(columnWidth, labelWidth);
+    }
+
     @Override
     protected void clear() {
         super.clear();
@@ -191,9 +198,5 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     protected double width(JsonNode row) {
         return layout.textWidth(LayoutProvider.toString(row));
-    }
-    
-    protected double baseColumnWidth() {
-        return Math.max(columnWidth, labelWidth);
     }
 }

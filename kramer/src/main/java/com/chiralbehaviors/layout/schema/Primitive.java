@@ -16,13 +16,11 @@
 
 package com.chiralbehaviors.layout.schema;
 
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.PrimitiveLayout;
-import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
 import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -55,8 +53,8 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public Function<Double, Region> buildColumnHeader(Map<SchemaNodeLayout, Region> headers) {
-        return layout.columnHeader(headers);
+    public Function<Double, Region> buildColumnHeader() {
+        return layout.columnHeader();
     }
 
     @Override
@@ -65,8 +63,8 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public void compress(double available) {
-        layout.compress(available);
+    public void compress(double available, boolean scrolled) {
+        layout.compress(available, scrolled);
     }
 
     public double getDefaultWidth() {

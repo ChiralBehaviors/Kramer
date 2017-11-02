@@ -49,7 +49,8 @@ public class ColumnSet {
         columns.forEach(c -> c.adjustHeight(delta));
     }
 
-    public void compress(int cardinality, double justified, double labelWidth) {
+    public void compress(int cardinality, double justified, double labelWidth,
+                         boolean scrolled) {
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
                                    .size(),
@@ -60,7 +61,7 @@ public class ColumnSet {
             firstColumn.setWidth(justified);
             firstColumn.getFields()
                        .forEach(f -> {
-                           f.compress(fieldWidth);
+                           f.compress(fieldWidth, scrolled);
                        });
             cellHeight = firstColumn.cellHeight(cardinality, labelWidth);
             return;
@@ -72,7 +73,7 @@ public class ColumnSet {
         double compressed = columnWidth - labelWidth;
         firstColumn.getFields()
                    .forEach(f -> {
-                       f.compress(compressed);
+                       f.compress(compressed, scrolled);
                    });
         IntStream.range(1, count)
                  .forEach(i -> columns.add(new Column(columnWidth)));

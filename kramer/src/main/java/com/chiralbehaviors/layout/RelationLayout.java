@@ -20,9 +20,7 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -103,15 +101,13 @@ public class RelationLayout extends SchemaNodeLayout {
         return extended - layout.getListCellVerticalInset();
     }
 
-    public Map<SchemaNodeLayout, Region> buildColumnHeader() {
-        Map<SchemaNodeLayout, Region> headers = new HashMap<>();
+    public Region buildColumnHeader() {
         HBox header = new HBox();
-        headers.put(this, header);
         List<SchemaNode> children = r.getChildren();
         children.forEach(c -> header.getChildren()
-                                    .add(c.buildColumnHeader(headers)
+                                    .add(c.buildColumnHeader()
                                           .apply(columnHeaderHeight)));
-        return headers;
+        return header;
     }
 
     public JsonControl buildNestedTable(int cardinality) {
@@ -155,10 +151,10 @@ public class RelationLayout extends SchemaNodeLayout {
         return height;
     }
 
-    public Function<Double, Region> columnHeader(Map<SchemaNodeLayout, Region> headers) {
+    public Function<Double, Region> columnHeader() {
         List<SchemaNode> children = r.getChildren();
         List<Function<Double, Region>> nestedHeaders = children.stream()
-                                                               .map(c -> c.buildColumnHeader(headers))
+                                                               .map(c -> c.buildColumnHeader())
                                                                .collect(Collectors.toList());
         return rendered -> {
             VBox columnHeader = new VBox();
@@ -176,12 +172,12 @@ public class RelationLayout extends SchemaNodeLayout {
                 nested.getChildren()
                       .add(n.apply(half));
             });
-            headers.put(this, columnHeader);
             return columnHeader;
         };
     }
 
-    public void compress(double justified) {
+    @Override
+    public void compress(double justified, boolean ignored) {
         if (r.isUseTable()) {
             r.justify(justified - layout.getListHorizontalInset());
             return;
@@ -206,7 +202,7 @@ public class RelationLayout extends SchemaNodeLayout {
             }
         }
         columnSets.forEach(cs -> cs.compress(averageCardinality, justifiedWidth,
-                                             labelWidth));
+                                             labelWidth, scroll > 0.0));
     }
 
     @Override
@@ -236,6 +232,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return columnHeaderHeight;
     }
 
+    @Override
     public double getJustifiedTableColumnWidth() {
         return justifiedWidth + layout.getNestedInset();
     }
@@ -357,6 +354,9 @@ public class RelationLayout extends SchemaNodeLayout {
                              .getAsDouble();
         outlineWidth = snap(labelWidth + outlineWidth);
         maxCardinality = Math.max(1, maxCardinality);
+        if (!singular && maxCardinality > averageCardinality) {
+            scroll = layout.getScrollWidth();
+        }
         return r.isFold() ? r.getFold()
                              .outlineWidth()
                           : r.outlineWidth();
@@ -527,5 +527,9 @@ public class RelationLayout extends SchemaNodeLayout {
 
     protected double rowHeight(double elementHeight) {
         return elementHeight + layout.getListCellVerticalInset();
+    }
+ 
+    public double getJustifiedTableWidth() { 
+        return justifiedWidth - layout.getListHorizontalInset();
     }
 }

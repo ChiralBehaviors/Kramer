@@ -18,18 +18,18 @@ package com.chiralbehaviors.layout.schema;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
 import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import javafx.scene.Parent;
 import javafx.scene.layout.Region;
@@ -66,7 +66,7 @@ public class Relation extends SchemaNode {
     public void autoLayout(double width) {
         double justified = LayoutProvider.snap(width);
         layout(justified);
-        compress(justified);
+        compress(justified, false);
     }
 
     @Override
@@ -76,11 +76,11 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public Function<Double, Region> buildColumnHeader(Map<SchemaNodeLayout, Region> headers) {
+    public Function<Double, Region> buildColumnHeader() {
         if (isFold()) {
-            return fold.buildColumnHeader(headers);
+            return fold.buildColumnHeader();
         }
-        return layout.columnHeader(headers);
+        return layout.columnHeader();
     }
 
     public JsonControl buildControl(int cardinality, double width) {
@@ -121,11 +121,11 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public void compress(double justified) {
+    public void compress(double justified, boolean scrolled) {
         if (isFold()) {
-            fold.compress(justified);
+            fold.compress(justified, scrolled);
         } else {
-            layout.compress(justified);
+            layout.compress(justified, scrolled);
         }
     }
 
@@ -213,6 +213,7 @@ public class Relation extends SchemaNode {
 
         if (isAutoFoldable()) {
             fold = ((Relation) children.get(children.size() - 1));
+            return fold.measure(flatten(data), isSingular, provider);
         }
         if (data.isNull() || children.size() == 0) {
             return 24;
@@ -319,6 +320,20 @@ public class Relation extends SchemaNode {
                                                          * cardinality);
         }
         return layout.buildOutline(extractor, cardinality);
+    }
+
+    private ArrayNode flatten(JsonNode data) {
+        ArrayNode flattened = JsonNodeFactory.instance.arrayNode();
+        if (data != null) {
+            if (data.isArray()) {
+                data.forEach(item -> {
+                    flattened.addAll(SchemaNode.asArray(item.get(fold.getField())));
+                });
+            } else {
+                flattened.addAll(SchemaNode.asArray(data.get(fold.getField())));
+            }
+        }
+        return flattened;
     }
 
     private boolean isAutoFoldable() {

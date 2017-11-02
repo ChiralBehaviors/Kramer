@@ -19,7 +19,6 @@ package com.chiralbehaviors.layout.schema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -152,7 +151,7 @@ abstract public class SchemaNode {
     abstract public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
                                                                  double rendered);
 
-    abstract public Function<Double, Region> buildColumnHeader(Map<SchemaNodeLayout, Region> headers);
+    abstract public Function<Double, Region> buildColumnHeader();
 
     public abstract double cellHeight(int cardinality, double available);
 
@@ -160,7 +159,7 @@ abstract public class SchemaNode {
         return getLayout().columnHeaderHeight();
     }
 
-    public abstract void compress(double available);
+    public abstract void compress(double available, boolean scrolled);
 
     public Function<JsonNode, JsonNode> extract(Function<JsonNode, JsonNode> extractor) {
         return n -> {

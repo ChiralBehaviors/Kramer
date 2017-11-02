@@ -116,6 +116,7 @@ abstract public class SchemaNodeLayout {
     protected double               height         = -1.0;
     protected double               justifiedWidth = -1.0;
     protected final LayoutProvider layout;
+    protected double               scroll         = 0.0;
 
     public SchemaNodeLayout(LayoutProvider layout) {
         this.layout = layout;
@@ -128,6 +129,8 @@ abstract public class SchemaNodeLayout {
     public double columnHeaderHeight() {
         return layout.getTextLineHeight() + layout.getTextVerticalInset();
     }
+
+    abstract public void compress(double justified, boolean scrolled);
 
     abstract public JsonNode extractFrom(JsonNode node);
 
@@ -153,9 +156,12 @@ abstract public class SchemaNodeLayout {
 
     abstract public double measure(JsonNode data, boolean isSingular);
 
+    abstract public double nestTableColumn(Indent indent, double indentation);
+
     protected void clear() {
         height = -1.0;
         justifiedWidth = -1.0;
+        scroll = 0.0;
     }
 
     protected Control label(double labelWidth, String label) {

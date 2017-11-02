@@ -18,13 +18,11 @@ package com.chiralbehaviors.layout.control;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -43,19 +41,16 @@ import javafx.util.Pair;
  *
  */
 public class NestedTable extends JsonControl {
-
-    private Map<SchemaNodeLayout, Region> columnHeaders;
-    private double                        rowHeight;
-    private ListView<JsonNode>            rows;
+    private double             rowHeight;
+    private ListView<JsonNode> rows;
 
     public NestedTable(RelationLayout layout) {
         getStyleClass().add(layout.getStyleClass());
     }
 
     public JsonControl build(int cardinality, RelationLayout layout) {
-        columnHeaders = layout.buildColumnHeader();
+        Region header = layout.buildColumnHeader();
         buildRows(cardinality, layout);
-        Region header = columnHeaders.get(layout);
         VBox frame = new VBox(header, rows);
         frame.setPrefWidth(layout.getJustifiedWidth());
         frame.setMaxWidth(USE_COMPUTED_SIZE);
@@ -69,21 +64,6 @@ public class NestedTable extends JsonControl {
         double width = layout.getJustifiedWidth();
         control.setMinWidth(width);
         control.setMaxWidth(width);
-//        control.setMaxWidth(USE_COMPUTED_SIZE);
-        Region header = columnHeaders.get(layout);
-        control.widthProperty()
-               .addListener((o, p, n) -> {
-                   double w = o.getValue()
-                               .doubleValue()
-                              + layout.getIndentation();
-                   header.setMinWidth(w);
-                   header.setMaxWidth(w);
-                   header.setPrefWidth(w);
-               });
-        double indented = layout.getJustifiedWidth() + layout.getIndentation();
-        header.setMinWidth(indented);
-        header.setMaxWidth(indented);
-        header.setPrefWidth(indented);
         return new Pair<>(node -> control.setItem(layout.extractFrom(node)),
                           control);
     }
@@ -153,21 +133,8 @@ public class NestedTable extends JsonControl {
         row.setMaxHeight(rendered);
 
         double width = layout.getJustifiedWidth();
-        row.setPrefSize(width, rendered);
-        row.setMaxSize(USE_COMPUTED_SIZE, rendered);
-
-        Region header = columnHeaders.get(layout);
-        row.widthProperty()
-           .addListener((o, p, n) -> {
-               double w = o.getValue()
-                           .doubleValue();
-               header.setMinWidth(w);
-               header.setMaxWidth(w);
-               header.setPrefWidth(w);
-           });
-        header.setMinWidth(width);
-        header.setMaxWidth(width);
-        header.setPrefWidth(width);
+        row.setMinSize(width, rendered);
+        row.setMaxSize(width, rendered);
 
         row.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(extended),
@@ -216,23 +183,9 @@ public class NestedTable extends JsonControl {
 
         double height = layout.getHeight() - layout.getColumnHeaderHeight();
 
-        double width = layout.getJustifiedTableColumnWidth();
-        rows.setPrefSize(width, height);
-        rows.setMaxSize(USE_COMPUTED_SIZE, height);
-
-        //        Region header = columnHeaders.get(layout);
-        //        rows.widthProperty()
-        //            .addListener((o, p, n) -> {
-        //                double w = o.getValue()
-        //                            .doubleValue();
-        //                header.setMinWidth(w);
-        //                header.setMaxWidth(w);
-        //                header.setPrefWidth(w);
-        //            });
-        //        header.setMinWidth(width);
-        //        header.setMaxWidth(width);
-        //        header.setPrefWidth(width);
-
+        double width = layout.getJustifiedTableWidth();
+        rows.setMinSize(width, height);
+        rows.setMaxSize(width, height);
         rows.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
                                                                layout));
