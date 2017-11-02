@@ -293,8 +293,7 @@ public class RelationLayout extends SchemaNodeLayout {
                        + labelWidth;
         double tableWidth = calculateTableWidth();
         if (tableWidth <= outlineWidth) {
-            useTable = true;
-            return r.nestTable();
+            return nestTable();
         }
         return outlineWidth(outlineWidth);
     }
