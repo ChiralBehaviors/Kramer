@@ -142,8 +142,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         double averageWidth = data.size() == 0 ? 0 : (sum / data.size());
 
         columnWidth = Math.max(labelWidth,
-                               layout.totalTextWidth(LayoutProvider.snap(Math.max(p.getDefaultWidth(),
-                                                                                  averageWidth))));
+                               LayoutProvider.snap(Math.max(p.getDefaultWidth(),
+                                                            averageWidth)));
         if (maxWidth > averageWidth) {
             variableLength = true;
         }
@@ -183,7 +183,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public double tableColumnWidth() {
-        return baseColumnWidth() + indentation;
+        return baseColumnWidth();
     }
 
     protected double baseColumnWidth() {
@@ -197,6 +197,6 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     protected double width(JsonNode row) {
-        return layout.textWidth(LayoutProvider.toString(row));
+        return layout.totalTextWidth(layout.textWidth(LayoutProvider.toString(row)));
     }
 }
