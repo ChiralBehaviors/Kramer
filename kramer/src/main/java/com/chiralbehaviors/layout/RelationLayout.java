@@ -189,7 +189,7 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public void compress(double justified, boolean ignored) {
         if (useTable) {
-            r.justify(justified);
+            r.justify(justified - layout.getNestedInset());
             return;
         }
         columnSets.clear();
@@ -265,24 +265,21 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public double justify(double justified) {
-        double available = justified - layout.getNestedInset();
-        //        assert available >= tableColumnWidth : String.format("%s justified width incorrect %s < %s",
+        //        assert justified >= tableColumnWidth : String.format("%s justified width incorrect %s < %s",
         //                                                         r.getLabel(), available,
         //                                                         tableColumnWidth);
-        double slack = Math.max(0, available - tableColumnWidth);
+        double slack = Math.max(0, justified - tableColumnWidth);
         List<SchemaNode> children = r.getChildren();
-        justifiedWidth = snap(children.stream()
-                                      .mapToDouble(child -> {
-                                          double childWidth = child.tableColumnWidth();
-                                          double additional = slack
-                                                              * (childWidth
-                                                                 / tableColumnWidth);
-                                          double childJustified = snap(additional
-                                                                       + childWidth);
-                                          return child.justify(childJustified);
-                                      })
-                                      .sum());
-        return justified + layout.getNestedInset();
+        children.stream()
+                .mapToDouble(child -> {
+                    double childWidth = child.tableColumnWidth();
+                    double additional = slack * (childWidth / tableColumnWidth);
+                    double childJustified = snap(additional + childWidth);
+                    return child.justify(childJustified);
+                })
+                .sum();
+        justifiedWidth = justified;
+        return justifiedWidth;
     }
 
     @Override
@@ -383,7 +380,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                                                             indentation));
                                  })
                                  .sum());
-        return tableColumnWidth + layout.getNestedInset();
+        return tableColumnWidth;
     }
 
     public double outlineCellHeight(double baseHeight) {

@@ -129,7 +129,7 @@ abstract public class SchemaNodeLayout {
         return justifiedWidth;
     }
 
-    abstract public double justify(double width);
+    abstract public double justify(double justified);
 
     public double labelWidth(String label) {
         return snap(layout.labelWidth(label));

@@ -104,8 +104,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double justify(double available) {
-        justifiedWidth = snap(Math.max(0.0, available));
+    public double justify(double justified) {
+        justifiedWidth = justified;
         return justifiedWidth;
     }
 
@@ -154,7 +154,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public double nestTableColumn(Indent indent, double indentation) {
         this.indentation = indentation;
-        return tableColumnWidth();
+        return tableColumnWidth() + indentation;
     }
 
     public Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
