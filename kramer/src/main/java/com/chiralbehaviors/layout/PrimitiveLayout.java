@@ -154,7 +154,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public double nestTableColumn(Indent indent, double indentation) {
         this.indentation = indentation;
-        return tableColumnWidth() + indentation;
+        return tableColumnWidth();
     }
 
     public Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
