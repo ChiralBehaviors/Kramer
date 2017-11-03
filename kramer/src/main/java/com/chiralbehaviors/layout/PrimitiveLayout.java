@@ -105,8 +105,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double justify(double available) {
-        justifiedWidth = snap(available - indentation);
-        return getJustifiedTableColumnWidth();
+        justifiedWidth = snap(Math.max(0.0, available));
+        return justifiedWidth;
     }
 
     @Override
@@ -124,19 +124,22 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     public double measure(JsonNode data, boolean singular) {
         clear();
         labelWidth = labelWidth(p.getLabel());
-        double sum = 0;
+        double summedDataWidth = 0;
         maxWidth = 0;
         columnWidth = 0;
         for (JsonNode prim : SchemaNode.asList(data)) {
             List<JsonNode> rows = SchemaNode.asList(prim);
-            double width = 0;
+            double summedWidth = 0;
             for (JsonNode row : rows) {
-                width += width(row);
-                maxWidth = Math.max(maxWidth, width);
+                double w = width(row);
+                summedWidth += w;
+                maxWidth = Math.max(maxWidth, w);
             }
-            sum += rows.isEmpty() ? 1 : width / rows.size();
+            summedDataWidth += rows.isEmpty() ? 1 : summedWidth / rows.size();
         }
-        double averageWidth = data.size() == 0 ? 0 : (sum / data.size());
+        double averageWidth = data.size() == 0 ? 0
+                                               : (summedDataWidth
+                                                  / data.size());
 
         columnWidth = Math.max(labelWidth,
                                LayoutProvider.snap(Math.max(p.getDefaultWidth(),
@@ -144,7 +147,6 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         if (maxWidth > averageWidth) {
             variableLength = true;
         }
-
         return columnWidth;
 
     }

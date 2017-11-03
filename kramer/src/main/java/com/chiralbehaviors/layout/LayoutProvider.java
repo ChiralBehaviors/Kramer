@@ -259,10 +259,6 @@ public class LayoutProvider {
                              textFont, textInsets, textLineHeight);
     }
 
-    double baseTextWidth(double width) {
-        return width - getTextHorizontalInset();
-    }
-
     double getListCellHorizontalInset() {
         return listCellInsets.getLeft() + listCellInsets.getRight();
     }

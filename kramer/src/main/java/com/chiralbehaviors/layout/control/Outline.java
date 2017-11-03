@@ -116,7 +116,7 @@ public class Outline extends JsonControl {
             column.getStyleClass()
                   .add("column");
             column.setMinSize(c.getWidth(), cellHeight);
-            column.setMaxSize(USE_COMPUTED_SIZE, cellHeight);
+            column.setMaxSize(c.getWidth(), cellHeight);
             controls.add(build(c, cardinality, extractor, labelWidth, column));
             span.getChildren()
                 .add(column);
