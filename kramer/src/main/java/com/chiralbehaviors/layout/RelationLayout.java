@@ -189,7 +189,7 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public void compress(double justified, boolean ignored) {
         if (useTable) {
-            r.justify(justified - layout.getListHorizontalInset());
+            r.justify(justified);
             return;
         }
         columnSets.clear();
@@ -458,11 +458,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     protected double baseOutlineWidth(double width) {
-        return snap(baseTableWidth(width));
-    }
-
-    protected double baseTableWidth(double width) {
-        return width - layout.getNestedInset();
+        return snap(width - layout.getNestedInset());
     }
 
     @Override

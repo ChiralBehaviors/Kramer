@@ -46,11 +46,6 @@ abstract public class SchemaNodeLayout {
                         return 0;
                 }
             }
-
-            @Override
-            public double indent(LayoutProvider layout, double indentation) {
-                return indentation + layout.getNestedLeftInset();
-            }
         },
         NONE,
         RIGHT {
@@ -66,11 +61,6 @@ abstract public class SchemaNodeLayout {
                     default:
                         return 0;
                 }
-            }
-
-            @Override
-            public double indent(LayoutProvider layout, double indentation) {
-                return indentation + layout.getNestedRightInset();
             }
         },
         SINGULAR {
@@ -89,11 +79,6 @@ abstract public class SchemaNodeLayout {
                         return 0;
                 }
             }
-
-            @Override
-            public double indent(LayoutProvider layout, double indentation) {
-                return indentation + layout.getNestedInset();
-            }
         },
         TOP;
 
@@ -109,10 +94,6 @@ abstract public class SchemaNodeLayout {
                 default:
                     return 0;
             }
-        };
-
-        public double indent(LayoutProvider layout, double indentation) {
-            return indentation;
         };
     }
 
