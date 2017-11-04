@@ -189,7 +189,7 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public void compress(double justified, boolean ignored) {
         if (useTable) {
-            r.justify(justified - layout.getNestedInset());
+            r.justify(justified);
             return;
         }
         columnSets.clear();
@@ -242,6 +242,10 @@ public class RelationLayout extends SchemaNodeLayout {
         return columnHeaderHeight;
     }
 
+    public double getJustifiedCellWidth() {
+        return justifiedWidth + layout.getListCellHorizontalInset();
+    }
+
     @Override
     public double getJustifiedTableColumnWidth() {
         return justifiedWidth + layout.getNestedInset();
@@ -264,11 +268,13 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double justify(double justified) {
-        //        assert justified >= tableColumnWidth : String.format("%s justified width incorrect %s < %s",
-        //                                                         r.getLabel(), available,
-        //                                                         tableColumnWidth);
-        double slack = Math.max(0, justified - tableColumnWidth);
+    public double justify(double justifed) {
+        double available = justifed - layout.getNestedCellInset();
+        assert available >= tableColumnWidth : String.format("%s justified width incorrect %s < %s",
+                                                             r.getLabel(),
+                                                             available,
+                                                             tableColumnWidth);
+        double slack = Math.max(0, available - tableColumnWidth);
         List<SchemaNode> children = r.getChildren();
         justifiedWidth = children.stream()
                                  .mapToDouble(child -> {
@@ -287,7 +293,7 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public double layout(double width) {
         clear();
-        double available = snap(width - labelWidth);
+        double available = baseOutlineWidth(snap(width - labelWidth));
         assert available > 0;
         outlineWidth = r.getChildren()
                         .stream()
@@ -296,7 +302,7 @@ public class RelationLayout extends SchemaNodeLayout {
                         .orElse(0.0)
                        + labelWidth;
         double tableWidth = calculateTableColumnWidth();
-        if (tableWidth <= outlineWidth) {
+        if (tableWidth <= outlineWidth(outlineWidth)) {
             return nestTableColumn(Indent.TOP, layout.getNestedInset());
         }
         return outlineWidth(outlineWidth);
@@ -394,17 +400,16 @@ public class RelationLayout extends SchemaNodeLayout {
                                                            Function<JsonNode, JsonNode> extractor,
                                                            double justified) {
 
-        double available = justified - labelWidth;
 
-        JsonControl control = r.buildControl(cardinality, extractor);
 
         Control labelControl = label(labelWidth, r.getLabel());
         labelControl.setMinWidth(labelWidth);
         labelControl.setMaxWidth(labelWidth);
 
+        JsonControl control = r.buildControl(cardinality, extractor);
+        double available = justified - labelWidth;
         control.setMinWidth(available);
         control.setMaxWidth(available);
-
         control.setMinHeight(height);
         control.setMaxHeight(height);
 
@@ -474,7 +479,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                                       justifiedWidth))
                 .max()
                 .getAsDouble();
-    } 
+    }
 
     protected Indent indent(Indent parent, SchemaNode child) {
         List<SchemaNode> children = r.getChildren();

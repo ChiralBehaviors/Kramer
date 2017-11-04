@@ -67,12 +67,14 @@ public class Outline extends JsonControl {
                                                                .sum());
         layout.apply(list);
         list.setFixedCellSize(cellHeight);
+        list.setMinWidth(layout.outlineWidth());
+        list.setMaxWidth(layout.outlineWidth());
         list.setCellFactory(c -> {
             ListCell<JsonNode> cell = listCell(columnSets, averageCardinality,
                                                layout.baseOutlineCellHeight(cellHeight),
                                                extractor, layout);
-            cell.setPrefWidth(layout.getJustifiedWidth());
-            cell.setMaxWidth(USE_COMPUTED_SIZE);
+            cell.setMinWidth(layout.getJustifiedCellWidth());
+            cell.setMaxWidth(layout.getJustifiedCellWidth());
             layout.apply(cell);
             return cell;
         });
@@ -176,8 +178,8 @@ public class Outline extends JsonControl {
                 cell = new VBox();
                 cell.setMinHeight(cellHeight);
                 cell.setPrefHeight(cellHeight);
-                cell.setMinWidth(0);
-                cell.setPrefWidth(1);
+                cell.setMinWidth(layout.getJustifiedWidth());
+                cell.setPrefWidth(layout.getJustifiedWidth());
                 columnSets.forEach(cs -> {
                     Pair<Consumer<JsonNode>, Parent> master = build(cs.getColumns(),
                                                                     averageCardinality,
