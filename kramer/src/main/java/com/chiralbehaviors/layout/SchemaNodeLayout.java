@@ -38,8 +38,9 @@ abstract public class SchemaNodeLayout {
                                  double indentation) {
                 switch (child) {
                     case LEFT:
-                    case SINGULAR:
                         return indentation + layout.getNestedLeftInset();
+                    case SINGULAR:
+                        return indentation + (2 * layout.getNestedLeftInset());
                     case RIGHT:
                         return layout.getNestedRightInset();
                     default:
@@ -56,6 +57,7 @@ abstract public class SchemaNodeLayout {
                     case LEFT:
                         return layout.getNestedLeftInset();
                     case SINGULAR:
+                        return indentation + (2 * layout.getNestedRightInset());
                     case RIGHT:
                         return indentation + layout.getNestedRightInset();
                     default:
