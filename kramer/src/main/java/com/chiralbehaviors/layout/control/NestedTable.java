@@ -52,8 +52,9 @@ public class NestedTable extends JsonControl {
     public JsonControl build(int cardinality, RelationLayout layout) {
         Region header = layout.buildColumnHeader();
         VBox frame = new VBox(header, buildRows(cardinality, layout));
-        //        frame.setMinWidth(layout.getJustifiedWidth());
-        //        frame.setMaxWidth(layout.getJustifiedWidth()); 
+        frame.setMinWidth(layout.getJustifiedTableColumnWidth());
+        frame.setPrefWidth(layout.getJustifiedTableColumnWidth());
+        frame.setMaxWidth(layout.getJustifiedTableColumnWidth());
 
         AnchorPane.setLeftAnchor(frame, 0d);
         AnchorPane.setRightAnchor(frame, 0d);
@@ -69,6 +70,7 @@ public class NestedTable extends JsonControl {
         JsonControl control = layout.buildControl(1);
         double width = layout.getJustifiedWidth();
         control.setMinWidth(width);
+        control.setPrefWidth(width);
         control.setMaxWidth(width);
         return new Pair<>(node -> control.setItem(layout.extractFrom(node)),
                           control);
@@ -135,11 +137,9 @@ public class NestedTable extends JsonControl {
 
         row.setFixedCellSize(extended);
 
-        row.setMinHeight(rendered);
-        row.setMaxHeight(rendered);
-
         double width = layout.getJustifiedTableColumnWidth();
         row.setMinSize(width, rendered);
+        row.setPrefSize(width, rendered);
         row.setMaxSize(width, rendered);
 
         row.setCellFactory(listView -> {
@@ -147,6 +147,7 @@ public class NestedTable extends JsonControl {
                                                                layout));
             double justified = layout.getJustifiedCellWidth();
             cell.setMinWidth(justified);
+            cell.setPrefWidth(justified);
             cell.setMaxWidth(justified);
             return cell;
         });
@@ -192,6 +193,7 @@ public class NestedTable extends JsonControl {
         double height = layout.getHeight() - layout.getColumnHeaderHeight();
 
         rows.setMinSize(width, height);
+        rows.setPrefSize(width, height);
         rows.setMaxSize(width, height);
 
         rows.setCellFactory(listView -> {
@@ -199,6 +201,7 @@ public class NestedTable extends JsonControl {
                                                                layout));
             double justified = layout.getJustifiedCellWidth();
             cell.setMinWidth(justified);
+            cell.setPrefWidth(justified);
             cell.setMaxWidth(justified);
             return cell;
         });

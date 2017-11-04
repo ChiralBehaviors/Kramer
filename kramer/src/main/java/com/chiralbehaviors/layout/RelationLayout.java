@@ -303,7 +303,7 @@ public class RelationLayout extends SchemaNodeLayout {
                        + labelWidth;
         double tableWidth = calculateTableColumnWidth();
         if (tableWidth <= outlineWidth(outlineWidth)) {
-            return nestTableColumn(Indent.TOP, layout.getNestedInset());
+            return nestTableColumn(Indent.TOP, 0);
         }
         return outlineWidth(outlineWidth);
     }
