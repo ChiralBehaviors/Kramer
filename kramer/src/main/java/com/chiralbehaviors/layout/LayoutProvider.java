@@ -267,6 +267,10 @@ public class LayoutProvider {
                              textFont, textInsets, textLineHeight);
     }
 
+    double getLeftCellInset() {
+        return listCellInsets.getLeft();
+    }
+
     double getListCellHorizontalInset() {
         return listCellInsets.getLeft() + listCellInsets.getRight();
     }
@@ -311,6 +315,10 @@ public class LayoutProvider {
         return listInsets.getRight() + listCellInsets.getRight();
     }
 
+    double getRightCellInset() {
+        return listCellInsets.getRight();
+    }
+
     double getScrollWidth() {
         return listScroll.getWidth();
     }
@@ -342,12 +350,11 @@ public class LayoutProvider {
     double labelWidth(String label) {
         return textWidth(label) + 20;
     }
-
-    double textWidth(String text) {
+     double textWidth(String text) {
         return snap(FONT_LOADER.computeStringWidth(text, textFont));
     }
 
-    double totalTextWidth(double justifiedWidth) {
+     double totalTextWidth(double justifiedWidth) {
         return LayoutProvider.snap(justifiedWidth + getTextHorizontalInset());
     }
 }

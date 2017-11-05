@@ -96,7 +96,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double getJustifiedTableColumnWidth() {
-        return justifiedWidth + columnHeaderIndentation;
+        return snap(justifiedWidth + columnHeaderIndentation);
     }
 
     @Override
