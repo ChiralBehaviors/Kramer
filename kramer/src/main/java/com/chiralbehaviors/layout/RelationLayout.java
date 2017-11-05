@@ -269,7 +269,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double justify(double justifed) {
+    public double justify(double justifed) { 
         double available = justifed - layout.getNestedCellInset();
         assert available >= tableColumnWidth : String.format("%s justified width incorrect %s < %s",
                                                              r.getLabel(),
@@ -288,6 +288,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                      return child.justify(childJustified);
                                  })
                                  .sum();
+        assert justifiedWidth > 0 : String.format("%s jw <= 0: %s", r.getLabel(), justifiedWidth);
         return justifiedWidth + layout.getNestedInset();
     }
 
@@ -303,7 +304,7 @@ public class RelationLayout extends SchemaNodeLayout {
                         .orElse(0.0)
                        + labelWidth;
         double tableWidth = calculateTableColumnWidth();
-        if (tableWidth <= outlineWidth(outlineWidth)) {
+        if (width >= tableWidth && tableWidth <= outlineWidth(outlineWidth)) {
             return nestTableColumn(Indent.TOP, 0);
         }
         return outlineWidth(outlineWidth);
@@ -451,7 +452,9 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double tableColumnWidth() {
-        assert tableColumnWidth > 0.0;
+        assert tableColumnWidth > 0.0 : String.format("%s tcw <= 0: %s",
+                                                      r.getLabel(),
+                                                      tableColumnWidth);
         return tableColumnWidth + layout.getNestedInset();
     }
 
@@ -469,6 +472,7 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     protected void clear() {
         super.clear();
+        useTable = false;
         tableColumnWidth = -1.0;
         scroll = 0.0;
     }
