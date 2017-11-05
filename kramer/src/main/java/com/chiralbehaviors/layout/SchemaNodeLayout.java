@@ -35,7 +35,7 @@ abstract public class SchemaNodeLayout {
         LEFT {
             @Override
             public double indent(Indent child, LayoutProvider layout,
-                                 double indentation) {
+                                 double indentation, boolean isChildRelation) {
                 switch (child) {
                     case LEFT:
                         return indentation + layout.getNestedLeftInset();
@@ -52,14 +52,14 @@ abstract public class SchemaNodeLayout {
         RIGHT {
             @Override
             public double indent(Indent child, LayoutProvider layout,
-                                 double indentation) {
+                                 double indentation, boolean isChildRelation) {
                 switch (child) {
                     case LEFT:
                         return layout.getNestedLeftInset();
-                    case SINGULAR:
-                        return indentation + (2 * layout.getNestedRightInset());
                     case RIGHT:
                         return indentation + layout.getNestedRightInset();
+                    case SINGULAR:
+                        return indentation + (2 * layout.getNestedRightInset());
                     default:
                         return 0;
                 }
@@ -68,7 +68,7 @@ abstract public class SchemaNodeLayout {
         SINGULAR {
             @Override
             public double indent(Indent child, LayoutProvider layout,
-                                 double indentation) {
+                                 double indentation, boolean isChildRelation) {
                 double half = indentation / 2;
                 switch (child) {
                     case LEFT:
@@ -82,10 +82,24 @@ abstract public class SchemaNodeLayout {
                 }
             }
         },
-        TOP;
+        TOP {
+            public double indent(Indent child, LayoutProvider layout,
+                                 double indentation, boolean isChildRelation) {
+                switch (child) {
+                    case LEFT:
+                        return layout.getNestedLeftInset();
+                    case RIGHT:
+                        return layout.getNestedRightInset();
+                    case SINGULAR:
+                        return layout.getNestedInset();
+                    default:
+                        return 0;
+                }
+            }
+        };
 
         public double indent(Indent child, LayoutProvider layout,
-                             double indentation) {
+                             double indentation, boolean isChildRelation) {
             switch (child) {
                 case LEFT:
                     return layout.getNestedLeftInset();

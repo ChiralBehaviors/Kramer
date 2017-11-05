@@ -239,7 +239,7 @@ public class LayoutProvider {
         textLineHeight = snap(getLineHeight(textFont,
                                             TextBoundsType.LOGICAL_VERTICAL_CENTER))
                          + 1;
-        textInsets = new Insets(3, 20, 3, 20);
+        textInsets = new Insets(3, 30, 3, 30);
     }
 
     public PrimitiveLayout layout(Primitive primitive) {

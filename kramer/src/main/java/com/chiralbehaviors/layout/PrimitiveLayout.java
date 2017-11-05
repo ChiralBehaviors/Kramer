@@ -105,7 +105,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double justify(double justified) {
-        justifiedWidth = justified;
+        justifiedWidth = baseColumnWidth();
         return justifiedWidth;
     }
 

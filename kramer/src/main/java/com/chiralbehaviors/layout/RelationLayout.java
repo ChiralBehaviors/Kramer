@@ -385,10 +385,10 @@ public class RelationLayout extends SchemaNodeLayout {
                                      return c.nestTableColumn(child,
                                                               indent.indent(child,
                                                                             layout,
-                                                                            indentation));
+                                                                            indentation, c.isRelation()));
                                  })
                                  .sum());
-        return tableColumnWidth + layout.getNestedInset();
+        return tableColumnWidth + indentation;
     }
 
     public double outlineCellHeight(double baseHeight) {
@@ -399,8 +399,6 @@ public class RelationLayout extends SchemaNodeLayout {
                                                            double labelWidth,
                                                            Function<JsonNode, JsonNode> extractor,
                                                            double justified) {
-
-
 
         Control labelControl = label(labelWidth, r.getLabel());
         labelControl.setMinWidth(labelWidth);
