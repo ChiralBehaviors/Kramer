@@ -169,10 +169,11 @@ public class RelationLayout extends SchemaNodeLayout {
             VBox columnHeader = new VBox();
             HBox nested = new HBox();
 
-            double width = getJustifiedTableColumnWidth();
+            double width = getJustifiedTableColumnWidth()
+                           + columnHeaderIndentation;
             columnHeader.setMinSize(width, rendered);
             columnHeader.setMaxSize(width, rendered);
-            double half = LayoutProvider.snap(rendered / 2.0);
+            double half = snap(rendered / 2.0);
             columnHeader.getChildren()
                         .add(layout.label(width, r.getLabel(), half));
             columnHeader.getChildren()
@@ -374,6 +375,7 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public double nestTableColumn(Indent indent, double indentation) {
+        columnHeaderIndentation = indentation;
         useTable = true;
         rowHeight = -1.0;
         columnHeaderHeight = -1.0;
@@ -385,7 +387,8 @@ public class RelationLayout extends SchemaNodeLayout {
                                      return c.nestTableColumn(child,
                                                               indent.indent(child,
                                                                             layout,
-                                                                            indentation, c.isRelation()));
+                                                                            indentation,
+                                                                            c.isRelation()));
                                  })
                                  .sum());
         return tableColumnWidth + indentation;

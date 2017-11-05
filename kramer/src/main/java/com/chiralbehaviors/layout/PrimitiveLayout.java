@@ -42,7 +42,6 @@ import javafx.util.Pair;
  *
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
-    protected double        indentation = 0.0;
     protected double        scroll      = 0.0;
     private double          columnWidth;
     private double          labelWidth;
@@ -100,7 +99,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double getJustifiedTableColumnWidth() {
-        return justifiedWidth + indentation;
+        return justifiedWidth + columnHeaderIndentation;
     }
 
     @Override
@@ -153,7 +152,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double nestTableColumn(Indent indent, double indentation) {
-        this.indentation = indentation;
+        this.columnHeaderIndentation = indentation;
         return tableColumnWidth();
     }
 
@@ -193,7 +192,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     protected void clear() {
         super.clear();
-        indentation = 0.0;
+        columnHeaderIndentation = 0.0;
     }
 
     protected double width(JsonNode row) {

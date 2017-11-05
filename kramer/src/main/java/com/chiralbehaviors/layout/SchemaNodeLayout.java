@@ -113,9 +113,10 @@ abstract public class SchemaNodeLayout {
         };
     }
 
-    protected double               height         = -1.0;
-    protected double               justifiedWidth = -1.0;
+    protected double               height                  = -1.0;
+    protected double               justifiedWidth          = -1.0;
     protected final LayoutProvider layout;
+    protected double               columnHeaderIndentation = 0.0;
 
     public SchemaNodeLayout(LayoutProvider layout) {
         this.layout = layout;
