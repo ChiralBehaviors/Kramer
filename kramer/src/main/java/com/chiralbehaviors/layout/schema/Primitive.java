@@ -58,13 +58,18 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
+    public double calculateTableColumnWidth() {
+        return layout.calculateTableColumnWidth();
+    }
+
+    @Override
     public double cellHeight(int cardinality, double justified) {
         return layout.cellHeight(justified);
     }
 
     @Override
-    public void compress(double available, boolean scrolled) {
-        layout.compress(available, scrolled);
+    public void compress(double available) {
+        layout.compress(available);
     }
 
     public double getDefaultWidth() {
@@ -120,11 +125,6 @@ public class Primitive extends SchemaNode {
     @Override
     public double tableColumnWidth() {
         return layout.tableColumnWidth();
-    }
-
-    @Override
-    public double calculateTableColumnWidth() {
-        return layout.calculateTableColumnWidth();
     }
 
     @Override

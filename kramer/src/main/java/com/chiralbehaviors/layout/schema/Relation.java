@@ -65,7 +65,7 @@ public class Relation extends SchemaNode {
     public void autoLayout(double width) {
         double justified = LayoutProvider.snap(width);
         layout(justified);
-        compress(justified, false);
+        compress(justified);
     }
 
     @Override
@@ -95,6 +95,26 @@ public class Relation extends SchemaNode {
         return layout.buildControl(cardinality, extractor);
     }
 
+    public JsonControl buildNestedTable(Function<JsonNode, JsonNode> extractor,
+                                        int cardinality) {
+        if (isFold()) {
+            return fold.buildNestedTable(extract(extractor),
+                                         layout.getAverageCardinality()
+                                                             * cardinality);
+        }
+        return layout.buildNestedTable(cardinality);
+    }
+
+    public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
+                                    int cardinality) {
+        if (isFold()) {
+            return fold.buildOutline(extract(extractor),
+                                     layout.getAverageCardinality()
+                                                         * cardinality);
+        }
+        return layout.buildOutline(extractor, cardinality);
+    }
+
     @Override
     public double calculateTableColumnWidth() {
         return isFold() ? fold.calculateTableColumnWidth()
@@ -119,11 +139,11 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public void compress(double justified, boolean scrolled) {
+    public void compress(double justified) {
         if (isFold()) {
-            fold.compress(justified, scrolled);
+            fold.compress(justified);
         } else {
-            layout.compress(justified, scrolled);
+            layout.compress(justified);
         }
     }
 
@@ -290,26 +310,6 @@ public class Relation extends SchemaNode {
             buf.append('\n');
         });
         return buf.toString();
-    }
-
-    public JsonControl buildNestedTable(Function<JsonNode, JsonNode> extractor,
-                                        int cardinality) {
-        if (isFold()) {
-            return fold.buildNestedTable(extract(extractor),
-                                         layout.getAverageCardinality()
-                                                             * cardinality);
-        }
-        return layout.buildNestedTable(cardinality);
-    }
-
-    public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
-                                    int cardinality) {
-        if (isFold()) {
-            return fold.buildOutline(extract(extractor),
-                                     layout.getAverageCardinality()
-                                                         * cardinality);
-        }
-        return layout.buildOutline(extractor, cardinality);
     }
 
     private ArrayNode flatten(JsonNode data) {

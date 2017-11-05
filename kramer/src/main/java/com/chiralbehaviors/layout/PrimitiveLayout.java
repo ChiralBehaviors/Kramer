@@ -42,7 +42,7 @@ import javafx.util.Pair;
  *
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
-    protected double        scroll      = 0.0;
+    protected double        scroll = 0.0;
     private double          columnWidth;
     private double          labelWidth;
     private double          maxWidth;
@@ -85,11 +85,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public void compress(double available, boolean scrolled) {
+    public void compress(double available) {
         justifiedWidth = snap(available);
-        if (scrolled) {
-            scroll = layout.getScrollWidth();
-        }
     }
 
     @Override
@@ -104,7 +101,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double justify(double justified) {
-        justifiedWidth = baseColumnWidth();
+        justifiedWidth = justified;
         return justifiedWidth;
     }
 

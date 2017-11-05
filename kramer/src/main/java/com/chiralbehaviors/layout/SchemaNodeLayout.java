@@ -69,12 +69,11 @@ abstract public class SchemaNodeLayout {
             @Override
             public double indent(Indent child, LayoutProvider layout,
                                  double indentation, boolean isChildRelation) {
-                double half = indentation / 2;
                 switch (child) {
                     case LEFT:
-                        return half + layout.getNestedLeftInset();
+                        return indentation + layout.getNestedLeftInset();
                     case RIGHT:
-                        return half + layout.getNestedRightInset();
+                        return indentation + layout.getNestedRightInset();
                     case SINGULAR:
                         return indentation + layout.getNestedInset();
                     default:
@@ -83,6 +82,7 @@ abstract public class SchemaNodeLayout {
             }
         },
         TOP {
+            @Override
             public double indent(Indent child, LayoutProvider layout,
                                  double indentation, boolean isChildRelation) {
                 switch (child) {
@@ -113,10 +113,10 @@ abstract public class SchemaNodeLayout {
         };
     }
 
+    protected double               columnHeaderIndentation = 0.0;
     protected double               height                  = -1.0;
     protected double               justifiedWidth          = -1.0;
     protected final LayoutProvider layout;
-    protected double               columnHeaderIndentation = 0.0;
 
     public SchemaNodeLayout(LayoutProvider layout) {
         this.layout = layout;
@@ -132,7 +132,7 @@ abstract public class SchemaNodeLayout {
         return layout.getTextLineHeight() + layout.getTextVerticalInset();
     }
 
-    abstract public void compress(double justified, boolean scrolled);
+    abstract public void compress(double justified);
 
     abstract public JsonNode extractFrom(JsonNode node);
 

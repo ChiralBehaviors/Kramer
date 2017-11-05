@@ -153,13 +153,15 @@ abstract public class SchemaNode {
 
     abstract public Function<Double, Region> buildColumnHeader();
 
+    abstract public double calculateTableColumnWidth();
+
     public abstract double cellHeight(int cardinality, double available);
 
     public double columnHeaderHeight() {
         return getLayout().columnHeaderHeight();
     }
 
-    public abstract void compress(double available, boolean scrolled);
+    public abstract void compress(double available);
 
     public Function<JsonNode, JsonNode> extract(Function<JsonNode, JsonNode> extractor) {
         return n -> {
@@ -213,8 +215,6 @@ abstract public class SchemaNode {
     }
 
     abstract public double tableColumnWidth();
-
-    abstract public double calculateTableColumnWidth();
 
     abstract public String toString(int indent);
 }

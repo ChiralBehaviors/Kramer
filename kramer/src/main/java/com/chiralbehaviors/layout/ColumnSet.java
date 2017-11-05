@@ -61,7 +61,7 @@ public class ColumnSet {
             firstColumn.setWidth(justified);
             firstColumn.getFields()
                        .forEach(f -> {
-                           f.compress(fieldWidth, scrolled);
+                           f.compress(fieldWidth);
                        });
             cellHeight = firstColumn.cellHeight(cardinality, labelWidth);
             return;
@@ -73,7 +73,7 @@ public class ColumnSet {
         double compressed = columnWidth - labelWidth;
         firstColumn.getFields()
                    .forEach(f -> {
-                       f.compress(compressed, scrolled);
+                       f.compress(compressed);
                    });
         IntStream.range(1, count)
                  .forEach(i -> columns.add(new Column(columnWidth)));

@@ -105,6 +105,9 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public Region buildColumnHeader() {
         HBox header = new HBox();
+        header.setMinWidth(justifiedWidth + layout.getNestedCellInset());
+        header.setPrefWidth(justifiedWidth + layout.getNestedCellInset());
+        header.setMaxWidth(justifiedWidth + layout.getNestedCellInset());
         List<SchemaNode> children = r.getChildren();
         children.forEach(c -> header.getChildren()
                                     .add(c.buildColumnHeader()
@@ -169,8 +172,7 @@ public class RelationLayout extends SchemaNodeLayout {
             VBox columnHeader = new VBox();
             HBox nested = new HBox();
 
-            double width = getJustifiedTableColumnWidth()
-                           + columnHeaderIndentation;
+            double width = justifiedWidth + columnHeaderIndentation;
             columnHeader.setMinSize(width, rendered);
             columnHeader.setMaxSize(width, rendered);
             double half = snap(rendered / 2.0);
@@ -188,9 +190,9 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public void compress(double justified, boolean ignored) {
+    public void compress(double justified) {
         if (useTable) {
-            r.justify(justified);
+            justify(justified);
             return;
         }
         columnSets.clear();
@@ -269,7 +271,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double justify(double justifed) { 
+    public double justify(double justifed) {
         double available = justifed - layout.getNestedCellInset();
         assert available >= tableColumnWidth : String.format("%s justified width incorrect %s < %s",
                                                              r.getLabel(),
@@ -288,8 +290,8 @@ public class RelationLayout extends SchemaNodeLayout {
                                      return child.justify(childJustified);
                                  })
                                  .sum();
-        assert justifiedWidth > 0 : String.format("%s jw <= 0: %s", r.getLabel(), justifiedWidth);
-        return justifiedWidth + layout.getNestedInset();
+        justifiedWidth = available;
+        return justifiedWidth;
     }
 
     @Override
@@ -304,10 +306,10 @@ public class RelationLayout extends SchemaNodeLayout {
                         .orElse(0.0)
                        + labelWidth;
         double tableWidth = calculateTableColumnWidth();
-        if (width >= tableWidth && tableWidth <= outlineWidth(outlineWidth)) {
+        if (width >= tableWidth && tableWidth <= outlineWidth()) {
             return nestTableColumn(Indent.TOP, 0);
         }
-        return outlineWidth(outlineWidth);
+        return outlineWidth();
     }
 
     @Override
@@ -371,12 +373,12 @@ public class RelationLayout extends SchemaNodeLayout {
         if (!singular && maxCardinality > averageCardinality) {
             scroll = layout.getScrollWidth();
         }
-        return r.outlineWidth();
+        return outlineWidth();
     }
 
     @Override
     public double nestTableColumn(Indent indent, double indentation) {
-        columnHeaderIndentation = indentation;
+        columnHeaderIndentation = indentation + layout.getNestedCellInset();
         useTable = true;
         rowHeight = -1.0;
         columnHeaderHeight = -1.0;
@@ -392,7 +394,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                                                             c.isRelation()));
                                  })
                                  .sum());
-        return tableColumnWidth + indentation;
+        return tableColumnWidth + layout.getNestedCellInset();
     }
 
     public double outlineCellHeight(double baseHeight) {
@@ -460,8 +462,8 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public String toString() {
-        return String.format("RelationLayout [r=%s x %s:%s, {%s, %s, %s} ]",
-                             r.getField(), averageCardinality, height,
+        return String.format("RelationLayout [%s %s x %s, {%s, %s, %s} ]",
+                             r.getField(), height, averageCardinality,
                              outlineWidth, tableColumnWidth, justifiedWidth);
     }
 
