@@ -67,12 +67,16 @@ public class Outline extends JsonControl {
                                                                .sum());
         layout.apply(list);
         list.setFixedCellSize(cellHeight);
+        list.setMinWidth(layout.getJustifiedTableColumnWidth());
+        list.setPrefWidth(layout.getJustifiedTableColumnWidth());
+        list.setMaxWidth(layout.getJustifiedTableColumnWidth());
         list.setCellFactory(c -> {
             ListCell<JsonNode> cell = listCell(columnSets, averageCardinality,
                                                layout.baseOutlineCellHeight(cellHeight),
                                                extractor, layout);
-            cell.setPrefWidth(layout.getJustifiedWidth());
-            cell.setMaxWidth(USE_COMPUTED_SIZE);
+            cell.setMinWidth(layout.getJustifiedCellWidth());
+            cell.setPrefWidth(layout.getJustifiedCellWidth());
+            cell.setMaxWidth(layout.getJustifiedCellWidth());
             layout.apply(cell);
             return cell;
         });
@@ -116,7 +120,8 @@ public class Outline extends JsonControl {
             column.getStyleClass()
                   .add("column");
             column.setMinSize(c.getWidth(), cellHeight);
-            column.setMaxSize(USE_COMPUTED_SIZE, cellHeight);
+            column.setMaxSize(c.getWidth(), cellHeight);
+            column.setPrefSize(c.getWidth(), cellHeight);
             controls.add(build(c, cardinality, extractor, labelWidth, column));
             span.getChildren()
                 .add(column);
@@ -175,9 +180,10 @@ public class Outline extends JsonControl {
                                     RelationLayout layout) {
                 cell = new VBox();
                 cell.setMinHeight(cellHeight);
-                cell.setPrefHeight(cellHeight);
-                cell.setMinWidth(0);
-                cell.setPrefWidth(1);
+                cell.setMaxHeight(cellHeight);
+                cell.setMinWidth(layout.getJustifiedWidth());
+                cell.setPrefWidth(layout.getJustifiedWidth());
+                cell.setMaxWidth(layout.getJustifiedWidth());
                 columnSets.forEach(cs -> {
                     Pair<Consumer<JsonNode>, Parent> master = build(cs.getColumns(),
                                                                     averageCardinality,

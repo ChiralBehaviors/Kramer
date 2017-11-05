@@ -18,13 +18,11 @@ package com.chiralbehaviors.layout.control;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -33,6 +31,7 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Skin;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -43,23 +42,26 @@ import javafx.util.Pair;
  *
  */
 public class NestedTable extends JsonControl {
-
-    private Map<SchemaNodeLayout, Region> columnHeaders;
-    private double                        rowHeight;
-    private ListView<JsonNode>            rows;
+    private double             rowHeight;
+    private ListView<JsonNode> rows;
 
     public NestedTable(RelationLayout layout) {
         getStyleClass().add(layout.getStyleClass());
     }
 
     public JsonControl build(int cardinality, RelationLayout layout) {
-        columnHeaders = layout.buildColumnHeader();
-        buildRows(cardinality, layout);
-        Region header = columnHeaders.get(layout);
-        VBox frame = new VBox(header, rows);
-        frame.setPrefWidth(layout.getJustifiedWidth());
-        frame.setMaxWidth(USE_COMPUTED_SIZE);
-        getChildren().add(frame);
+        Region header = layout.buildColumnHeader();
+        VBox frame = new VBox(header, buildRows(cardinality, layout));
+        frame.setMinWidth(layout.getJustifiedTableColumnWidth());
+        frame.setPrefWidth(layout.getJustifiedTableColumnWidth());
+        frame.setMaxWidth(layout.getJustifiedTableColumnWidth());
+
+        AnchorPane.setLeftAnchor(frame, 0d);
+        AnchorPane.setRightAnchor(frame, 0d);
+        AnchorPane.setTopAnchor(frame, 0d);
+        AnchorPane.setBottomAnchor(frame, 0d);
+
+        getChildren().add(new AnchorPane(frame));
         return this;
     }
 
@@ -68,22 +70,8 @@ public class NestedTable extends JsonControl {
         JsonControl control = layout.buildControl(1);
         double width = layout.getJustifiedWidth();
         control.setMinWidth(width);
+        control.setPrefWidth(width);
         control.setMaxWidth(width);
-//        control.setMaxWidth(USE_COMPUTED_SIZE);
-        Region header = columnHeaders.get(layout);
-        control.widthProperty()
-               .addListener((o, p, n) -> {
-                   double w = o.getValue()
-                               .doubleValue()
-                              + layout.getIndentation();
-                   header.setMinWidth(w);
-                   header.setMaxWidth(w);
-                   header.setPrefWidth(w);
-               });
-        double indented = layout.getJustifiedWidth() + layout.getIndentation();
-        header.setMinWidth(indented);
-        header.setMaxWidth(indented);
-        header.setPrefWidth(indented);
         return new Pair<>(node -> control.setItem(layout.extractFrom(node)),
                           control);
     }
@@ -149,31 +137,18 @@ public class NestedTable extends JsonControl {
 
         row.setFixedCellSize(extended);
 
-        row.setMinHeight(rendered);
-        row.setMaxHeight(rendered);
-
-        double width = layout.getJustifiedWidth();
+        double width = layout.getJustifiedTableColumnWidth();
+        row.setMinSize(width, rendered);
         row.setPrefSize(width, rendered);
-        row.setMaxSize(USE_COMPUTED_SIZE, rendered);
-
-        Region header = columnHeaders.get(layout);
-        row.widthProperty()
-           .addListener((o, p, n) -> {
-               double w = o.getValue()
-                           .doubleValue();
-               header.setMinWidth(w);
-               header.setMaxWidth(w);
-               header.setPrefWidth(w);
-           });
-        header.setMinWidth(width);
-        header.setMaxWidth(width);
-        header.setPrefWidth(width);
+        row.setMaxSize(width, rendered);
 
         row.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(extended),
                                                                layout));
-            cell.setMinWidth(0);
-            cell.setPrefWidth(1);
+            double justified = layout.getJustifiedCellWidth();
+            cell.setMinWidth(justified);
+            cell.setPrefWidth(justified);
+            cell.setMaxWidth(justified);
             return cell;
         });
         return row;
@@ -207,40 +182,34 @@ public class NestedTable extends JsonControl {
         };
     }
 
-    private ListView<JsonNode> buildRows(int card, RelationLayout layout) {
+    private AnchorPane buildRows(int card, RelationLayout layout) {
         rows = new ListView<>();
         layout.apply(rows);
 
         double rowHeight = layout.getRowHeight();
         rows.setFixedCellSize(rowHeight);
 
+        double width = layout.getJustifiedTableColumnWidth();
         double height = layout.getHeight() - layout.getColumnHeaderHeight();
 
-        double width = layout.getJustifiedTableColumnWidth();
+        rows.setMinSize(width, height);
         rows.setPrefSize(width, height);
-        rows.setMaxSize(USE_COMPUTED_SIZE, height);
-
-        //        Region header = columnHeaders.get(layout);
-        //        rows.widthProperty()
-        //            .addListener((o, p, n) -> {
-        //                double w = o.getValue()
-        //                            .doubleValue();
-        //                header.setMinWidth(w);
-        //                header.setMaxWidth(w);
-        //                header.setPrefWidth(w);
-        //            });
-        //        header.setMinWidth(width);
-        //        header.setMaxWidth(width);
-        //        header.setPrefWidth(width);
+        rows.setMaxSize(width, height);
 
         rows.setCellFactory(listView -> {
             ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
                                                                layout));
-            cell.setMinWidth(0);
-            cell.setPrefWidth(1);
+            double justified = layout.getJustifiedCellWidth();
+            cell.setMinWidth(justified);
+            cell.setPrefWidth(justified);
+            cell.setMaxWidth(justified);
             return cell;
         });
-        return rows;
+        AnchorPane.setLeftAnchor(rows, 0d);
+        AnchorPane.setRightAnchor(rows, 0d);
+        AnchorPane.setTopAnchor(rows, 0d);
+        AnchorPane.setBottomAnchor(rows, 0d);
+        return new AnchorPane(rows);
     }
 
     private List<JsonNode> itemsAsArray(JsonNode items) {

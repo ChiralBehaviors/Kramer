@@ -180,6 +180,14 @@ public class LayoutProvider {
     public void initialize(List<String> styleSheets) {
         this.styleSheets = styleSheets;
         Label text = new Label("Lorem Ipsum");
+        text.setStyle("-fx-background-color: " + "         rgba(0,0,0,0.08),"
+                      + "        linear-gradient(#9a9a9a, #909090),"
+                      + "        white 0%;"
+                      + "    -fx-background-insets: 0 0 -1 0,0,1;"
+                      + "    -fx-background-radius: 5,5,4;"
+                      + "    -fx-padding: 3 30 3 30;"
+                      + "    -fx-text-fill: #242d35;"
+                      + "    -fx-font-size: 14px;");
         Label labelText = new Label("Lorem Ipsum");
 
         ListView<String> outlineList = new ListView<>();
@@ -239,7 +247,7 @@ public class LayoutProvider {
         textLineHeight = snap(getLineHeight(textFont,
                                             TextBoundsType.LOGICAL_VERTICAL_CENTER))
                          + 1;
-        textInsets = new Insets(3, 20, 3, 20);
+        textInsets = text.getInsets();
     }
 
     public PrimitiveLayout layout(Primitive primitive) {
@@ -257,10 +265,6 @@ public class LayoutProvider {
         return String.format("Layout [model=%s\n listCellInsets=%s\n listInsets=%s\n styleSheets=%s\n textFont=%s\n textInsets=%s\n textLineHeight=%s]",
                              model, listCellInsets, listInsets, styleSheets,
                              textFont, textInsets, textLineHeight);
-    }
-
-    double baseTextWidth(double width) {
-        return width - getTextHorizontalInset();
     }
 
     double getListCellHorizontalInset() {

@@ -20,9 +20,7 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -52,6 +50,7 @@ import javafx.util.Pair;
  *
  */
 public class RelationLayout extends SchemaNodeLayout {
+    boolean                       useTable         = false;
     private int                   averageCardinality;
     private double                columnHeaderHeight;
     private final List<ColumnSet> columnSets       = new ArrayList<>();
@@ -60,6 +59,7 @@ public class RelationLayout extends SchemaNodeLayout {
     private double                outlineWidth     = 0;
     private final Relation        r;
     private double                rowHeight        = -1;
+    private double                scroll           = 0.0;
     private boolean               singular;
     private double                tableColumnWidth = 0;
 
@@ -71,7 +71,7 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public void adjustHeight(double delta) {
         super.adjustHeight(delta);
-        if (r.isUseTable()) {
+        if (useTable) {
             List<SchemaNode> children = r.getChildren();
             double subDelta = delta / children.size();
             if (delta >= 1.0) {
@@ -103,15 +103,22 @@ public class RelationLayout extends SchemaNodeLayout {
         return extended - layout.getListCellVerticalInset();
     }
 
-    public Map<SchemaNodeLayout, Region> buildColumnHeader() {
-        Map<SchemaNodeLayout, Region> headers = new HashMap<>();
+    public Region buildColumnHeader() {
         HBox header = new HBox();
-        headers.put(this, header);
+        header.setMinWidth(justifiedWidth + layout.getNestedCellInset());
+        header.setPrefWidth(justifiedWidth + layout.getNestedCellInset());
+        header.setMaxWidth(justifiedWidth + layout.getNestedCellInset());
         List<SchemaNode> children = r.getChildren();
         children.forEach(c -> header.getChildren()
-                                    .add(c.buildColumnHeader(headers)
+                                    .add(c.buildColumnHeader()
                                           .apply(columnHeaderHeight)));
-        return headers;
+        return header;
+    }
+
+    public JsonControl buildControl(int cardinality,
+                                    Function<JsonNode, JsonNode> extractor) {
+        return useTable ? r.buildNestedTable(extractor, cardinality)
+                        : r.buildOutline(extractor, cardinality);
     }
 
     public JsonControl buildNestedTable(int cardinality) {
@@ -138,7 +145,7 @@ public class RelationLayout extends SchemaNodeLayout {
             return height;
         }
         int cardinality = resolveCardinality(card);
-        if (!r.isUseTable()) {
+        if (!useTable) {
             height = outlineHeight(cardinality);
         } else {
             columnHeaderHeight = r.getChildren()
@@ -155,20 +162,22 @@ public class RelationLayout extends SchemaNodeLayout {
         return height;
     }
 
-    public Function<Double, Region> columnHeader(Map<SchemaNodeLayout, Region> headers) {
+    @Override
+    public Function<Double, Region> columnHeader() {
         List<SchemaNode> children = r.getChildren();
         List<Function<Double, Region>> nestedHeaders = children.stream()
-                                                               .map(c -> c.buildColumnHeader(headers))
+                                                               .map(c -> c.buildColumnHeader())
                                                                .collect(Collectors.toList());
         return rendered -> {
             VBox columnHeader = new VBox();
             HBox nested = new HBox();
 
-            columnHeader.setMinSize(justifiedWidth, rendered);
-            columnHeader.setMaxSize(justifiedWidth, rendered);
-            double half = LayoutProvider.snap(rendered / 2.0);
+            double width = justifiedWidth + columnHeaderIndentation;
+            columnHeader.setMinSize(width, rendered);
+            columnHeader.setMaxSize(width, rendered);
+            double half = snap(rendered / 2.0);
             columnHeader.getChildren()
-                        .add(layout.label(justifiedWidth, r.getLabel(), half));
+                        .add(layout.label(width, r.getLabel(), half));
             columnHeader.getChildren()
                         .add(nested);
 
@@ -176,14 +185,14 @@ public class RelationLayout extends SchemaNodeLayout {
                 nested.getChildren()
                       .add(n.apply(half));
             });
-            headers.put(this, columnHeader);
             return columnHeader;
         };
     }
 
+    @Override
     public void compress(double justified) {
-        if (r.isUseTable()) {
-            r.justify(justified - layout.getListHorizontalInset());
+        if (useTable) {
+            justify(justified);
             return;
         }
         columnSets.clear();
@@ -206,7 +215,7 @@ public class RelationLayout extends SchemaNodeLayout {
             }
         }
         columnSets.forEach(cs -> cs.compress(averageCardinality, justifiedWidth,
-                                             labelWidth));
+                                             labelWidth, scroll > 0.0));
     }
 
     @Override
@@ -236,16 +245,17 @@ public class RelationLayout extends SchemaNodeLayout {
         return columnHeaderHeight;
     }
 
+    public double getJustifiedCellWidth() {
+        return justifiedWidth + layout.getListCellHorizontalInset();
+    }
+
+    @Override
     public double getJustifiedTableColumnWidth() {
         return justifiedWidth + layout.getNestedInset();
     }
 
     public double getLabelWidth() {
         return labelWidth;
-    }
-
-    public double getRowCellWidth() {
-        return justifiedWidth - layout.getNestedInset();
     }
 
     public double getRowHeight() {
@@ -261,30 +271,33 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double justify(double width) {
-        assert width >= tableColumnWidth : String.format("%s justified width incorrect %s < %s",
-                                                         r.getLabel(), width,
-                                                         tableColumnWidth);
-        double slack = Math.max(0, width - tableColumnWidth);
+    public double justify(double justifed) {
+        double available = justifed - layout.getNestedCellInset();
+        assert available >= tableColumnWidth : String.format("%s justified width incorrect %s < %s",
+                                                             r.getLabel(),
+                                                             available,
+                                                             tableColumnWidth);
+        double slack = Math.max(0, available - tableColumnWidth);
         List<SchemaNode> children = r.getChildren();
-        justifiedWidth = snap(children.stream()
-                                      .mapToDouble(child -> {
-                                          double childWidth = child.tableColumnWidth();
-                                          double additional = slack
-                                                              * (childWidth
-                                                                 / tableColumnWidth);
-                                          double childJustified = snap(additional
-                                                                       + childWidth);
-                                          return child.justify(childJustified);
-                                      })
-                                      .sum());
+        justifiedWidth = children.stream()
+                                 .mapToDouble(child -> {
+                                     double childWidth = child.tableColumnWidth();
+                                     double additional = slack
+                                                         * (childWidth
+                                                            / tableColumnWidth);
+                                     double childJustified = snap(additional
+                                                                  + childWidth);
+                                     return child.justify(childJustified);
+                                 })
+                                 .sum();
+        justifiedWidth = available;
         return justifiedWidth;
     }
 
     @Override
     public double layout(double width) {
         clear();
-        double available = snap(width - labelWidth);
+        double available = baseOutlineWidth(snap(width - labelWidth));
         assert available > 0;
         outlineWidth = r.getChildren()
                         .stream()
@@ -292,16 +305,16 @@ public class RelationLayout extends SchemaNodeLayout {
                         .max()
                         .orElse(0.0)
                        + labelWidth;
-        double tableWidth = calculateTableWidth();
-        if (tableWidth <= outlineWidth) {
-            return r.nestTable();
+        double tableWidth = calculateTableColumnWidth();
+        if (width >= tableWidth && tableWidth <= outlineWidth()) {
+            return nestTableColumn(Indent.TOP, 0);
         }
-        return outlineWidth(outlineWidth);
+        return outlineWidth();
     }
 
     @Override
     public double layoutWidth() {
-        return r.isUseTable() ? getTableWidth() : outlineWidth(outlineWidth);
+        return useTable ? tableColumnWidth() : outlineWidth(outlineWidth);
     }
 
     @Override
@@ -357,17 +370,16 @@ public class RelationLayout extends SchemaNodeLayout {
                              .getAsDouble();
         outlineWidth = snap(labelWidth + outlineWidth);
         maxCardinality = Math.max(1, maxCardinality);
-        return r.isFold() ? r.getFold()
-                             .outlineWidth()
-                          : r.outlineWidth();
+        if (!singular && maxCardinality > averageCardinality) {
+            scroll = layout.getScrollWidth();
+        }
+        return outlineWidth();
     }
 
-    public double nestTable() {
-        tableColumnWidth = nestTableColumn(Indent.TOP, 0);
-        return tableColumnWidth;
-    }
-
+    @Override
     public double nestTableColumn(Indent indent, double indentation) {
+        columnHeaderIndentation = indentation + layout.getNestedCellInset();
+        useTable = true;
         rowHeight = -1.0;
         columnHeaderHeight = -1.0;
         height = -1.0;
@@ -378,10 +390,11 @@ public class RelationLayout extends SchemaNodeLayout {
                                      return c.nestTableColumn(child,
                                                               indent.indent(child,
                                                                             layout,
-                                                                            indentation));
+                                                                            indentation,
+                                                                            c.isRelation()));
                                  })
                                  .sum());
-        return tableColumnWidth;
+        return tableColumnWidth + layout.getNestedCellInset();
     }
 
     public double outlineCellHeight(double baseHeight) {
@@ -393,20 +406,24 @@ public class RelationLayout extends SchemaNodeLayout {
                                                            Function<JsonNode, JsonNode> extractor,
                                                            double justified) {
 
-        double available = justified - labelWidth;
-
-        JsonControl control = r.buildControl(cardinality, extractor);
-
         Control labelControl = label(labelWidth, r.getLabel());
         labelControl.setMinWidth(labelWidth);
-        control.setPrefWidth(available);
+        labelControl.setMaxWidth(labelWidth);
+
+        JsonControl control = r.buildControl(cardinality, extractor);
+        double available = justified - labelWidth;
+        control.setMinWidth(available);
+        control.setMaxWidth(available);
         control.setMinHeight(height);
+        control.setMaxHeight(height);
 
         Pane box = new HBox();
         box.getStyleClass()
            .add(r.getField());
-        box.setPrefWidth(justified);
-        box.setPrefHeight(height);
+        box.setMinWidth(justified);
+        box.setMaxWidth(justified);
+        box.setMinHeight(height);
+        box.setMaxHeight(height);
         box.getChildren()
            .add(labelControl);
         box.getChildren()
@@ -437,33 +454,29 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double tableColumnWidth() {
-        assert tableColumnWidth > 0.0;
-        return tableColumnWidth;
+        assert tableColumnWidth > 0.0 : String.format("%s tcw <= 0: %s",
+                                                      r.getLabel(),
+                                                      tableColumnWidth);
+        return tableColumnWidth + layout.getNestedInset();
     }
 
     @Override
     public String toString() {
-        return String.format("RelationLayout [r=%s x %s:%s, {%s, %s, %s} ]",
-                             r.getField(), averageCardinality, height,
+        return String.format("RelationLayout [%s %s x %s, {%s, %s, %s} ]",
+                             r.getField(), height, averageCardinality,
                              outlineWidth, tableColumnWidth, justifiedWidth);
     }
 
     protected double baseOutlineWidth(double width) {
-        return snap(baseTableWidth(width));
-    }
-
-    protected double baseTableWidth(double width) {
-        return width - layout.getNestedInset();
-    }
-
-    protected double calculateTableWidth() {
-        return calculateTableColumnWidth();
+        return snap(width - layout.getNestedInset());
     }
 
     @Override
     protected void clear() {
         super.clear();
+        useTable = false;
         tableColumnWidth = -1.0;
+        scroll = 0.0;
     }
 
     protected double elementHeight() {
@@ -473,11 +486,6 @@ public class RelationLayout extends SchemaNodeLayout {
                                                       justifiedWidth))
                 .max()
                 .getAsDouble();
-    }
-
-    protected double getTableWidth() {
-        assert tableColumnWidth > 0.0;
-        return tableColumnWidth;
     }
 
     protected Indent indent(Indent parent, SchemaNode child) {

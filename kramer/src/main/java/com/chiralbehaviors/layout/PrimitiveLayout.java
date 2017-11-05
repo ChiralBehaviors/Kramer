@@ -19,7 +19,6 @@ package com.chiralbehaviors.layout;
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -43,12 +42,11 @@ import javafx.util.Pair;
  *
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
-    protected double        indentation = 0.0;
+    protected double        scroll = 0.0;
     private double          columnWidth;
     private double          labelWidth;
     private double          maxWidth;
     private final Primitive p;
-
     @SuppressWarnings("unused")
     private boolean         variableLength;
 
@@ -75,17 +73,18 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return height;
     }
 
-    public Function<Double, Region> columnHeader(Map<SchemaNodeLayout, Region> headers) {
+    @Override
+    public Function<Double, Region> columnHeader() {
         return rendered -> {
             double width = getJustifiedTableColumnWidth();
             Control columnHeader = layout.label(width, p.getLabel(), rendered);
             columnHeader.setMinSize(width, rendered);
             columnHeader.setMaxSize(width, rendered);
-            headers.put(this, columnHeader);
             return columnHeader;
         };
     }
 
+    @Override
     public void compress(double available) {
         justifiedWidth = snap(available);
     }
@@ -95,18 +94,15 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return p.extractFrom(node);
     }
 
-    public double getIndentation() {
-        return indentation;
-    }
-
+    @Override
     public double getJustifiedTableColumnWidth() {
-        return justifiedWidth + indentation;
+        return justifiedWidth + columnHeaderIndentation;
     }
 
     @Override
-    public double justify(double available) {
-        justifiedWidth = snap(available - indentation);
-        return getJustifiedTableColumnWidth();
+    public double justify(double justified) {
+        justifiedWidth = justified;
+        return justifiedWidth;
     }
 
     @Override
@@ -124,33 +120,36 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     public double measure(JsonNode data, boolean singular) {
         clear();
         labelWidth = labelWidth(p.getLabel());
-        double sum = 0;
+        double summedDataWidth = 0;
         maxWidth = 0;
         columnWidth = 0;
         for (JsonNode prim : SchemaNode.asList(data)) {
             List<JsonNode> rows = SchemaNode.asList(prim);
-            double width = 0;
+            double summedWidth = 0;
             for (JsonNode row : rows) {
-                width += width(row);
-                maxWidth = Math.max(maxWidth, width);
+                double w = width(row);
+                summedWidth += w;
+                maxWidth = Math.max(maxWidth, w);
             }
-            sum += rows.isEmpty() ? 1 : width / rows.size();
+            summedDataWidth += rows.isEmpty() ? 1 : summedWidth / rows.size();
         }
-        double averageWidth = data.size() == 0 ? 0 : (sum / data.size());
+        double averageWidth = data.size() == 0 ? 0
+                                               : (summedDataWidth
+                                                  / data.size());
 
         columnWidth = Math.max(labelWidth,
-                               layout.totalTextWidth(LayoutProvider.snap(Math.max(p.getDefaultWidth(),
-                                                                                  averageWidth))));
+                               LayoutProvider.snap(Math.max(p.getDefaultWidth(),
+                                                            averageWidth)));
         if (maxWidth > averageWidth) {
             variableLength = true;
         }
-
         return columnWidth;
 
     }
 
+    @Override
     public double nestTableColumn(Indent indent, double indentation) {
-        this.indentation = indentation;
+        this.columnHeaderIndentation = indentation;
         return tableColumnWidth();
     }
 
@@ -180,20 +179,20 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public double tableColumnWidth() {
-        return baseColumnWidth() + indentation;
+        return baseColumnWidth();
+    }
+
+    protected double baseColumnWidth() {
+        return Math.max(columnWidth, labelWidth);
     }
 
     @Override
     protected void clear() {
         super.clear();
-        indentation = 0.0;
+        columnHeaderIndentation = 0.0;
     }
 
     protected double width(JsonNode row) {
-        return layout.textWidth(LayoutProvider.toString(row));
-    }
-    
-    protected double baseColumnWidth() {
-        return Math.max(columnWidth, labelWidth);
+        return layout.totalTextWidth(layout.textWidth(LayoutProvider.toString(row)));
     }
 }

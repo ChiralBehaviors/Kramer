@@ -18,13 +18,11 @@ package com.chiralbehaviors.layout.schema;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
 import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.NestedTable;
@@ -42,7 +40,6 @@ import javafx.util.Pair;
  *
  */
 public class Relation extends SchemaNode {
-    boolean                        useTable = false;
     private boolean                autoFold = true;
     private final List<SchemaNode> children = new ArrayList<>();
     private Relation               fold;
@@ -78,11 +75,11 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public Function<Double, Region> buildColumnHeader(Map<SchemaNodeLayout, Region> headers) {
+    public Function<Double, Region> buildColumnHeader() {
         if (isFold()) {
-            return fold.buildColumnHeader(headers);
+            return fold.buildColumnHeader();
         }
-        return layout.columnHeader(headers);
+        return layout.columnHeader();
     }
 
     public JsonControl buildControl(int cardinality, double width) {
@@ -95,8 +92,27 @@ public class Relation extends SchemaNode {
 
     public JsonControl buildControl(int cardinality,
                                     Function<JsonNode, JsonNode> extractor) {
-        return useTable ? buildNestedTable(extractor, cardinality)
-                        : buildOutline(extractor, cardinality);
+        return layout.buildControl(cardinality, extractor);
+    }
+
+    public JsonControl buildNestedTable(Function<JsonNode, JsonNode> extractor,
+                                        int cardinality) {
+        if (isFold()) {
+            return fold.buildNestedTable(extract(extractor),
+                                         layout.getAverageCardinality()
+                                                             * cardinality);
+        }
+        return layout.buildNestedTable(cardinality);
+    }
+
+    public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
+                                    int cardinality) {
+        if (isFold()) {
+            return fold.buildOutline(extract(extractor),
+                                     layout.getAverageCardinality()
+                                                         * cardinality);
+        }
+        return layout.buildOutline(extractor, cardinality);
     }
 
     @Override
@@ -180,26 +196,17 @@ public class Relation extends SchemaNode {
         return true;
     }
 
-    public boolean isUseTable() {
-        if (isFold()) {
-            return fold.isUseTable();
-        }
-        return useTable;
-    }
-
     @Override
     public double justify(double width) {
         if (isFold()) {
             return fold.justify(width);
         } else {
-            assert useTable : "Not a nested table";
             return layout.justify(width);
         }
     }
 
     @Override
     public double layout(double width) {
-        useTable = false;
         return isFold() ? fold.layout(width) : layout.layout(width);
     }
 
@@ -215,6 +222,7 @@ public class Relation extends SchemaNode {
 
         if (isAutoFoldable()) {
             fold = ((Relation) children.get(children.size() - 1));
+            return fold.measure(flatten(data), isSingular, provider);
         }
         if (data.isNull() || children.size() == 0) {
             return 24;
@@ -227,14 +235,8 @@ public class Relation extends SchemaNode {
         measure(jsonNode, !jsonNode.isArray(), layout);
     }
 
-    public double nestTable() {
-        useTable = true;
-        return layout.nestTable();
-    }
-
     @Override
     public double nestTableColumn(Indent indent, double indentation) {
-        useTable = true;
         return isFold() ? fold.nestTableColumn(indent, indentation)
                         : layout.nestTableColumn(indent, indentation);
     }
@@ -284,10 +286,6 @@ public class Relation extends SchemaNode {
         }
     }
 
-    public void setUseTable(boolean useTable) {
-        this.useTable = useTable;
-    }
-
     @Override
     public double tableColumnWidth() {
         return isFold() ? fold.tableColumnWidth() : layout.tableColumnWidth();
@@ -312,26 +310,6 @@ public class Relation extends SchemaNode {
             buf.append('\n');
         });
         return buf.toString();
-    }
-
-    protected JsonControl buildNestedTable(Function<JsonNode, JsonNode> extractor,
-                                           int cardinality) {
-        if (isFold()) {
-            return fold.buildNestedTable(extract(extractor),
-                                         layout.getAverageCardinality()
-                                                             * cardinality);
-        }
-        return layout.buildNestedTable(cardinality);
-    }
-
-    protected JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
-                                       int cardinality) {
-        if (isFold()) {
-            return fold.buildOutline(extract(extractor),
-                                     layout.getAverageCardinality()
-                                                         * cardinality);
-        }
-        return layout.buildOutline(extractor, cardinality);
     }
 
     private ArrayNode flatten(JsonNode data) {

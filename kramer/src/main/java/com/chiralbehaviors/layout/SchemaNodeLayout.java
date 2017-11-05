@@ -18,9 +18,12 @@ package com.chiralbehaviors.layout;
 
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
+import java.util.function.Function;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Control;
+import javafx.scene.layout.Region;
 
 /**
  * @author halhildebrand
@@ -32,70 +35,71 @@ abstract public class SchemaNodeLayout {
         LEFT {
             @Override
             public double indent(Indent child, LayoutProvider layout,
-                                 double indentation) {
+                                 double indentation, boolean isChildRelation) {
                 switch (child) {
                     case LEFT:
-                    case SINGULAR:
                         return indentation + layout.getNestedLeftInset();
+                    case SINGULAR:
+                        return indentation + (2 * layout.getNestedLeftInset());
                     case RIGHT:
                         return layout.getNestedRightInset();
                     default:
                         return 0;
                 }
             }
-
-            @Override
-            public double indent(LayoutProvider layout, double indentation) {
-                return indentation + layout.getNestedLeftInset();
-            }
         },
         NONE,
         RIGHT {
             @Override
             public double indent(Indent child, LayoutProvider layout,
-                                 double indentation) {
+                                 double indentation, boolean isChildRelation) {
                 switch (child) {
                     case LEFT:
                         return layout.getNestedLeftInset();
-                    case SINGULAR:
                     case RIGHT:
                         return indentation + layout.getNestedRightInset();
+                    case SINGULAR:
+                        return indentation + (2 * layout.getNestedRightInset());
                     default:
                         return 0;
                 }
-            }
-
-            @Override
-            public double indent(LayoutProvider layout, double indentation) {
-                return indentation + layout.getNestedRightInset();
             }
         },
         SINGULAR {
             @Override
             public double indent(Indent child, LayoutProvider layout,
-                                 double indentation) {
-                double half = indentation / 2;
+                                 double indentation, boolean isChildRelation) {
                 switch (child) {
                     case LEFT:
-                        return half + layout.getNestedLeftInset();
+                        return indentation + layout.getNestedLeftInset();
                     case RIGHT:
-                        return half + layout.getNestedRightInset();
+                        return indentation + layout.getNestedRightInset();
                     case SINGULAR:
                         return indentation + layout.getNestedInset();
                     default:
                         return 0;
                 }
             }
-
-            @Override
-            public double indent(LayoutProvider layout, double indentation) {
-                return indentation + layout.getNestedInset();
-            }
         },
-        TOP;
+        TOP {
+            @Override
+            public double indent(Indent child, LayoutProvider layout,
+                                 double indentation, boolean isChildRelation) {
+                switch (child) {
+                    case LEFT:
+                        return layout.getNestedLeftInset();
+                    case RIGHT:
+                        return layout.getNestedRightInset();
+                    case SINGULAR:
+                        return layout.getNestedInset();
+                    default:
+                        return 0;
+                }
+            }
+        };
 
         public double indent(Indent child, LayoutProvider layout,
-                             double indentation) {
+                             double indentation, boolean isChildRelation) {
             switch (child) {
                 case LEFT:
                     return layout.getNestedLeftInset();
@@ -107,14 +111,11 @@ abstract public class SchemaNodeLayout {
                     return 0;
             }
         };
-
-        public double indent(LayoutProvider layout, double indentation) {
-            return indentation;
-        };
     }
 
-    protected double               height         = -1.0;
-    protected double               justifiedWidth = -1.0;
+    protected double               columnHeaderIndentation = 0.0;
+    protected double               height                  = -1.0;
+    protected double               justifiedWidth          = -1.0;
     protected final LayoutProvider layout;
 
     public SchemaNodeLayout(LayoutProvider layout) {
@@ -125,9 +126,13 @@ abstract public class SchemaNodeLayout {
         this.height = LayoutProvider.snap(height + delta);
     }
 
+    abstract public Function<Double, Region> columnHeader();
+
     public double columnHeaderHeight() {
         return layout.getTextLineHeight() + layout.getTextVerticalInset();
     }
+
+    abstract public void compress(double justified);
 
     abstract public JsonNode extractFrom(JsonNode node);
 
@@ -141,7 +146,7 @@ abstract public class SchemaNodeLayout {
         return justifiedWidth;
     }
 
-    abstract public double justify(double width);
+    abstract public double justify(double justified);
 
     public double labelWidth(String label) {
         return snap(layout.labelWidth(label));
@@ -152,6 +157,8 @@ abstract public class SchemaNodeLayout {
     abstract public double layoutWidth();
 
     abstract public double measure(JsonNode data, boolean isSingular);
+
+    abstract public double nestTableColumn(Indent indent, double indentation);
 
     protected void clear() {
         height = -1.0;
