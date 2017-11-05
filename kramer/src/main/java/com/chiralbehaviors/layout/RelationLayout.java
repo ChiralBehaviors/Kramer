@@ -278,20 +278,17 @@ public class RelationLayout extends SchemaNodeLayout {
                                                              available,
                                                              tableColumnWidth);
         double slack = Math.max(0, available - tableColumnWidth);
-        List<SchemaNode> children = r.getChildren();
-        justifiedWidth = children.stream()
-                                 .mapToDouble(child -> {
-                                     double childWidth = child.tableColumnWidth();
-                                     double additional = slack
-                                                         * (childWidth
-                                                            / tableColumnWidth);
-                                     double childJustified = snap(additional
-                                                                  + childWidth);
-                                     return child.justify(childJustified);
-                                 })
-                                 .sum();
+        r.getChildren()
+         .stream()
+         .mapToDouble(child -> {
+             double childWidth = child.tableColumnWidth();
+             double additional = slack * (childWidth / tableColumnWidth);
+             double childJustified = snap(additional + childWidth);
+             return child.justify(childJustified);
+         })
+         .sum();
         justifiedWidth = available;
-        return justifiedWidth;
+        return justifed;
     }
 
     @Override
