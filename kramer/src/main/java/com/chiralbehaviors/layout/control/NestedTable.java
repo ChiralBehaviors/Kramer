@@ -52,9 +52,9 @@ public class NestedTable extends JsonControl {
     public JsonControl build(int cardinality, RelationLayout layout) {
         Region header = layout.buildColumnHeader();
         VBox frame = new VBox(header, buildRows(cardinality, layout));
-        frame.setMinWidth(layout.getJustifiedTableColumnWidth());
-        frame.setPrefWidth(layout.getJustifiedTableColumnWidth());
-        frame.setMaxWidth(layout.getJustifiedTableColumnWidth());
+        frame.setMinWidth(layout.getJustifiedColumnWidth());
+        frame.setPrefWidth(layout.getJustifiedColumnWidth());
+        frame.setMaxWidth(layout.getJustifiedColumnWidth());
 
         AnchorPane.setLeftAnchor(frame, 0d);
         AnchorPane.setRightAnchor(frame, 0d);
@@ -137,7 +137,7 @@ public class NestedTable extends JsonControl {
 
         row.setFixedCellSize(extended);
 
-        double width = layout.getJustifiedTableColumnWidth();
+        double width = layout.getJustifiedColumnWidth();
         row.setMinSize(width, rendered);
         row.setPrefSize(width, rendered);
         row.setMaxSize(width, rendered);
@@ -189,7 +189,7 @@ public class NestedTable extends JsonControl {
         double rowHeight = layout.getRowHeight();
         rows.setFixedCellSize(rowHeight);
 
-        double width = layout.getJustifiedTableColumnWidth();
+        double width = layout.getJustifiedColumnWidth();
         double height = layout.getHeight() - layout.getColumnHeaderHeight();
 
         rows.setMinSize(width, height);

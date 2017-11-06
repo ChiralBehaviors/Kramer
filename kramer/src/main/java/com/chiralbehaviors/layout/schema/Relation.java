@@ -257,7 +257,7 @@ public class Relation extends SchemaNode {
     }
 
     public double outlineWidth() {
-        return isFold() ? fold.outlineWidth() : layout.outlineWidth();
+        return isFold() ? fold.outlineWidth() : layout.columnWidth();
     }
 
     @Override

@@ -43,8 +43,6 @@ import javafx.util.Pair;
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
     protected double        scroll = 0.0;
-    private double          columnWidth;
-    private double          labelWidth;
     private double          maxWidth;
     private final Primitive p;
     @SuppressWarnings("unused")
@@ -60,7 +58,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public double calculateTableColumnWidth() {
-        return baseColumnWidth();
+        return columnWidth();
     }
 
     public double cellHeight(double justified) {
@@ -76,7 +74,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public Function<Double, Region> columnHeader() {
         return rendered -> {
-            double width = getJustifiedTableColumnWidth();
+            double width = getColumnHeaderWidth();
             Control columnHeader = layout.label(width, p.getLabel(), rendered);
             columnHeader.setMinSize(width, rendered);
             columnHeader.setMaxSize(width, rendered);
@@ -95,8 +93,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double getJustifiedTableColumnWidth() {
-        return snap(justifiedWidth + columnHeaderIndentation);
+    public double getJustifiedColumnWidth() {
+        return snap(justifiedWidth);
     }
 
     @Override
@@ -113,7 +111,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double layoutWidth() {
-        return baseColumnWidth();
+        return columnWidth();
     }
 
     @Override
@@ -179,10 +177,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public double tableColumnWidth() {
-        return baseColumnWidth();
+        return columnWidth();
     }
 
-    protected double baseColumnWidth() {
+    @Override
+    public double columnWidth() {
         return Math.max(columnWidth, labelWidth);
     }
 
@@ -190,6 +189,10 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     protected void clear() {
         super.clear();
         columnHeaderIndentation = 0.0;
+    }
+
+    protected double getColumnHeaderWidth() {
+        return snap(justifiedWidth + columnHeaderIndentation);
     }
 
     protected double width(JsonNode row) {

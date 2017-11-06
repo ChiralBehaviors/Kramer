@@ -114,8 +114,10 @@ abstract public class SchemaNodeLayout {
     }
 
     protected double               columnHeaderIndentation = 0.0;
+    protected double               columnWidth;
     protected double               height                  = -1.0;
     protected double               justifiedWidth          = -1.0;
+    protected double               labelWidth;
     protected final LayoutProvider layout;
 
     public SchemaNodeLayout(LayoutProvider layout) {
@@ -132,6 +134,8 @@ abstract public class SchemaNodeLayout {
         return layout.getTextLineHeight() + layout.getTextVerticalInset();
     }
 
+    abstract public double columnWidth();
+
     abstract public void compress(double justified);
 
     abstract public JsonNode extractFrom(JsonNode node);
@@ -140,10 +144,14 @@ abstract public class SchemaNodeLayout {
         return height;
     }
 
-    abstract public double getJustifiedTableColumnWidth();
+    abstract public double getJustifiedColumnWidth();
 
     public double getJustifiedWidth() {
         return justifiedWidth;
+    }
+
+    public double getLabelWidth() {
+        return labelWidth;
     }
 
     abstract public double justify(double justified);

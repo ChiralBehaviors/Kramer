@@ -48,8 +48,8 @@ import javafx.util.Pair;
 public class Outline extends JsonControl {
     private final ListView<JsonNode> list;
 
-    public Outline(RelationLayout layout) {
-        getStyleClass().add(layout.getStyleClass());
+    public Outline(String styleClass) {
+        getStyleClass().add(styleClass);
         list = new ListView<>();
         AnchorPane.setLeftAnchor(list, 0d);
         AnchorPane.setRightAnchor(list, 0d);
@@ -67,9 +67,9 @@ public class Outline extends JsonControl {
                                                                .sum());
         layout.apply(list);
         list.setFixedCellSize(cellHeight);
-        list.setMinWidth(layout.getJustifiedTableColumnWidth());
-        list.setPrefWidth(layout.getJustifiedTableColumnWidth());
-        list.setMaxWidth(layout.getJustifiedTableColumnWidth());
+        list.setMinWidth(layout.getJustifiedColumnWidth());
+        list.setPrefWidth(layout.getJustifiedColumnWidth());
+        list.setMaxWidth(layout.getJustifiedColumnWidth());
         list.setCellFactory(c -> {
             ListCell<JsonNode> cell = listCell(columnSets, averageCardinality,
                                                layout.baseOutlineCellHeight(cellHeight),
