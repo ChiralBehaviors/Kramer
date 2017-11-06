@@ -87,11 +87,11 @@ abstract public class SchemaNodeLayout {
                                  double indentation, boolean isChildRelation) {
                 switch (child) {
                     case LEFT:
-                        return layout.getLeftCellInset();
+                        return layout.getNestedLeftInset();
                     case RIGHT:
-                        return layout.getRightCellInset();
+                        return layout.getNestedRightInset();
                     case SINGULAR:
-                        return layout.getNestedCellInset();
+                        return layout.getNestedInset();
                     default:
                         return 0;
                 }

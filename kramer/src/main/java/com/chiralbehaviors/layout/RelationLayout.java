@@ -57,6 +57,7 @@ public class RelationLayout extends SchemaNodeLayout {
     private int                   maxCardinality;
     private final Relation        r;
     private double                rowHeight        = -1;
+    @SuppressWarnings("unused")
     private double                scroll           = 0.0;
     private boolean               singular;
     private double                tableColumnWidth = 0;
@@ -220,7 +221,7 @@ public class RelationLayout extends SchemaNodeLayout {
             }
         }
         columnSets.forEach(cs -> cs.compress(averageCardinality, justifiedWidth,
-                                             labelWidth, scroll > 0.0));
+                                             labelWidth));
     }
 
     @Override
@@ -274,13 +275,12 @@ public class RelationLayout extends SchemaNodeLayout {
                                                              r.getLabel(),
                                                              available,
                                                              tableColumnWidth);
-        r.getChildren()
-         .stream()
-         .mapToDouble(child -> child.justify(available
-                                             * (child.tableColumnWidth()
-                                                / tableColumnWidth)))
-         .sum();
-        justifiedWidth = snap(available);
+        justifiedWidth = snap(r.getChildren()
+                               .stream()
+                               .mapToDouble(child -> child.justify(available
+                                                                   * (child.tableColumnWidth()
+                                                                      / tableColumnWidth)))
+                               .sum());
         return justifed;
     }
 
@@ -385,7 +385,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                                                        c.isRelation()));
                             })
                             .sum();
-        return tableColumnWidth + layout.getNestedCellInset();
+        return tableColumnWidth();
     }
 
     public double outlineCellHeight(double baseHeight) {

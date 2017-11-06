@@ -49,8 +49,7 @@ public class ColumnSet {
         columns.forEach(c -> c.adjustHeight(delta));
     }
 
-    public void compress(int cardinality, double justified, double labelWidth,
-                         boolean scrolled) {
+    public void compress(int cardinality, double justified, double labelWidth) {
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
                                    .size(),
