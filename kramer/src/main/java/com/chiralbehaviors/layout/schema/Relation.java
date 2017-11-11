@@ -66,6 +66,7 @@ public class Relation extends SchemaNode {
         double justified = LayoutProvider.snap(width);
         layout(justified);
         compress(justified);
+        cellHeight(1, justified);
     }
 
     @Override

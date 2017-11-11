@@ -128,9 +128,18 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
                                     int cardinality) {
-        return new Outline(getStyleClass()).build(height, columnSets, extractor,
-                                                  resolveCardinality(cardinality),
-                                                  this);
+        Outline outline = new Outline(getStyleClass()).build(height, columnSets,
+                                                             extractor,
+                                                             resolveCardinality(cardinality),
+                                                             this);
+        outline.setMinWidth(columnWidth());
+        outline.setPrefWidth(columnWidth());
+        outline.setMaxWidth(columnWidth());
+
+        outline.setMinHeight(height);
+        outline.setPrefHeight(height);
+        outline.setMaxHeight(height);
+        return outline;
     }
 
     public double calculateTableColumnWidth() {

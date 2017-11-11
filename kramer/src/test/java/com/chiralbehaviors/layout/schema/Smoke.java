@@ -43,7 +43,7 @@ public class Smoke extends Application {
         AnchorPane root = new AnchorPane();
         root.getChildren()
             .add(layout);
-        primaryStage.setScene(new Scene(root, 1200, 800));
+        primaryStage.setScene(new Scene(root, 800, 800));
         primaryStage.show();
 
         JsonNode data = Util.testData();

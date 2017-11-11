@@ -22,23 +22,25 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.fxmisc.flowless.Cell;
+import org.fxmisc.flowless.VirtualFlow;
+
 import com.chiralbehaviors.layout.Column;
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
 import javafx.scene.control.Skin;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.text.Text;
 import javafx.util.Pair;
 
 /**
@@ -46,48 +48,41 @@ import javafx.util.Pair;
  *
  */
 public class Outline extends JsonControl {
-    private final ListView<JsonNode> list;
+    private final ObservableList<JsonNode>                items = FXCollections.observableArrayList();
+    private VirtualFlow<JsonNode, Cell<JsonNode, Region>> list;
 
     public Outline(String styleClass) {
         getStyleClass().add(styleClass);
-        list = new ListView<>();
-        AnchorPane.setLeftAnchor(list, 0d);
-        AnchorPane.setRightAnchor(list, 0d);
-        AnchorPane.setTopAnchor(list, 0d);
-        AnchorPane.setBottomAnchor(list, 0d);
-        getChildren().add(new AnchorPane(list));
     }
 
     public Outline build(double height, Collection<ColumnSet> columnSets,
                          Function<JsonNode, JsonNode> extractor,
                          int averageCardinality, RelationLayout layout) {
-
         double cellHeight = layout.outlineCellHeight(columnSets.stream()
                                                                .mapToDouble(cs -> cs.getCellHeight())
                                                                .sum());
-        layout.apply(list);
-        list.setFixedCellSize(cellHeight);
+        Function<JsonNode, Cell<JsonNode, Region>> cell = listCell(columnSets,
+                                                                   averageCardinality,
+                                                                   layout.baseOutlineCellHeight(cellHeight),
+                                                                   extractor,
+                                                                   layout);
+        list = VirtualFlow.createVertical(items,
+                                          jsonNode -> cell.apply(jsonNode));
         list.setMinWidth(layout.getJustifiedColumnWidth());
         list.setPrefWidth(layout.getJustifiedColumnWidth());
         list.setMaxWidth(layout.getJustifiedColumnWidth());
-        list.setCellFactory(c -> {
-            ListCell<JsonNode> cell = listCell(columnSets, averageCardinality,
-                                               layout.baseOutlineCellHeight(cellHeight),
-                                               extractor, layout);
-            cell.setMinWidth(layout.getJustifiedCellWidth());
-            cell.setPrefWidth(layout.getJustifiedCellWidth());
-            cell.setMaxWidth(layout.getJustifiedCellWidth());
-            layout.apply(cell);
-            return cell;
-        });
-        list.setPlaceholder(new Text());
+        
+        list.setMinHeight(height);
+        list.setPrefHeight(height);
+        list.setMaxHeight(height);
+        StackPane.setAlignment(list, Pos.TOP_LEFT);
+        getChildren().add(new StackPane(list));
         return this;
     }
 
     @Override
     public void setItem(JsonNode item) {
-        list.getItems()
-            .setAll(SchemaNode.asList(item));
+        items.setAll(SchemaNode.asList(item));
     }
 
     protected Consumer<JsonNode> build(Column c, int cardinality,
@@ -134,69 +129,54 @@ public class Outline extends JsonControl {
         return new OutlineSkin(this);
     }
 
-    protected ListCell<JsonNode> listCell(Collection<ColumnSet> columnSets,
-                                          int averageCardinality,
-                                          double cellHeight,
-                                          Function<JsonNode, JsonNode> extractor,
-                                          RelationLayout layout) {
-        return new ListCell<JsonNode>() {
-            VBox                     cell;
+    protected Function<JsonNode, Cell<JsonNode, Region>> listCell(Collection<ColumnSet> columnSets,
+                                                                  int averageCardinality,
+                                                                  double cellHeight,
+                                                                  Function<JsonNode, JsonNode> extractor,
+                                                                  RelationLayout layout) {
+        return item -> {
             List<Consumer<JsonNode>> controls = new ArrayList<>();
-            {
-                itemProperty().addListener((obs, oldItem, newItem) -> {
-                    if (newItem != null) {
-                        if (cell == null) {
-                            initialize(extractor, layout);
-                        }
-                        setGraphic(cell);
-                    }
-                });
-                emptyProperty().addListener((obs, wasEmpty, isEmpty) -> {
-                    if (isEmpty) {
-                        setGraphic(null);
-                    } else {
-                        setGraphic(cell);
-                    }
-                });
-                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-                setAlignment(Pos.CENTER);
-            }
+            VBox cell = new VBox();
+            cell.setMinHeight(cellHeight);
+            cell.setMaxHeight(cellHeight);
+            cell.setMinWidth(layout.getJustifiedWidth());
+            cell.setPrefWidth(layout.getJustifiedWidth());
+            cell.setMaxWidth(layout.getJustifiedWidth());
+            columnSets.forEach(cs -> {
+                Pair<Consumer<JsonNode>, Parent> master = build(cs.getColumns(),
+                                                                averageCardinality,
+                                                                cs.getCellHeight(),
+                                                                extractor,
+                                                                layout.getLabelWidth());
+                controls.add(master.getKey());
+                Parent control = master.getValue();
+                VBox.setVgrow(control, Priority.ALWAYS);
+                cell.getChildren()
+                    .add(control);
+            });
+            controls.forEach(child -> child.accept(item));
+            return new Cell<JsonNode, Region>() {
 
-            @Override
-            protected void updateItem(JsonNode item, boolean empty) {
-                if (item == getItem()) {
-                    return;
+                @Override
+                public Region getNode() {
+                    return cell;
                 }
-                super.updateItem(item, empty);
-                super.setText(null);
-                if (empty) {
-                    super.setGraphic(null);
-                    return;
-                }
-                controls.forEach(child -> child.accept(item));
-            }
 
-            private void initialize(Function<JsonNode, JsonNode> extractor,
-                                    RelationLayout layout) {
-                cell = new VBox();
-                cell.setMinHeight(cellHeight);
-                cell.setMaxHeight(cellHeight);
-                cell.setMinWidth(layout.getJustifiedWidth());
-                cell.setPrefWidth(layout.getJustifiedWidth());
-                cell.setMaxWidth(layout.getJustifiedWidth());
-                columnSets.forEach(cs -> {
-                    Pair<Consumer<JsonNode>, Parent> master = build(cs.getColumns(),
-                                                                    averageCardinality,
-                                                                    cs.getCellHeight(),
-                                                                    extractor,
-                                                                    layout.getLabelWidth());
-                    controls.add(master.getKey());
-                    Parent control = master.getValue();
-                    VBox.setVgrow(control, Priority.ALWAYS);
-                    cell.getChildren()
-                        .add(control);
-                });
-            }
+                @Override
+                public String toString() {
+                    return cell.toString();
+                }
+
+                @Override
+                public boolean isReusable() {
+                    return true;
+                }
+
+                @Override
+                public void updateItem(JsonNode item) {
+                    controls.forEach(child -> child.accept(item));
+                }
+            };
         };
     }
 
