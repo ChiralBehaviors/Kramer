@@ -19,6 +19,10 @@ package com.chiralbehaviors.layout.control;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
+
+import org.fxmisc.flowless.Cell;
+import org.fxmisc.flowless.VirtualFlow;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.PrimitiveLayout;
@@ -26,14 +30,14 @@ import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
 
@@ -42,8 +46,8 @@ import javafx.util.Pair;
  *
  */
 public class NestedTable extends JsonControl {
-    private double             rowHeight;
-    private ListView<JsonNode> rows;
+    private final ObservableList<JsonNode>                items = FXCollections.observableArrayList();
+    private VirtualFlow<JsonNode, Cell<JsonNode, Region>> rows;
 
     public NestedTable(RelationLayout layout) {
         getStyleClass().add(layout.getStyleClass());
@@ -78,24 +82,21 @@ public class NestedTable extends JsonControl {
 
     public Pair<Consumer<JsonNode>, Region> buildRelation(double rendered,
                                                           RelationLayout layout) {
-        ListView<JsonNode> column = buildNestedRow(rendered, layout);
-        return new Pair<>(node -> column.getItems()
-                                        .setAll(itemsAsArray(layout.extractFrom(node))),
-                          column);
-    }
+        Pair<ObservableList<JsonNode>, VirtualFlow<JsonNode, Cell<JsonNode, Region>>> column = buildNestedRow(rendered,
+                                                                                                              layout);
 
-    public double getRowHeight() {
-        return rowHeight;
+        
+
+        VirtualFlow<JsonNode, Cell<JsonNode, Region>> row = column.getValue();
+        StackPane.setAlignment(row, Pos.TOP_LEFT);
+        return new Pair<>(node -> column.getKey()
+                                        .setAll(itemsAsArray(layout.extractFrom(node))),
+                          new StackPane(row));
     }
 
     @Override
-    public void setItem(JsonNode items) {
-        rows.getItems()
-            .setAll(itemsAsArray(items));
-    }
-
-    public void setRowHeight(double rowHeight) {
-        this.rowHeight = rowHeight;
+    public void setItem(JsonNode item) {
+        items.setAll(itemsAsArray(item));
     }
 
     @Override
@@ -122,8 +123,9 @@ public class NestedTable extends JsonControl {
         }), cell);
     }
 
-    private ListView<JsonNode> buildNestedRow(double rendered,
-                                              RelationLayout layout) {
+    private Pair<ObservableList<JsonNode>, VirtualFlow<JsonNode, Cell<JsonNode, Region>>> buildNestedRow(double rendered,
+                                                                                                         RelationLayout layout) {
+        ObservableList<JsonNode> nestedItems = FXCollections.observableArrayList();
         int cardinality = layout.resolvedCardinality();
         double calculatedHeight = layout.getHeight();
         double deficit = Math.max(0, rendered - calculatedHeight);
@@ -131,63 +133,52 @@ public class NestedTable extends JsonControl {
                                                               / cardinality));
         double extended = LayoutProvider.snap(layout.getRowHeight()
                                               + childDeficit);
-
-        ListView<JsonNode> row = new ListView<>();
-        layout.apply(row);
-
-        row.setFixedCellSize(extended);
-
+        Function<JsonNode, Cell<JsonNode, Region>> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(extended),
+                                                                                   layout));
+        VirtualFlow<JsonNode, Cell<JsonNode, Region>> row = VirtualFlow.createVertical(nestedItems,
+                                                                                       item -> cell.apply(item));
         double width = layout.getJustifiedColumnWidth();
         row.setMinSize(width, rendered);
         row.setPrefSize(width, rendered);
         row.setMaxSize(width, rendered);
 
-        row.setCellFactory(listView -> {
-            ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(extended),
-                                                               layout));
-            double justified = layout.getJustifiedCellWidth();
-            cell.setMinWidth(justified);
-            cell.setPrefWidth(justified);
-            cell.setMaxWidth(justified);
-            return cell;
-        });
-        return row;
+        return new Pair<>(nestedItems, row);
     }
 
-    // Eventually will be controlled by CSS
-    private ListCell<JsonNode> buildRowCell(Pair<Consumer<JsonNode>, Region> cell) {
-        return new ListCell<JsonNode>() {
-            {
-                setContentDisplay(ContentDisplay.GRAPHIC_ONLY);
-                setAlignment(Pos.CENTER_LEFT);
-            }
+    private Function<JsonNode, Cell<JsonNode, Region>> buildRowCell(Pair<Consumer<JsonNode>, Region> cell) {
+        return item -> {
+            return new Cell<JsonNode, Region>() {
 
-            @Override
-            protected void updateItem(JsonNode item, boolean empty) {
-                if (item == getItem()) {
-                    return;
+                @Override
+                public Region getNode() {
+                    return cell.getValue();
                 }
-                super.updateItem(item, empty);
-                if (empty) {
-                    return;
+
+                @Override
+                public String toString() {
+                    return cell.toString();
                 }
-                if (item == null) {
-                    setGraphic(null);
-                    return;
+
+                @Override
+                public boolean isReusable() {
+                    return true;
                 }
-                setGraphic(cell.getValue());
-                cell.getKey()
-                    .accept(item);
-            }
+
+                @Override
+                public void updateItem(JsonNode item) {
+                    cell.getKey()
+                        .accept(item);
+                }
+            };
         };
     }
 
-    private AnchorPane buildRows(int card, RelationLayout layout) {
-        rows = new ListView<>();
-        layout.apply(rows);
+    private StackPane buildRows(int card, RelationLayout layout) {
 
         double rowHeight = layout.getRowHeight();
-        rows.setFixedCellSize(rowHeight);
+        Function<JsonNode, Cell<JsonNode, Region>> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
+                                                                                   layout));
+        rows = VirtualFlow.createVertical(items, item -> cell.apply(item));
 
         double width = layout.getJustifiedColumnWidth();
         double height = layout.getHeight() - layout.getColumnHeaderHeight();
@@ -195,21 +186,9 @@ public class NestedTable extends JsonControl {
         rows.setMinSize(width, height);
         rows.setPrefSize(width, height);
         rows.setMaxSize(width, height);
-
-        rows.setCellFactory(listView -> {
-            ListCell<JsonNode> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
-                                                               layout));
-            double justified = layout.getJustifiedCellWidth();
-            cell.setMinWidth(justified);
-            cell.setPrefWidth(justified);
-            cell.setMaxWidth(justified);
-            return cell;
-        });
-        AnchorPane.setLeftAnchor(rows, 0d);
-        AnchorPane.setRightAnchor(rows, 0d);
-        AnchorPane.setTopAnchor(rows, 0d);
-        AnchorPane.setBottomAnchor(rows, 0d);
-        return new AnchorPane(rows);
+        
+        StackPane.setAlignment(rows, Pos.TOP_LEFT);
+        return new StackPane(rows);
     }
 
     private List<JsonNode> itemsAsArray(JsonNode items) {
