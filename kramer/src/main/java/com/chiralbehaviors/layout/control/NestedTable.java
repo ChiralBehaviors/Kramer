@@ -46,8 +46,8 @@ import javafx.util.Pair;
  *
  */
 public class NestedTable extends JsonControl {
-    private final ObservableList<JsonNode>                items = FXCollections.observableArrayList();
-    private VirtualFlow<JsonNode, Cell<JsonNode, Region>> rows;
+    private final ObservableList<JsonNode>           items = FXCollections.observableArrayList();
+    private VirtualFlow<JsonNode, Cell<JsonNode, ?>> rows;
 
     public NestedTable(RelationLayout layout) {
         getStyleClass().add(layout.getStyleClass());
@@ -84,8 +84,6 @@ public class NestedTable extends JsonControl {
                                                           RelationLayout layout) {
         Pair<ObservableList<JsonNode>, VirtualFlow<JsonNode, Cell<JsonNode, Region>>> column = buildNestedRow(rendered,
                                                                                                               layout);
-
-        
 
         VirtualFlow<JsonNode, Cell<JsonNode, Region>> row = column.getValue();
         StackPane.setAlignment(row, Pos.TOP_LEFT);
@@ -133,10 +131,9 @@ public class NestedTable extends JsonControl {
                                                               / cardinality));
         double extended = LayoutProvider.snap(layout.getRowHeight()
                                               + childDeficit);
-        Function<JsonNode, Cell<JsonNode, Region>> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(extended),
-                                                                                   layout));
         VirtualFlow<JsonNode, Cell<JsonNode, Region>> row = VirtualFlow.createVertical(nestedItems,
-                                                                                       item -> cell.apply(item));
+                                                                                       item -> cell(layout.baseRowCellHeight(extended),
+                                                                                                    layout).apply(item));
         double width = layout.getJustifiedColumnWidth();
         row.setMinSize(width, rendered);
         row.setPrefSize(width, rendered);
@@ -145,18 +142,42 @@ public class NestedTable extends JsonControl {
         return new Pair<>(nestedItems, row);
     }
 
-    private Function<JsonNode, Cell<JsonNode, Region>> buildRowCell(Pair<Consumer<JsonNode>, Region> cell) {
+    private StackPane buildRows(int card, RelationLayout layout) {
+
+        double rowHeight = layout.getRowHeight();
+        rows = VirtualFlow.createVertical(items,
+                                          item -> cell(layout.baseRowCellHeight(rowHeight),
+                                                       layout).apply(item));
+
+        double width = layout.getJustifiedColumnWidth();
+        double height = layout.getHeight() - layout.getColumnHeaderHeight();
+
+        rows.setMinSize(width, height);
+        rows.setPrefSize(width, height);
+        rows.setMaxSize(width, height);
+
+        StackPane.setAlignment(rows, Pos.CENTER_LEFT);
+        StackPane pane = new StackPane(rows);
+        pane.setMinSize(width, height);
+        pane.setPrefSize(width, height);
+        pane.setMaxSize(width, height);
+        return pane;
+    }
+
+    private Function<JsonNode, Cell<JsonNode, Region>> cell(double rendered,
+                                                            RelationLayout layout) {
         return item -> {
             return new Cell<JsonNode, Region>() {
-
-                @Override
-                public Region getNode() {
-                    return cell.getValue();
+                Pair<Consumer<JsonNode>, Region> column = buildColumn(rendered,
+                                                                      layout);
+                {
+                    column.getKey()
+                          .accept(item);
                 }
 
                 @Override
-                public String toString() {
-                    return cell.toString();
+                public Region getNode() {
+                    return column.getValue();
                 }
 
                 @Override
@@ -165,30 +186,18 @@ public class NestedTable extends JsonControl {
                 }
 
                 @Override
+                public String toString() {
+                    return column.getValue()
+                                 .toString();
+                }
+
+                @Override
                 public void updateItem(JsonNode item) {
-                    cell.getKey()
-                        .accept(item);
+                    column.getKey()
+                          .accept(item);
                 }
             };
         };
-    }
-
-    private StackPane buildRows(int card, RelationLayout layout) {
-
-        double rowHeight = layout.getRowHeight();
-        Function<JsonNode, Cell<JsonNode, Region>> cell = buildRowCell(buildColumn(layout.baseRowCellHeight(rowHeight),
-                                                                                   layout));
-        rows = VirtualFlow.createVertical(items, item -> cell.apply(item));
-
-        double width = layout.getJustifiedColumnWidth();
-        double height = layout.getHeight() - layout.getColumnHeaderHeight();
-
-        rows.setMinSize(width, height);
-        rows.setPrefSize(width, height);
-        rows.setMaxSize(width, height);
-        
-        StackPane.setAlignment(rows, Pos.TOP_LEFT);
-        return new StackPane(rows);
     }
 
     private List<JsonNode> itemsAsArray(JsonNode items) {
