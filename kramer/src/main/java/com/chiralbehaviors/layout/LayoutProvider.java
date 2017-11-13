@@ -21,6 +21,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.fxmisc.flowless.Cell;
+import org.fxmisc.flowless.VirtualFlow;
+
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -29,18 +32,15 @@ import com.sun.javafx.scene.text.TextLayout;
 import com.sun.javafx.tk.FontLoader;
 import com.sun.javafx.tk.Toolkit;
 
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
-import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
-import javafx.scene.control.ScrollBar;
 import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
@@ -82,6 +82,10 @@ public class LayoutProvider {
         return new Insets(a.getTop() + b.getTop(), a.getRight() + b.getRight(),
                           a.getBottom() + b.getBottom(),
                           a.getLeft() + b.getLeft());
+    }
+
+    public static double relax(double value) {
+        return Math.max(0, Math.floor(value) - 1);
     }
 
     public static double snap(double value) {
@@ -127,30 +131,14 @@ public class LayoutProvider {
         }
     }
 
-    private static ScrollBar getScrollBar(Control source) {
-        ScrollBar scrollBar = null;
-        for (Node node : source.lookupAll(".scroll-bar")) {
-            if (node instanceof ScrollBar && ((ScrollBar) node).getOrientation()
-                                                               .equals(Orientation.HORIZONTAL)) {
-                scrollBar = (ScrollBar) node;
-            }
-        }
-        return scrollBar;
-    }
-
-    private Insets                                listCellInsets = ZERO_INSETS;
-    private Insets                                listInsets     = ZERO_INSETS;
-    private Bounds                                listScroll;
+    private Insets                                cellInsets     = ZERO_INSETS;
+    private Insets                                insets         = ZERO_INSETS;
     private final LayoutModel                     model;
     private final Map<Primitive, PrimitiveLayout> primitives     = new HashMap<>();
     private final Map<Relation, RelationLayout>   relations      = new HashMap<>();
-
     private List<String>                          styleSheets;
-
     private Font                                  textFont       = Font.getDefault();
-
     private Insets                                textInsets     = ZERO_INSETS;
-
     private double                                textLineHeight = 0;
 
     public LayoutProvider(LayoutModel model) {
@@ -190,20 +178,16 @@ public class LayoutProvider {
                       + "    -fx-font-size: 14px;");
         Label labelText = new Label("Lorem Ipsum");
 
-        ListView<String> outlineList = new ListView<>();
+        ObservableList<String> items = FXCollections.observableArrayList();
 
-        ListCell<String> outlineListCell = new ListCell<String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(item);
-            };
-        };
-        outlineList.setCellFactory(s -> outlineListCell);
+        VirtualFlow<String, ?> flow = VirtualFlow.createVertical(items,
+                                                                 color -> {
+                                                                     return Cell.wrapNode(new Label(color));
+                                                                 });
 
         VBox root = new VBox();
         root.getChildren()
-            .addAll(outlineList, text, labelText);
+            .addAll(flow, text, labelText);
         Scene scene = new Scene(root, 800, 600);
         if (styleSheets != null) {
             scene.getStylesheets()
@@ -214,34 +198,19 @@ public class LayoutProvider {
 
         labelText.applyCss();
         labelText.layout();
-
-        ObservableList<String> listItems = outlineList.getItems();
         for (int i = 0; i < 100; i++) {
-            listItems.add("Lorem ipsum");
+            items.add("Lorem ipsum");
         }
-        outlineList.setItems(null);
-        outlineList.setItems(listItems);
-        outlineList.requestLayout();
+        flow.requestLayout();
 
         root.applyCss();
         root.layout();
 
-        outlineList.applyCss();
-        outlineList.layout();
-        outlineList.refresh();
-        outlineListCell.applyCss();
-        outlineListCell.layout();
+        flow.applyCss();
+        flow.layout();
 
-        listScroll = getScrollBar(outlineList).getLayoutBounds();
-        listCellInsets = new Insets(outlineListCell.snappedTopInset(),
-                                    outlineListCell.snappedRightInset(),
-                                    outlineListCell.snappedBottomInset(),
-                                    outlineListCell.snappedLeftInset());
-
-        listInsets = new Insets(outlineList.snappedTopInset(),
-                                outlineList.snappedRightInset(),
-                                outlineList.snappedBottomInset(),
-                                outlineList.snappedLeftInset());
+        insets = new Insets(flow.snappedTopInset(), flow.snappedRightInset(),
+                            flow.snappedBottomInset(), flow.snappedLeftInset());
 
         textFont = text.getFont();
         textLineHeight = snap(getLineHeight(textFont,
@@ -263,36 +232,28 @@ public class LayoutProvider {
     @Override
     public String toString() {
         return String.format("Layout [model=%s\n listCellInsets=%s\n listInsets=%s\n styleSheets=%s\n textFont=%s\n textInsets=%s\n textLineHeight=%s]",
-                             model, listCellInsets, listInsets, styleSheets,
-                             textFont, textInsets, textLineHeight);
+                             model, cellInsets, insets, styleSheets, textFont,
+                             textInsets, textLineHeight);
     }
 
-    double getLeftCellInset() {
-        return listCellInsets.getLeft();
+    double getCellHorizontalInset() {
+        return cellInsets.getLeft() + cellInsets.getRight();
     }
 
-    double getListCellHorizontalInset() {
-        return listCellInsets.getLeft() + listCellInsets.getRight();
+    double getCellInset() {
+        return cellInsets.getLeft();
     }
 
-    double getListCellVerticalInset() {
-        return listCellInsets.getTop() + listCellInsets.getBottom();
+    double getCellVerticalInset() {
+        return cellInsets.getTop() + cellInsets.getBottom();
+    }
+
+    double getLeftHorizontalInset() {
+        return insets.getLeft();
     }
 
     double getListHorizontalInset() {
-        return listInsets.getLeft() + listInsets.getRight();
-    }
-
-    double getListLeftHorizontalInset() {
-        return listInsets.getLeft();
-    }
-
-    double getListRightHorizontalInset() {
-        return listInsets.getRight();
-    }
-
-    double getListVerticalInset() {
-        return listInsets.getTop() + listInsets.getBottom();
+        return insets.getLeft() + insets.getRight();
     }
 
     double getNestedCellInset() {
@@ -304,7 +265,7 @@ public class LayoutProvider {
     }
 
     double getNestedLeftInset() {
-        return listInsets.getLeft() + listCellInsets.getLeft();
+        return insets.getLeft() + cellInsets.getLeft();
     }
 
     double getNestedListInset() {
@@ -312,15 +273,15 @@ public class LayoutProvider {
     }
 
     double getNestedRightInset() {
-        return listInsets.getRight() + listCellInsets.getRight();
+        return insets.getRight() + cellInsets.getRight();
     }
 
     double getRightCellInset() {
-        return listCellInsets.getRight();
+        return cellInsets.getRight();
     }
 
-    double getScrollWidth() {
-        return listScroll.getWidth();
+    double getRightHorizontalInset() {
+        return insets.getRight();
     }
 
     double getTextHorizontalInset() {
@@ -333,6 +294,10 @@ public class LayoutProvider {
 
     double getTextVerticalInset() {
         return textInsets.getTop() + textInsets.getBottom();
+    }
+
+    double getVerticalInset() {
+        return insets.getTop() + insets.getBottom();
     }
 
     Control label(double labelWidth, String label, double height) {
@@ -350,11 +315,12 @@ public class LayoutProvider {
     double labelWidth(String label) {
         return textWidth(label) + 20;
     }
-     double textWidth(String text) {
+
+    double textWidth(String text) {
         return snap(FONT_LOADER.computeStringWidth(text, textFont));
     }
 
-     double totalTextWidth(double justifiedWidth) {
+    double totalTextWidth(double justifiedWidth) {
         return LayoutProvider.snap(justifiedWidth + getTextHorizontalInset());
     }
 }

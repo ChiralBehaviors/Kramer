@@ -66,8 +66,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
             return height;
         }
         double rows = Math.ceil((maxWidth / justified) + 0.5);
-        height = (layout.getTextLineHeight() * rows)
-                 + layout.getTextVerticalInset();
+        height = snap((layout.getTextLineHeight() * rows)
+                      + layout.getTextVerticalInset());
         return height;
     }
 
@@ -99,7 +99,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double justify(double justified) {
-        justifiedWidth = justified;
+        justifiedWidth = snap(justified);
         return justifiedWidth;
     }
 
