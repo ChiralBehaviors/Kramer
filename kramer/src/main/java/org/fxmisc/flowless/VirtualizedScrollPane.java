@@ -30,21 +30,6 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
 
     private Var<Double>                           vbarValue;
 
-    /** The Policy for the Horizontal ScrollBar */
-    private final Var<ScrollPane.ScrollBarPolicy> hbarPolicy;
-
-    public final ScrollPane.ScrollBarPolicy getHbarPolicy() {
-        return hbarPolicy.getValue();
-    }
-
-    public final void setHbarPolicy(ScrollPane.ScrollBarPolicy value) {
-        hbarPolicy.setValue(value);
-    }
-
-    public final Var<ScrollPane.ScrollBarPolicy> hbarPolicyProperty() {
-        return hbarPolicy;
-    }
-
     /** The Policy for the Vertical ScrollBar */
     private final Var<ScrollPane.ScrollBarPolicy> vbarPolicy;
 
@@ -64,7 +49,6 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
      * Constructs a VirtualizedScrollPane with the given content and policies
      */
     public VirtualizedScrollPane(@NamedArg("content") V content,
-                                 @NamedArg("hPolicy") ScrollPane.ScrollBarPolicy hPolicy,
                                  @NamedArg("vPolicy") ScrollPane.ScrollBarPolicy vPolicy) {
         this.getStyleClass()
             .add("virtualized-scroll-pane");
@@ -95,8 +79,7 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
         vbarValue = Var.doubleVar(vbar.valueProperty());
         Bindings.bindBidirectional(vbarValue, vPosEstimate);
 
-        // scrollbar visibility
-        hbarPolicy = Var.newSimpleVar(hPolicy);
+        // scrollbar visibility 
         vbarPolicy = Var.newSimpleVar(vPolicy);
 
         Val<Double> layoutWidth = Val.map(layoutBoundsProperty(),
@@ -108,14 +91,6 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
         Val<Boolean> needsVBar0 = Val.combine(content.totalHeightEstimateProperty(),
                                               layoutHeight,
                                               (ch, lh) -> ch > lh);
-        Val<Boolean> needsHBar = Val.combine(needsHBar0, needsVBar0,
-                                             content.totalWidthEstimateProperty(),
-                                             vbar.widthProperty(), layoutWidth,
-                                             (needsH, needsV, cw, vbw,
-                                              lw) -> needsH
-                                                     || needsV
-                                                        && cw
-                                                           + vbw.doubleValue() > lw);
         Val<Boolean> needsVBar = Val.combine(needsVBar0, needsHBar0,
                                              content.totalHeightEstimateProperty(),
                                              Var.newSimpleVar(0.0),
@@ -126,17 +101,6 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
                                                         && ch
                                                            + hbh.doubleValue() > lh);
 
-        Val<Boolean> shouldDisplayHorizontal = Val.flatMap(hbarPolicy,
-                                                           policy -> {
-                                                               switch (policy) {
-                                                                   case NEVER:
-                                                                       return Val.constant(false);
-                                                                   case ALWAYS:
-                                                                       return Val.constant(true);
-                                                                   default: // AS_NEEDED
-                                                                       return needsHBar;
-                                                               }
-                                                           });
         Val<Boolean> shouldDisplayVertical = Val.flatMap(vbarPolicy, policy -> {
             switch (policy) {
                 case NEVER:
@@ -148,8 +112,7 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
             }
         });
 
-        // request layout later, because if currently in layout, the request is ignored
-        shouldDisplayHorizontal.addListener(obs -> Platform.runLater(this::requestLayout));
+        // request layout later, because if currently in layout, the request is ignored 
         shouldDisplayVertical.addListener(obs -> Platform.runLater(this::requestLayout));
 
         vbar.visibleProperty()
@@ -169,7 +132,7 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
      * vertical scroll bars as needed
      */
     public VirtualizedScrollPane(@NamedArg("content") V content) {
-        this(content, AS_NEEDED, AS_NEEDED);
+        this(content, AS_NEEDED);
     }
 
     /**

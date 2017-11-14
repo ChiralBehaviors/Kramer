@@ -139,7 +139,6 @@ public class NestedTable extends JsonControl {
 
         return new Pair<>(nestedItems,
                           new VirtualizedScrollPane<>(row,
-                                                      ScrollBarPolicy.NEVER,
                                                       ScrollBarPolicy.AS_NEEDED));
     }
 
@@ -160,8 +159,7 @@ public class NestedTable extends JsonControl {
         rows.setMaxSize(width, height);
 
         StackPane.setAlignment(rows, Pos.TOP_LEFT);
-        Region scroll = new VirtualizedScrollPane<>(rows, ScrollBarPolicy.NEVER,
-                                                    ScrollBarPolicy.AS_NEEDED);
+        Region scroll = new VirtualizedScrollPane<>(rows, ScrollBarPolicy.AS_NEEDED);
         scroll.setMinSize(width, height);
         scroll.setPrefSize(width, height);
         scroll.setMaxSize(width, height);

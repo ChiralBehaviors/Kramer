@@ -77,7 +77,6 @@ public class Outline extends JsonControl {
         list.setPrefHeight(height);
         list.setMaxHeight(height);
         getChildren().add(new VirtualizedScrollPane<>(list,
-                                                      ScrollBarPolicy.NEVER,
                                                       ScrollBarPolicy.AS_NEEDED));
         return this;
     }
