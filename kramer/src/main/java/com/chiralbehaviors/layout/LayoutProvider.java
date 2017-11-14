@@ -180,7 +180,8 @@ public class LayoutProvider {
 
         ObservableList<String> items = FXCollections.observableArrayList();
 
-        VirtualFlow<String, ?> flow = VirtualFlow.createVertical(items,
+        VirtualFlow<String, ?> flow = VirtualFlow.createVertical(100, 100,
+                                                                 items,
                                                                  color -> {
                                                                      return Cell.wrapNode(new Label(color));
                                                                  });

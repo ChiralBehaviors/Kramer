@@ -125,8 +125,11 @@ public class NestedTable extends JsonControl {
         double deficit = rendered - layout.getHeight();
         double childDeficit = deficit / (double) cardinality;
         double extended = snap(layout.getRowHeight() + childDeficit);
-        VirtualFlow<JsonNode, Cell<JsonNode, Region>> row = VirtualFlow.createVertical(nestedItems,
-                                                                                       item -> cell(layout.baseRowCellHeight(extended),
+        double cellHeight = layout.baseRowCellHeight(extended);
+        VirtualFlow<JsonNode, Cell<JsonNode, Region>> row = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
+                                                                                       cellHeight,
+                                                                                       nestedItems,
+                                                                                       item -> cell(cellHeight,
                                                                                                     layout).apply(item));
         double width = layout.getJustifiedColumnWidth();
         row.setMinSize(width, rendered);
@@ -142,9 +145,10 @@ public class NestedTable extends JsonControl {
 
     private Region buildRows(int card, RelationLayout layout) {
 
-        double rowHeight = layout.getRowHeight();
-        rows = VirtualFlow.createVertical(items,
-                                          item -> cell(layout.baseRowCellHeight(rowHeight),
+        double cellHeight = layout.baseRowCellHeight(layout.getRowHeight());
+        rows = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
+                                          cellHeight, items,
+                                          item -> cell(cellHeight,
                                                        layout).apply(item));
 
         double width = layout.getJustifiedColumnWidth();

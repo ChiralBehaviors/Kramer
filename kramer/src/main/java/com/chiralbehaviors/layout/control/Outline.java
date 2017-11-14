@@ -66,7 +66,8 @@ public class Outline extends JsonControl {
                                                                    layout.baseOutlineCellHeight(cellHeight),
                                                                    extractor,
                                                                    layout);
-        list = VirtualFlow.createVertical(items,
+        list = VirtualFlow.createVertical(layout.getJustifiedWidth(),
+                                          cellHeight, items,
                                           jsonNode -> cell.apply(jsonNode));
         list.setMinWidth(layout.getJustifiedColumnWidth());
         list.setPrefWidth(layout.getJustifiedColumnWidth());
