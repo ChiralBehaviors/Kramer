@@ -25,17 +25,16 @@ import java.util.function.Function;
 
 import org.fxmisc.flowless.Cell;
 import org.fxmisc.flowless.VirtualFlow;
-import org.fxmisc.flowless.VirtualizedScrollPane;
 
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.scroll.FlyAwayScrollPane;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
-import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
@@ -137,9 +136,7 @@ public class NestedTable extends JsonControl {
         row.setMaxSize(width, rendered);
         row.show(1);
 
-        return new Pair<>(nestedItems,
-                          new VirtualizedScrollPane<>(row,
-                                                      ScrollBarPolicy.AS_NEEDED));
+        return new Pair<>(nestedItems, new FlyAwayScrollPane<>(row));
     }
 
     private Region buildRows(int card, RelationLayout layout) {
@@ -159,7 +156,7 @@ public class NestedTable extends JsonControl {
         rows.setMaxSize(width, height);
 
         StackPane.setAlignment(rows, Pos.TOP_LEFT);
-        Region scroll = new VirtualizedScrollPane<>(rows, ScrollBarPolicy.AS_NEEDED);
+        Region scroll = new FlyAwayScrollPane<>(rows);
         scroll.setMinSize(width, height);
         scroll.setPrefSize(width, height);
         scroll.setMaxSize(width, height);

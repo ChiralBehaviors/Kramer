@@ -1,7 +1,6 @@
-package org.fxmisc.flowless;
+package com.chiralbehaviors.layout.scroll;
 
-import static javafx.scene.control.ScrollPane.ScrollBarPolicy.AS_NEEDED;
-
+import org.fxmisc.flowless.Virtualized;
 import org.reactfx.value.Val;
 import org.reactfx.value.Var;
 
@@ -16,46 +15,26 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.ScrollBar;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.Region;
 
-public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
+public class FlyAwayScrollPane<V extends Node & Virtualized> extends Region
         implements Virtualized {
 
-    private static final PseudoClass              CONTENT_FOCUSED = PseudoClass.getPseudoClass("content-focused");
+    private static final PseudoClass      CONTENT_FOCUSED = PseudoClass.getPseudoClass("content-focused");
 
-    private final ScrollBar                       vbar;
-    private final V                               content;
-    private final ChangeListener<Boolean>         contentFocusedListener;
+    private final FlyAwayScrollBar        vbar;
+    private final V                       content;
+    private final ChangeListener<Boolean> contentFocusedListener;
 
-    private Var<Double>                           vbarValue;
+    private Var<Double>                   vbarValue;
 
-    /** The Policy for the Vertical ScrollBar */
-    private final Var<ScrollPane.ScrollBarPolicy> vbarPolicy;
-
-    public final ScrollPane.ScrollBarPolicy getVbarPolicy() {
-        return vbarPolicy.getValue();
-    }
-
-    public final void setVbarPolicy(ScrollPane.ScrollBarPolicy value) {
-        vbarPolicy.setValue(value);
-    }
-
-    public final Var<ScrollPane.ScrollBarPolicy> vbarPolicyProperty() {
-        return vbarPolicy;
-    }
-
-    /**
-     * Constructs a VirtualizedScrollPane with the given content and policies
-     */
-    public VirtualizedScrollPane(@NamedArg("content") V content,
-                                 @NamedArg("vPolicy") ScrollPane.ScrollBarPolicy vPolicy) {
+    public FlyAwayScrollPane(@NamedArg("content") V content) {
         this.getStyleClass()
             .add("virtualized-scroll-pane");
         this.content = content;
 
         // create scrollbars 
-        vbar = new ScrollBar();
+        vbar = new FlyAwayScrollBar();
         vbar.setOrientation(Orientation.VERTICAL);
 
         // scrollbar ranges 
@@ -73,63 +52,27 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
                                                Val.map(content.layoutBoundsProperty(),
                                                        Bounds::getHeight),
                                                content.totalHeightEstimateProperty(),
-                                               VirtualizedScrollPane::offsetToScrollbarPosition)
+                                               FlyAwayScrollPane::offsetToScrollbarPosition)
                                       .orElseConst(0.0)
                                       .asVar(this::setVPosition);
         vbarValue = Var.doubleVar(vbar.valueProperty());
         Bindings.bindBidirectional(vbarValue, vPosEstimate);
 
-        // scrollbar visibility 
-        vbarPolicy = Var.newSimpleVar(vPolicy);
- 
-        Val<Double> layoutHeight = Val.map(layoutBoundsProperty(),
-                                           Bounds::getHeight);
-        Val<Boolean> needsVBar0 = Val.combine(content.totalHeightEstimateProperty(),
-                                              layoutHeight,
-                                              (ch, lh) -> ch > lh);
-        Val<Boolean> needsVBar = Val.combine(needsVBar0,
-                                             Var.newSimpleVar(false),
-                                             content.totalHeightEstimateProperty(),
-                                             Var.newSimpleVar(0.0),
-                                             layoutHeight,
-                                             (needsV, needsH, ch, hbh,
-                                              lh) -> needsV
-                                                     || needsH
-                                                        && ch
-                                                           + hbh.doubleValue() > lh);
-
-        Val<Boolean> shouldDisplayVertical = Val.flatMap(vbarPolicy, policy -> {
-            switch (policy) {
-                case NEVER:
-                    return Val.constant(false);
-                case ALWAYS:
-                    return Val.constant(true);
-                default: // AS_NEEDED
-                    return needsVBar;
+        contentFocusedListener = (obs, ov, nv) -> {
+            pseudoClassStateChanged(CONTENT_FOCUSED, nv);
+            if (nv) {
+                vbar.setVisible(true); 
+            } else {
+                vbar.setVisible(false);
             }
-        });
-
-        // request layout later, because if currently in layout, the request is ignored 
-        shouldDisplayVertical.addListener(obs -> Platform.runLater(this::requestLayout));
-
-        vbar.visibleProperty()
-            .bind(shouldDisplayVertical);
-
-        contentFocusedListener = (obs, ov,
-                                  nv) -> pseudoClassStateChanged(CONTENT_FOCUSED,
-                                                                 nv);
+        };
         content.focusedProperty()
                .addListener(contentFocusedListener);
         getChildren().addAll(content, vbar);
         getChildren().addListener((Observable obs) -> dispose());
-    }
 
-    /**
-     * Constructs a VirtualizedScrollPane that only displays its horizontal and
-     * vertical scroll bars as needed
-     */
-    public VirtualizedScrollPane(@NamedArg("content") V content) {
-        this(content, AS_NEEDED);
+        vbar.setVisible(  false);
+        Platform.runLater(this::requestLayout);
     }
 
     /**

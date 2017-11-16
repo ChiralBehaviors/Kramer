@@ -24,18 +24,17 @@ import java.util.function.Function;
 
 import org.fxmisc.flowless.Cell;
 import org.fxmisc.flowless.VirtualFlow;
-import org.fxmisc.flowless.VirtualizedScrollPane;
 
 import com.chiralbehaviors.layout.Column;
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.scroll.FlyAwayScrollPane;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.Parent;
-import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -76,8 +75,7 @@ public class Outline extends JsonControl {
         list.setMinHeight(height);
         list.setPrefHeight(height);
         list.setMaxHeight(height);
-        getChildren().add(new VirtualizedScrollPane<>(list,
-                                                      ScrollBarPolicy.AS_NEEDED));
+        getChildren().add(new FlyAwayScrollPane<>(list));
         return this;
     }
 

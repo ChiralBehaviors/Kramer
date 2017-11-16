@@ -1,4 +1,4 @@
-package com.chiralbehaviors.layout.control;
+package com.chiralbehaviors.layout.scroll;
 
 /**
  * Copyright (c) 2017 Chiral Behaviors, LLC, all rights reserved.
@@ -65,7 +65,8 @@ import org.jdesktop.animation.timing.interpolation.PropertySetter;
  * @author Jolly Littlebottom
  */
 public class FlyawayScroll extends JLayeredPane {
-
+  
+    private static final long serialVersionUID = 1L;
     private static final Color THUMB_COLOR        = Color.DARK_GRAY;
     private static final Color THUMB_BORDER_COLOR = Color.LIGHT_GRAY;
     private static final float MAX_ALPHA          = 0.8f;
@@ -149,6 +150,7 @@ public class FlyawayScroll extends JLayeredPane {
 
     private class ControlPanel extends JPanel {
 
+        private static final long serialVersionUID = 1L;
         private final JMyScrollBar vScrollBar;
         private final JMyScrollBar hScrollBar;
 
@@ -175,6 +177,7 @@ public class FlyawayScroll extends JLayeredPane {
 
     private class JMyScrollBar extends JScrollBar {
 
+        private static final long serialVersionUID = 1L;
         protected final MyScrollBarUI scrollUI;
 
         public JMyScrollBar(int direction) {
