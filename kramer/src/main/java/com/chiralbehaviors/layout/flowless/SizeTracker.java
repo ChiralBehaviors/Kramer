@@ -1,11 +1,7 @@
-package org.fxmisc.flowless;
+package com.chiralbehaviors.layout.flowless;
 
 import java.util.Optional;
 import java.util.function.Function;
-
-import javafx.beans.value.ObservableObjectValue;
-import javafx.geometry.Bounds;
-import javafx.scene.control.IndexRange;
 
 import org.reactfx.Subscription;
 import org.reactfx.collection.LiveList;
@@ -13,6 +9,10 @@ import org.reactfx.collection.MemoizationList;
 import org.reactfx.value.Val;
 import org.reactfx.value.ValBase;
 import org.reactfx.value.Var;
+
+import javafx.beans.value.ObservableObjectValue;
+import javafx.geometry.Bounds;
+import javafx.scene.control.IndexRange;
 
 /**
  * Estimates the size of the entire viewport (if it was actually completely
@@ -23,29 +23,45 @@ import org.reactfx.value.Var;
  * which implementation of {@link OrientationHelper} is used.
  */
 final class SizeTracker {
-    private final OrientationHelper                     orientation;
-    private final ObservableObjectValue<Bounds>         viewportBounds;
-    private final MemoizationList<? extends Cell<?, ?>> cells;
-    private final Val<Double>                           maxKnownMinBreadth;
+    private static <T> Val<T> avoidFalseInvalidations(Val<T> src) {
+        return new ValBase<T>() {
+            @Override
+            protected T computeValue() {
+                return src.getValue();
+            }
 
-    /**
-     * Stores either the greatest minimum cell's node's breadth or the
-     * viewport's breadth
-     */
-    private final Val<Double>                           breadthForCells;
-
-    private final MemoizationList<Double>               lengths;
+            @Override
+            protected Subscription connect() {
+                return src.observeChanges((obs, oldVal,
+                                           newVal) -> invalidate());
+            }
+        };
+    }
 
     /**
      * Stores either null or the average length of the cells' nodes currently
      * displayed in the viewport
      */
     private final Val<Double>                           averageLengthEstimate;
+    /**
+     * Stores either the greatest minimum cell's node's breadth or the
+     * viewport's breadth
+     */
+    private final Val<Double>                           breadthForCells;
+    private final MemoizationList<? extends Cell<?, ?>> cells;
 
-    private final Val<Double>                           totalLengthEstimate;
     private final Val<Double>                           lengthOffsetEstimate;
 
+    private final MemoizationList<Double>               lengths;
+
+    private final Val<Double>                           maxKnownMinBreadth;
+
+    private final OrientationHelper                     orientation;
     private final Subscription                          subscription;
+
+    private final Val<Double>                           totalLengthEstimate;
+    private final ObservableObjectValue<Bounds>         viewportBounds;
+
     private double                                      width, height;
 
     /**
@@ -142,27 +158,28 @@ final class SizeTracker {
                                                lengthOffsetEstimate.pin());
     }
 
-    private static <T> Val<T> avoidFalseInvalidations(Val<T> src) {
-        return new ValBase<T>() {
-            @Override
-            protected Subscription connect() {
-                return src.observeChanges((obs, oldVal,
-                                           newVal) -> invalidate());
-            }
+    public Val<Double> averageLengthEstimateProperty() {
+        return averageLengthEstimate;
+    }
 
-            @Override
-            protected T computeValue() {
-                return src.getValue();
-            }
-        };
+    public double breadthFor(int itemIndex) {
+        return width;
     }
 
     public void dispose() {
         subscription.unsubscribe();
     }
 
-    public Val<Double> maxCellBreadthProperty() {
-        return maxKnownMinBreadth;
+    public void forgetSizeOf(int itemIndex) {
+        lengths.forget(itemIndex, itemIndex + 1);
+    }
+
+    public Optional<Double> getAverageLengthEstimate() {
+        return averageLengthEstimate.getOpt();
+    }
+
+    public double getCellLayoutBreadth() {
+        return breadthForCells.getValue();
     }
 
     public double getViewportBreadth() {
@@ -173,35 +190,19 @@ final class SizeTracker {
         return orientation.length(viewportBounds.get());
     }
 
-    public Val<Double> averageLengthEstimateProperty() {
-        return averageLengthEstimate;
-    }
-
-    public Optional<Double> getAverageLengthEstimate() {
-        return averageLengthEstimate.getOpt();
-    }
-
-    public Val<Double> totalLengthEstimateProperty() {
-        return totalLengthEstimate;
+    public double lengthFor(int itemIndex) {
+        return lengths.get(itemIndex);
     }
 
     public Val<Double> lengthOffsetEstimateProperty() {
         return lengthOffsetEstimate;
     }
 
-    public double breadthFor(int itemIndex) {
-        return width;
+    public Val<Double> maxCellBreadthProperty() {
+        return maxKnownMinBreadth;
     }
 
-    public void forgetSizeOf(int itemIndex) {
-        lengths.forget(itemIndex, itemIndex + 1);
-    }
-
-    public double lengthFor(int itemIndex) {
-        return lengths.get(itemIndex);
-    }
-
-    public double getCellLayoutBreadth() {
-        return breadthForCells.getValue();
+    public Val<Double> totalLengthEstimateProperty() {
+        return totalLengthEstimate;
     }
 }

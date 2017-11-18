@@ -16,19 +16,15 @@
 
 package com.chiralbehaviors.layout.schema;
 
-import java.util.function.Consumer;
 import java.util.function.Function;
-
-import org.fxmisc.flowless.Cell;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
+import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.scene.Parent;
 import javafx.scene.layout.Region;
-import javafx.util.Pair;
 
 /**
  * @author hhildebrand
@@ -109,10 +105,10 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
-                                                           double labelWidth,
-                                                           Function<JsonNode, JsonNode> extractor,
-                                                           double justified) {
+    public Cell<JsonNode, Region> outlineElement(int cardinality,
+                                                 double labelWidth,
+                                                 Function<JsonNode, JsonNode> extractor,
+                                                 double justified) {
         return layout.outlineElement(cardinality, labelWidth, extractor,
                                      justified);
     }

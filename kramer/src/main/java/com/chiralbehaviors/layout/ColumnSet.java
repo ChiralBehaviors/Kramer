@@ -16,6 +16,7 @@
 
 package com.chiralbehaviors.layout;
 
+import static com.chiralbehaviors.layout.LayoutProvider.relax;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -24,7 +25,6 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import com.chiralbehaviors.layout.schema.SchemaNode;
-import static com.chiralbehaviors.layout.LayoutProvider.*;
 
 /**
  *
@@ -68,7 +68,7 @@ public class ColumnSet {
         }
 
         // compression
-        double columnWidth = relax(justified / (double) count);
+        double columnWidth = relax(justified / count);
         firstColumn.setWidth(columnWidth);
         double compressed = relax(columnWidth - labelWidth);
         firstColumn.getFields()

@@ -14,51 +14,42 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.control;
+package com.chiralbehaviors.layout;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.fxmisc.flowless.Cell;
-import org.fxmisc.flowless.VirtualFlow;
-
-import com.chiralbehaviors.layout.Column;
-import com.chiralbehaviors.layout.ColumnSet;
-import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.flowless.FlyAwayScrollPane;
+import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
-import com.chiralbehaviors.layout.scroll.FlyAwayScrollPane;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
-import javafx.scene.Parent;
-import javafx.scene.control.Skin;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.util.Pair;
 
 /**
  * @author halhildebrand
  *
  */
-public class Outline extends JsonControl {
+public class Outline implements Cell<JsonNode, Region> {
     private final ObservableList<JsonNode>           items = FXCollections.observableArrayList();
+
     private VirtualFlow<JsonNode, Cell<JsonNode, ?>> list;
 
-    public Outline(String styleClass) {
-        getStyleClass().add(styleClass);
-    }
+    private final StackPane                          root;
 
-    public Outline build(double height, Collection<ColumnSet> columnSets,
-                         Function<JsonNode, JsonNode> extractor,
-                         int averageCardinality, RelationLayout layout) {
+    public Outline(double height, Collection<ColumnSet> columnSets,
+                   Function<JsonNode, JsonNode> extractor,
+                   int averageCardinality, RelationLayout layout) {
         double cellHeight = layout.outlineCellHeight(columnSets.stream()
                                                                .mapToDouble(cs -> cs.getCellHeight())
                                                                .sum());
@@ -80,57 +71,97 @@ public class Outline extends JsonControl {
 
         Region pane = new FlyAwayScrollPane<>(list);
         StackPane.setAlignment(pane, Pos.TOP_LEFT);
-        getChildren().add(new StackPane(pane));
-        return this;
+        root = new StackPane(pane);
     }
 
     @Override
-    public void setItem(JsonNode item) {
+    public Region getNode() {
+        return root;
+    }
+
+    @Override
+    public boolean isReusable() {
+        return true;
+    }
+
+    @Override
+    public void updateItem(JsonNode item) {
         items.setAll(SchemaNode.asList(item));
     }
 
-    protected Consumer<JsonNode> build(Column c, int cardinality,
-                                       Function<JsonNode, JsonNode> extractor,
-                                       double labelWidth, VBox column) {
-        List<Consumer<JsonNode>> controls = new ArrayList<>();
+    protected Cell<JsonNode, Region> build(Column c, int cardinality,
+                                           Function<JsonNode, JsonNode> extractor,
+                                           double labelWidth,
+                                           double cellHeight) {
+
+        VBox column = new VBox();
+        column.getStyleClass()
+              .add("column");
+        column.setMinSize(c.getWidth(), cellHeight);
+        column.setMaxSize(c.getWidth(), cellHeight);
+        column.setPrefSize(c.getWidth(), cellHeight);
+        List<Cell<JsonNode, Region>> cells = new ArrayList<>();
         c.getFields()
          .forEach(field -> {
-             Pair<Consumer<JsonNode>, Parent> master = field.outlineElement(cardinality,
-                                                                            labelWidth,
-                                                                            extractor,
-                                                                            c.getWidth());
-             controls.add(master.getKey());
+             Cell<JsonNode, Region> cell = field.outlineElement(cardinality,
+                                                                labelWidth,
+                                                                extractor,
+                                                                c.getWidth());
+             cells.add(cell);
              column.getChildren()
-                   .add(master.getValue());
+                   .add(cell.getNode());
          });
-        return item -> controls.forEach(m -> m.accept(item));
+        return new Cell<JsonNode, Region>() {
+
+            @Override
+            public Region getNode() {
+                return column;
+            }
+
+            @Override
+            public boolean isReusable() {
+                return true;
+            }
+
+            @Override
+            public void updateItem(JsonNode item) {
+                cells.forEach(m -> m.updateItem(item));
+            }
+        };
     }
 
-    protected Pair<Consumer<JsonNode>, Parent> build(List<Column> columns,
-                                                     int cardinality,
-                                                     double cellHeight,
-                                                     Function<JsonNode, JsonNode> extractor,
-                                                     double labelWidth) {
+    protected Cell<JsonNode, Region> build(List<Column> columns,
+                                           int cardinality, double cellHeight,
+                                           Function<JsonNode, JsonNode> extractor,
+                                           double labelWidth) {
         HBox span = new HBox();
         span.setPrefHeight(cellHeight);
-        List<Consumer<JsonNode>> controls = new ArrayList<>();
+        List<Cell<JsonNode, Region>> controls = new ArrayList<>();
         columns.forEach(c -> {
-            VBox column = new VBox();
-            column.getStyleClass()
-                  .add("column");
-            column.setMinSize(c.getWidth(), cellHeight);
-            column.setMaxSize(c.getWidth(), cellHeight);
-            column.setPrefSize(c.getWidth(), cellHeight);
-            controls.add(build(c, cardinality, extractor, labelWidth, column));
+            Cell<JsonNode, Region> column = build(c, cardinality, extractor,
+                                                  labelWidth, cellHeight);
+            controls.add(column);
             span.getChildren()
-                .add(column);
+                .add(column.getNode());
         });
-        return new Pair<>(item -> controls.forEach(c -> c.accept(item)), span);
-    }
+        return new Cell<JsonNode, Region>() {
 
-    @Override
-    protected Skin<?> createDefaultSkin() {
-        return new OutlineSkin(this);
+            @Override
+            public Region getNode() {
+                return span;
+            }
+
+            @Override
+            public boolean isReusable() {
+                // TODO Auto-generated method stub
+                return Cell.super.isReusable();
+            }
+
+            @Override
+            public void updateItem(JsonNode item) {
+                controls.forEach(c -> c.updateItem(item));
+            }
+        };
     }
 
     protected Function<JsonNode, Cell<JsonNode, ?>> listCell(Collection<ColumnSet> columnSets,
@@ -139,7 +170,7 @@ public class Outline extends JsonControl {
                                                              Function<JsonNode, JsonNode> extractor,
                                                              RelationLayout layout) {
         return item -> {
-            List<Consumer<JsonNode>> controls = new ArrayList<>();
+            List<Cell<JsonNode, Region>> controls = new ArrayList<>();
             VBox cell = new VBox();
             cell.setMinHeight(cellHeight);
             cell.setMaxHeight(cellHeight);
@@ -147,18 +178,17 @@ public class Outline extends JsonControl {
             cell.setPrefWidth(layout.getJustifiedWidth());
             cell.setMaxWidth(layout.getJustifiedWidth());
             columnSets.forEach(cs -> {
-                Pair<Consumer<JsonNode>, Parent> master = build(cs.getColumns(),
-                                                                averageCardinality,
-                                                                cs.getCellHeight(),
-                                                                extractor,
-                                                                layout.getLabelWidth());
-                controls.add(master.getKey());
-                Parent control = master.getValue();
-                VBox.setVgrow(control, Priority.ALWAYS);
+                Cell<JsonNode, Region> master = build(cs.getColumns(),
+                                                      averageCardinality,
+                                                      cs.getCellHeight(),
+                                                      extractor,
+                                                      layout.getLabelWidth());
+                controls.add(master);
+                VBox.setVgrow(master.getNode(), Priority.ALWAYS);
                 cell.getChildren()
-                    .add(control);
+                    .add(master.getNode());
             });
-            controls.forEach(child -> child.accept(item));
+            controls.forEach(child -> child.updateItem(item));
             return new Cell<JsonNode, Region>() {
 
                 @Override
@@ -167,18 +197,18 @@ public class Outline extends JsonControl {
                 }
 
                 @Override
-                public String toString() {
-                    return cell.toString();
-                }
-
-                @Override
                 public boolean isReusable() {
                     return true;
                 }
 
                 @Override
+                public String toString() {
+                    return cell.toString();
+                }
+
+                @Override
                 public void updateItem(JsonNode item) {
-                    controls.forEach(child -> child.accept(item));
+                    controls.forEach(child -> child.updateItem(item));
                 }
             };
         };

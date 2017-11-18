@@ -16,7 +16,8 @@
 
 package com.chiralbehaviors.layout;
 
-import static com.chiralbehaviors.layout.LayoutProvider.*;
+import static com.chiralbehaviors.layout.LayoutProvider.snap;
+
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.List;
@@ -109,8 +110,7 @@ public class Column {
                                                      .getHeight())
                                   .sum();
         if (calculated < finalHeight) {
-            double delta = snap((finalHeight - calculated)
-                                 / (double) fields.size());
+            double delta = snap((finalHeight - calculated) / fields.size());
             if (delta >= 1.0) {
                 fields.forEach(f -> f.adjustHeight(delta));
             }

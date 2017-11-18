@@ -49,7 +49,7 @@ public class Smoke extends Application {
         JsonNode data = Util.testData();
         layout.setRoot(Util.build());
         layout.measure(data);
-        layout.setItem(data);
+        layout.updateItem(data);
         layout.autoLayout();
     }
 

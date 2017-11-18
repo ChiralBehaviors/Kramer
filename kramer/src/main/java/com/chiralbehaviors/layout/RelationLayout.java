@@ -26,12 +26,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.fxmisc.flowless.Cell;
-import org.fxmisc.flowless.VirtualFlow;
-
-import com.chiralbehaviors.layout.control.JsonControl;
-import com.chiralbehaviors.layout.control.NestedTable;
-import com.chiralbehaviors.layout.control.Outline;
+import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,13 +36,11 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.common.util.concurrent.AtomicDouble;
 
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.control.Control;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import javafx.util.Pair;
 
 /**
  *
@@ -151,30 +145,33 @@ public class RelationLayout extends SchemaNodeLayout {
         return header;
     }
 
-    public JsonControl buildControl(int cardinality,
-                                    Function<JsonNode, JsonNode> extractor) {
+    public Cell<JsonNode, Region> buildControl(int cardinality,
+                                               Function<JsonNode, JsonNode> extractor) {
         return useTable ? r.buildNestedTable(extractor, cardinality)
                         : r.buildOutline(extractor, cardinality);
     }
 
-    public JsonControl buildNestedTable(int cardinality) {
-        return new NestedTable(this).build(resolveCardinality(cardinality),
-                                           this);
+    public Cell<JsonNode, Region> buildNestedTable(int cardinality) {
+        return new NestedTable(resolveCardinality(cardinality), this);
     }
 
-    public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
-                                    int cardinality) {
-        Outline outline = new Outline(getStyleClass()).build(height, columnSets,
-                                                             extractor,
-                                                             resolveCardinality(cardinality),
-                                                             this);
-        outline.setMinWidth(columnWidth());
-        outline.setPrefWidth(columnWidth());
-        outline.setMaxWidth(columnWidth());
+    public Cell<JsonNode, Region> buildOutline(Function<JsonNode, JsonNode> extractor,
+                                               int cardinality) {
+        Outline outline = new Outline(height, columnSets, extractor,
+                                      resolveCardinality(cardinality), this);
+        outline.getNode()
+               .setMinWidth(columnWidth());
+        outline.getNode()
+               .setPrefWidth(columnWidth());
+        outline.getNode()
+               .setMaxWidth(columnWidth());
 
-        outline.setMinHeight(height);
-        outline.setPrefHeight(height);
-        outline.setMaxHeight(height);
+        outline.getNode()
+               .setMinHeight(height);
+        outline.getNode()
+               .setPrefHeight(height);
+        outline.getNode()
+               .setMaxHeight(height);
         return outline;
     }
 
@@ -442,21 +439,26 @@ public class RelationLayout extends SchemaNodeLayout {
         return baseHeight + layout.getCellVerticalInset();
     }
 
-    public Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
-                                                           double labelWidth,
-                                                           Function<JsonNode, JsonNode> extractor,
-                                                           double justified) {
+    @Override
+    public Cell<JsonNode, Region> outlineElement(int cardinality,
+                                                 double labelWidth,
+                                                 Function<JsonNode, JsonNode> extractor,
+                                                 double justified) {
 
         Control labelControl = label(labelWidth, r.getLabel());
         labelControl.setMinWidth(labelWidth);
         labelControl.setMaxWidth(labelWidth);
 
-        JsonControl control = r.buildControl(cardinality, extractor);
+        Cell<JsonNode, Region> control = r.buildControl(cardinality, extractor);
         double available = justified - labelWidth;
-        control.setMinWidth(available);
-        control.setMaxWidth(available);
-        control.setMinHeight(height);
-        control.setMaxHeight(height);
+        control.getNode()
+               .setMinWidth(available);
+        control.getNode()
+               .setMaxWidth(available);
+        control.getNode()
+               .setMinHeight(height);
+        control.getNode()
+               .setMaxHeight(height);
 
         Pane box = new HBox();
         box.getStyleClass()
@@ -468,16 +470,28 @@ public class RelationLayout extends SchemaNodeLayout {
         box.getChildren()
            .add(labelControl);
         box.getChildren()
-           .add(control);
+           .add(control.getNode());
 
-        return new Pair<>(item -> {
-            if (item == null) {
-                return;
+        return new Cell<JsonNode, Region>() {
+
+            @Override
+            public Region getNode() {
+                return box;
             }
-            control.setItem(extractor.apply(item) == null ? null
-                                                          : extractor.apply(item)
-                                                                     .get(r.getField()));
-        }, box);
+
+            @Override
+            public boolean isReusable() {
+                return true;
+            }
+
+            @Override
+            public void updateItem(JsonNode item) {
+                control.updateItem(extractor.apply(item) == null ? null
+                                                                 : extractor.apply(item)
+                                                                            .get(r.getField()));
+            }
+
+        };
     }
 
     public int resolvedCardinality() {

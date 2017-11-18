@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory;
 
 import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
 import com.chiralbehaviors.layout.control.AutoLayout;
+import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil.QueryException;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.toy.Page.Route;
@@ -76,7 +78,8 @@ public class SinglePageApp extends Application implements LayoutModel {
     private Button                   reloadButton;
 
     @Override
-    public void apply(ListView<JsonNode> list, Relation relation) {
+    public void apply(VirtualFlow<JsonNode, Cell<JsonNode, ?>> list,
+                      Relation relation) { 
         list.setOnMouseClicked(event -> {
             Route route = back.peek()
                               .getRoute(relation);
@@ -99,30 +102,7 @@ public class SinglePageApp extends Application implements LayoutModel {
                 }
             }
         });
-    }
-
-    @Override
-    public void apply(TableRow<JsonNode> row, Relation relation) {
-        row.setOnMouseClicked(event -> {
-            Route route = back.peek()
-                              .getRoute(relation);
-            if (route == null) {
-                return;
-            }
-            if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY
-                && event.getClickCount() == 2) {
-                JsonNode item = row.getItem();
-                if (item == null) {
-                    return;
-                }
-                try {
-                    push(extract(route, item));
-                } catch (QueryException e) {
-                    log.error("Unable to push page: %s", route.getPath(), e);
-                }
-            }
-        });
-    }
+    } 
 
     public void initRootLayout(Stage ps) throws IOException, URISyntaxException,
                                          QueryException {

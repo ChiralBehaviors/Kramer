@@ -20,8 +20,7 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.function.Function;
 
-import org.fxmisc.flowless.Cell;
-
+import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Control;
@@ -171,6 +170,11 @@ abstract public class SchemaNodeLayout {
     abstract public double measure(JsonNode data, boolean isSingular);
 
     abstract public double nestTableColumn(Indent indent, double indentation);
+
+    abstract public Cell<JsonNode, Region> outlineElement(int cardinality,
+                                                          double labelWidth,
+                                                          Function<JsonNode, JsonNode> extractor,
+                                                          double justified);
 
     protected void clear() {
         height = -1.0;

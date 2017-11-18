@@ -95,7 +95,7 @@ public class AutoLayoutController {
     @FXML
     private AnchorPane          anchor;
     private WebTarget           endpoint;
-    private AutoLayout      layout;
+    private AutoLayout          layout;
     @FXML
     private ToggleGroup         page;
     private QueryState          queryState;
@@ -276,7 +276,7 @@ public class AutoLayoutController {
         schemaView.setRoot(schema);
         layout.setRoot(schema);
         layout.measure(data);
-        layout.setItem(data);
+        layout.updateItem(data);
         layout.autoLayout();
     }
 }

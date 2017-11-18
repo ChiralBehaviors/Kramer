@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.scroll;
+package com.chiralbehaviors.layout.flowless;
 
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -67,7 +67,7 @@ public class FlyAwayScrollBar extends ScrollBar {
         addEventHandler(MouseEvent.MOUSE_EXITED, (MouseEvent event) -> {
             setVisible(false, false);
         });
-        
+
     }
 
     public void foo() {

@@ -19,19 +19,14 @@ package com.chiralbehaviors.layout;
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.fxmisc.flowless.Cell;
-
-import com.chiralbehaviors.layout.control.JsonControl;
-import com.chiralbehaviors.layout.control.PrimitiveControl;
+import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.layout.AnchorPane;
@@ -39,7 +34,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
-import javafx.util.Pair;
 
 /**
  *
@@ -56,6 +50,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     public PrimitiveLayout(LayoutProvider layout, Primitive p) {
         super(layout);
         this.p = p;
+    }
+
+    public void apply(Cell<JsonNode, ?> list) {
+        layout.getModel()
+              .apply(list, p);
     }
 
     @Override
@@ -96,8 +95,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         };
     }
 
-    public PrimitiveControl buildControl(int cardinality) {
-        return new PrimitiveControl(p.getField());
+    public Cell<JsonNode, Region> buildControl(int cardinality) {
+        return new PrimitiveCell(p.getField());
     }
 
     public double calculateTableColumnWidth() {
@@ -199,10 +198,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return tableColumnWidth();
     }
 
-    public Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
-                                                           double labelWidth,
-                                                           Function<JsonNode, JsonNode> extractor,
-                                                           double justified) {
+    @Override
+    public Cell<JsonNode, Region> outlineElement(int cardinality,
+                                                 double labelWidth,
+                                                 Function<JsonNode, JsonNode> extractor,
+                                                 double justified) {
         HBox box = new HBox();
         box.setPrefSize(justified, height);
         VBox.setVgrow(box, Priority.ALWAYS);
@@ -210,23 +210,31 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         Control labelControl = label(labelWidth, p.getLabel());
         labelControl.setMinWidth(labelWidth);
         labelControl.setMaxWidth(labelWidth);
-        JsonControl control = buildControl(cardinality);
-        control.setPrefSize(justified, height);
+        Cell<JsonNode, Region> control = buildControl(cardinality);
 
         box.getChildren()
            .add(labelControl);
         box.getChildren()
-           .add(control);
+           .add(control.getNode());
+        return new Cell<JsonNode, Region>() {
 
-        return new Pair<>(item -> {
-            control.setItem(extractor.apply(item)
-                                     .get(p.getField()));
-        }, box);
-    }
+            @Override
+            public Region getNode() {
+                return box;
+            }
 
-    public void apply(Cell<JsonNode, ?> list) {
-        layout.getModel()
-              .apply(list, p);
+            @Override
+            public boolean isReusable() {
+                return true;
+            }
+
+            @Override
+            public void updateItem(JsonNode item) {
+                control.updateItem(extractor.apply(item)
+                                            .get(p.getField()));
+            }
+
+        };
     }
 
     public double tableColumnWidth() {

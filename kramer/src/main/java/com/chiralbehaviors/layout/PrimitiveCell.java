@@ -14,26 +14,27 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.control;
+package com.chiralbehaviors.layout;
 
+import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Label;
-import javafx.scene.control.Skin;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Region;
 
 /**
  * @author halhildebrand
  *
  */
-public class PrimitiveControl extends JsonControl {
+public class PrimitiveCell implements Cell<JsonNode, Region> {
 
+    private AnchorPane  anchor;
     private final Label label;
 
-    public PrimitiveControl(String style) {
+    public PrimitiveCell(String style) {
         super();
-        getStyleClass().add(style);
         label = new Label();
         label.setWrapText(true);
         label.setStyle("-fx-background-color: " + "         rgba(0,0,0,0.08),"
@@ -48,17 +49,22 @@ public class PrimitiveControl extends JsonControl {
         AnchorPane.setRightAnchor(label, 0d);
         AnchorPane.setTopAnchor(label, 0d);
         AnchorPane.setBottomAnchor(label, 0d);
-        getChildren().add(new AnchorPane(label));
+        anchor = new AnchorPane(label);
     }
 
     @Override
-    public void setItem(JsonNode item) {
+    public Region getNode() {
+        return anchor;
+    }
+
+    @Override
+    public boolean isReusable() {
+        return true;
+    }
+
+    @Override
+    public void updateItem(JsonNode item) {
         label.setText(SchemaNode.asText(item));
-    }
-
-    @Override
-    protected Skin<?> createDefaultSkin() {
-        return new PrimitiveControlSkin(this);
     }
 
 }

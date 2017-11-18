@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.control;
+package com.chiralbehaviors.layout;
 
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
@@ -23,19 +23,15 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import org.fxmisc.flowless.Cell;
-import org.fxmisc.flowless.VirtualFlow;
-
-import com.chiralbehaviors.layout.PrimitiveLayout;
-import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.flowless.FlyAwayScrollPane;
+import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
-import com.chiralbehaviors.layout.scroll.FlyAwayScrollPane;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
-import javafx.scene.control.Skin;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -45,33 +41,28 @@ import javafx.util.Pair;
  * @author halhildebrand
  *
  */
-public class NestedTable extends JsonControl {
-    private final ObservableList<JsonNode>           items = FXCollections.observableArrayList();
-    private VirtualFlow<JsonNode, Cell<JsonNode, ?>> rows;
+public class NestedTable implements Cell<JsonNode, Region> {
+    private final VBox                     frame;
+    private final ObservableList<JsonNode> items = FXCollections.observableArrayList();
 
-    public NestedTable(RelationLayout layout) {
-        getStyleClass().add(layout.getStyleClass());
-    }
-
-    public JsonControl build(int cardinality, RelationLayout layout) {
+    public NestedTable(int cardinality, RelationLayout layout) {
         Region header = layout.buildColumnHeader();
-        VBox frame = new VBox(header, buildRows(cardinality, layout));
+        frame = new VBox(header, buildRows(cardinality, layout));
         frame.setMinWidth(layout.getJustifiedColumnWidth());
         frame.setPrefWidth(layout.getJustifiedColumnWidth());
         frame.setMaxWidth(layout.getJustifiedColumnWidth());
-
-        getChildren().add(frame);
-        return this;
     }
 
-    public Pair<Consumer<JsonNode>, Region> buildPrimitive(double rendered,
-                                                           PrimitiveLayout layout) {
-        JsonControl control = layout.buildControl(1);
-        control.setMinSize(layout.getJustifiedWidth(), rendered);
-        control.setPrefSize(layout.getJustifiedWidth(), rendered);
-        control.setMaxSize(layout.getJustifiedWidth(), rendered);
-        return new Pair<>(node -> control.setItem(layout.extractFrom(node)),
-                          control);
+    public Cell<JsonNode, Region> buildPrimitive(double rendered,
+                                                 PrimitiveLayout layout) {
+        Cell<JsonNode, Region> control = layout.buildControl(1);
+        control.getNode()
+               .setMinSize(layout.getJustifiedWidth(), rendered);
+        control.getNode()
+               .setPrefSize(layout.getJustifiedWidth(), rendered);
+        control.getNode()
+               .setMaxSize(layout.getJustifiedWidth(), rendered);
+        return control;
     }
 
     public Pair<Consumer<JsonNode>, Region> buildRelation(double rendered,
@@ -87,13 +78,18 @@ public class NestedTable extends JsonControl {
     }
 
     @Override
-    public void setItem(JsonNode item) {
-        items.setAll(itemsAsArray(item));
+    public Region getNode() {
+        return frame;
     }
 
     @Override
-    protected Skin<?> createDefaultSkin() {
-        return new NestedTableSkin(this);
+    public boolean isReusable() {
+        return true;
+    }
+
+    @Override
+    public void updateItem(JsonNode item) {
+        items.setAll(SchemaNode.asList(item));
     }
 
     private Pair<ObservableList<JsonNode>, Region> buildNestedRow(double rendered,
@@ -101,7 +97,7 @@ public class NestedTable extends JsonControl {
         ObservableList<JsonNode> nestedItems = FXCollections.observableArrayList();
         int cardinality = layout.resolvedCardinality();
         double deficit = rendered - layout.getHeight();
-        double childDeficit = deficit / (double) cardinality;
+        double childDeficit = deficit / cardinality;
         double extended = snap(layout.getRowHeight() + childDeficit);
         double cellHeight = layout.baseRowCellHeight(extended);
         VirtualFlow<JsonNode, Cell<JsonNode, ?>> row = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
@@ -121,10 +117,11 @@ public class NestedTable extends JsonControl {
     private Region buildRows(int card, RelationLayout layout) {
 
         double cellHeight = layout.baseRowCellHeight(layout.getRowHeight());
-        rows = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
-                                          cellHeight, items,
-                                          item -> cell(cellHeight,
-                                                       layout).apply(item));
+        VirtualFlow<JsonNode, Cell<JsonNode, ?>> rows = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
+                                                                                   cellHeight,
+                                                                                   items,
+                                                                                   item -> cell(cellHeight,
+                                                                                                layout).apply(item));
 
         double width = layout.getJustifiedColumnWidth();
         double height = snap(layout.getHeight()

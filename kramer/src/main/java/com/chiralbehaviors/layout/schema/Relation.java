@@ -18,23 +18,18 @@ package com.chiralbehaviors.layout.schema;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
-
-import org.fxmisc.flowless.Cell;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
-import com.chiralbehaviors.layout.control.JsonControl;
+import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
-import javafx.scene.Parent;
 import javafx.scene.layout.Region;
-import javafx.util.Pair;
 
 /**
  * @author hhildebrand
@@ -84,7 +79,7 @@ public class Relation extends SchemaNode {
         return layout.columnHeader();
     }
 
-    public JsonControl buildControl(int cardinality, double width) {
+    public Cell<JsonNode, Region> buildControl(int cardinality, double width) {
         if (isFold()) {
             return fold.buildControl(layout.getAverageCardinality()
                                      * cardinality, width);
@@ -92,13 +87,13 @@ public class Relation extends SchemaNode {
         return buildControl(cardinality, n -> n);
     }
 
-    public JsonControl buildControl(int cardinality,
-                                    Function<JsonNode, JsonNode> extractor) {
+    public Cell<JsonNode, Region> buildControl(int cardinality,
+                                               Function<JsonNode, JsonNode> extractor) {
         return layout.buildControl(cardinality, extractor);
     }
 
-    public JsonControl buildNestedTable(Function<JsonNode, JsonNode> extractor,
-                                        int cardinality) {
+    public Cell<JsonNode, Region> buildNestedTable(Function<JsonNode, JsonNode> extractor,
+                                                   int cardinality) {
         if (isFold()) {
             return fold.buildNestedTable(extract(extractor),
                                          layout.getAverageCardinality()
@@ -107,8 +102,8 @@ public class Relation extends SchemaNode {
         return layout.buildNestedTable(cardinality);
     }
 
-    public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
-                                    int cardinality) {
+    public Cell<JsonNode, Region> buildOutline(Function<JsonNode, JsonNode> extractor,
+                                               int cardinality) {
         if (isFold()) {
             return fold.buildOutline(extract(extractor),
                                      layout.getAverageCardinality()
@@ -244,10 +239,10 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
-                                                           double labelWidth,
-                                                           Function<JsonNode, JsonNode> extractor,
-                                                           double justified) {
+    public Cell<JsonNode, Region> outlineElement(int cardinality,
+                                                 double labelWidth,
+                                                 Function<JsonNode, JsonNode> extractor,
+                                                 double justified) {
         if (isFold()) {
             return fold.outlineElement(layout.getAverageCardinality()
                                        * cardinality, labelWidth,
@@ -277,14 +272,14 @@ public class Relation extends SchemaNode {
                                                                             : null;
     }
 
-    public void setItem(JsonControl control, JsonNode data) {
+    public void setItem(Cell<JsonNode, Region> control, JsonNode data) {
         if (data == null) {
             data = JsonNodeFactory.instance.arrayNode();
         }
         if (isFold()) {
             fold.setItem(control, flatten(data));
         } else {
-            control.setItem(data);
+            control.updateItem(data);
         }
     }
 

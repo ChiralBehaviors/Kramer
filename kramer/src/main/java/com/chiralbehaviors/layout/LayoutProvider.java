@@ -21,9 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.fxmisc.flowless.Cell;
-import org.fxmisc.flowless.VirtualFlow;
-
+import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -48,11 +47,11 @@ public class LayoutProvider {
 
     public interface LayoutModel {
 
-        default void apply(VirtualFlow<JsonNode, Cell<JsonNode, ?>> list,
-                           Relation relation) {
+        default void apply(Cell<JsonNode, ?> list, Primitive p) {
         }
 
-        default void apply(Cell<JsonNode, ?> list, Primitive p) {
+        default void apply(VirtualFlow<JsonNode, Cell<JsonNode, ?>> list,
+                           Relation relation) {
         }
     }
 

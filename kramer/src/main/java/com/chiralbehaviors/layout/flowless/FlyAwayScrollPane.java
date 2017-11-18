@@ -1,6 +1,5 @@
-package com.chiralbehaviors.layout.scroll;
+package com.chiralbehaviors.layout.flowless;
 
-import org.fxmisc.flowless.Virtualized;
 import org.reactfx.value.Val;
 import org.reactfx.value.Var;
 
@@ -20,11 +19,46 @@ import javafx.scene.layout.Region;
 public class FlyAwayScrollPane<V extends Node & Virtualized> extends Region
         implements Virtualized {
 
-    private static final PseudoClass      CONTENT_FOCUSED = PseudoClass.getPseudoClass("content-focused");
+    private static final PseudoClass CONTENT_FOCUSED = PseudoClass.getPseudoClass("content-focused");
+
+    private static double offsetToScrollbarPosition(double contentOffset,
+                                                    double viewportSize,
+                                                    double contentSize) {
+        return contentSize > viewportSize ? contentOffset
+                                            / (contentSize - viewportSize)
+                                            * contentSize
+                                          : 0;
+    }
+
+    private static double scrollbarPositionToOffset(double scrollbarPos,
+                                                    double viewportSize,
+                                                    double contentSize) {
+        return contentSize > viewportSize ? scrollbarPos / contentSize
+                                            * (contentSize - viewportSize)
+                                          : 0;
+    }
+
+    private static void setupUnitIncrement(ScrollBar bar) {
+        bar.unitIncrementProperty()
+           .bind(new DoubleBinding() {
+               {
+                   bind(bar.maxProperty(), bar.visibleAmountProperty());
+               }
+
+               @Override
+               protected double computeValue() {
+                   double max = bar.getMax();
+                   double visible = bar.getVisibleAmount();
+                   return max > visible ? 16 / (max - visible) * max : 0;
+               }
+           });
+    }
+
+    private final V                       content;
+
+    private final ChangeListener<Boolean> contentFocusedListener;
 
     private final FlyAwayScrollBar        vbar;
-    private final V                       content;
-    private final ChangeListener<Boolean> contentFocusedListener;
 
     private Var<Double>                   vbarValue;
 
@@ -33,21 +67,21 @@ public class FlyAwayScrollPane<V extends Node & Virtualized> extends Region
             .add("virtualized-scroll-pane");
         this.content = content;
 
-        // create scrollbars 
+        // create scrollbars
         vbar = new FlyAwayScrollBar();
         vbar.setOrientation(Orientation.VERTICAL);
 
-        // scrollbar ranges 
+        // scrollbar ranges
         vbar.setMin(0);
         vbar.maxProperty()
             .bind(content.totalHeightEstimateProperty());
 
-        // scrollbar increments 
+        // scrollbar increments
         setupUnitIncrement(vbar);
         vbar.blockIncrementProperty()
             .bind(vbar.visibleAmountProperty());
 
-        // scrollbar positions 
+        // scrollbar positions
         Var<Double> vPosEstimate = Val.combine(content.estimatedScrollYProperty(),
                                                Val.map(content.layoutBoundsProperty(),
                                                        Bounds::getHeight),
@@ -61,7 +95,7 @@ public class FlyAwayScrollPane<V extends Node & Virtualized> extends Region
         contentFocusedListener = (obs, ov, nv) -> {
             pseudoClassStateChanged(CONTENT_FOCUSED, nv);
             if (nv) {
-                vbar.setVisible(true); 
+                vbar.setVisible(true);
             } else {
                 vbar.setVisible(false);
             }
@@ -71,55 +105,8 @@ public class FlyAwayScrollPane<V extends Node & Virtualized> extends Region
         getChildren().addAll(content, vbar);
         getChildren().addListener((Observable obs) -> dispose());
 
-        vbar.setVisible(  false);
+        vbar.setVisible(false);
         Platform.runLater(this::requestLayout);
-    }
-
-    /**
-     * Does not unbind scrolling from Content before returning Content.
-     * 
-     * @return - the content
-     */
-    public V getContent() {
-        return content;
-    }
-
-    /**
-     * Unbinds scrolling from Content before returning Content.
-     * 
-     * @return - the content
-     */
-    public V removeContent() {
-        getChildren().clear();
-        return content;
-    }
-
-    private void dispose() {
-        content.focusedProperty()
-               .removeListener(contentFocusedListener);
-        vbarValue.unbindBidirectional(content.estimatedScrollYProperty());
-        unbindScrollBar(vbar);
-    }
-
-    private void unbindScrollBar(ScrollBar bar) {
-        bar.maxProperty()
-           .unbind();
-        bar.unitIncrementProperty()
-           .unbind();
-        bar.blockIncrementProperty()
-           .unbind();
-        bar.visibleProperty()
-           .unbind();
-    }
-
-    @Override
-    public Val<Double> totalWidthEstimateProperty() {
-        return content.totalWidthEstimateProperty();
-    }
-
-    @Override
-    public Val<Double> totalHeightEstimateProperty() {
-        return content.totalHeightEstimateProperty();
     }
 
     @Override
@@ -132,14 +119,28 @@ public class FlyAwayScrollPane<V extends Node & Virtualized> extends Region
         return content.estimatedScrollYProperty();
     }
 
-    @Override
-    public void scrollXBy(double deltaX) {
-        content.scrollXBy(deltaX);
+    /**
+     * Does not unbind scrolling from Content before returning Content.
+     *
+     * @return - the content
+     */
+    public V getContent() {
+        return content;
+    }
+
+    /**
+     * Unbinds scrolling from Content before returning Content.
+     *
+     * @return - the content
+     */
+    public V removeContent() {
+        getChildren().clear();
+        return content;
     }
 
     @Override
-    public void scrollYBy(double deltaY) {
-        content.scrollYBy(deltaY);
+    public void scrollXBy(double deltaX) {
+        content.scrollXBy(deltaX);
     }
 
     @Override
@@ -148,28 +149,28 @@ public class FlyAwayScrollPane<V extends Node & Virtualized> extends Region
     }
 
     @Override
+    public void scrollYBy(double deltaY) {
+        content.scrollYBy(deltaY);
+    }
+
+    @Override
     public void scrollYToPixel(double pixel) {
         content.scrollYToPixel(pixel);
     }
 
     @Override
-    protected double computePrefWidth(double height) {
-        return content.prefWidth(height);
+    public Val<Double> totalHeightEstimateProperty() {
+        return content.totalHeightEstimateProperty();
     }
 
     @Override
-    protected double computePrefHeight(double width) {
-        return content.prefHeight(width);
+    public Val<Double> totalWidthEstimateProperty() {
+        return content.totalWidthEstimateProperty();
     }
 
     @Override
-    protected double computeMinWidth(double height) {
-        return vbar.minWidth(-1);
-    }
-
-    @Override
-    protected double computeMinHeight(double width) {
-        return -1;
+    protected double computeMaxHeight(double width) {
+        return content.maxHeight(width);
     }
 
     @Override
@@ -178,8 +179,23 @@ public class FlyAwayScrollPane<V extends Node & Virtualized> extends Region
     }
 
     @Override
-    protected double computeMaxHeight(double width) {
-        return content.maxHeight(width);
+    protected double computeMinHeight(double width) {
+        return -1;
+    }
+
+    @Override
+    protected double computeMinWidth(double height) {
+        return vbar.minWidth(-1);
+    }
+
+    @Override
+    protected double computePrefHeight(double width) {
+        return content.prefHeight(width);
+    }
+
+    @Override
+    protected double computePrefWidth(double height) {
+        return content.prefWidth(height);
     }
 
     @Override
@@ -201,6 +217,13 @@ public class FlyAwayScrollPane<V extends Node & Virtualized> extends Region
         }
     }
 
+    private void dispose() {
+        content.focusedProperty()
+               .removeListener(contentFocusedListener);
+        vbarValue.unbindBidirectional(content.estimatedScrollYProperty());
+        unbindScrollBar(vbar);
+    }
+
     private void setVPosition(double pos) {
         double offset = scrollbarPositionToOffset(pos, content.getLayoutBounds()
                                                               .getHeight(),
@@ -210,36 +233,14 @@ public class FlyAwayScrollPane<V extends Node & Virtualized> extends Region
                .setValue(offset);
     }
 
-    private static void setupUnitIncrement(ScrollBar bar) {
+    private void unbindScrollBar(ScrollBar bar) {
+        bar.maxProperty()
+           .unbind();
         bar.unitIncrementProperty()
-           .bind(new DoubleBinding() {
-               {
-                   bind(bar.maxProperty(), bar.visibleAmountProperty());
-               }
-
-               @Override
-               protected double computeValue() {
-                   double max = bar.getMax();
-                   double visible = bar.getVisibleAmount();
-                   return max > visible ? 16 / (max - visible) * max : 0;
-               }
-           });
-    }
-
-    private static double offsetToScrollbarPosition(double contentOffset,
-                                                    double viewportSize,
-                                                    double contentSize) {
-        return contentSize > viewportSize ? contentOffset
-                                            / (contentSize - viewportSize)
-                                            * contentSize
-                                          : 0;
-    }
-
-    private static double scrollbarPositionToOffset(double scrollbarPos,
-                                                    double viewportSize,
-                                                    double contentSize) {
-        return contentSize > viewportSize ? scrollbarPos / contentSize
-                                            * (contentSize - viewportSize)
-                                          : 0;
+           .unbind();
+        bar.blockIncrementProperty()
+           .unbind();
+        bar.visibleProperty()
+           .unbind();
     }
 }

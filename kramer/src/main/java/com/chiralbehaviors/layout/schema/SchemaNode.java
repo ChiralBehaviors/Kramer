@@ -19,21 +19,17 @@ package com.chiralbehaviors.layout.schema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
-
-import org.fxmisc.flowless.Cell;
 
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
+import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
-import javafx.scene.Parent;
 import javafx.scene.layout.Region;
-import javafx.util.Pair;
 
 /**
  * @author hhildebrand
@@ -203,10 +199,10 @@ abstract public class SchemaNode {
 
     abstract public double nestTableColumn(Indent indent, double indentation);
 
-    public abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
-                                                                    double labelWidth,
-                                                                    Function<JsonNode, JsonNode> extractor,
-                                                                    double justified);
+    public abstract Cell<JsonNode, Region> outlineElement(int cardinality,
+                                                          double labelWidth,
+                                                          Function<JsonNode, JsonNode> extractor,
+                                                          double justified);
 
     public abstract double rowHeight(int cardinality, double justified);
 
