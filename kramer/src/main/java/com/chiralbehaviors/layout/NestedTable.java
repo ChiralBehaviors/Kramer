@@ -103,8 +103,8 @@ public class NestedTable implements Cell<JsonNode, Region> {
         VirtualFlow<JsonNode, Cell<JsonNode, ?>> row = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
                                                                                   cellHeight,
                                                                                   nestedItems,
-                                                                                  item -> cell(cellHeight,
-                                                                                               layout).apply(item));
+                                                                                  cell(cellHeight,
+                                                                                       layout));
         double width = layout.getJustifiedColumnWidth();
         row.setMinSize(width, rendered);
         row.setPrefSize(width, rendered);
@@ -120,8 +120,8 @@ public class NestedTable implements Cell<JsonNode, Region> {
         VirtualFlow<JsonNode, Cell<JsonNode, ?>> rows = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
                                                                                    cellHeight,
                                                                                    items,
-                                                                                   item -> cell(cellHeight,
-                                                                                                layout).apply(item));
+                                                                                   cell(cellHeight,
+                                                                                        layout));
 
         double width = layout.getJustifiedColumnWidth();
         double height = snap(layout.getHeight()

@@ -12,12 +12,9 @@
 
 	<dependencies>
 		<dependency>
-			<groupId>net.java.dev.timingframework</groupId>
-			<artifactId>timingframework</artifactId>
-			<version>1.0</version>
+			<groupId>org.fxmisc.wellbehaved</groupId>
+			<artifactId>wellbehavedfx</artifactId>
 		</dependency>
-
-
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>

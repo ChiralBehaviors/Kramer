@@ -126,8 +126,9 @@ public class RelationLayout extends SchemaNodeLayout {
             }
 
             @Override
-            public void updateItem(JsonNode item) {
-                nested.forEach(c -> c.updateItem(item));
+            public void updateItem(JsonNode item) { 
+                nested.forEach(c -> 
+                c.updateItem(item));
             }
         };
     }

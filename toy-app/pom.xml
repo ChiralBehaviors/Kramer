@@ -27,6 +27,11 @@
 			<groupId>com.hellblazer</groupId>
 			<artifactId>utils</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.fxmisc.wellbehaved</groupId>
+			<artifactId>wellbehavedfx</artifactId>
+			<version>0.3</version>
+		</dependency>
 	</dependencies>
 
 	<build>

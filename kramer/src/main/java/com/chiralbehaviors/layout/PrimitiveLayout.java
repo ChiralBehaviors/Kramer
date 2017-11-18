@@ -89,8 +89,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
             }
 
             @Override
-            public void updateItem(JsonNode item) {
-                label.setText(SchemaNode.asText(item));
+            public void updateItem(JsonNode item) { 
+                label.setText(SchemaNode.asText(extractFrom(item)));
             }
         };
     }
