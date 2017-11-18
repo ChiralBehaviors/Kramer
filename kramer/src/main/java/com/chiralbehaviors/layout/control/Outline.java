@@ -34,11 +34,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Pair;
 
@@ -75,7 +77,10 @@ public class Outline extends JsonControl {
         list.setMinHeight(height);
         list.setPrefHeight(height);
         list.setMaxHeight(height);
-        getChildren().add(new FlyAwayScrollPane<>(list));
+        
+        Region pane = new FlyAwayScrollPane<>(list);
+        StackPane.setAlignment(pane, Pos.TOP_LEFT); 
+        getChildren().add(new StackPane(pane));
         return this;
     }
 
