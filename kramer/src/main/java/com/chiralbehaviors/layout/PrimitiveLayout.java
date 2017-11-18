@@ -22,14 +22,19 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.fxmisc.flowless.Cell;
+
 import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.PrimitiveControl;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Control;
+import javafx.scene.control.Label;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -51,6 +56,44 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     public PrimitiveLayout(LayoutProvider layout, Primitive p) {
         super(layout);
         this.p = p;
+    }
+
+    @Override
+    public Cell<JsonNode, ?> buildColumn(double rendered) {
+        Label label = new Label();
+        label.setWrapText(true);
+        label.setStyle("-fx-background-color: " + "         rgba(0,0,0,0.08),"
+                       + "        linear-gradient(#9a9a9a, #909090),"
+                       + "        white 0%;"
+                       + "    -fx-background-insets: 0 0 -1 0,0,1;"
+                       + "    -fx-background-radius: 5,5,4;"
+                       + "    -fx-padding: 3 30 3 30;"
+                       + "    -fx-text-fill: #242d35;"
+                       + "    -fx-font-size: 14px;");
+        AnchorPane.setLeftAnchor(label, 0d);
+        AnchorPane.setRightAnchor(label, 0d);
+        AnchorPane.setTopAnchor(label, 0d);
+        AnchorPane.setBottomAnchor(label, 0d);
+        AnchorPane anchor = new AnchorPane(label);
+        anchor.setMinSize(justifiedWidth, rendered);
+        anchor.setPrefSize(justifiedWidth, rendered);
+        anchor.setMaxSize(justifiedWidth, rendered);
+        return new Cell<JsonNode, Node>() {
+            @Override
+            public Node getNode() {
+                return anchor;
+            }
+
+            @Override
+            public boolean isReusable() {
+                return true;
+            }
+
+            @Override
+            public void updateItem(JsonNode item) {
+                label.setText(SchemaNode.asText(item));
+            }
+        };
     }
 
     public PrimitiveControl buildControl(int cardinality) {
@@ -80,6 +123,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
             columnHeader.setMaxSize(width, rendered);
             return columnHeader;
         };
+    }
+
+    @Override
+    public double columnWidth() {
+        return Math.max(columnWidth, labelWidth);
     }
 
     @Override
@@ -176,13 +224,13 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         }, box);
     }
 
-    public double tableColumnWidth() {
-        return columnWidth();
+    public void apply(Cell<JsonNode, ?> list) {
+        layout.getModel()
+              .apply(list, p);
     }
 
-    @Override
-    public double columnWidth() {
-        return Math.max(columnWidth, labelWidth);
+    public double tableColumnWidth() {
+        return columnWidth();
     }
 
     @Override

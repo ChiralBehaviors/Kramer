@@ -22,10 +22,11 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.fxmisc.flowless.Cell;
+
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
-import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -148,8 +149,7 @@ abstract public class SchemaNode {
         getLayout().adjustHeight(delta);
     }
 
-    abstract public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
-                                                                 double rendered);
+    abstract public Cell<JsonNode, ?> buildColumn(double rendered);
 
     abstract public Function<Double, Region> buildColumnHeader();
 

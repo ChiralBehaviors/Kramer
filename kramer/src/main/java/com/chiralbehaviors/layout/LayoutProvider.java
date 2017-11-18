@@ -39,11 +39,6 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TableRow;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextBoundsType;
@@ -53,19 +48,11 @@ public class LayoutProvider {
 
     public interface LayoutModel {
 
-        default void apply(ListCell<JsonNode> cell, Relation relation) {
+        default void apply(VirtualFlow<JsonNode, Cell<JsonNode, ?>> list,
+                           Relation relation) {
         }
 
-        default void apply(ListView<JsonNode> list, Relation relation) {
-        }
-
-        default void apply(TableRow<JsonNode> row, Relation relation) {
-        }
-
-        default void apply(TableView<JsonNode> table, Relation relation) {
-        }
-
-        default void apply(TextArea control, Primitive primitive) {
+        default void apply(Cell<JsonNode, ?> list, Primitive p) {
         }
     }
 

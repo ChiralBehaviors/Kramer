@@ -19,10 +19,11 @@ package com.chiralbehaviors.layout.schema;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.fxmisc.flowless.Cell;
+
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
-import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Parent;
@@ -47,9 +48,8 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
-                                                        double rendered) {
-        return table.buildPrimitive(rendered, layout);
+    public Cell<JsonNode, ?> buildColumn(double rendered) {
+        return layout.buildColumn(rendered);
     }
 
     @Override

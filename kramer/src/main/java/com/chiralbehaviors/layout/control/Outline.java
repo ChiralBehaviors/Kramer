@@ -49,8 +49,8 @@ import javafx.util.Pair;
  *
  */
 public class Outline extends JsonControl {
-    private final ObservableList<JsonNode>                items = FXCollections.observableArrayList();
-    private VirtualFlow<JsonNode, Cell<JsonNode, Region>> list;
+    private final ObservableList<JsonNode>           items = FXCollections.observableArrayList();
+    private VirtualFlow<JsonNode, Cell<JsonNode, ?>> list;
 
     public Outline(String styleClass) {
         getStyleClass().add(styleClass);
@@ -62,11 +62,11 @@ public class Outline extends JsonControl {
         double cellHeight = layout.outlineCellHeight(columnSets.stream()
                                                                .mapToDouble(cs -> cs.getCellHeight())
                                                                .sum());
-        Function<JsonNode, Cell<JsonNode, Region>> cell = listCell(columnSets,
-                                                                   averageCardinality,
-                                                                   layout.baseOutlineCellHeight(cellHeight),
-                                                                   extractor,
-                                                                   layout);
+        Function<JsonNode, Cell<JsonNode, ?>> cell = listCell(columnSets,
+                                                              averageCardinality,
+                                                              layout.baseOutlineCellHeight(cellHeight),
+                                                              extractor,
+                                                              layout);
         list = VirtualFlow.createVertical(layout.getJustifiedWidth(),
                                           cellHeight, items,
                                           jsonNode -> cell.apply(jsonNode));
@@ -77,9 +77,9 @@ public class Outline extends JsonControl {
         list.setMinHeight(height);
         list.setPrefHeight(height);
         list.setMaxHeight(height);
-        
+
         Region pane = new FlyAwayScrollPane<>(list);
-        StackPane.setAlignment(pane, Pos.TOP_LEFT); 
+        StackPane.setAlignment(pane, Pos.TOP_LEFT);
         getChildren().add(new StackPane(pane));
         return this;
     }
@@ -133,11 +133,11 @@ public class Outline extends JsonControl {
         return new OutlineSkin(this);
     }
 
-    protected Function<JsonNode, Cell<JsonNode, Region>> listCell(Collection<ColumnSet> columnSets,
-                                                                  int averageCardinality,
-                                                                  double cellHeight,
-                                                                  Function<JsonNode, JsonNode> extractor,
-                                                                  RelationLayout layout) {
+    protected Function<JsonNode, Cell<JsonNode, ?>> listCell(Collection<ColumnSet> columnSets,
+                                                             int averageCardinality,
+                                                             double cellHeight,
+                                                             Function<JsonNode, JsonNode> extractor,
+                                                             RelationLayout layout) {
         return item -> {
             List<Consumer<JsonNode>> controls = new ArrayList<>();
             VBox cell = new VBox();

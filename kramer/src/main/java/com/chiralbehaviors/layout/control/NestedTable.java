@@ -36,7 +36,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
 import javafx.scene.control.Skin;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -47,8 +46,8 @@ import javafx.util.Pair;
  *
  */
 public class NestedTable extends JsonControl {
-    private final ObservableList<JsonNode>                items = FXCollections.observableArrayList();
-    private VirtualFlow<JsonNode, Cell<JsonNode, Region>> rows;
+    private final ObservableList<JsonNode>           items = FXCollections.observableArrayList();
+    private VirtualFlow<JsonNode, Cell<JsonNode, ?>> rows;
 
     public NestedTable(RelationLayout layout) {
         getStyleClass().add(layout.getStyleClass());
@@ -97,26 +96,6 @@ public class NestedTable extends JsonControl {
         return new NestedTableSkin(this);
     }
 
-    private Pair<Consumer<JsonNode>, Region> buildColumn(double rendered,
-                                                         RelationLayout layout) {
-        HBox cell = new HBox();
-        cell.getStyleClass()
-            .add(layout.getStyleClass());
-        cell.setMinSize(layout.getJustifiedWidth(), rendered);
-        cell.setPrefSize(layout.getJustifiedWidth(), rendered);
-        cell.setMaxSize(layout.getJustifiedWidth(), rendered);
-        List<Consumer<JsonNode>> consumers = new ArrayList<>();
-        layout.forEach(child -> {
-            Pair<Consumer<JsonNode>, Region> column = child.buildColumn(this,
-                                                                        rendered);
-            consumers.add(column.getKey());
-            Region control = column.getValue();
-            cell.getChildren()
-                .add(control);
-        });
-        return new Pair<>(node -> consumers.forEach(c -> c.accept(node)), cell);
-    }
-
     private Pair<ObservableList<JsonNode>, Region> buildNestedRow(double rendered,
                                                                   RelationLayout layout) {
         ObservableList<JsonNode> nestedItems = FXCollections.observableArrayList();
@@ -125,11 +104,11 @@ public class NestedTable extends JsonControl {
         double childDeficit = deficit / (double) cardinality;
         double extended = snap(layout.getRowHeight() + childDeficit);
         double cellHeight = layout.baseRowCellHeight(extended);
-        VirtualFlow<JsonNode, Cell<JsonNode, Region>> row = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
-                                                                                       cellHeight,
-                                                                                       nestedItems,
-                                                                                       item -> cell(cellHeight,
-                                                                                                    layout).apply(item));
+        VirtualFlow<JsonNode, Cell<JsonNode, ?>> row = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
+                                                                                  cellHeight,
+                                                                                  nestedItems,
+                                                                                  item -> cell(cellHeight,
+                                                                                               layout).apply(item));
         double width = layout.getJustifiedColumnWidth();
         row.setMinSize(width, rendered);
         row.setPrefSize(width, rendered);
@@ -163,39 +142,12 @@ public class NestedTable extends JsonControl {
         return scroll;
     }
 
-    private Function<JsonNode, Cell<JsonNode, Region>> cell(double rendered,
-                                                            RelationLayout layout) {
+    private Function<JsonNode, Cell<JsonNode, ?>> cell(double rendered,
+                                                       RelationLayout layout) {
         return item -> {
-            return new Cell<JsonNode, Region>() {
-                Pair<Consumer<JsonNode>, Region> column = buildColumn(rendered,
-                                                                      layout);
-                {
-                    column.getKey()
-                          .accept(item);
-                }
-
-                @Override
-                public Region getNode() {
-                    return column.getValue();
-                }
-
-                @Override
-                public boolean isReusable() {
-                    return true;
-                }
-
-                @Override
-                public String toString() {
-                    return column.getValue()
-                                 .toString();
-                }
-
-                @Override
-                public void updateItem(JsonNode item) {
-                    column.getKey()
-                          .accept(item);
-                }
-            };
+            Cell<JsonNode, ?> column = layout.buildColumn(rendered);
+            column.updateItem(item);
+            return column;
         };
     }
 

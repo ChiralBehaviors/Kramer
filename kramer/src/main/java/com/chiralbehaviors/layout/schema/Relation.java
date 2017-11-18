@@ -21,11 +21,12 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.fxmisc.flowless.Cell;
+
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
 import com.chiralbehaviors.layout.control.JsonControl;
-import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -70,9 +71,9 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
-                                                        double rendered) {
-        return table.buildRelation(rendered, layout);
+    public Cell<JsonNode, ?> buildColumn(double rendered) {
+        return isFold() ? fold.buildColumn(rendered)
+                        : layout.buildColumn(rendered);
     }
 
     @Override

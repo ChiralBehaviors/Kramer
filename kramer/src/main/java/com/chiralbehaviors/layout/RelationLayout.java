@@ -16,7 +16,8 @@
 
 package com.chiralbehaviors.layout;
 
-import static com.chiralbehaviors.layout.LayoutProvider.*;
+import static com.chiralbehaviors.layout.LayoutProvider.relax;
+import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +25,9 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.fxmisc.flowless.Cell;
+import org.fxmisc.flowless.VirtualFlow;
 
 import com.chiralbehaviors.layout.control.JsonControl;
 import com.chiralbehaviors.layout.control.NestedTable;
@@ -35,10 +39,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.common.util.concurrent.AtomicDouble;
 
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Control;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
@@ -83,12 +86,7 @@ public class RelationLayout extends SchemaNodeLayout {
         }
     }
 
-    public void apply(ListCell<JsonNode> cell) {
-        layout.getModel()
-              .apply(cell, r);
-    }
-
-    public void apply(ListView<JsonNode> list) {
+    public void apply(VirtualFlow<JsonNode, Cell<JsonNode, ?>> list) {
         layout.getModel()
               .apply(list, r);
     }
@@ -99,6 +97,45 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public double baseRowCellHeight(double extended) {
         return snap(extended - layout.getCellVerticalInset());
+    }
+
+    @Override
+    public Cell<JsonNode, ?> buildColumn(double rendered) {
+        HBox cell = new HBox();
+        cell.getStyleClass()
+            .add(getStyleClass());
+        cell.setMinSize(justifiedWidth, rendered);
+        cell.setPrefSize(justifiedWidth, rendered);
+        cell.setMaxSize(justifiedWidth, rendered);
+        List<Cell<JsonNode, ?>> nested = new ArrayList<>();
+        forEach(child -> {
+            Cell<JsonNode, ?> column = child.buildColumn(rendered);
+            nested.add(column);
+            cell.getChildren()
+                .add(column.getNode());
+        });
+        return new Cell<JsonNode, Node>() {
+
+            @Override
+            public Node getNode() {
+                return cell;
+            }
+
+            @Override
+            public boolean isReusable() {
+                return true;
+            }
+
+            @Override
+            public String toString() {
+                return String.format("Cell[%s]", r.getField());
+            }
+
+            @Override
+            public void updateItem(JsonNode item) {
+                nested.forEach(c -> c.updateItem(item));
+            }
+        };
     }
 
     public Region buildColumnHeader() {

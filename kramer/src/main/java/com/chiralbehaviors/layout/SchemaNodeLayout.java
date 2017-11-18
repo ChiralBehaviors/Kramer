@@ -20,6 +20,8 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.function.Function;
 
+import org.fxmisc.flowless.Cell;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Control;
@@ -127,6 +129,8 @@ abstract public class SchemaNodeLayout {
     public void adjustHeight(double delta) {
         this.height = LayoutProvider.snap(height + delta);
     }
+
+    abstract public Cell<JsonNode, ?> buildColumn(double rendered);
 
     abstract public Function<Double, Region> columnHeader();
 
