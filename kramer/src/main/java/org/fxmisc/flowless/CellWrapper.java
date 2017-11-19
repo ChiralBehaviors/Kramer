@@ -6,24 +6,14 @@ import java.util.function.IntConsumer;
 import javafx.scene.Node;
 
 /**
- * Factory class for wrapping a {@link Cell} and running additional code before/after specific methods
+ * Factory class for wrapping a {@link Cell} and running additional code
+ * before/after specific methods
  */
 abstract class CellWrapper<T, N extends Node, C extends Cell<T, N>>
-implements Cell<T, N> {
+        implements Cell<T, N> {
 
-    public static <T, N extends Node,C extends Cell<T, N>>
-    CellWrapper<T, N, C> beforeDispose(C cell, Runnable action) {
-        return new CellWrapper<T, N, C>(cell) {
-            @Override
-            public void dispose() {
-                action.run();
-                super.dispose();
-            }
-        };
-    }
-
-    public static <T, N extends Node,C extends Cell<T, N>>
-    CellWrapper<T, N, C> afterDispose(C cell, Runnable action) {
+    public static <T, N extends Node, C extends Cell<T, N>> CellWrapper<T, N, C> afterDispose(C cell,
+                                                                                              Runnable action) {
         return new CellWrapper<T, N, C>(cell) {
             @Override
             public void dispose() {
@@ -33,19 +23,8 @@ implements Cell<T, N> {
         };
     }
 
-    public static <T, N extends Node,C extends Cell<T, N>>
-    CellWrapper<T, N, C> beforeReset(C cell, Runnable action) {
-        return new CellWrapper<T, N, C>(cell) {
-            @Override
-            public void reset() {
-                action.run();
-                super.reset();
-            }
-        };
-    }
-
-    public static <T, N extends Node,C extends Cell<T, N>>
-    CellWrapper<T, N, C> afterReset(C cell, Runnable action) {
+    public static <T, N extends Node, C extends Cell<T, N>> CellWrapper<T, N, C> afterReset(C cell,
+                                                                                            Runnable action) {
         return new CellWrapper<T, N, C>(cell) {
             @Override
             public void reset() {
@@ -55,19 +34,19 @@ implements Cell<T, N> {
         };
     }
 
-    public static <T, N extends Node,C extends Cell<T, N>>
-    CellWrapper<T, N, C> beforeUpdateItem(C cell, Consumer<? super T> action) {
+    public static <T, N extends Node, C extends Cell<T, N>> CellWrapper<T, N, C> afterUpdateIndex(C cell,
+                                                                                                  IntConsumer action) {
         return new CellWrapper<T, N, C>(cell) {
             @Override
-            public void updateItem(T item) {
-                action.accept(item);
-                super.updateItem(item);
+            public void updateIndex(int index) {
+                super.updateIndex(index);
+                action.accept(index);
             }
         };
     }
 
-    public static <T, N extends Node,C extends Cell<T, N>>
-    CellWrapper<T, N, C> afterUpdateItem(C cell, Consumer<? super T> action) {
+    public static <T, N extends Node, C extends Cell<T, N>> CellWrapper<T, N, C> afterUpdateItem(C cell,
+                                                                                                 Consumer<? super T> action) {
         return new CellWrapper<T, N, C>(cell) {
             @Override
             public void updateItem(T item) {
@@ -77,8 +56,30 @@ implements Cell<T, N> {
         };
     }
 
-    public static <T, N extends Node,C extends Cell<T, N>>
-    CellWrapper<T, N, C> beforeUpdateIndex(C cell, IntConsumer action) {
+    public static <T, N extends Node, C extends Cell<T, N>> CellWrapper<T, N, C> beforeDispose(C cell,
+                                                                                               Runnable action) {
+        return new CellWrapper<T, N, C>(cell) {
+            @Override
+            public void dispose() {
+                action.run();
+                super.dispose();
+            }
+        };
+    }
+
+    public static <T, N extends Node, C extends Cell<T, N>> CellWrapper<T, N, C> beforeReset(C cell,
+                                                                                             Runnable action) {
+        return new CellWrapper<T, N, C>(cell) {
+            @Override
+            public void reset() {
+                action.run();
+                super.reset();
+            }
+        };
+    }
+
+    public static <T, N extends Node, C extends Cell<T, N>> CellWrapper<T, N, C> beforeUpdateIndex(C cell,
+                                                                                                   IntConsumer action) {
         return new CellWrapper<T, N, C>(cell) {
             @Override
             public void updateIndex(int index) {
@@ -88,13 +89,13 @@ implements Cell<T, N> {
         };
     }
 
-    public static <T, N extends Node,C extends Cell<T, N>>
-    CellWrapper<T, N, C> afterUpdateIndex(C cell, IntConsumer action) {
+    public static <T, N extends Node, C extends Cell<T, N>> CellWrapper<T, N, C> beforeUpdateItem(C cell,
+                                                                                                  Consumer<? super T> action) {
         return new CellWrapper<T, N, C>(cell) {
             @Override
-            public void updateIndex(int index) {
-                super.updateIndex(index);
-                action.accept(index);
+            public void updateItem(T item) {
+                action.accept(item);
+                super.updateItem(item);
             }
         };
     }
@@ -103,6 +104,11 @@ implements Cell<T, N> {
 
     public CellWrapper(C delegate) {
         this.delegate = delegate;
+    }
+
+    @Override
+    public void dispose() {
+        delegate.dispose();
     }
 
     public C getDelegate() {
@@ -120,8 +126,13 @@ implements Cell<T, N> {
     }
 
     @Override
-    public void updateItem(T item) {
-        delegate.updateItem(item);
+    public void reset() {
+        delegate.reset();
+    }
+
+    @Override
+    public String toString() {
+        return delegate.toString();
     }
 
     @Override
@@ -130,17 +141,7 @@ implements Cell<T, N> {
     }
 
     @Override
-    public void reset() {
-        delegate.reset();
-    }
-
-    @Override
-    public void dispose() {
-        delegate.dispose();
-    }
-
-    @Override
-    public String toString() {
-        return delegate.toString();
+    public void updateItem(T item) {
+        delegate.updateItem(item);
     }
 }

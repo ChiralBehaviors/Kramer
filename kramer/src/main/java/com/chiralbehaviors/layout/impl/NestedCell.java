@@ -22,7 +22,6 @@ import java.util.List;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.collections.ObservableList;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 
@@ -60,10 +59,5 @@ public class NestedCell extends HBox implements LayoutCell<NestedCell> {
     @Override
     public void updateItem(JsonNode item) {
         cells.forEach(c -> c.updateItem(item));
-    }
-  
-    public static ObservableList<JsonNode> create() {
-        // TODO Auto-generated method stub
-        return null;
     }
 }

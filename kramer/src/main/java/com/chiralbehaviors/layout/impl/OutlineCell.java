@@ -50,8 +50,7 @@ public class OutlineCell extends VBox implements LayoutCell<OutlineCell> {
         setPrefSize(layout.getJustifiedWidth(), cellHeight);
         setMaxSize(layout.getJustifiedWidth(), cellHeight);
         columnSets.forEach(cs -> {
-            Cell<JsonNode, Span> span = new Span(cs.getWidth(),
-                                                 cs.getColumns(),
+            Cell<JsonNode, Span> span = new Span(cs.getWidth(), cs.getColumns(),
                                                  averageCardinality,
                                                  cs.getCellHeight(), extractor,
                                                  layout.getLabelWidth());

@@ -1,5 +1,6 @@
 package com.chiralbehaviors.layout.flowless;
 
+import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.reactfx.value.Val;
 import org.reactfx.value.Var;
 
@@ -11,7 +12,7 @@ import javafx.scene.transform.Scale;
  * Acts as an intermediate class between {@link VirtualizedScrollPane} and its
  * {@link Virtualized} content in that it scales the content without also
  * scaling the ScrollPane's scroll bars.
- * 
+ *
  * <pre>
  *     {@code
  *     Virtualized actualContent = // creation code

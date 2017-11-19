@@ -22,27 +22,58 @@ import javafx.scene.layout.Region;
 public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
         implements Virtualized {
 
-    private static final PseudoClass              CONTENT_FOCUSED = PseudoClass.getPseudoClass("content-focused");
+    private static final PseudoClass CONTENT_FOCUSED = PseudoClass.getPseudoClass("content-focused");
 
-    private final ScrollBar                       vbar;
+    private static double offsetToScrollbarPosition(double contentOffset,
+                                                    double viewportSize,
+                                                    double contentSize) {
+        return contentSize > viewportSize ? contentOffset
+                                            / (contentSize - viewportSize)
+                                            * contentSize
+                                          : 0;
+    }
+
+    private static double scrollbarPositionToOffset(double scrollbarPos,
+                                                    double viewportSize,
+                                                    double contentSize) {
+        return contentSize > viewportSize ? scrollbarPos / contentSize
+                                            * (contentSize - viewportSize)
+                                          : 0;
+    }
+
+    private static void setupUnitIncrement(ScrollBar bar) {
+        bar.unitIncrementProperty()
+           .bind(new DoubleBinding() {
+               {
+                   bind(bar.maxProperty(), bar.visibleAmountProperty());
+               }
+
+               @Override
+               protected double computeValue() {
+                   double max = bar.getMax();
+                   double visible = bar.getVisibleAmount();
+                   return max > visible ? 16 / (max - visible) * max : 0;
+               }
+           });
+    }
+
     private final V                               content;
+
     private final ChangeListener<Boolean>         contentFocusedListener;
 
-    private Var<Double>                           vbarValue;
+    private final ScrollBar                       vbar;
 
     /** The Policy for the Vertical ScrollBar */
     private final Var<ScrollPane.ScrollBarPolicy> vbarPolicy;
 
-    public final ScrollPane.ScrollBarPolicy getVbarPolicy() {
-        return vbarPolicy.getValue();
-    }
+    private Var<Double>                           vbarValue;
 
-    public final void setVbarPolicy(ScrollPane.ScrollBarPolicy value) {
-        vbarPolicy.setValue(value);
-    }
-
-    public final Var<ScrollPane.ScrollBarPolicy> vbarPolicyProperty() {
-        return vbarPolicy;
+    /**
+     * Constructs a VirtualizedScrollPane that only displays its horizontal and
+     * vertical scroll bars as needed
+     */
+    public VirtualizedScrollPane(@NamedArg("content") V content) {
+        this(content, AS_NEEDED);
     }
 
     /**
@@ -54,21 +85,21 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
             .add("virtualized-scroll-pane");
         this.content = content;
 
-        // create scrollbars 
+        // create scrollbars
         vbar = new ScrollBar();
         vbar.setOrientation(Orientation.VERTICAL);
 
-        // scrollbar ranges 
+        // scrollbar ranges
         vbar.setMin(0);
         vbar.maxProperty()
             .bind(content.totalHeightEstimateProperty());
 
-        // scrollbar increments 
+        // scrollbar increments
         setupUnitIncrement(vbar);
         vbar.blockIncrementProperty()
             .bind(vbar.visibleAmountProperty());
 
-        // scrollbar positions 
+        // scrollbar positions
         Var<Double> vPosEstimate = Val.combine(content.estimatedScrollYProperty(),
                                                Val.map(content.layoutBoundsProperty(),
                                                        Bounds::getHeight),
@@ -79,9 +110,9 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
         vbarValue = Var.doubleVar(vbar.valueProperty());
         Bindings.bindBidirectional(vbarValue, vPosEstimate);
 
-        // scrollbar visibility 
+        // scrollbar visibility
         vbarPolicy = Var.newSimpleVar(vPolicy);
- 
+
         Val<Double> layoutHeight = Val.map(layoutBoundsProperty(),
                                            Bounds::getHeight);
         Val<Boolean> needsVBar0 = Val.combine(content.totalHeightEstimateProperty(),
@@ -109,7 +140,7 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
             }
         });
 
-        // request layout later, because if currently in layout, the request is ignored 
+        // request layout later, because if currently in layout, the request is ignored
         shouldDisplayVertical.addListener(obs -> Platform.runLater(this::requestLayout));
 
         vbar.visibleProperty()
@@ -124,61 +155,6 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
         getChildren().addListener((Observable obs) -> dispose());
     }
 
-    /**
-     * Constructs a VirtualizedScrollPane that only displays its horizontal and
-     * vertical scroll bars as needed
-     */
-    public VirtualizedScrollPane(@NamedArg("content") V content) {
-        this(content, AS_NEEDED);
-    }
-
-    /**
-     * Does not unbind scrolling from Content before returning Content.
-     * 
-     * @return - the content
-     */
-    public V getContent() {
-        return content;
-    }
-
-    /**
-     * Unbinds scrolling from Content before returning Content.
-     * 
-     * @return - the content
-     */
-    public V removeContent() {
-        getChildren().clear();
-        return content;
-    }
-
-    private void dispose() {
-        content.focusedProperty()
-               .removeListener(contentFocusedListener);
-        vbarValue.unbindBidirectional(content.estimatedScrollYProperty());
-        unbindScrollBar(vbar);
-    }
-
-    private void unbindScrollBar(ScrollBar bar) {
-        bar.maxProperty()
-           .unbind();
-        bar.unitIncrementProperty()
-           .unbind();
-        bar.blockIncrementProperty()
-           .unbind();
-        bar.visibleProperty()
-           .unbind();
-    }
-
-    @Override
-    public Val<Double> totalWidthEstimateProperty() {
-        return content.totalWidthEstimateProperty();
-    }
-
-    @Override
-    public Val<Double> totalHeightEstimateProperty() {
-        return content.totalHeightEstimateProperty();
-    }
-
     @Override
     public Var<Double> estimatedScrollXProperty() {
         return content.estimatedScrollXProperty();
@@ -189,14 +165,32 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
         return content.estimatedScrollYProperty();
     }
 
-    @Override
-    public void scrollXBy(double deltaX) {
-        content.scrollXBy(deltaX);
+    /**
+     * Does not unbind scrolling from Content before returning Content.
+     *
+     * @return - the content
+     */
+    public V getContent() {
+        return content;
+    }
+
+    public final ScrollPane.ScrollBarPolicy getVbarPolicy() {
+        return vbarPolicy.getValue();
+    }
+
+    /**
+     * Unbinds scrolling from Content before returning Content.
+     *
+     * @return - the content
+     */
+    public V removeContent() {
+        getChildren().clear();
+        return content;
     }
 
     @Override
-    public void scrollYBy(double deltaY) {
-        content.scrollYBy(deltaY);
+    public void scrollXBy(double deltaX) {
+        content.scrollXBy(deltaX);
     }
 
     @Override
@@ -205,28 +199,36 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
     }
 
     @Override
+    public void scrollYBy(double deltaY) {
+        content.scrollYBy(deltaY);
+    }
+
+    @Override
     public void scrollYToPixel(double pixel) {
         content.scrollYToPixel(pixel);
     }
 
-    @Override
-    protected double computePrefWidth(double height) {
-        return content.prefWidth(height);
+    public final void setVbarPolicy(ScrollPane.ScrollBarPolicy value) {
+        vbarPolicy.setValue(value);
     }
 
     @Override
-    protected double computePrefHeight(double width) {
-        return content.prefHeight(width);
+    public Val<Double> totalHeightEstimateProperty() {
+        return content.totalHeightEstimateProperty();
     }
 
     @Override
-    protected double computeMinWidth(double height) {
-        return vbar.minWidth(-1);
+    public Val<Double> totalWidthEstimateProperty() {
+        return content.totalWidthEstimateProperty();
+    }
+
+    public final Var<ScrollPane.ScrollBarPolicy> vbarPolicyProperty() {
+        return vbarPolicy;
     }
 
     @Override
-    protected double computeMinHeight(double width) {
-        return -1;
+    protected double computeMaxHeight(double width) {
+        return content.maxHeight(width);
     }
 
     @Override
@@ -235,8 +237,23 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
     }
 
     @Override
-    protected double computeMaxHeight(double width) {
-        return content.maxHeight(width);
+    protected double computeMinHeight(double width) {
+        return -1;
+    }
+
+    @Override
+    protected double computeMinWidth(double height) {
+        return vbar.minWidth(-1);
+    }
+
+    @Override
+    protected double computePrefHeight(double width) {
+        return content.prefHeight(width);
+    }
+
+    @Override
+    protected double computePrefWidth(double height) {
+        return content.prefWidth(height);
     }
 
     @Override
@@ -258,6 +275,13 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
         }
     }
 
+    private void dispose() {
+        content.focusedProperty()
+               .removeListener(contentFocusedListener);
+        vbarValue.unbindBidirectional(content.estimatedScrollYProperty());
+        unbindScrollBar(vbar);
+    }
+
     private void setVPosition(double pos) {
         double offset = scrollbarPositionToOffset(pos, content.getLayoutBounds()
                                                               .getHeight(),
@@ -267,36 +291,14 @@ public class VirtualizedScrollPane<V extends Node & Virtualized> extends Region
                .setValue(offset);
     }
 
-    private static void setupUnitIncrement(ScrollBar bar) {
+    private void unbindScrollBar(ScrollBar bar) {
+        bar.maxProperty()
+           .unbind();
         bar.unitIncrementProperty()
-           .bind(new DoubleBinding() {
-               {
-                   bind(bar.maxProperty(), bar.visibleAmountProperty());
-               }
-
-               @Override
-               protected double computeValue() {
-                   double max = bar.getMax();
-                   double visible = bar.getVisibleAmount();
-                   return max > visible ? 16 / (max - visible) * max : 0;
-               }
-           });
-    }
-
-    private static double offsetToScrollbarPosition(double contentOffset,
-                                                    double viewportSize,
-                                                    double contentSize) {
-        return contentSize > viewportSize ? contentOffset
-                                            / (contentSize - viewportSize)
-                                            * contentSize
-                                          : 0;
-    }
-
-    private static double scrollbarPositionToOffset(double scrollbarPos,
-                                                    double viewportSize,
-                                                    double contentSize) {
-        return contentSize > viewportSize ? scrollbarPos / contentSize
-                                            * (contentSize - viewportSize)
-                                          : 0;
+           .unbind();
+        bar.blockIncrementProperty()
+           .unbind();
+        bar.visibleProperty()
+           .unbind();
     }
 }

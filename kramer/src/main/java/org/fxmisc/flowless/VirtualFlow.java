@@ -94,6 +94,33 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         REAR
     }
 
+    @SuppressWarnings("unchecked") // Because of the cast we have to perform, below
+    private static final CssMetaData<VirtualFlow<?, ?>, Gravity>   GRAVITY = new CssMetaData<VirtualFlow<?, ?>, Gravity>("-flowless-gravity",
+                                                                                                                         // JavaFX seems to have an odd return type on getEnumConverter: "? extends Enum<?>", not E as the second generic type.
+                                                                                                                         // Even though if you look at the source, the EnumConverter type it uses does have the type E.
+                                                                                                                         // To get round this, we cast on return:
+                                                                                                                         (StyleConverter<?, Gravity>) StyleConverter.getEnumConverter(Gravity.class),
+                                                                                                                         Gravity.FRONT) {
+
+                                                                               @Override
+                                                                               public StyleableProperty<Gravity> getStyleableProperty(VirtualFlow<?, ?> virtualFlow) {
+                                                                                   return virtualFlow.gravity;
+                                                                               }
+
+                                                                               @Override
+                                                                               public boolean isSettable(VirtualFlow<?, ?> virtualFlow) {
+                                                                                   return !virtualFlow.gravity.isBound();
+                                                                               }
+                                                                           };
+
+    private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
+
+    static {
+        List<CssMetaData<? extends Styleable, ?>> styleables = new ArrayList<>(Region.getClassCssMetaData());
+        styleables.add(GRAVITY);
+        STYLEABLES = Collections.unmodifiableList(styleables);
+    }
+
     /**
      * Creates a viewport that lays out content horizontally from left to right
      */
@@ -140,13 +167,17 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
                                  new VerticalHelper(), gravity);
     }
 
-    private final ObservableList<T>                items;
-    private final OrientationHelper                orientation;
-    private final CellListManager<T, C>            cellListManager;
-    private final SizeTracker                      sizeTracker;
-    private final CellPositioner<T, C>             cellPositioner;
-    private final Navigator<T, C>                  navigator;
+    public static List<CssMetaData<? extends Styleable, ?>> getClassCssMetaData() {
+        return STYLEABLES;
+    }
 
+    private final Var<Double>                      breadthOffset;
+    // non-negative
+    private final Var<Double>                      breadthOffset0 = Var.newSimpleVar(0.0);
+
+    private final CellListManager<T, C>            cellListManager;
+
+    private final CellPositioner<T, C>             cellPositioner;
     private final StyleableObjectProperty<Gravity> gravity        = new StyleableObjectProperty<Gravity>() {
                                                                       @Override
                                                                       public Object getBean() {
@@ -154,33 +185,25 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
                                                                       }
 
                                                                       @Override
-                                                                      public String getName() {
-                                                                          return "gravity";
-                                                                      }
-
-                                                                      @Override
                                                                       public CssMetaData<? extends Styleable, Gravity> getCssMetaData() {
                                                                           return GRAVITY;
                                                                       }
+
+                                                                      @Override
+                                                                      public String getName() {
+                                                                          return "gravity";
+                                                                      }
                                                                   };
 
-    // non-negative
-    private final Var<Double>                      breadthOffset0 = Var.newSimpleVar(0.0);
-    private final Var<Double>                      breadthOffset  = breadthOffset0.asVar(this::setBreadthOffset);
+    private final ObservableList<T>                items;
 
-    public Var<Double> breadthOffsetProperty() {
-        return breadthOffset;
-    }
+    private final Var<Double>                      lengthOffsetEstimate;
 
-    public Val<Double> totalBreadthEstimateProperty() {
-        return sizeTracker.maxCellBreadthProperty();
-    }
+    private final Navigator<T, C>                  navigator;
 
-    private final Var<Double> lengthOffsetEstimate;
+    private final OrientationHelper                orientation;
 
-    public Var<Double> lengthOffsetEstimateProperty() {
-        return lengthOffsetEstimate;
-    }
+    private final SizeTracker                      sizeTracker;
 
     private VirtualFlow(double cellBreadth, double cellLength,
                         ObservableList<T> items,
@@ -188,6 +211,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
                         OrientationHelper orientation, Gravity gravity) {
         this.getStyleClass()
             .add("virtual-flow");
+        breadthOffset = breadthOffset0.asVar(this::setBreadthOffset);
         this.items = items;
         this.orientation = orientation;
         this.cellListManager = new CellListManager<T, C>(items, cellFactory);
@@ -217,10 +241,39 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         });
     }
 
+    public Var<Double> breadthOffsetProperty() {
+        return breadthOffset;
+    }
+
+    public Bounds cellToViewport(C cell, Bounds bounds) {
+        return cell.getNode()
+                   .localToParent(bounds);
+    }
+
+    public Point2D cellToViewport(C cell, double x, double y) {
+        return cell.getNode()
+                   .localToParent(x, y);
+    }
+
+    public Point2D cellToViewport(C cell, Point2D point) {
+        return cell.getNode()
+                   .localToParent(point);
+    }
+
     public void dispose() {
         navigator.dispose();
         sizeTracker.dispose();
         cellListManager.dispose();
+    }
+
+    @Override
+    public Var<Double> estimatedScrollXProperty() {
+        return orientation.estimatedScrollXProperty(this);
+    }
+
+    @Override
+    public Var<Double> estimatedScrollYProperty() {
+        return orientation.estimatedScrollYProperty(this);
     }
 
     /**
@@ -248,172 +301,36 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         return cellPositioner.getCellIfVisible(itemIndex);
     }
 
-    /**
-     * This method calls {@link #layout()} as a side-effect to insure that the
-     * VirtualFlow is up-to-date in light of any changes
-     */
-    public ObservableList<C> visibleCells() {
-        // insure cells are up-to-date in light of any changes
-        layout();
-        return cellListManager.getLazyCellList()
-                              .memoizedItems();
-    }
-
-    public Val<Double> totalLengthEstimateProperty() {
-        return sizeTracker.totalLengthEstimateProperty();
-    }
-
-    public Bounds cellToViewport(C cell, Bounds bounds) {
-        return cell.getNode()
-                   .localToParent(bounds);
-    }
-
-    public Point2D cellToViewport(C cell, Point2D point) {
-        return cell.getNode()
-                   .localToParent(point);
-    }
-
-    public Point2D cellToViewport(C cell, double x, double y) {
-        return cell.getNode()
-                   .localToParent(x, y);
-    }
-
-    @Override
-    protected void layoutChildren() {
-
-        // navigate to the target position and fill viewport
-        while (true) {
-            double oldLayoutBreadth = sizeTracker.getCellLayoutBreadth();
-            orientation.resize(navigator, oldLayoutBreadth,
-                               sizeTracker.getViewportLength());
-            navigator.layout();
-            if (oldLayoutBreadth == sizeTracker.getCellLayoutBreadth()) {
-                break;
-            }
-        }
-
-        double viewBreadth = orientation.breadth(this);
-        double navigatorBreadth = orientation.breadth(navigator);
-        double totalBreadth = breadthOffset0.getValue();
-        double breadthDifference = navigatorBreadth - totalBreadth;
-        if (breadthDifference < viewBreadth) {
-            // viewport is scrolled all the way to the end of its breadth.
-            //  but now viewport size (breadth) has increased
-            double adjustment = viewBreadth - breadthDifference;
-            orientation.relocate(navigator, -(totalBreadth - adjustment), 0);
-            breadthOffset0.setValue(totalBreadth - adjustment);
-        } else {
-            orientation.relocate(navigator, -breadthOffset0.getValue(), 0);
-        }
-    }
-
-    @Override
-    protected final double computePrefWidth(double height) {
-        switch (getContentBias()) {
-            case HORIZONTAL: // vertical flow
-                return computePrefBreadth();
-            case VERTICAL: // horizontal flow
-                return computePrefLength(height);
-            default:
-                throw new AssertionError("Unreachable code");
-        }
-    }
-
-    @Override
-    protected final double computePrefHeight(double width) {
-        switch (getContentBias()) {
-            case HORIZONTAL: // vertical flow
-                return computePrefLength(width);
-            case VERTICAL: // horizontal flow
-                return computePrefBreadth();
-            default:
-                throw new AssertionError("Unreachable code");
-        }
-    }
-
-    private double computePrefBreadth() {
-        return 100;
-    }
-
-    private double computePrefLength(double breadth) {
-        return 100;
-    }
-
     @Override
     public final Orientation getContentBias() {
         return orientation.getContentBias();
     }
 
-    void scrollLength(double deltaLength) {
-        setLengthOffset(lengthOffsetEstimate.getValue() + deltaLength);
+    @Override
+    public List<CssMetaData<? extends Styleable, ?>> getCssMetaData() {
+        return getClassCssMetaData();
     }
 
-    void scrollBreadth(double deltaBreadth) {
-        setBreadthOffset(breadthOffset0.getValue() + deltaBreadth);
+    public Gravity getGravity() {
+        return gravity.get();
     }
 
     /**
-     * Scroll the content horizontally by the given amount.
+     * The gravity of the virtual flow. When there are not enough cells to fill
+     * the full height (vertical virtual flow) or width (horizontal virtual
+     * flow), the cells are placed either at the front (vertical: top,
+     * horizontal: left), or rear (vertical: bottom, horizontal: right) of the
+     * virtual flow, depending on the value of the gravity property.
      *
-     * @param deltaX
-     *            positive value scrolls right, negative value scrolls left
-     */
-    @Override
-    public void scrollXBy(double deltaX) {
-        orientation.scrollHorizontallyBy(this, deltaX);
-    }
-
-    /**
-     * Scroll the content vertically by the given amount.
+     * The gravity can also be styled in CSS, using the "-flowless-gravity"
+     * property, for example:
      *
-     * @param deltaY
-     *            positive value scrolls down, negative value scrolls up
+     * <pre>
+     * .virtual-flow { -flowless-gravity: rear; }
+     * </pre>
      */
-    @Override
-    public void scrollYBy(double deltaY) {
-        orientation.scrollVerticallyBy(this, deltaY);
-    }
-
-    /**
-     * Scroll the content horizontally to the pixel
-     *
-     * @param pixel
-     *            - the pixel position to which to scroll
-     */
-    @Override
-    public void scrollXToPixel(double pixel) {
-        orientation.scrollHorizontallyToPixel(this, pixel);
-    }
-
-    /**
-     * Scroll the content vertically to the pixel
-     *
-     * @param pixel
-     *            - the pixel position to which to scroll
-     */
-    @Override
-    public void scrollYToPixel(double pixel) {
-        orientation.scrollVerticallyToPixel(this, pixel);
-    }
-
-    @Override
-    public Val<Double> totalWidthEstimateProperty() {
-        return orientation.widthEstimateProperty(this);
-    }
-
-    @Override
-    public Val<Double> totalHeightEstimateProperty() {
-        return orientation.heightEstimateProperty(this);
-    }
-
-    @Override
-    public Var<Double> estimatedScrollXProperty() {
-        return orientation.estimatedScrollXProperty(this);
-    }
-
-    @Override
-    public Var<Double> estimatedScrollYProperty() {
-        return orientation.estimatedScrollYProperty(this);
+    public ObjectProperty<Gravity> gravityProperty() {
+        return gravity;
     }
 
     /**
@@ -473,6 +390,58 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         }
     }
 
+    public Var<Double> lengthOffsetEstimateProperty() {
+        return lengthOffsetEstimate;
+    }
+
+    /**
+     * Scroll the content horizontally by the given amount.
+     *
+     * @param deltaX
+     *            positive value scrolls right, negative value scrolls left
+     */
+    @Override
+    public void scrollXBy(double deltaX) {
+        orientation.scrollHorizontallyBy(this, deltaX);
+    }
+
+    /**
+     * Scroll the content horizontally to the pixel
+     *
+     * @param pixel
+     *            - the pixel position to which to scroll
+     */
+    @Override
+    public void scrollXToPixel(double pixel) {
+        orientation.scrollHorizontallyToPixel(this, pixel);
+    }
+
+    /**
+     * Scroll the content vertically by the given amount.
+     *
+     * @param deltaY
+     *            positive value scrolls down, negative value scrolls up
+     */
+    @Override
+    public void scrollYBy(double deltaY) {
+        orientation.scrollVerticallyBy(this, deltaY);
+    }
+
+    /**
+     * Scroll the content vertically to the pixel
+     *
+     * @param pixel
+     *            - the pixel position to which to scroll
+     */
+    @Override
+    public void scrollYToPixel(double pixel) {
+        orientation.scrollVerticallyToPixel(this, pixel);
+    }
+
+    public void setGravity(Gravity gravity) {
+        this.gravity.set(gravity);
+    }
+
     /**
      * Forces the viewport to acts as though it scrolled from 0 to
      * {@code viewportOffset}). <em>Note:</em> the viewport makes an educated
@@ -500,6 +469,17 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
      */
     public void show(int itemIdx) {
         navigator.setTargetPosition(new MinDistanceTo(itemIdx));
+    }
+
+    /**
+     * Forces the viewport to show the given item by "scrolling" to it and then
+     * further "scrolling," so that the {@code region} is visible, in one layout
+     * call (e.g., this method does not "scroll" twice).
+     */
+    public void show(int itemIndex, Bounds region) {
+        navigator.showLengthRegion(itemIndex, orientation.minY(region),
+                                   orientation.maxY(region));
+        showBreadthRegion(orientation.minX(region), orientation.maxX(region));
     }
 
     /**
@@ -531,15 +511,167 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         navigator.setTargetPosition(new StartOffStart(itemIdx, offset));
     }
 
+    public Val<Double> totalBreadthEstimateProperty() {
+        return sizeTracker.maxCellBreadthProperty();
+    }
+
+    @Override
+    public Val<Double> totalHeightEstimateProperty() {
+        return orientation.heightEstimateProperty(this);
+    }
+
+    public Val<Double> totalLengthEstimateProperty() {
+        return sizeTracker.totalLengthEstimateProperty();
+    }
+
+    @Override
+    public Val<Double> totalWidthEstimateProperty() {
+        return orientation.widthEstimateProperty(this);
+    }
+
     /**
-     * Forces the viewport to show the given item by "scrolling" to it and then
-     * further "scrolling," so that the {@code region} is visible, in one layout
-     * call (e.g., this method does not "scroll" twice).
+     * This method calls {@link #layout()} as a side-effect to insure that the
+     * VirtualFlow is up-to-date in light of any changes
      */
-    public void show(int itemIndex, Bounds region) {
-        navigator.showLengthRegion(itemIndex, orientation.minY(region),
-                                   orientation.maxY(region));
-        showBreadthRegion(orientation.minX(region), orientation.maxX(region));
+    public ObservableList<C> visibleCells() {
+        // insure cells are up-to-date in light of any changes
+        layout();
+        return cellListManager.getLazyCellList()
+                              .memoizedItems();
+    }
+
+    @Override
+    protected final double computePrefHeight(double width) {
+        switch (getContentBias()) {
+            case HORIZONTAL: // vertical flow
+                return computePrefLength(width);
+            case VERTICAL: // horizontal flow
+                return computePrefBreadth();
+            default:
+                throw new AssertionError("Unreachable code");
+        }
+    }
+
+    @Override
+    protected final double computePrefWidth(double height) {
+        switch (getContentBias()) {
+            case HORIZONTAL: // vertical flow
+                return computePrefBreadth();
+            case VERTICAL: // horizontal flow
+                return computePrefLength(height);
+            default:
+                throw new AssertionError("Unreachable code");
+        }
+    }
+
+    @Override
+    protected void layoutChildren() {
+
+        // navigate to the target position and fill viewport
+        while (true) {
+            double oldLayoutBreadth = sizeTracker.getCellLayoutBreadth();
+            orientation.resize(navigator, oldLayoutBreadth,
+                               sizeTracker.getViewportLength());
+            navigator.layout();
+            if (oldLayoutBreadth == sizeTracker.getCellLayoutBreadth()) {
+                break;
+            }
+        }
+
+        double viewBreadth = orientation.breadth(this);
+        double navigatorBreadth = orientation.breadth(navigator);
+        double totalBreadth = breadthOffset0.getValue();
+        double breadthDifference = navigatorBreadth - totalBreadth;
+        if (breadthDifference < viewBreadth) {
+            // viewport is scrolled all the way to the end of its breadth.
+            //  but now viewport size (breadth) has increased
+            double adjustment = viewBreadth - breadthDifference;
+            orientation.relocate(navigator, -(totalBreadth - adjustment), 0);
+            breadthOffset0.setValue(totalBreadth - adjustment);
+        } else {
+            orientation.relocate(navigator, -breadthOffset0.getValue(), 0);
+        }
+    }
+
+    void scrollBreadth(double deltaBreadth) {
+        setBreadthOffset(breadthOffset0.getValue() + deltaBreadth);
+    }
+
+    void scrollLength(double deltaLength) {
+        setLengthOffset(lengthOffsetEstimate.getValue() + deltaLength);
+    }
+
+    void setBreadthOffset(double pixels) {
+        double total = totalBreadthEstimateProperty().getValue();
+        double breadth = sizeTracker.getViewportBreadth();
+        double max = Math.max(total - breadth, 0);
+        double current = breadthOffset0.getValue();
+
+        if (pixels > max) {
+            pixels = max;
+        }
+        if (pixels < 0) {
+            pixels = 0;
+        }
+
+        if (pixels != current) {
+            breadthOffset0.setValue(pixels);
+            requestLayout();
+            // TODO: could be safely relocated right away?
+            // (Does relocation request layout?)
+        }
+    }
+
+    void setLengthOffset(double pixels) {
+        double total = totalLengthEstimateProperty().getOrElse(0.0);
+        double length = sizeTracker.getViewportLength();
+        double max = Math.max(total - length, 0);
+        double current = lengthOffsetEstimate.getValue();
+
+        if (pixels > max) {
+            pixels = max;
+        }
+        if (pixels < 0) {
+            pixels = 0;
+        }
+
+        double diff = pixels - current;
+        if (diff == 0) {
+            // do nothing
+        } else if (Math.abs(diff) < length) { // distance less than one screen
+            navigator.scrollCurrentPositionBy(diff);
+        } else {
+            jumpToAbsolutePosition(pixels);
+        }
+    }
+
+    private double computePrefBreadth() {
+        return 100;
+    }
+
+    private double computePrefLength(double breadth) {
+        return 100;
+    }
+
+    private void jumpToAbsolutePosition(double pixels) {
+        if (items.isEmpty()) {
+            return;
+        }
+
+        // guess the first visible cell and its offset in the viewport
+        double avgLen = sizeTracker.getAverageLengthEstimate()
+                                   .orElse(0.0);
+        if (avgLen == 0.0) {
+            return;
+        }
+        int first = (int) Math.floor(pixels / avgLen);
+        double firstOffset = -(pixels % avgLen);
+
+        if (first < items.size()) {
+            navigator.setTargetPosition(new StartOffStart(first, firstOffset));
+        } else {
+            navigator.setTargetPosition(new EndOffEnd(items.size() - 1, 0.0));
+        }
     }
 
     private void showBreadthRegion(double fromX, double toX) {
@@ -553,126 +685,5 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
             double shift = Math.max(spaceAfter, -spaceBefore);
             setBreadthOffset(bOff - shift);
         }
-    }
-
-    void setLengthOffset(double pixels) {
-        double total = totalLengthEstimateProperty().getOrElse(0.0);
-        double length = sizeTracker.getViewportLength();
-        double max = Math.max(total - length, 0);
-        double current = lengthOffsetEstimate.getValue();
-
-        if (pixels > max)
-            pixels = max;
-        if (pixels < 0)
-            pixels = 0;
-
-        double diff = pixels - current;
-        if (diff == 0) {
-            // do nothing
-        } else if (Math.abs(diff) < length) { // distance less than one screen
-            navigator.scrollCurrentPositionBy(diff);
-        } else {
-            jumpToAbsolutePosition(pixels);
-        }
-    }
-
-    void setBreadthOffset(double pixels) {
-        double total = totalBreadthEstimateProperty().getValue();
-        double breadth = sizeTracker.getViewportBreadth();
-        double max = Math.max(total - breadth, 0);
-        double current = breadthOffset0.getValue();
-
-        if (pixels > max)
-            pixels = max;
-        if (pixels < 0)
-            pixels = 0;
-
-        if (pixels != current) {
-            breadthOffset0.setValue(pixels);
-            requestLayout();
-            // TODO: could be safely relocated right away?
-            // (Does relocation request layout?)
-        }
-    }
-
-    private void jumpToAbsolutePosition(double pixels) {
-        if (items.isEmpty()) {
-            return;
-        }
-
-        // guess the first visible cell and its offset in the viewport
-        double avgLen = sizeTracker.getAverageLengthEstimate()
-                                   .orElse(0.0);
-        if (avgLen == 0.0)
-            return;
-        int first = (int) Math.floor(pixels / avgLen);
-        double firstOffset = -(pixels % avgLen);
-
-        if (first < items.size()) {
-            navigator.setTargetPosition(new StartOffStart(first, firstOffset));
-        } else {
-            navigator.setTargetPosition(new EndOffEnd(items.size() - 1, 0.0));
-        }
-    }
-
-    /**
-     * The gravity of the virtual flow. When there are not enough cells to fill
-     * the full height (vertical virtual flow) or width (horizontal virtual
-     * flow), the cells are placed either at the front (vertical: top,
-     * horizontal: left), or rear (vertical: bottom, horizontal: right) of the
-     * virtual flow, depending on the value of the gravity property.
-     *
-     * The gravity can also be styled in CSS, using the "-flowless-gravity"
-     * property, for example:
-     * 
-     * <pre>
-     * .virtual-flow { -flowless-gravity: rear; }
-     * </pre>
-     */
-    public ObjectProperty<Gravity> gravityProperty() {
-        return gravity;
-    }
-
-    public Gravity getGravity() {
-        return gravity.get();
-    }
-
-    public void setGravity(Gravity gravity) {
-        this.gravity.set(gravity);
-    }
-
-    @SuppressWarnings("unchecked") // Because of the cast we have to perform, below
-    private static final CssMetaData<VirtualFlow<?, ?>, Gravity>   GRAVITY = new CssMetaData<VirtualFlow<?, ?>, Gravity>("-flowless-gravity",
-                                                                                                                         // JavaFX seems to have an odd return type on getEnumConverter: "? extends Enum<?>", not E as the second generic type.
-                                                                                                                         // Even though if you look at the source, the EnumConverter type it uses does have the type E.
-                                                                                                                         // To get round this, we cast on return:
-                                                                                                                         (StyleConverter<?, Gravity>) StyleConverter.getEnumConverter(Gravity.class),
-                                                                                                                         Gravity.FRONT) {
-
-                                                                               @Override
-                                                                               public boolean isSettable(VirtualFlow<?, ?> virtualFlow) {
-                                                                                   return !virtualFlow.gravity.isBound();
-                                                                               }
-
-                                                                               @Override
-                                                                               public StyleableProperty<Gravity> getStyleableProperty(VirtualFlow<?, ?> virtualFlow) {
-                                                                                   return virtualFlow.gravity;
-                                                                               }
-                                                                           };
-
-    private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
-    static {
-        List<CssMetaData<? extends Styleable, ?>> styleables = new ArrayList<>(Region.getClassCssMetaData());
-        styleables.add(GRAVITY);
-        STYLEABLES = Collections.unmodifiableList(styleables);
-    }
-
-    public static List<CssMetaData<? extends Styleable, ?>> getClassCssMetaData() {
-        return STYLEABLES;
-    }
-
-    @Override
-    public List<CssMetaData<? extends Styleable, ?>> getCssMetaData() {
-        return getClassCssMetaData();
     }
 }

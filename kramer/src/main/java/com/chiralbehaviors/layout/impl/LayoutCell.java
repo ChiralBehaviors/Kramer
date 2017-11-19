@@ -20,8 +20,6 @@ import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.beans.InvalidationListener;
-import javafx.beans.Observable;
-import javafx.beans.value.WritableValue;
 import javafx.css.PseudoClass;
 import javafx.css.StyleableProperty;
 import javafx.scene.Node;
@@ -61,14 +59,15 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     default void styleFocus(Node node, String defaultStyle) {
 
         // focusTraversable is styleable through css. Calling setFocusTraversable
         // makes it look to css like the user set the value and css will not
         // override. Initializing focusTraversable by calling set on the
         // CssMetaData ensures that css will be able to override the value.
-        ((StyleableProperty<Boolean>) (WritableValue<Boolean>) node.focusTraversableProperty()).applyStyle(null,
-                                                                                                           Boolean.FALSE);
+        ((StyleableProperty<Boolean>) node.focusTraversableProperty()).applyStyle(null,
+                                                                                  Boolean.FALSE);
         node.getStyleClass()
             .addAll(defaultStyle);
         /**
@@ -77,16 +76,13 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
          * have focused set to true.
          */
         node.focusedProperty()
-            .addListener(new InvalidationListener() {
-                @Override
-                public void invalidated(Observable property) {
-                    node.pseudoClassStateChanged(PSEUDO_CLASS_FOCUSED,
-                                                 node.isFocused()); // TODO is this necessary??
+            .addListener((InvalidationListener) property -> {
+                node.pseudoClassStateChanged(PSEUDO_CLASS_FOCUSED,
+                                             node.isFocused()); // TODO is this necessary??
 
-                    // The user has shifted focus, so we should cancel the editing on this cell
-                    if (!node.isFocused() && isEditing()) {
-                        cancelEdit();
-                    }
+                // The user has shifted focus, so we should cancel the editing on this cell
+                if (!node.isFocused() && isEditing()) {
+                    cancelEdit();
                 }
             });
 

@@ -39,11 +39,6 @@ public class Span extends HBox implements LayoutCell<Span> {
         styleFocus(this, DEFAULT_STYLE);
     }
 
-    @Override
-    public Span getNode() {
-        return this;
-    }
-
     public Span(double justified, List<Column> columns, int cardinality,
                 double cellHeight, Function<JsonNode, JsonNode> extractor,
                 double labelWidth) {
@@ -60,6 +55,11 @@ public class Span extends HBox implements LayoutCell<Span> {
             this.columns.add(cell);
             getChildren().add(cell.getNode());
         });
+    }
+
+    @Override
+    public Span getNode() {
+        return this;
     }
 
     @Override

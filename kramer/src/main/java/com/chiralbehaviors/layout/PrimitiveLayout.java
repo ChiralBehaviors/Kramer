@@ -141,6 +141,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return justifiedWidth;
     }
 
+    @Override
     public Control label(double labelWidth) {
         return label(labelWidth, p.getLabel());
     }

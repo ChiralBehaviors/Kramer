@@ -1,5 +1,6 @@
 package com.chiralbehaviors.layout.flowless;
 
+import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.reactfx.value.Val;
 import org.reactfx.value.Var;
 
@@ -35,7 +36,7 @@ public interface Virtualized {
     /**
      * Convenience method: scroll horizontally by {@code deltaX} and vertically
      * by {@code deltaY}
-     * 
+     *
      * @param deltaX
      *            negative values scroll left, positive scroll right
      * @param deltaY
@@ -49,7 +50,7 @@ public interface Virtualized {
     /**
      * Convenience method: scroll horizontally by {@code deltas.getX()} and
      * vertically by {@code deltas.getY()}
-     * 
+     *
      * @param deltas
      *            negative values scroll left/up, positive scroll right/down
      */
@@ -76,7 +77,7 @@ public interface Virtualized {
 
     /**
      * Scroll the content horizontally by the given amount.
-     * 
+     *
      * @param deltaX
      *            positive value scrolls right, negative value scrolls left
      */
@@ -84,7 +85,7 @@ public interface Virtualized {
 
     /**
      * Scroll the content horizontally to the pixel
-     * 
+     *
      * @param pixel
      *            - the pixel position to which to scroll
      */
@@ -92,7 +93,7 @@ public interface Virtualized {
 
     /**
      * Scroll the content vertically by the given amount.
-     * 
+     *
      * @param deltaY
      *            positive value scrolls down, negative value scrolls up
      */
@@ -100,7 +101,7 @@ public interface Virtualized {
 
     /**
      * Scroll the content vertically to the pixel
-     * 
+     *
      * @param pixel
      *            - the pixel position to which to scroll
      */

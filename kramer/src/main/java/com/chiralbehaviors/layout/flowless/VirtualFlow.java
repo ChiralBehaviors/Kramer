@@ -168,37 +168,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
 
             final MappingChange.Map<Integer, T> map = f -> getModelItem(f);
 
-            selectedIndicesSeq.addListener(new ListChangeListener<Integer>() {
-                @Override
-                public void onChanged(final Change<? extends Integer> c) {
-                    // when the selectedIndices ObservableList changes, we manually call
-                    // the observers of the selectedItems ObservableList.
-
-                    // Fix for a bug identified whilst fixing RT-37395:
-                    // We shouldn't fire events on the selectedItems list unless
-                    // the indices list has actually changed. This means that index
-                    // permutation events should not be forwarded blindly through the
-                    // items list, as a index permutation implies the items list is
-                    // unchanged, not changed!
-                    boolean hasRealChangeOccurred = false;
-                    while (c.next() && !hasRealChangeOccurred) {
-                        hasRealChangeOccurred = c.wasAdded() || c.wasRemoved();
-                    }
-
-                    if (hasRealChangeOccurred) {
-                        if (selectedItemChange != null) {
-                            selectedItemsSeq.callObservers(selectedItemChange);
-                        } else {
-                            c.reset();
-                            selectedItemsSeq.callObservers(new MappingChange<Integer, T>(c,
-                                                                                         map,
-                                                                                         selectedItemsSeq));
-                        }
-                    }
-                    c.reset();
-                }
-            });
-
             selectedItemsSeq = new ReadOnlyUnbackedObservableList<T>() {
                 @Override
                 public T get(int i) {
@@ -211,6 +180,34 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
                     return selectedIndices.cardinality();
                 }
             };
+
+            selectedIndicesSeq.addListener((ListChangeListener<Integer>) c -> {
+                // when the selectedIndices ObservableList changes, we manually call
+                // the observers of the selectedItems ObservableList.
+
+                // Fix for a bug identified whilst fixing RT-37395:
+                // We shouldn't fire events on the selectedItems list unless
+                // the indices list has actually changed. This means that index
+                // permutation events should not be forwarded blindly through the
+                // items list, as a index permutation implies the items list is
+                // unchanged, not changed!
+                boolean hasRealChangeOccurred = false;
+                while (c.next() && !hasRealChangeOccurred) {
+                    hasRealChangeOccurred = c.wasAdded() || c.wasRemoved();
+                }
+
+                if (hasRealChangeOccurred) {
+                    if (selectedItemChange != null) {
+                        selectedItemsSeq.callObservers(selectedItemChange);
+                    } else {
+                        c.reset();
+                        selectedItemsSeq.callObservers(new MappingChange<Integer, T>(c,
+                                                                                     map,
+                                                                                     selectedItemsSeq));
+                    }
+                }
+                c.reset();
+            });
         }
 
         @Override
@@ -297,8 +294,9 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
 
         @Override
         public void clearSelection(int index) {
-            if (index < 0)
+            if (index < 0) {
                 return;
+            }
 
             // TODO shouldn't directly access like this
             // TODO might need to update focus and / or selected index/item
@@ -410,8 +408,9 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
             Object rowObj = null;
             for (int i = 0, max = getItemCount(); i < max; i++) {
                 rowObj = getModelItem(i);
-                if (rowObj == null)
+                if (rowObj == null) {
                     continue;
+                }
 
                 if (rowObj.equals(obj)) {
                     if (isSelected(i)) {
@@ -438,11 +437,13 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
 
         @Override
         public void selectAll() {
-            if (getSelectionMode() == SINGLE)
+            if (getSelectionMode() == SINGLE) {
                 return;
+            }
 
-            if (getItemCount() <= 0)
+            if (getItemCount() <= 0) {
                 return;
+            }
 
             final int rowCount = getItemCount();
             final int focusedIndex = getFocusedIndex();
@@ -522,10 +523,11 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
                     }
                 }
 
-                for (int i = 0; i < rows.length; i++) {
-                    int index = rows[i];
-                    if (index < 0 || index >= rowCount)
+                for (int row2 : rows) {
+                    int index = row2;
+                    if (index < 0 || index >= rowCount) {
                         continue;
+                    }
                     lastIndex = index;
 
                     if (!selectedIndices.get(index)) {
@@ -671,8 +673,9 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
 
                 @Override
                 public boolean next() {
-                    if (pos >= addedSize)
+                    if (pos >= addedSize) {
                         return false;
+                    }
 
                     // starting from pos, we keep going until the value is
                     // not the next value
@@ -760,8 +763,9 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
                 @Override
                 public Integer get(int index) {
                     final int itemCount = getItemCount();
-                    if (index < 0 || index >= itemCount)
+                    if (index < 0 || index >= itemCount) {
                         return -1;
+                    }
 
                     if (index == (lastGetIndex + 1)
                         && lastGetValue < itemCount) {

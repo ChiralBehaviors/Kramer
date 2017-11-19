@@ -41,7 +41,7 @@ import javafx.scene.layout.Region;
 public class AutoLayout extends Control implements Cell<JsonNode, Region> {
     private static final java.util.logging.Logger log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
 
-    private LayoutCell<? extends Region>                control;
+    private LayoutCell<? extends Region>          control;
     private SimpleObjectProperty<JsonNode>        data        = new SimpleObjectProperty<>();
     private double                                layoutWidth = 0.0;
     private LayoutModel                           model;

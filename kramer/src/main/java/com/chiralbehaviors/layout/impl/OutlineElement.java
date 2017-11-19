@@ -45,22 +45,6 @@ public class OutlineElement extends HBox implements LayoutCell<OutlineElement> {
         styleFocus(this, DEFAULT_STYLE);
     }
 
-    public OutlineElement(PrimitiveLayout p, int cardinality, double labelWidth,
-                          Function<JsonNode, JsonNode> extractor,
-                          double justified) {
-        this(p.label(labelWidth), p.buildControl(1), cardinality, labelWidth,
-             extractor, justified, p.getField(), p.getHeight());
-    }
-
-    public OutlineElement(RelationLayout layout, int cardinality,
-                          double labelWidth,
-                          Function<JsonNode, JsonNode> extractor,
-                          double justified) {
-        this(layout.label(labelWidth), layout.buildControl(1, extractor),
-             cardinality, labelWidth, extractor, justified, layout.getField(),
-             layout.getHeight());
-    }
-
     public OutlineElement(Control label, LayoutCell<? extends Region> cell,
                           int cardinality, double labelWidth,
                           Function<JsonNode, JsonNode> extractor,
@@ -88,6 +72,22 @@ public class OutlineElement extends HBox implements LayoutCell<OutlineElement> {
             .setMaxSize(available, height);
         getChildren().addAll(label, cell.getNode());
 
+    }
+
+    public OutlineElement(PrimitiveLayout p, int cardinality, double labelWidth,
+                          Function<JsonNode, JsonNode> extractor,
+                          double justified) {
+        this(p.label(labelWidth), p.buildControl(1), cardinality, labelWidth,
+             extractor, justified, p.getField(), p.getHeight());
+    }
+
+    public OutlineElement(RelationLayout layout, int cardinality,
+                          double labelWidth,
+                          Function<JsonNode, JsonNode> extractor,
+                          double justified) {
+        this(layout.label(labelWidth), layout.buildControl(1, extractor),
+             cardinality, labelWidth, extractor, justified, layout.getField(),
+             layout.getHeight());
     }
 
     @Override

@@ -261,6 +261,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return columnHeaderHeight;
     }
 
+    @Override
     public String getField() {
         return r.getField();
     }
@@ -309,6 +310,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return justifed;
     }
 
+    @Override
     public Control label(double labelWidth) {
         return label(labelWidth, r.getLabel());
     }
