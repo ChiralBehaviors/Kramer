@@ -21,7 +21,6 @@ import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Label;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 
 /**
@@ -30,11 +29,9 @@ import javafx.scene.layout.Region;
  */
 public class PrimitiveCell implements Cell<JsonNode, Region> {
 
-    private AnchorPane  anchor;
     private final Label label;
 
     public PrimitiveCell() {
-        super();
         label = new Label();
         label.setWrapText(true);
         label.setStyle("-fx-background-color: " + "         rgba(0,0,0,0.08),"
@@ -45,16 +42,11 @@ public class PrimitiveCell implements Cell<JsonNode, Region> {
                        + "    -fx-padding: 3 30 3 30;"
                        + "    -fx-text-fill: #242d35;"
                        + "    -fx-font-size: 14px;");
-        AnchorPane.setLeftAnchor(label, 0d);
-        AnchorPane.setRightAnchor(label, 0d);
-        AnchorPane.setTopAnchor(label, 0d);
-        AnchorPane.setBottomAnchor(label, 0d);
-        anchor = new AnchorPane(label);
     }
 
     @Override
     public Region getNode() {
-        return anchor;
+        return label;
     }
 
     @Override
