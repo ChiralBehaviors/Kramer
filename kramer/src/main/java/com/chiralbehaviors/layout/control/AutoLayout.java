@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
 import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.impl.LayoutCell;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,7 +41,7 @@ import javafx.scene.layout.Region;
 public class AutoLayout extends Control implements Cell<JsonNode, Region> {
     private static final java.util.logging.Logger log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
 
-    private Cell<JsonNode, Region>                control;
+    private LayoutCell<? extends Region>                control;
     private SimpleObjectProperty<JsonNode>        data        = new SimpleObjectProperty<>();
     private double                                layoutWidth = 0.0;
     private LayoutModel                           model;

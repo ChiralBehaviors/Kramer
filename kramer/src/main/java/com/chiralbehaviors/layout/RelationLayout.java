@@ -28,6 +28,10 @@ import java.util.stream.Collectors;
 
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
+import com.chiralbehaviors.layout.impl.LayoutCell;
+import com.chiralbehaviors.layout.impl.NestedTable;
+import com.chiralbehaviors.layout.impl.Outline;
+import com.chiralbehaviors.layout.impl.OutlineElement;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,7 +41,6 @@ import com.google.common.util.concurrent.AtomicDouble;
 
 import javafx.scene.control.Control;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
@@ -105,18 +108,18 @@ public class RelationLayout extends SchemaNodeLayout {
         return header;
     }
 
-    public Cell<JsonNode, Region> buildControl(int cardinality,
-                                               Function<JsonNode, JsonNode> extractor) {
+    public LayoutCell<?> buildControl(int cardinality,
+                                      Function<JsonNode, JsonNode> extractor) {
         return useTable ? r.buildNestedTable(extractor, cardinality)
                         : r.buildOutline(extractor, cardinality);
     }
 
-    public Cell<JsonNode, Region> buildNestedTable(int cardinality) {
+    public LayoutCell<NestedTable> buildNestedTable(int cardinality) {
         return new NestedTable(resolveCardinality(cardinality), this);
     }
 
-    public Cell<JsonNode, Region> buildOutline(Function<JsonNode, JsonNode> extractor,
-                                               int cardinality) {
+    public Outline buildOutline(Function<JsonNode, JsonNode> extractor,
+                                int cardinality) {
         Outline outline = new Outline(height, columnSets, extractor,
                                       resolveCardinality(cardinality), this);
         outline.getNode()
@@ -266,6 +269,10 @@ public class RelationLayout extends SchemaNodeLayout {
         return snap(justifiedWidth + layout.getNestedInset());
     }
 
+    public String getLabel() {
+        return r.getLabel();
+    }
+
     public double getRowHeight() {
         return rowHeight;
     }
@@ -296,6 +303,10 @@ public class RelationLayout extends SchemaNodeLayout {
                                       })
                                       .sum());
         return justifed;
+    }
+
+    public Control label(double labelWidth) {
+        return label(labelWidth, r.getLabel());
     }
 
     @Override
@@ -404,58 +415,12 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public Cell<JsonNode, Region> outlineElement(int cardinality,
-                                                 double labelWidth,
-                                                 Function<JsonNode, JsonNode> extractor,
-                                                 double justified) {
+    public OutlineElement outlineElement(int cardinality, double labelWidth,
+                                         Function<JsonNode, JsonNode> extractor,
+                                         double justified) {
 
-        Control labelControl = label(labelWidth, r.getLabel());
-        labelControl.setMinWidth(labelWidth);
-        labelControl.setMaxWidth(labelWidth);
-
-        Cell<JsonNode, Region> control = r.buildControl(cardinality, extractor);
-        double available = justified - labelWidth;
-        control.getNode()
-               .setMinWidth(available);
-        control.getNode()
-               .setMaxWidth(available);
-        control.getNode()
-               .setMinHeight(height);
-        control.getNode()
-               .setMaxHeight(height);
-
-        Pane box = new HBox();
-        box.getStyleClass()
-           .add(r.getField());
-        box.setMinWidth(justified);
-        box.setMaxWidth(justified);
-        box.setMinHeight(height);
-        box.setMaxHeight(height);
-        box.getChildren()
-           .add(labelControl);
-        box.getChildren()
-           .add(control.getNode());
-
-        return new Cell<JsonNode, Region>() {
-
-            @Override
-            public Region getNode() {
-                return box;
-            }
-
-            @Override
-            public boolean isReusable() {
-                return true;
-            }
-
-            @Override
-            public void updateItem(JsonNode item) {
-                control.updateItem(extractor.apply(item) == null ? null
-                                                                 : extractor.apply(item)
-                                                                            .get(r.getField()));
-            }
-
-        };
+        return new OutlineElement(this, cardinality, labelWidth, extractor,
+                                  justified);
     }
 
     public int resolvedCardinality() {

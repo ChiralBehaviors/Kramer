@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout;
+package com.chiralbehaviors.layout.impl;
 
-import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -27,7 +26,7 @@ import javafx.scene.layout.Region;
  * @author halhildebrand
  *
  */
-public class PrimitiveCell implements Cell<JsonNode, Region> {
+public class PrimitiveCell implements LayoutCell<Region> {
 
     private final Label label;
 

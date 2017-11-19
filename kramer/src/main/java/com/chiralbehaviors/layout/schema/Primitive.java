@@ -19,10 +19,11 @@ package com.chiralbehaviors.layout.schema;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
-import com.chiralbehaviors.layout.NestedTable;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
-import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.impl.LayoutCell;
+import com.chiralbehaviors.layout.impl.NestedTable;
+import com.chiralbehaviors.layout.impl.OutlineElement;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.layout.Region;
@@ -45,7 +46,8 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public Cell<JsonNode, Region> buildColumn(double rendered, NestedTable table) {
+    public LayoutCell<? extends Region> buildColumn(double rendered,
+                                              NestedTable table) {
         return table.buildPrimitive(rendered, layout);
     }
 
@@ -106,10 +108,9 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public Cell<JsonNode, Region> outlineElement(int cardinality,
-                                                 double labelWidth,
-                                                 Function<JsonNode, JsonNode> extractor,
-                                                 double justified) {
+    public OutlineElement outlineElement(int cardinality, double labelWidth,
+                                         Function<JsonNode, JsonNode> extractor,
+                                         double justified) {
         return layout.outlineElement(cardinality, labelWidth, extractor,
                                      justified);
     }

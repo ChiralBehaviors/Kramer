@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout;
+package com.chiralbehaviors.layout.impl;
 
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import com.chiralbehaviors.layout.PrimitiveLayout;
+import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.FlyAwayScrollPane;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
@@ -38,28 +40,27 @@ import javafx.scene.layout.VBox;
  * @author halhildebrand
  *
  */
-public class NestedTable implements Cell<JsonNode, Region> {
-    private final VBox                     frame;
+public class NestedTable extends VBox implements LayoutCell<NestedTable> {
     private final ObservableList<JsonNode> items = FXCollections.observableArrayList();
 
     public NestedTable(int cardinality, RelationLayout layout) {
         Region header = layout.buildColumnHeader();
-        frame = new VBox(header, buildRows(cardinality, layout));
-        frame.setMinWidth(layout.getJustifiedColumnWidth());
-        frame.setPrefWidth(layout.getJustifiedColumnWidth());
-        frame.setMaxWidth(layout.getJustifiedColumnWidth());
+        getChildren().addAll(header, buildRows(cardinality, layout));
+        setMinWidth(layout.getJustifiedColumnWidth());
+        setPrefWidth(layout.getJustifiedColumnWidth());
+        setMaxWidth(layout.getJustifiedColumnWidth());
     }
 
-    public Cell<JsonNode, Region> buildPrimitive(double rendered,
-                                                 PrimitiveLayout layout) {
-        Cell<JsonNode, Region> control = layout.buildControl(1);
+    public LayoutCell<? extends Region> buildPrimitive(double rendered,
+                                                       PrimitiveLayout layout) {
+        LayoutCell<? extends Region> control = layout.buildControl(1);
         control.getNode()
                .setMinSize(layout.getJustifiedWidth(), rendered);
         control.getNode()
                .setPrefSize(layout.getJustifiedWidth(), rendered);
         control.getNode()
                .setMaxSize(layout.getJustifiedWidth(), rendered);
-        return new Cell<JsonNode, Region>() {
+        return new LayoutCell<Region>() {
             @Override
             public Region getNode() {
                 return control.getNode();
@@ -77,8 +78,8 @@ public class NestedTable implements Cell<JsonNode, Region> {
         };
     }
 
-    public Cell<JsonNode, Region> buildRelation(double rendered,
-                                                RelationLayout layout) {
+    public LayoutCell<? extends Region> buildRelation(double rendered,
+                                                      RelationLayout layout) {
         ObservableList<JsonNode> nestedItems = FXCollections.observableArrayList();
         int cardinality = layout.resolvedCardinality();
         double deficit = rendered - layout.getHeight();
@@ -97,7 +98,7 @@ public class NestedTable implements Cell<JsonNode, Region> {
 
         Region scroll = new FlyAwayScrollPane<>(row);
 
-        return new Cell<JsonNode, Region>() {
+        return new LayoutCell<Region>() {
 
             @Override
             public Region getNode() {
@@ -123,8 +124,8 @@ public class NestedTable implements Cell<JsonNode, Region> {
     }
 
     @Override
-    public Region getNode() {
-        return frame;
+    public NestedTable getNode() {
+        return this;
     }
 
     @Override
@@ -153,7 +154,7 @@ public class NestedTable implements Cell<JsonNode, Region> {
         rows.setMinSize(width, height);
         rows.setPrefSize(width, height);
         rows.setMaxSize(width, height);
- 
+
         Region scroll = new FlyAwayScrollPane<>(rows);
         scroll.setMinSize(width, height);
         scroll.setPrefSize(width, height);
@@ -185,9 +186,10 @@ public class NestedTable implements Cell<JsonNode, Region> {
         cell.setMinSize(layout.getJustifiedWidth(), rendered);
         cell.setPrefSize(layout.getJustifiedWidth(), rendered);
         cell.setMaxSize(layout.getJustifiedWidth(), rendered);
-        List<Cell<JsonNode, Region>> nested = new ArrayList<>();
+        List<LayoutCell<? extends Region>> nested = new ArrayList<>();
         layout.forEach(child -> {
-            Cell<JsonNode, Region> column = child.buildColumn(rendered, this);
+            LayoutCell<? extends Region> column = child.buildColumn(rendered,
+                                                                    this);
             nested.add(column);
             Region control = column.getNode();
             cell.getChildren()

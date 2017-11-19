@@ -22,10 +22,11 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
-import com.chiralbehaviors.layout.NestedTable;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
-import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.impl.LayoutCell;
+import com.chiralbehaviors.layout.impl.NestedTable;
+import com.chiralbehaviors.layout.impl.OutlineElement;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -146,7 +147,8 @@ abstract public class SchemaNode {
         getLayout().adjustHeight(delta);
     }
 
-    abstract public Cell<JsonNode, Region> buildColumn(double rendered, NestedTable table);
+    abstract public LayoutCell<? extends Region> buildColumn(double rendered,
+                                                       NestedTable table);
 
     abstract public Function<Double, Region> buildColumnHeader();
 
@@ -200,10 +202,10 @@ abstract public class SchemaNode {
 
     abstract public double nestTableColumn(Indent indent, double indentation);
 
-    public abstract Cell<JsonNode, Region> outlineElement(int cardinality,
-                                                          double labelWidth,
-                                                          Function<JsonNode, JsonNode> extractor,
-                                                          double justified);
+    public abstract OutlineElement outlineElement(int cardinality,
+                                                  double labelWidth,
+                                                  Function<JsonNode, JsonNode> extractor,
+                                                  double justified);
 
     public abstract double rowHeight(int cardinality, double justified);
 

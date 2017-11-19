@@ -21,10 +21,11 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
-import com.chiralbehaviors.layout.NestedTable;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
-import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.impl.LayoutCell;
+import com.chiralbehaviors.layout.impl.NestedTable;
+import com.chiralbehaviors.layout.impl.OutlineElement;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -67,7 +68,8 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public Cell<JsonNode, Region> buildColumn(double rendered, NestedTable table) {
+    public LayoutCell<? extends Region> buildColumn(double rendered,
+                                                    NestedTable table) {
         return isFold() ? fold.buildColumn(rendered, table)
                         : table.buildRelation(rendered, layout);
     }
@@ -80,7 +82,7 @@ public class Relation extends SchemaNode {
         return layout.columnHeader();
     }
 
-    public Cell<JsonNode, Region> buildControl(int cardinality, double width) {
+    public LayoutCell<?> buildControl(int cardinality, double width) {
         if (isFold()) {
             return fold.buildControl(layout.getAverageCardinality()
                                      * cardinality, width);
@@ -88,13 +90,13 @@ public class Relation extends SchemaNode {
         return buildControl(cardinality, n -> n);
     }
 
-    public Cell<JsonNode, Region> buildControl(int cardinality,
-                                               Function<JsonNode, JsonNode> extractor) {
+    public LayoutCell<?> buildControl(int cardinality,
+                                      Function<JsonNode, JsonNode> extractor) {
         return layout.buildControl(cardinality, extractor);
     }
 
-    public Cell<JsonNode, Region> buildNestedTable(Function<JsonNode, JsonNode> extractor,
-                                                   int cardinality) {
+    public LayoutCell<?> buildNestedTable(Function<JsonNode, JsonNode> extractor,
+                                          int cardinality) {
         if (isFold()) {
             return fold.buildNestedTable(extract(extractor),
                                          layout.getAverageCardinality()
@@ -103,8 +105,8 @@ public class Relation extends SchemaNode {
         return layout.buildNestedTable(cardinality);
     }
 
-    public Cell<JsonNode, Region> buildOutline(Function<JsonNode, JsonNode> extractor,
-                                               int cardinality) {
+    public LayoutCell<?> buildOutline(Function<JsonNode, JsonNode> extractor,
+                                      int cardinality) {
         if (isFold()) {
             return fold.buildOutline(extract(extractor),
                                      layout.getAverageCardinality()
@@ -240,10 +242,9 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public Cell<JsonNode, Region> outlineElement(int cardinality,
-                                                 double labelWidth,
-                                                 Function<JsonNode, JsonNode> extractor,
-                                                 double justified) {
+    public OutlineElement outlineElement(int cardinality, double labelWidth,
+                                         Function<JsonNode, JsonNode> extractor,
+                                         double justified) {
         if (isFold()) {
             return fold.outlineElement(layout.getAverageCardinality()
                                        * cardinality, labelWidth,
@@ -273,7 +274,7 @@ public class Relation extends SchemaNode {
                                                                             : null;
     }
 
-    public void setItem(Cell<JsonNode, Region> control, JsonNode data) {
+    public void setItem(LayoutCell<? extends Region> control, JsonNode data) {
         if (data == null) {
             data = JsonNodeFactory.instance.arrayNode();
         }
