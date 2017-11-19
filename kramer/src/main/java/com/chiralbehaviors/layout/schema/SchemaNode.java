@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
+import com.chiralbehaviors.layout.NestedTable;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
 import com.chiralbehaviors.layout.flowless.Cell;
@@ -145,7 +146,7 @@ abstract public class SchemaNode {
         getLayout().adjustHeight(delta);
     }
 
-    abstract public Cell<JsonNode, ?> buildColumn(double rendered);
+    abstract public Cell<JsonNode, Region> buildColumn(double rendered, NestedTable table);
 
     abstract public Function<Double, Region> buildColumnHeader();
 

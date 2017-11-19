@@ -35,7 +35,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.google.common.util.concurrent.AtomicDouble;
 
-import javafx.scene.Node;
 import javafx.scene.control.Control;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -91,46 +90,6 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public double baseRowCellHeight(double extended) {
         return snap(extended - layout.getCellVerticalInset());
-    }
-
-    @Override
-    public Cell<JsonNode, ?> buildColumn(double rendered) {
-        HBox cell = new HBox();
-        cell.getStyleClass()
-            .add(getStyleClass());
-        cell.setMinSize(justifiedWidth, rendered);
-        cell.setPrefSize(justifiedWidth, rendered);
-        cell.setMaxSize(justifiedWidth, rendered);
-        List<Cell<JsonNode, ?>> nested = new ArrayList<>();
-        forEach(child -> {
-            Cell<JsonNode, ?> column = child.buildColumn(rendered);
-            nested.add(column);
-            cell.getChildren()
-                .add(column.getNode());
-        });
-        return new Cell<JsonNode, Node>() {
-
-            @Override
-            public Node getNode() {
-                return cell;
-            }
-
-            @Override
-            public boolean isReusable() {
-                return true;
-            }
-
-            @Override
-            public String toString() {
-                return String.format("Cell[%s]", r.getField());
-            }
-
-            @Override
-            public void updateItem(JsonNode item) { 
-                nested.forEach(c -> 
-                c.updateItem(item));
-            }
-        };
     }
 
     public Region buildColumnHeader() {
@@ -292,6 +251,10 @@ public class RelationLayout extends SchemaNodeLayout {
                                          .orElse(0.0));
         }
         return columnHeaderHeight;
+    }
+
+    public String getField() {
+        return r.getField();
     }
 
     public double getJustifiedCellWidth() {

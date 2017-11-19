@@ -26,10 +26,7 @@ import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.scene.Node;
 import javafx.scene.control.Control;
-import javafx.scene.control.Label;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -57,46 +54,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
               .apply(list, p);
     }
 
-    @Override
-    public Cell<JsonNode, ?> buildColumn(double rendered) {
-        Label label = new Label();
-        label.setWrapText(true);
-        label.setStyle("-fx-background-color: " + "         rgba(0,0,0,0.08),"
-                       + "        linear-gradient(#9a9a9a, #909090),"
-                       + "        white 0%;"
-                       + "    -fx-background-insets: 0 0 -1 0,0,1;"
-                       + "    -fx-background-radius: 5,5,4;"
-                       + "    -fx-padding: 3 30 3 30;"
-                       + "    -fx-text-fill: #242d35;"
-                       + "    -fx-font-size: 14px;");
-        AnchorPane.setLeftAnchor(label, 0d);
-        AnchorPane.setRightAnchor(label, 0d);
-        AnchorPane.setTopAnchor(label, 0d);
-        AnchorPane.setBottomAnchor(label, 0d);
-        AnchorPane anchor = new AnchorPane(label);
-        anchor.setMinSize(justifiedWidth, rendered);
-        anchor.setPrefSize(justifiedWidth, rendered);
-        anchor.setMaxSize(justifiedWidth, rendered);
-        return new Cell<JsonNode, Node>() {
-            @Override
-            public Node getNode() {
-                return anchor;
-            }
-
-            @Override
-            public boolean isReusable() {
-                return true;
-            }
-
-            @Override
-            public void updateItem(JsonNode item) { 
-                label.setText(SchemaNode.asText(extractFrom(item)));
-            }
-        };
-    }
-
     public Cell<JsonNode, Region> buildControl(int cardinality) {
-        return new PrimitiveCell(p.getField());
+        return new PrimitiveCell();
     }
 
     public double calculateTableColumnWidth() {
@@ -239,10 +198,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
             @Override
             public void updateItem(JsonNode item) {
-                control.updateItem(extractor.apply(item)
-                                            .get(p.getField()));
+                control.updateItem(extractFrom(extractor.apply(item)));
             }
-
         };
     }
 

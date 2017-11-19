@@ -33,7 +33,7 @@ public class PrimitiveCell implements Cell<JsonNode, Region> {
     private AnchorPane  anchor;
     private final Label label;
 
-    public PrimitiveCell(String style) {
+    public PrimitiveCell() {
         super();
         label = new Label();
         label.setWrapText(true);

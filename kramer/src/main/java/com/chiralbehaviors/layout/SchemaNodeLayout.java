@@ -127,9 +127,7 @@ abstract public class SchemaNodeLayout {
 
     public void adjustHeight(double delta) {
         this.height = LayoutProvider.snap(height + delta);
-    }
-
-    abstract public Cell<JsonNode, ?> buildColumn(double rendered);
+    } 
 
     abstract public Function<Double, Region> columnHeader();
 

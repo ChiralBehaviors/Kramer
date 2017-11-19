@@ -20,7 +20,6 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.flowless.Cell;
@@ -32,10 +31,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.util.Pair;
 
 /**
  * @author halhildebrand
@@ -62,38 +61,26 @@ public class NestedTable implements Cell<JsonNode, Region> {
                .setPrefSize(layout.getJustifiedWidth(), rendered);
         control.getNode()
                .setMaxSize(layout.getJustifiedWidth(), rendered);
-        return control;
+        return new Cell<JsonNode, Region>() {
+            @Override
+            public Region getNode() {
+                return control.getNode();
+            }
+
+            @Override
+            public boolean isReusable() {
+                return true;
+            }
+
+            @Override
+            public void updateItem(JsonNode item) {
+                control.updateItem(layout.extractFrom(item));
+            }
+        };
     }
 
-    public Pair<Consumer<JsonNode>, Region> buildRelation(double rendered,
-                                                          RelationLayout layout) {
-        Pair<ObservableList<JsonNode>, Region> column = buildNestedRow(rendered,
-                                                                       layout);
-
-        Region row = column.getValue();
-        StackPane.setAlignment(row, Pos.TOP_LEFT);
-        return new Pair<>(node -> column.getKey()
-                                        .setAll(itemsAsArray(layout.extractFrom(node))),
-                          new StackPane(row));
-    }
-
-    @Override
-    public Region getNode() {
-        return frame;
-    }
-
-    @Override
-    public boolean isReusable() {
-        return true;
-    }
-
-    @Override
-    public void updateItem(JsonNode item) {
-        items.setAll(SchemaNode.asList(item));
-    }
-
-    private Pair<ObservableList<JsonNode>, Region> buildNestedRow(double rendered,
-                                                                  RelationLayout layout) {
+    public Cell<JsonNode, Region> buildRelation(double rendered,
+                                                RelationLayout layout) {
         ObservableList<JsonNode> nestedItems = FXCollections.observableArrayList();
         int cardinality = layout.resolvedCardinality();
         double deficit = rendered - layout.getHeight();
@@ -109,9 +96,49 @@ public class NestedTable implements Cell<JsonNode, Region> {
         row.setMinSize(width, rendered);
         row.setPrefSize(width, rendered);
         row.setMaxSize(width, rendered);
-        row.show(1);
 
-        return new Pair<>(nestedItems, new FlyAwayScrollPane<>(row));
+        Region scroll = new FlyAwayScrollPane<>(row);
+        StackPane.setAlignment(scroll, Pos.TOP_LEFT);
+        StackPane root = new StackPane(scroll);
+
+        return new Cell<JsonNode, Region>() {
+
+            @Override
+            public Region getNode() {
+                return root;
+            }
+
+            @Override
+            public boolean isReusable() {
+                return true;
+            }
+
+            @Override
+            public String toString() {
+                return String.format("Cell[%s]", layout.getField());
+            }
+
+            @Override
+            public void updateItem(JsonNode item) {
+                nestedItems.setAll(itemsAsArray(layout.extractFrom(item)));
+            }
+        };
+
+    }
+
+    @Override
+    public Region getNode() {
+        return frame;
+    }
+
+    @Override
+    public boolean isReusable() {
+        return true;
+    }
+
+    @Override
+    public void updateItem(JsonNode item) {
+        items.setAll(SchemaNode.asList(item));
     }
 
     private Region buildRows(int card, RelationLayout layout) {
@@ -142,7 +169,7 @@ public class NestedTable implements Cell<JsonNode, Region> {
     private Function<JsonNode, Cell<JsonNode, ?>> cell(double rendered,
                                                        RelationLayout layout) {
         return item -> {
-            Cell<JsonNode, ?> column = layout.buildColumn(rendered);
+            Cell<JsonNode, ?> column = buildColumn(rendered, layout);
             column.updateItem(item);
             return column;
         };
@@ -153,5 +180,46 @@ public class NestedTable implements Cell<JsonNode, Region> {
         SchemaNode.asArray(items)
                   .forEach(n -> itemArray.add(n));
         return itemArray;
+    }
+
+    private Cell<JsonNode, Region> buildColumn(double rendered,
+                                               RelationLayout layout) {
+        HBox cell = new HBox();
+        cell.getStyleClass()
+            .add(layout.getStyleClass());
+        cell.setMinSize(layout.getJustifiedWidth(), rendered);
+        cell.setPrefSize(layout.getJustifiedWidth(), rendered);
+        cell.setMaxSize(layout.getJustifiedWidth(), rendered);
+        List<Cell<JsonNode, Region>> nested = new ArrayList<>();
+        layout.forEach(child -> {
+            Cell<JsonNode, Region> column = child.buildColumn(rendered, this);
+            nested.add(column);
+            Region control = column.getNode();
+            cell.getChildren()
+                .add(control);
+        });
+
+        return new Cell<JsonNode, Region>() {
+
+            @Override
+            public Region getNode() {
+                return cell;
+            }
+
+            @Override
+            public boolean isReusable() {
+                return true;
+            }
+
+            @Override
+            public String toString() {
+                return String.format("Cell[%s]", layout.getField());
+            }
+
+            @Override
+            public void updateItem(JsonNode item) {
+                nested.forEach(c -> c.updateItem(item));
+            }
+        };
     }
 }

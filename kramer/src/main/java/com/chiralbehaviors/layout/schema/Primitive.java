@@ -19,6 +19,7 @@ package com.chiralbehaviors.layout.schema;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutProvider;
+import com.chiralbehaviors.layout.NestedTable;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
 import com.chiralbehaviors.layout.flowless.Cell;
@@ -44,8 +45,8 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public Cell<JsonNode, ?> buildColumn(double rendered) {
-        return layout.buildColumn(rendered);
+    public Cell<JsonNode, Region> buildColumn(double rendered, NestedTable table) {
+        return table.buildPrimitive(rendered, layout);
     }
 
     @Override
