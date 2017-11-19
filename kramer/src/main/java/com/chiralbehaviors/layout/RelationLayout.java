@@ -38,7 +38,6 @@ import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.google.common.util.concurrent.AtomicDouble;
 
 import javafx.scene.control.Control;
 import javafx.scene.layout.HBox;
@@ -290,7 +289,7 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public double justify(double justifed) {
         double available = snap(justifed - layout.getNestedCellInset());
-        AtomicDouble remaining = new AtomicDouble(available);
+        double[] remaining = new double[] { available };
         List<SchemaNode> children = r.getChildren();
         SchemaNode last = children.get(children.size() - 1);
         justifiedWidth = snap(children.stream()
@@ -300,10 +299,9 @@ public class RelationLayout extends SchemaNodeLayout {
                                                                            / tableColumnWidth));
 
                                           if (child.equals(last)) {
-                                              childJustified = remaining.get();
+                                              childJustified = remaining[0];
                                           } else {
-                                              remaining.addAndGet(0
-                                                                  - childJustified);
+                                              remaining[0] -= childJustified;
                                           }
                                           return child.justify(childJustified);
                                       })
