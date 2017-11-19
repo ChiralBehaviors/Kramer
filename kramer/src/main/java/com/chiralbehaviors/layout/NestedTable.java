@@ -30,10 +30,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Pos;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 /**
@@ -98,14 +96,12 @@ public class NestedTable implements Cell<JsonNode, Region> {
         row.setMaxSize(width, rendered);
 
         Region scroll = new FlyAwayScrollPane<>(row);
-        StackPane.setAlignment(scroll, Pos.TOP_LEFT);
-        StackPane root = new StackPane(scroll);
 
         return new Cell<JsonNode, Region>() {
 
             @Override
             public Region getNode() {
-                return root;
+                return scroll;
             }
 
             @Override
@@ -157,8 +153,7 @@ public class NestedTable implements Cell<JsonNode, Region> {
         rows.setMinSize(width, height);
         rows.setPrefSize(width, height);
         rows.setMaxSize(width, height);
-
-        StackPane.setAlignment(rows, Pos.TOP_LEFT);
+ 
         Region scroll = new FlyAwayScrollPane<>(rows);
         scroll.setMinSize(width, height);
         scroll.setPrefSize(width, height);
