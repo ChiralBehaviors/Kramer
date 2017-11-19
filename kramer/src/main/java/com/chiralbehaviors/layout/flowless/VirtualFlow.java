@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
+import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.reactfx.collection.MemoizationList;
 import org.reactfx.util.Lists;
 import org.reactfx.value.Val;
@@ -106,31 +107,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         REAR
     }
 
-    static class ShiftParams {
-        private final int     clearIndex;
-        private final boolean selected;
-        private final int     setIndex;
-
-        ShiftParams(int clearIndex, int setIndex, boolean selected) {
-            this.clearIndex = clearIndex;
-            this.setIndex = setIndex;
-            this.selected = selected;
-        }
-
-        public final int getClearIndex() {
-            return clearIndex;
-        }
-
-        public final int getSetIndex() {
-            return setIndex;
-        }
-
-        public final boolean isSelected() {
-            return selected;
-        }
-    }
-
-    private class VirtualFlowSelectionModel extends MultipleSelectionModel<T> {
+    public class VirtualFlowSelectionModel extends MultipleSelectionModel<T> {
 
         /***********************************************************************
          * * Observable properties * *
@@ -825,6 +802,30 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         }
     }
 
+    static class ShiftParams {
+        private final int     clearIndex;
+        private final boolean selected;
+        private final int     setIndex;
+
+        ShiftParams(int clearIndex, int setIndex, boolean selected) {
+            this.clearIndex = clearIndex;
+            this.setIndex = setIndex;
+            this.selected = selected;
+        }
+
+        public final int getClearIndex() {
+            return clearIndex;
+        }
+
+        public final int getSetIndex() {
+            return setIndex;
+        }
+
+        public final boolean isSelected() {
+            return selected;
+        }
+    }
+
     @SuppressWarnings("unchecked") // Because of the cast we have to perform, below
     private static final CssMetaData<VirtualFlow<?, ?>, Gravity>   GRAVITY = new CssMetaData<VirtualFlow<?, ?>, Gravity>("-flowless-gravity",
                                                                                                                          // JavaFX seems to have an odd return type on getEnumConverter: "? extends Enum<?>", not E as the second generic type.
@@ -1138,6 +1139,14 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         return gravity.get();
     }
 
+    public ObservableList<T> getItems() {
+        return items;
+    }
+
+    public VirtualFlowSelectionModel getSelectionModel() {
+        return selectionModel;
+    }
+
     /**
      * The gravity of the virtual flow. When there are not enough cells to fill
      * the full height (vertical virtual flow) or width (horizontal virtual
@@ -1416,10 +1425,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         }
     }
 
-    VirtualFlowSelectionModel getSelectionModel() {
-        return selectionModel;
-    }
-
     void scrollBreadth(double deltaBreadth) {
         setBreadthOffset(breadthOffset0.getValue() + deltaBreadth);
     }
@@ -1513,4 +1518,5 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
             setBreadthOffset(bOff - shift);
         }
     }
+
 }
