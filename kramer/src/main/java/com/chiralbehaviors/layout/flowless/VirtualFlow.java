@@ -993,14 +993,15 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         };
     }
 
-    private final Var<Double>                      breadthOffset;
+    protected final ObservableList<T>              items;
 
+    private final Var<Double>                      breadthOffset;
     // non-negative
     private final Var<Double>                      breadthOffset0 = Var.newSimpleVar(0.0);
+
     private final CellListManager<T, C>            cellListManager;
 
     private final CellPositioner<T, C>             cellPositioner;
-
     private final StyleableObjectProperty<Gravity> gravity        = new StyleableObjectProperty<Gravity>() {
                                                                       @Override
                                                                       public Object getBean() {
@@ -1017,7 +1018,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
                                                                           return "gravity";
                                                                       }
                                                                   };
-    private final ObservableList<T>                items;
 
     private final Var<Double>                      lengthOffsetEstimate;
 
@@ -1029,10 +1029,10 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
 
     private final SizeTracker                      sizeTracker;
 
-    private VirtualFlow(double cellBreadth, double cellLength,
-                        ObservableList<T> items,
-                        Function<? super T, ? extends C> cellFactory,
-                        OrientationHelper orientation, Gravity gravity) {
+    protected VirtualFlow(double cellBreadth, double cellLength,
+                          ObservableList<T> items,
+                          Function<? super T, ? extends C> cellFactory,
+                          OrientationHelper orientation, Gravity gravity) {
         breadthOffset = breadthOffset0.asVar(this::setBreadthOffset);
         this.getStyleClass()
             .add("virtual-flow");

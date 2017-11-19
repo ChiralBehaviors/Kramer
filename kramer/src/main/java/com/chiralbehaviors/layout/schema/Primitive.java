@@ -22,7 +22,6 @@ import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
 import com.chiralbehaviors.layout.impl.LayoutCell;
-import com.chiralbehaviors.layout.impl.NestedTable;
 import com.chiralbehaviors.layout.impl.OutlineElement;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -46,9 +45,8 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public LayoutCell<? extends Region> buildColumn(double rendered,
-                                              NestedTable table) {
-        return table.buildPrimitive(rendered, layout);
+    public LayoutCell<? extends Region> buildColumn(double rendered) {
+        return layout.buildColumn(rendered);
     }
 
     @Override

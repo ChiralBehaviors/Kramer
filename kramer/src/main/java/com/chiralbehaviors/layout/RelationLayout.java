@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.impl.LayoutCell;
+import com.chiralbehaviors.layout.impl.NestedRow;
 import com.chiralbehaviors.layout.impl.NestedTable;
 import com.chiralbehaviors.layout.impl.Outline;
 import com.chiralbehaviors.layout.impl.OutlineElement;
@@ -93,6 +94,11 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public double baseRowCellHeight(double extended) {
         return snap(extended - layout.getCellVerticalInset());
+    }
+
+    @Override
+    public LayoutCell<? extends Region> buildColumn(double rendered) {
+        return new NestedRow(rendered, this);
     }
 
     public Region buildColumnHeader() {
@@ -511,4 +517,5 @@ public class RelationLayout extends SchemaNodeLayout {
     protected double rowHeight(double elementHeight) {
         return snap(elementHeight + layout.getCellVerticalInset());
     }
+
 }

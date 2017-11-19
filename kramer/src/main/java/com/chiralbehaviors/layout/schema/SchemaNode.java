@@ -25,7 +25,6 @@ import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
 import com.chiralbehaviors.layout.impl.LayoutCell;
-import com.chiralbehaviors.layout.impl.NestedTable;
 import com.chiralbehaviors.layout.impl.OutlineElement;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -147,8 +146,7 @@ abstract public class SchemaNode {
         getLayout().adjustHeight(delta);
     }
 
-    abstract public LayoutCell<? extends Region> buildColumn(double rendered,
-                                                       NestedTable table);
+    abstract public LayoutCell<? extends Region> buildColumn(double rendered);
 
     abstract public Function<Double, Region> buildColumnHeader();
 

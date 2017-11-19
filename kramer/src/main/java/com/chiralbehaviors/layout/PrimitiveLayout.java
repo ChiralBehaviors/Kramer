@@ -54,6 +54,33 @@ public class PrimitiveLayout extends SchemaNodeLayout {
               .apply(list, p);
     }
 
+    @Override
+    public LayoutCell<? extends Region> buildColumn(double rendered) {
+        LayoutCell<? extends Region> control = buildControl(1);
+        control.getNode()
+               .setMinSize(justifiedWidth, rendered);
+        control.getNode()
+               .setPrefSize(justifiedWidth, rendered);
+        control.getNode()
+               .setMaxSize(justifiedWidth, rendered);
+        return new LayoutCell<Region>() {
+            @Override
+            public Region getNode() {
+                return control.getNode();
+            }
+
+            @Override
+            public boolean isReusable() {
+                return true;
+            }
+
+            @Override
+            public void updateItem(JsonNode item) {
+                control.updateItem(extractFrom(item));
+            }
+        };
+    }
+
     public LayoutCell<? extends Region> buildControl(int cardinality) {
         return new PrimitiveCell();
     }

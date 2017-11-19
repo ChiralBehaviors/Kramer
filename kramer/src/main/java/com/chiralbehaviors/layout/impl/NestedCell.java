@@ -16,21 +16,54 @@
 
 package com.chiralbehaviors.layout.impl;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.chiralbehaviors.layout.RelationLayout;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import javafx.collections.ObservableList;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 
 /**
  * @author halhildebrand
  *
  */
 public class NestedCell extends HBox implements LayoutCell<NestedCell> {
-    private static final String DEFAULT_STYLE = "nested-cell";
+    private static final String                      DEFAULT_STYLE = "nested-cell";
+    private final List<LayoutCell<? extends Region>> cells;
 
     {
         styleFocus(this, DEFAULT_STYLE);
     }
 
+    public NestedCell(double rendered, RelationLayout layout) {
+        getStyleClass().add(layout.getStyleClass());
+        setMinSize(layout.getJustifiedWidth(), rendered);
+        setPrefSize(layout.getJustifiedWidth(), rendered);
+        setMaxSize(layout.getJustifiedWidth(), rendered);
+        cells = new ArrayList<>();
+        layout.forEach(child -> {
+            LayoutCell<? extends Region> cell = child.buildColumn(rendered);
+            cells.add(cell);
+            Region control = cell.getNode();
+            getChildren().add(control);
+        });
+    }
+
     @Override
     public NestedCell getNode() {
         return this;
+    }
+
+    @Override
+    public void updateItem(JsonNode item) {
+        cells.forEach(c -> c.updateItem(item));
+    }
+  
+    public static ObservableList<JsonNode> create() {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

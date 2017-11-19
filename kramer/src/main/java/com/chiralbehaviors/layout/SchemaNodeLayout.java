@@ -21,6 +21,7 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.impl.LayoutCell;
+import com.chiralbehaviors.layout.impl.OutlineElement;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Control;
@@ -129,6 +130,8 @@ abstract public class SchemaNodeLayout {
         this.height = LayoutProvider.snap(height + delta);
     }
 
+    abstract public LayoutCell<? extends Region> buildColumn(double rendered);
+
     abstract public Function<Double, Region> columnHeader();
 
     public double columnHeaderHeight() {
@@ -173,10 +176,10 @@ abstract public class SchemaNodeLayout {
 
     abstract public double nestTableColumn(Indent indent, double indentation);
 
-    abstract public LayoutCell<? extends Region> outlineElement(int cardinality,
-                                                                double labelWidth,
-                                                                Function<JsonNode, JsonNode> extractor,
-                                                                double justified);
+    abstract public OutlineElement outlineElement(int cardinality,
+                                                  double labelWidth,
+                                                  Function<JsonNode, JsonNode> extractor,
+                                                  double justified);
 
     protected void clear() {
         height = -1.0;

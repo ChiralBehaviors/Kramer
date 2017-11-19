@@ -24,7 +24,6 @@ import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
 import com.chiralbehaviors.layout.impl.LayoutCell;
-import com.chiralbehaviors.layout.impl.NestedTable;
 import com.chiralbehaviors.layout.impl.OutlineElement;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -68,10 +67,9 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public LayoutCell<? extends Region> buildColumn(double rendered,
-                                                    NestedTable table) {
-        return isFold() ? fold.buildColumn(rendered, table)
-                        : table.buildRelation(rendered, layout);
+    public LayoutCell<? extends Region> buildColumn(double rendered) {
+        return isFold() ? fold.buildColumn(rendered)
+                        : layout.buildColumn(rendered);
     }
 
     @Override

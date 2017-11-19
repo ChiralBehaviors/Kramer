@@ -54,7 +54,7 @@ public class FlyAwayScrollPane<V extends Node & Virtualized> extends Region
            });
     }
 
-    private final V                       content;
+    protected final V                     content;
 
     private final ChangeListener<Boolean> contentFocusedListener;
 
