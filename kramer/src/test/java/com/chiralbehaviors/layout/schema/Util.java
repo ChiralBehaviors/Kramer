@@ -42,10 +42,13 @@ final public class Util {
         n.addChild(new Primitive("description"));
         root.addChild(n);
 
+        Relation allAttributes = new Relation("allAttributes");
+        root.addChild(allAttributes);
+
         n = new Relation("attributes");
         n.addChild(new Primitive("name"));
         n.addChild(new Primitive("description"));
-        root.addChild(n);
+        allAttributes.addChild(n);
 
         Relation n2 = new Relation("authorizedAttribute");
         n2.addChild(new Primitive("name"));
