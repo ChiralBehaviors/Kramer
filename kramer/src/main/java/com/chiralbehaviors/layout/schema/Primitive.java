@@ -18,12 +18,12 @@ package com.chiralbehaviors.layout.schema;
 
 import java.util.function.Function;
 
+import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
-import com.chiralbehaviors.layout.impl.ColumnHeader;
-import com.chiralbehaviors.layout.impl.LayoutCell;
-import com.chiralbehaviors.layout.impl.OutlineElement;
+import com.chiralbehaviors.layout.outline.OutlineElement;
+import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.layout.Region;

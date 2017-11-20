@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.impl;
+package com.chiralbehaviors.layout.outline;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Column;
+import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -35,13 +36,10 @@ public class Span extends HBox implements LayoutCell<Span> {
     private static final String                       DEFAULT_STYLE = "span";
     private final List<Cell<JsonNode, OutlineColumn>> columns       = new ArrayList<>();
 
-    {
-        styleFocus(this, DEFAULT_STYLE);
-    }
-
     public Span(double justified, List<Column> columns, int cardinality,
                 double cellHeight, Function<JsonNode, JsonNode> extractor,
                 double labelWidth) {
+        setDefaultStyles(DEFAULT_STYLE);
         setMinSize(justified, cellHeight);
         setPrefSize(justified, cellHeight);
         setMaxSize(justified, cellHeight);
@@ -55,11 +53,6 @@ public class Span extends HBox implements LayoutCell<Span> {
             this.columns.add(cell);
             getChildren().add(cell.getNode());
         });
-    }
-
-    @Override
-    public Span getNode() {
-        return this;
     }
 
     @Override

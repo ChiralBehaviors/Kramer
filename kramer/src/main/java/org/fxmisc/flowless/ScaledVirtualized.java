@@ -11,7 +11,7 @@ import javafx.scene.transform.Scale;
  * Acts as an intermediate class between {@link VirtualizedScrollPane} and its
  * {@link Virtualized} content in that it scales the content without also
  * scaling the ScrollPane's scroll bars.
- * 
+ *
  * <pre>
  *     {@code
  *     Virtualized actualContent = // creation code

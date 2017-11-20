@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.impl;
+package com.chiralbehaviors.layout.outline;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Column;
+import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -35,14 +36,10 @@ public class OutlineColumn extends VBox implements LayoutCell<OutlineColumn> {
     private static final String                  DEFAULT_STYLE = "span";
     private List<Cell<JsonNode, OutlineElement>> fields;
 
-    {
-        styleFocus(this, DEFAULT_STYLE);
-    }
-
     public OutlineColumn(Column c, int cardinality,
                          Function<JsonNode, JsonNode> extractor,
                          double labelWidth, double cellHeight) {
-
+        setDefaultStyles(DEFAULT_STYLE);
         setMinSize(c.getWidth(), cellHeight);
         setMaxSize(c.getWidth(), cellHeight);
         setPrefSize(c.getWidth(), cellHeight);
@@ -55,11 +52,6 @@ public class OutlineColumn extends VBox implements LayoutCell<OutlineColumn> {
              fields.add(cell);
              getChildren().add(cell.getNode());
          });
-    }
-
-    @Override
-    public OutlineColumn getNode() {
-        return this;
     }
 
     @Override

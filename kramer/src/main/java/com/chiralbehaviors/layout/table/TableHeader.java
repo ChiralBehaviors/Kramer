@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.impl;
+package com.chiralbehaviors.layout.table;
 
 import java.util.List;
 
+import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 
 import javafx.scene.layout.HBox;
@@ -30,21 +31,12 @@ public class TableHeader extends HBox implements LayoutCell<TableHeader> {
 
     private static final String DEFAULT_STYLE = "table-header";
 
-    {
-        styleFocus(this, DEFAULT_STYLE);
-    }
-
     public TableHeader(double width, double height, List<SchemaNode> children) {
+        setDefaultStyles(DEFAULT_STYLE);
         setMinWidth(width);
         setPrefWidth(width);
         setMaxWidth(width);
         children.forEach(c -> getChildren().add(c.buildColumnHeader()
                                                  .apply(height)));
     }
-
-    @Override
-    public TableHeader getNode() {
-        return this;
-    }
-
 }

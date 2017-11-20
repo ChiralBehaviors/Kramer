@@ -20,9 +20,8 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.function.Function;
 
-import com.chiralbehaviors.layout.impl.ColumnHeader;
-import com.chiralbehaviors.layout.impl.LayoutCell;
-import com.chiralbehaviors.layout.impl.OutlineElement;
+import com.chiralbehaviors.layout.outline.OutlineElement;
+import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Control;
@@ -139,10 +138,6 @@ abstract public class SchemaNodeLayout {
         return layout.getTextLineHeight() + layout.getTextVerticalInset();
     }
 
-    public Control label(double width, double half) {
-        return layout.label(width, getLabel(), half);
-    }
-
     abstract public double columnWidth();
 
     abstract public void compress(double justified);
@@ -155,13 +150,13 @@ abstract public class SchemaNodeLayout {
         return height;
     }
 
-    abstract public String getLabel();
-
     abstract public double getJustifiedColumnWidth();
 
     public double getJustifiedWidth() {
         return justifiedWidth;
     }
+
+    abstract public String getLabel();
 
     public double getLabelWidth() {
         return labelWidth;
@@ -170,6 +165,10 @@ abstract public class SchemaNodeLayout {
     abstract public double justify(double justified);
 
     abstract public Control label(double labelWidth);
+
+    public Control label(double width, double half) {
+        return layout.label(width, getLabel(), half);
+    }
 
     public double labelWidth(String label) {
         return snap(layout.labelWidth(label));

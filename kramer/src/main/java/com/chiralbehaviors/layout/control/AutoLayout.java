@@ -19,10 +19,10 @@ package com.chiralbehaviors.layout.control;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
 import com.chiralbehaviors.layout.flowless.Cell;
-import com.chiralbehaviors.layout.impl.LayoutCell;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;

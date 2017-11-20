@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.impl;
+package com.chiralbehaviors.layout.outline;
 
 import java.util.Collection;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.ColumnSet;
+import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.FlyAwayScrollPane;
@@ -38,11 +39,13 @@ import javafx.scene.layout.StackPane;
  *
  */
 public class Outline extends StackPane implements LayoutCell<Outline> {
-    private final ObservableList<JsonNode> items = FXCollections.observableArrayList();
+    private static final String            DEFAULT_STYLE = "outline";
+    private final ObservableList<JsonNode> items         = FXCollections.observableArrayList();
 
     public Outline(double height, Collection<ColumnSet> columnSets,
                    Function<JsonNode, JsonNode> extractor,
                    int averageCardinality, RelationLayout layout) {
+        setDefaultStyles(DEFAULT_STYLE);
         double cellHeight = layout.outlineCellHeight(columnSets.stream()
                                                                .mapToDouble(cs -> cs.getCellHeight())
                                                                .sum());
@@ -65,11 +68,6 @@ public class Outline extends StackPane implements LayoutCell<Outline> {
         Region pane = new FlyAwayScrollPane<>(list);
         StackPane.setAlignment(pane, Pos.TOP_LEFT);
         getChildren().add(pane);
-    }
-
-    @Override
-    public Outline getNode() {
-        return this;
     }
 
     @Override

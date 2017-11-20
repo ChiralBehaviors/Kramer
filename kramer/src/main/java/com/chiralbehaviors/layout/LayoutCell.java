@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.impl;
+package com.chiralbehaviors.layout;
 
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,6 +40,12 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
     default void cancelEdit() {
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    default T getNode() {
+        return (T) this;
+    }
+
     default boolean isEditing() {
         return false;
     }
@@ -49,19 +55,9 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         return true;
     }
 
-    default void setExternalFocus(boolean externalFocus, Node node) {
-
-        if (node != null) {
-            node.pseudoClassStateChanged(INTERNAL_PSEUDOCLASS_STATE,
-                                         !externalFocus);
-            node.pseudoClassStateChanged(EXTERNAL_PSEUDOCLASS_STATE,
-                                         externalFocus);
-        }
-    }
-
     @SuppressWarnings("unchecked")
-    default void styleFocus(Node node, String defaultStyle) {
-
+    default void setDefaultStyles(String defaultStyle) {
+        T node = getNode();
         // focusTraversable is styleable through css. Calling setFocusTraversable
         // makes it look to css like the user set the value and css will not
         // override. Initializing focusTraversable by calling set on the
@@ -89,14 +85,21 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         node.focusedProperty()
             .addListener((observable, oldVal, newVal) -> {
                 if (newVal) {
-                    setExternalFocus(false, node);
+                    setExternalFocus(false);
                 } else {
-                    setExternalFocus(true, node);
+                    setExternalFocus(true);
                 }
             });
 
         // initialize default pseudo-class state
         node.pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, true);
+    }
+
+    default void setExternalFocus(boolean externalFocus) {
+        T node = getNode();
+        node.pseudoClassStateChanged(INTERNAL_PSEUDOCLASS_STATE,
+                                     !externalFocus);
+        node.pseudoClassStateChanged(EXTERNAL_PSEUDOCLASS_STATE, externalFocus);
     }
 
     default void updateSelection(Node node, boolean selected) {

@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.impl;
+package com.chiralbehaviors.layout.table;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -33,11 +34,8 @@ public class NestedCell extends HBox implements LayoutCell<NestedCell> {
     private static final String                      DEFAULT_STYLE = "nested-cell";
     private final List<LayoutCell<? extends Region>> cells;
 
-    {
-        styleFocus(this, DEFAULT_STYLE);
-    }
-
     public NestedCell(double rendered, RelationLayout layout) {
+        setDefaultStyles(DEFAULT_STYLE);
         getStyleClass().add(layout.getField());
         setMinSize(layout.getJustifiedWidth(), rendered);
         setPrefSize(layout.getJustifiedWidth(), rendered);
@@ -49,11 +47,6 @@ public class NestedCell extends HBox implements LayoutCell<NestedCell> {
             Region control = cell.getNode();
             getChildren().add(control);
         });
-    }
-
-    @Override
-    public NestedCell getNode() {
-        return this;
     }
 
     @Override

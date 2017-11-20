@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.impl;
+package com.chiralbehaviors.layout.outline;
 
 import java.util.function.Function;
 
+import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.flowless.Cell;
@@ -38,17 +39,13 @@ public class OutlineElement extends HBox implements LayoutCell<OutlineElement> {
     private static final String                    DEFAULT_STYLE = "outline-element";
 
     private final Cell<JsonNode, ? extends Region> cell;
-
     private final Function<JsonNode, JsonNode>     extractor;
-
-    {
-        styleFocus(this, DEFAULT_STYLE);
-    }
 
     public OutlineElement(Control label, LayoutCell<? extends Region> cell,
                           int cardinality, double labelWidth,
                           Function<JsonNode, JsonNode> extractor,
                           double justified, String field, double height) {
+        setDefaultStyles(DEFAULT_STYLE);
 
         this.extractor = extractor.andThen(n -> {
             return n.get(field);
@@ -88,11 +85,6 @@ public class OutlineElement extends HBox implements LayoutCell<OutlineElement> {
         this(layout.label(labelWidth), layout.buildControl(1, extractor),
              cardinality, labelWidth, extractor, justified, layout.getField(),
              layout.getHeight());
-    }
-
-    @Override
-    public OutlineElement getNode() {
-        return this;
     }
 
     @Override

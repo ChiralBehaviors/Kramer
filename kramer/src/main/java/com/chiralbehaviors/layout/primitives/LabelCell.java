@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.impl;
+package com.chiralbehaviors.layout.primitives;
 
+import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -26,11 +27,11 @@ import javafx.scene.layout.Region;
  * @author halhildebrand
  *
  */
-public class PrimitiveCell implements LayoutCell<Region> {
+public class LabelCell implements LayoutCell<Region> {
+    private static final String DEFAULT_STYLE = "primitive";
+    private final Label         label;
 
-    private final Label label;
-
-    public PrimitiveCell() {
+    public LabelCell() {
         label = new Label();
         label.setWrapText(true);
         label.setStyle("-fx-background-color: " + "         rgba(0,0,0,0.08),"
@@ -41,6 +42,7 @@ public class PrimitiveCell implements LayoutCell<Region> {
                        + "    -fx-padding: 3 30 3 30;"
                        + "    -fx-text-fill: #242d35;"
                        + "    -fx-font-size: 14px;");
+        setDefaultStyles(DEFAULT_STYLE);
     }
 
     @Override

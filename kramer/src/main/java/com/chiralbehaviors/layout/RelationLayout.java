@@ -28,15 +28,14 @@ import java.util.stream.Collectors;
 
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
-import com.chiralbehaviors.layout.impl.ColumnHeader;
-import com.chiralbehaviors.layout.impl.LayoutCell;
-import com.chiralbehaviors.layout.impl.NestedRow;
-import com.chiralbehaviors.layout.impl.NestedTable;
-import com.chiralbehaviors.layout.impl.Outline;
-import com.chiralbehaviors.layout.impl.OutlineElement;
-import com.chiralbehaviors.layout.impl.TableHeader;
+import com.chiralbehaviors.layout.outline.Outline;
+import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.table.ColumnHeader;
+import com.chiralbehaviors.layout.table.NestedRow;
+import com.chiralbehaviors.layout.table.NestedTable;
+import com.chiralbehaviors.layout.table.TableHeader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -253,6 +252,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return snap(justifiedWidth + layout.getNestedInset());
     }
 
+    @Override
     public String getLabel() {
         return r.getLabel();
     }

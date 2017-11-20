@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.impl;
+package com.chiralbehaviors.layout.table;
 
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.function.Function;
 
+import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -44,14 +45,10 @@ public class NestedRow extends AnchorPane implements LayoutCell<NestedRow> {
     }
 
     private final Function<JsonNode, JsonNode> extractor;
-
     private final ObservableList<JsonNode>     nestedItems;
 
-    {
-        styleFocus(this, DEFAULT_STYLE);
-    }
-
     public NestedRow(double rendered, RelationLayout layout) {
+        setDefaultStyles(DEFAULT_STYLE);
         getStyleClass().addAll(layout.getField());
         double cellHeight = cellHeight(rendered, layout);
         ObservableList<JsonNode> items = FXCollections.observableArrayList();
@@ -71,11 +68,6 @@ public class NestedRow extends AnchorPane implements LayoutCell<NestedRow> {
         row.setPrefSize(width, rendered);
         row.setMaxSize(width, rendered);
         getChildren().add(row);
-    }
-
-    @Override
-    public NestedRow getNode() {
-        return this;
     }
 
     @Override

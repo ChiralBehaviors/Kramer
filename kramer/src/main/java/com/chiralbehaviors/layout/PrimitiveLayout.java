@@ -22,12 +22,11 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.flowless.Cell;
-import com.chiralbehaviors.layout.impl.ColumnHeader;
-import com.chiralbehaviors.layout.impl.LayoutCell;
-import com.chiralbehaviors.layout.impl.OutlineElement;
-import com.chiralbehaviors.layout.impl.PrimitiveCell;
+import com.chiralbehaviors.layout.outline.OutlineElement;
+import com.chiralbehaviors.layout.primitives.LabelCell;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Control;
@@ -83,7 +82,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public LayoutCell<? extends Region> buildControl(int cardinality) {
-        return new PrimitiveCell();
+        LabelCell cell = new LabelCell();
+        cell.getNode()
+            .getStyleClass()
+            .add(p.getField());
+        return cell;
     }
 
     public double calculateTableColumnWidth() {
