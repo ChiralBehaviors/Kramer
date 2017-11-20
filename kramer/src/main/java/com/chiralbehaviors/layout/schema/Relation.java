@@ -23,6 +23,7 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
+import com.chiralbehaviors.layout.impl.ColumnHeader;
 import com.chiralbehaviors.layout.impl.LayoutCell;
 import com.chiralbehaviors.layout.impl.OutlineElement;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -73,7 +74,7 @@ public class Relation extends SchemaNode {
     }
 
     @Override
-    public Function<Double, Region> buildColumnHeader() {
+    public Function<Double, ColumnHeader> buildColumnHeader() {
         if (isFold()) {
             return fold.buildColumnHeader();
         }

@@ -21,6 +21,7 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
+import com.chiralbehaviors.layout.impl.ColumnHeader;
 import com.chiralbehaviors.layout.impl.LayoutCell;
 import com.chiralbehaviors.layout.impl.OutlineElement;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -50,7 +51,7 @@ public class Primitive extends SchemaNode {
     }
 
     @Override
-    public Function<Double, Region> buildColumnHeader() {
+    public Function<Double, ColumnHeader> buildColumnHeader() {
         return layout.columnHeader();
     }
 

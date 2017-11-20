@@ -21,20 +21,18 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.flowless.FlyAwayScrollPane;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.scene.layout.AnchorPane;
 
 /**
  * @author halhildebrand
  *
  */
-public class NestedRow
-        extends FlyAwayScrollPane<VirtualFlow<JsonNode, LayoutCell<NestedCell>>>
-        implements LayoutCell<NestedRow> {
+public class NestedRow extends AnchorPane implements LayoutCell<NestedRow> {
     private static final String DEFAULT_STYLE = "nested-row";
 
     private static double cellHeight(double rendered, RelationLayout layout) {
@@ -54,28 +52,25 @@ public class NestedRow
     }
 
     public NestedRow(double rendered, RelationLayout layout) {
-        this(layout.getJustifiedCellWidth(), cellHeight(rendered, layout),
-             FXCollections.observableArrayList(), layout,
-             item -> layout.extractFrom(item));
-        double width = layout.getJustifiedColumnWidth();
-        content.setMinSize(width, rendered);
-        content.setPrefSize(width, rendered);
-        content.setMaxSize(width, rendered);
-
-    }
-
-    protected NestedRow(double width, double cellHeight,
-                        ObservableList<JsonNode> items, RelationLayout layout,
-                        Function<JsonNode, JsonNode> extractor) {
-        super(VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
-                                         cellHeight, items, item -> {
-                                             NestedCell cell = new NestedCell(cellHeight,
-                                                                              layout);
-                                             cell.updateItem(item);
-                                             return cell;
-                                         }));
-        this.extractor = extractor;
+        getStyleClass().addAll(layout.getField());
+        double cellHeight = cellHeight(rendered, layout);
+        ObservableList<JsonNode> items = FXCollections.observableArrayList();
+        VirtualFlow<JsonNode, NestedCell> row = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
+                                                                           cellHeight,
+                                                                           items,
+                                                                           item1 -> {
+                                                                               NestedCell cell = new NestedCell(cellHeight,
+                                                                                                                layout);
+                                                                               cell.updateItem(item1);
+                                                                               return cell;
+                                                                           });
+        this.extractor = item -> layout.extractFrom(item);
         this.nestedItems = items;
+        double width = layout.getJustifiedColumnWidth();
+        row.setMinSize(width, rendered);
+        row.setPrefSize(width, rendered);
+        row.setMaxSize(width, rendered);
+        getChildren().add(row);
     }
 
     @Override

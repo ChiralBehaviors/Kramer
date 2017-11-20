@@ -28,11 +28,13 @@ import java.util.stream.Collectors;
 
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
+import com.chiralbehaviors.layout.impl.ColumnHeader;
 import com.chiralbehaviors.layout.impl.LayoutCell;
 import com.chiralbehaviors.layout.impl.NestedRow;
 import com.chiralbehaviors.layout.impl.NestedTable;
 import com.chiralbehaviors.layout.impl.Outline;
 import com.chiralbehaviors.layout.impl.OutlineElement;
+import com.chiralbehaviors.layout.impl.TableHeader;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,9 +42,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import javafx.scene.control.Control;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
 
 /**
  *
@@ -100,17 +100,10 @@ public class RelationLayout extends SchemaNodeLayout {
         return new NestedRow(rendered, this);
     }
 
-    public Region buildColumnHeader() {
-        HBox header = new HBox();
-        double width = snap(justifiedWidth + layout.getNestedCellInset());
-        header.setMinWidth(width);
-        header.setPrefWidth(width);
-        header.setMaxWidth(width);
-        List<SchemaNode> children = r.getChildren();
-        children.forEach(c -> header.getChildren()
-                                    .add(c.buildColumnHeader()
-                                          .apply(columnHeaderHeight)));
-        return header;
+    public TableHeader buildColumnHeader() {
+        return new TableHeader(snap(justifiedWidth
+                                    + layout.getNestedCellInset()),
+                               columnHeaderHeight, r.getChildren());
     }
 
     public LayoutCell<?> buildControl(int cardinality,
@@ -174,29 +167,14 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public Function<Double, Region> columnHeader() {
-        List<SchemaNode> children = r.getChildren();
-        List<Function<Double, Region>> nestedHeaders = children.stream()
-                                                               .map(c -> c.buildColumnHeader())
-                                                               .collect(Collectors.toList());
+    public Function<Double, ColumnHeader> columnHeader() {
+        List<Function<Double, ColumnHeader>> nestedHeaders = r.getChildren()
+                                                              .stream()
+                                                              .map(c -> c.buildColumnHeader())
+                                                              .collect(Collectors.toList());
         return rendered -> {
-            VBox columnHeader = new VBox();
-            HBox nested = new HBox();
-
             double width = snap(justifiedWidth + columnHeaderIndentation);
-            columnHeader.setMinSize(width, rendered);
-            columnHeader.setMaxSize(width, rendered);
-            double half = snap(rendered / 2.0);
-            columnHeader.getChildren()
-                        .add(layout.label(width, r.getLabel(), half));
-            columnHeader.getChildren()
-                        .add(nested);
-
-            nestedHeaders.forEach(n -> {
-                nested.getChildren()
-                      .add(n.apply(half));
-            });
-            return columnHeader;
+            return new ColumnHeader(width, rendered, this, nestedHeaders);
         };
     }
 
@@ -240,8 +218,8 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public void forEach(Consumer<? super SchemaNode> action) {
-        List<SchemaNode> children = r.getChildren();
-        children.forEach(c -> action.accept(c));
+        r.getChildren()
+         .forEach(c -> action.accept(c));
     }
 
     public int getAverageCardinality() {

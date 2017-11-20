@@ -24,6 +24,7 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
+import com.chiralbehaviors.layout.impl.ColumnHeader;
 import com.chiralbehaviors.layout.impl.LayoutCell;
 import com.chiralbehaviors.layout.impl.OutlineElement;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -148,7 +149,7 @@ abstract public class SchemaNode {
 
     abstract public LayoutCell<? extends Region> buildColumn(double rendered);
 
-    abstract public Function<Double, Region> buildColumnHeader();
+    abstract public Function<Double, ColumnHeader> buildColumnHeader();
 
     abstract public double calculateTableColumnWidth();
 

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.impl.ColumnHeader;
 import com.chiralbehaviors.layout.impl.LayoutCell;
 import com.chiralbehaviors.layout.impl.OutlineElement;
 import com.chiralbehaviors.layout.impl.PrimitiveCell;
@@ -100,14 +101,10 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public Function<Double, Region> columnHeader() {
-        return rendered -> {
-            double width = getColumnHeaderWidth();
-            Control columnHeader = layout.label(width, p.getLabel(), rendered);
-            columnHeader.setMinSize(width, rendered);
-            columnHeader.setMaxSize(width, rendered);
-            return columnHeader;
-        };
+    public Function<Double, ColumnHeader> columnHeader() {
+        return rendered -> new ColumnHeader(snap(justifiedWidth
+                                                 + columnHeaderIndentation),
+                                            rendered, this);
     }
 
     @Override
@@ -133,6 +130,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public double getJustifiedColumnWidth() {
         return snap(justifiedWidth);
+    }
+
+    @Override
+    public String getLabel() {
+        return p.getLabel();
     }
 
     @Override

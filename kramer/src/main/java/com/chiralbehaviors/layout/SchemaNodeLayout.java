@@ -20,6 +20,7 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.function.Function;
 
+import com.chiralbehaviors.layout.impl.ColumnHeader;
 import com.chiralbehaviors.layout.impl.LayoutCell;
 import com.chiralbehaviors.layout.impl.OutlineElement;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -132,10 +133,14 @@ abstract public class SchemaNodeLayout {
 
     abstract public LayoutCell<? extends Region> buildColumn(double rendered);
 
-    abstract public Function<Double, Region> columnHeader();
+    abstract public Function<Double, ColumnHeader> columnHeader();
 
     public double columnHeaderHeight() {
         return layout.getTextLineHeight() + layout.getTextVerticalInset();
+    }
+
+    public Control label(double width, double half) {
+        return layout.label(width, getLabel(), half);
     }
 
     abstract public double columnWidth();
@@ -149,6 +154,8 @@ abstract public class SchemaNodeLayout {
     public double getHeight() {
         return height;
     }
+
+    abstract public String getLabel();
 
     abstract public double getJustifiedColumnWidth();
 

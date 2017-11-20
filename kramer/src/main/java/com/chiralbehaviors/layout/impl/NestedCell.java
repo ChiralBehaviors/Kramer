@@ -38,7 +38,7 @@ public class NestedCell extends HBox implements LayoutCell<NestedCell> {
     }
 
     public NestedCell(double rendered, RelationLayout layout) {
-        getStyleClass().add(layout.getStyleClass());
+        getStyleClass().add(layout.getField());
         setMinSize(layout.getJustifiedWidth(), rendered);
         setPrefSize(layout.getJustifiedWidth(), rendered);
         setMaxSize(layout.getJustifiedWidth(), rendered);
