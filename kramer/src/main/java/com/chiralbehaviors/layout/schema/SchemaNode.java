@@ -203,7 +203,6 @@ abstract public class SchemaNode {
 
     public abstract OutlineElement outlineElement(int cardinality,
                                                   double labelWidth,
-                                                  Function<JsonNode, JsonNode> extractor,
                                                   double justified);
 
     public abstract double rowHeight(int cardinality, double justified);

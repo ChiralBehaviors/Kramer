@@ -18,11 +18,10 @@ package com.chiralbehaviors.layout.outline;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.Column;
 import com.chiralbehaviors.layout.LayoutCell;
-import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.layout.VBox;
@@ -33,12 +32,11 @@ import javafx.scene.layout.VBox;
  */
 public class OutlineColumn extends VBox implements LayoutCell<OutlineColumn> {
 
-    private static final String                  DEFAULT_STYLE = "span";
-    private List<Cell<JsonNode, OutlineElement>> fields;
+    private static final String      DEFAULT_STYLE = "span";
+    private List<Consumer<JsonNode>> fields;
 
-    public OutlineColumn(Column c, int cardinality,
-                         Function<JsonNode, JsonNode> extractor,
-                         double labelWidth, double cellHeight) {
+    public OutlineColumn(Column c, int cardinality, double labelWidth,
+                         double cellHeight) {
         setDefaultStyles(DEFAULT_STYLE);
         setMinSize(c.getWidth(), cellHeight);
         setMaxSize(c.getWidth(), cellHeight);
@@ -47,15 +45,14 @@ public class OutlineColumn extends VBox implements LayoutCell<OutlineColumn> {
         c.getFields()
          .forEach(field -> {
              OutlineElement cell = field.outlineElement(cardinality, labelWidth,
-                                                        extractor,
                                                         c.getWidth());
-             fields.add(cell);
+             fields.add(item -> cell.updateItem(field.extractFrom(item)));
              getChildren().add(cell.getNode());
          });
     }
 
     @Override
     public void updateItem(JsonNode item) {
-        fields.forEach(m -> m.updateItem(item));
+        fields.forEach(m -> m.accept(item));
     }
 }

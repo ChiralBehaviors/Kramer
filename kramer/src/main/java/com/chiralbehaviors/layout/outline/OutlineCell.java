@@ -19,7 +19,6 @@ package com.chiralbehaviors.layout.outline;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.LayoutCell;
@@ -40,7 +39,6 @@ public class OutlineCell extends VBox implements LayoutCell<OutlineCell> {
 
     public OutlineCell(Collection<ColumnSet> columnSets, int averageCardinality,
                        double cellHeight,
-                       Function<JsonNode, JsonNode> extractor,
                        RelationLayout layout) {
         setDefaultStyles(DEFAULT_STYLE);
         spans = new ArrayList<>();
@@ -50,8 +48,7 @@ public class OutlineCell extends VBox implements LayoutCell<OutlineCell> {
         columnSets.forEach(cs -> {
             Cell<JsonNode, Span> span = new Span(cs.getWidth(), cs.getColumns(),
                                                  averageCardinality,
-                                                 cs.getCellHeight(), extractor,
-                                                 layout.getLabelWidth());
+                                                 cs.getCellHeight(), layout.getLabelWidth());
             spans.add(span);
             VBox.setVgrow(span.getNode(), Priority.ALWAYS);
             getChildren().add(span.getNode());

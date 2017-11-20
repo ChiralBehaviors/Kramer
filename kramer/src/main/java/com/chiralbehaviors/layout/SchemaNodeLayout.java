@@ -184,7 +184,6 @@ abstract public class SchemaNodeLayout {
 
     abstract public OutlineElement outlineElement(int cardinality,
                                                   double labelWidth,
-                                                  Function<JsonNode, JsonNode> extractor,
                                                   double justified);
 
     protected void clear() {

@@ -108,10 +108,8 @@ public class Primitive extends SchemaNode {
 
     @Override
     public OutlineElement outlineElement(int cardinality, double labelWidth,
-                                         Function<JsonNode, JsonNode> extractor,
                                          double justified) {
-        return layout.outlineElement(cardinality, labelWidth, extractor,
-                                     justified);
+        return layout.outlineElement(cardinality, labelWidth, justified);
     }
 
     @Override

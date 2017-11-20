@@ -16,8 +16,6 @@
 
 package com.chiralbehaviors.layout.outline;
 
-import java.util.function.Function;
-
 import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
@@ -38,18 +36,13 @@ public class OutlineElement extends HBox implements LayoutCell<OutlineElement> {
 
     private static final String                    DEFAULT_STYLE = "outline-element";
 
-    private final Cell<JsonNode, ? extends Region> cell;
-    private final Function<JsonNode, JsonNode>     extractor;
+    private final Cell<JsonNode, ? extends Region> cell; 
 
     public OutlineElement(Control label, LayoutCell<? extends Region> cell,
                           int cardinality, double labelWidth,
-                          Function<JsonNode, JsonNode> extractor,
-                          double justified, String field, double height) {
+                          double justified,
+                          double height) {
         setDefaultStyles(DEFAULT_STYLE);
-
-        this.extractor = extractor.andThen(n -> {
-            return n.get(field);
-        });
 
         setMinSize(justified, height);
         setPrefSize(justified, height);
@@ -72,23 +65,20 @@ public class OutlineElement extends HBox implements LayoutCell<OutlineElement> {
     }
 
     public OutlineElement(PrimitiveLayout p, int cardinality, double labelWidth,
-                          Function<JsonNode, JsonNode> extractor,
                           double justified) {
         this(p.label(labelWidth), p.buildControl(1), cardinality, labelWidth,
-             extractor, justified, p.getField(), p.getHeight());
+             justified, p.getHeight());
     }
 
     public OutlineElement(RelationLayout layout, int cardinality,
                           double labelWidth,
-                          Function<JsonNode, JsonNode> extractor,
                           double justified) {
-        this(layout.label(labelWidth), layout.buildControl(1, extractor),
-             cardinality, labelWidth, extractor, justified, layout.getField(),
-             layout.getHeight());
+        this(layout.label(labelWidth), layout.buildControl(1),
+             cardinality, labelWidth, justified, layout.getHeight());
     }
 
     @Override
     public void updateItem(JsonNode item) {
-        cell.updateItem(extractor.apply(item));
+        cell.updateItem(item);
     }
 }

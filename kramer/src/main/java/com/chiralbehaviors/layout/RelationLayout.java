@@ -105,19 +105,17 @@ public class RelationLayout extends SchemaNodeLayout {
                                columnHeaderHeight, r.getChildren());
     }
 
-    public LayoutCell<?> buildControl(int cardinality,
-                                      Function<JsonNode, JsonNode> extractor) {
-        return useTable ? r.buildNestedTable(extractor, cardinality)
-                        : r.buildOutline(extractor, cardinality);
+    public LayoutCell<?> buildControl(int cardinality) {
+        return useTable ? r.buildNestedTable(cardinality)
+                        : r.buildOutline(cardinality);
     }
 
     public LayoutCell<NestedTable> buildNestedTable(int cardinality) {
         return new NestedTable(resolveCardinality(cardinality), this);
     }
 
-    public Outline buildOutline(Function<JsonNode, JsonNode> extractor,
-                                int cardinality) {
-        Outline outline = new Outline(height, columnSets, extractor,
+    public Outline buildOutline(int cardinality) {
+        Outline outline = new Outline(height, columnSets, n -> n,
                                       resolveCardinality(cardinality), this);
         outline.getNode()
                .setMinWidth(columnWidth());
@@ -400,11 +398,9 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public OutlineElement outlineElement(int cardinality, double labelWidth,
-                                         Function<JsonNode, JsonNode> extractor,
                                          double justified) {
 
-        return new OutlineElement(this, cardinality, labelWidth, extractor,
-                                  justified);
+        return new OutlineElement(this, cardinality, labelWidth, justified);
     }
 
     public int resolvedCardinality() {

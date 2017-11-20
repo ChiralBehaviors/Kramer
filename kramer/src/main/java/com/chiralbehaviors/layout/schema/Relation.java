@@ -86,32 +86,27 @@ public class Relation extends SchemaNode {
             return fold.buildControl(layout.getAverageCardinality()
                                      * cardinality, width);
         }
-        return buildControl(cardinality, n -> n);
+        return buildControl(cardinality);
     }
 
-    public LayoutCell<?> buildControl(int cardinality,
-                                      Function<JsonNode, JsonNode> extractor) {
-        return layout.buildControl(cardinality, extractor);
+    public LayoutCell<?> buildControl(int cardinality) {
+        return layout.buildControl(cardinality);
     }
 
-    public LayoutCell<?> buildNestedTable(Function<JsonNode, JsonNode> extractor,
-                                          int cardinality) {
+    public LayoutCell<?> buildNestedTable(int cardinality) {
         if (isFold()) {
-            return fold.buildNestedTable(extract(extractor),
-                                         layout.getAverageCardinality()
-                                                             * cardinality);
+            return fold.buildNestedTable(layout.getAverageCardinality()
+                                         * cardinality);
         }
         return layout.buildNestedTable(cardinality);
     }
 
-    public LayoutCell<?> buildOutline(Function<JsonNode, JsonNode> extractor,
-                                      int cardinality) {
+    public LayoutCell<?> buildOutline(int cardinality) {
         if (isFold()) {
-            return fold.buildOutline(extract(extractor),
-                                     layout.getAverageCardinality()
-                                                         * cardinality);
+            return fold.buildOutline(layout.getAverageCardinality()
+                                     * cardinality);
         }
-        return layout.buildOutline(extractor, cardinality);
+        return layout.buildOutline(cardinality);
     }
 
     @Override
@@ -242,16 +237,13 @@ public class Relation extends SchemaNode {
 
     @Override
     public OutlineElement outlineElement(int cardinality, double labelWidth,
-                                         Function<JsonNode, JsonNode> extractor,
                                          double justified) {
         if (isFold()) {
             return fold.outlineElement(layout.getAverageCardinality()
-                                       * cardinality, labelWidth,
-                                       extract(extractor), justified);
+                                       * cardinality, labelWidth, justified);
         }
 
-        return layout.outlineElement(cardinality, labelWidth, extractor,
-                                     justified);
+        return layout.outlineElement(cardinality, labelWidth, justified);
     }
 
     public double outlineWidth() {

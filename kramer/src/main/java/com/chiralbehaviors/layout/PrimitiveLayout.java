@@ -186,10 +186,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public OutlineElement outlineElement(int cardinality, double labelWidth,
-                                         Function<JsonNode, JsonNode> extractor,
                                          double justified) {
-        return new OutlineElement(this, cardinality, labelWidth, extractor,
-                                  justified);
+        return new OutlineElement(this, cardinality, labelWidth, justified);
     }
 
     public double tableColumnWidth() {

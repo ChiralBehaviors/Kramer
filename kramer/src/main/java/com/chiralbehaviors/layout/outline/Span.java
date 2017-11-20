@@ -18,7 +18,6 @@ package com.chiralbehaviors.layout.outline;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 import com.chiralbehaviors.layout.Column;
 import com.chiralbehaviors.layout.LayoutCell;
@@ -37,8 +36,7 @@ public class Span extends HBox implements LayoutCell<Span> {
     private final List<Cell<JsonNode, OutlineColumn>> columns       = new ArrayList<>();
 
     public Span(double justified, List<Column> columns, int cardinality,
-                double cellHeight, Function<JsonNode, JsonNode> extractor,
-                double labelWidth) {
+                double cellHeight, double labelWidth) {
         setDefaultStyles(DEFAULT_STYLE);
         setMinSize(justified, cellHeight);
         setPrefSize(justified, cellHeight);
@@ -47,7 +45,6 @@ public class Span extends HBox implements LayoutCell<Span> {
         columns.forEach(c -> {
             Cell<JsonNode, OutlineColumn> cell = new OutlineColumn(c,
                                                                    cardinality,
-                                                                   extractor,
                                                                    labelWidth,
                                                                    cellHeight);
             this.columns.add(cell);
