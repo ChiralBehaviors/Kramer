@@ -18,6 +18,7 @@ package com.chiralbehaviors.layout.table;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.RelationLayout;
@@ -31,8 +32,8 @@ import javafx.scene.layout.Region;
  *
  */
 public class NestedCell extends HBox implements LayoutCell<NestedCell> {
-    private static final String                      DEFAULT_STYLE = "nested-cell";
-    private final List<LayoutCell<? extends Region>> cells;
+    private static final String            DEFAULT_STYLE = "nested-cell";
+    private final List<Consumer<JsonNode>> consumers     = new ArrayList<>();;
 
     public NestedCell(double rendered, RelationLayout layout) {
         setDefaultStyles(DEFAULT_STYLE);
@@ -40,10 +41,9 @@ public class NestedCell extends HBox implements LayoutCell<NestedCell> {
         setMinSize(layout.getJustifiedWidth(), rendered);
         setPrefSize(layout.getJustifiedWidth(), rendered);
         setMaxSize(layout.getJustifiedWidth(), rendered);
-        cells = new ArrayList<>();
         layout.forEach(child -> {
             LayoutCell<? extends Region> cell = child.buildColumn(rendered);
-            cells.add(cell);
+            consumers.add(item -> cell.updateItem(child.extractFrom(item)));
             Region control = cell.getNode();
             getChildren().add(control);
         });
@@ -51,6 +51,6 @@ public class NestedCell extends HBox implements LayoutCell<NestedCell> {
 
     @Override
     public void updateItem(JsonNode item) {
-        cells.forEach(c -> c.updateItem(item));
+        consumers.forEach(c -> c.accept(item));
     }
 }

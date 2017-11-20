@@ -18,8 +18,6 @@ package com.chiralbehaviors.layout.table;
 
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
-import java.util.function.Function;
-
 import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
@@ -43,8 +41,7 @@ public class NestedRow extends AnchorPane implements LayoutCell<NestedRow> {
         double extended = snap(layout.getRowHeight() + childDeficit);
         return layout.baseRowCellHeight(extended);
     }
-
-    private final Function<JsonNode, JsonNode> extractor;
+ 
     private final ObservableList<JsonNode>     nestedItems;
 
     public NestedRow(double rendered, RelationLayout layout) {
@@ -61,7 +58,6 @@ public class NestedRow extends AnchorPane implements LayoutCell<NestedRow> {
                                                                                cell.updateItem(item1);
                                                                                return cell;
                                                                            });
-        this.extractor = item -> layout.extractFrom(item);
         this.nestedItems = items;
         double width = layout.getJustifiedColumnWidth();
         row.setMinSize(width, rendered);
@@ -72,6 +68,6 @@ public class NestedRow extends AnchorPane implements LayoutCell<NestedRow> {
 
     @Override
     public void updateItem(JsonNode item) {
-        nestedItems.setAll(NestedTable.itemsAsArray(extractor.apply(item)));
+        nestedItems.setAll(NestedTable.itemsAsArray(item));
     }
 }
