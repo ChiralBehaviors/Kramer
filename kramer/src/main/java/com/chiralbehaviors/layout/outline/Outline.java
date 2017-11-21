@@ -39,15 +39,11 @@ import javafx.scene.layout.StackPane;
  *
  */
 public class Outline extends StackPane implements LayoutCell<Outline> {
-    private static final String                DEFAULT_STYLE = "outline";
-    private final ObservableList<JsonNode>     items         = FXCollections.observableArrayList();
-    private final Function<JsonNode, JsonNode> extractor;
+    private static final String            DEFAULT_STYLE = "outline";
+    private final ObservableList<JsonNode> items         = FXCollections.observableArrayList();
 
     public Outline(double height, Collection<ColumnSet> columnSets,
-                   Function<JsonNode, JsonNode> extractor,
                    int averageCardinality, RelationLayout layout) {
-        assert extractor != null;
-        this.extractor = extractor;
         setDefaultStyles(DEFAULT_STYLE);
         double cellHeight = layout.outlineCellHeight(columnSets.stream()
                                                                .mapToDouble(cs -> cs.getCellHeight())
@@ -75,6 +71,6 @@ public class Outline extends StackPane implements LayoutCell<Outline> {
 
     @Override
     public void updateItem(JsonNode item) {
-        items.setAll(SchemaNode.asList(extractor.apply(item)));
+        items.setAll(SchemaNode.asList(item));
     }
 }

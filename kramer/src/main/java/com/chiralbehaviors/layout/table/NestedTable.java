@@ -48,12 +48,9 @@ public class NestedTable extends VBox implements LayoutCell<NestedTable> {
         return itemArray;
     }
 
-    private final Function<JsonNode, JsonNode> extractor;
-    private final ObservableList<JsonNode>     items = FXCollections.observableArrayList();
+    private final ObservableList<JsonNode> items = FXCollections.observableArrayList();
 
-    public NestedTable(int cardinality, RelationLayout layout,
-                       Function<JsonNode, JsonNode> extractor) {
-        this.extractor = extractor;
+    public NestedTable(int cardinality, RelationLayout layout) {
         setDefaultStyles(DEFAULT_STYLE);
         Region header = layout.buildColumnHeader();
         getChildren().addAll(header, buildRows(cardinality, layout));
@@ -64,7 +61,7 @@ public class NestedTable extends VBox implements LayoutCell<NestedTable> {
 
     @Override
     public void updateItem(JsonNode item) {
-        items.setAll(SchemaNode.asList(extractor.apply(item)));
+        items.setAll(SchemaNode.asList(item));
     }
 
     protected Region buildRows(int card, RelationLayout layout) {

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
 
 /**
  * @author hhildebrand
@@ -37,14 +36,6 @@ public class Relation extends SchemaNode {
 
     public void addChild(SchemaNode child) {
         children.add(child);
-    }
-
-    @Override
-    public JsonNode extractFrom(JsonNode jsonNode) {
-        if (isFold()) {
-            return fold.extractFrom(super.extractFrom(jsonNode));
-        }
-        return super.extractFrom(jsonNode);
     }
 
     public SchemaNode getChild(String field) {
@@ -66,7 +57,10 @@ public class Relation extends SchemaNode {
     }
 
     public Relation getAutoFoldable() {
-        return fold == null && autoFold && children.size() == 1
+        if (fold != null) {
+            return fold;
+        }
+        return autoFold && children.size() == 1
                && children.get(children.size() - 1) instanceof Relation
                                                                         ? (Relation) children.get(0)
                                                                         : null;

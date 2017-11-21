@@ -128,13 +128,12 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public LayoutCell<NestedTable> buildNestedTable(int cardinality) {
-        return new NestedTable(resolveCardinality(cardinality), this,
-                               extractor);
+        return new NestedTable(resolveCardinality(cardinality), this);
     }
 
     public Outline buildOutline(int cardinality) {
-        Outline outline = new Outline(height, columnSets, extractor,
-                                      resolveCardinality(cardinality), this);
+        Outline outline = new Outline(height, columnSets, resolveCardinality(cardinality),
+                                      this);
         outline.getNode()
                .setMinWidth(columnWidth());
         outline.getNode()
@@ -233,7 +232,7 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public JsonNode extractFrom(JsonNode node) {
-        return r.extractFrom(node);
+        return r.extractFrom(extractor.apply(node));
     }
 
     public void forEach(Consumer<? super SchemaNodeLayout> action) {
@@ -342,7 +341,7 @@ public class RelationLayout extends SchemaNodeLayout {
         if (fold != null) {
             return layout.layout(fold)
                          .measure(flatten(fold, datum), isSingular, item -> {
-                             return flatten(fold, extractor.apply(item));
+                             return flatten(r, extractor.apply(item));
                          });
         }
         this.extractor = extractor;
