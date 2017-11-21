@@ -19,13 +19,8 @@ package com.chiralbehaviors.layout.schema;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.chiralbehaviors.layout.LayoutCell;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-
-import javafx.scene.layout.Region;
 
 /**
  * @author hhildebrand
@@ -93,17 +88,6 @@ public class Relation extends SchemaNode {
                                                                             : null;
     }
 
-    public void setItem(LayoutCell<? extends Region> control, JsonNode data) {
-        if (data == null) {
-            data = JsonNodeFactory.instance.arrayNode();
-        }
-        if (isFold()) {
-            fold.setItem(control, flatten(data));
-        } else {
-            control.updateItem(data);
-        }
-    }
-
     @Override
     public String toString() {
         return toString(0);
@@ -125,19 +109,5 @@ public class Relation extends SchemaNode {
             }
         });
         return buf.toString();
-    }
-
-    private ArrayNode flatten(JsonNode data) {
-        ArrayNode flattened = JsonNodeFactory.instance.arrayNode();
-        if (data != null) {
-            if (data.isArray()) {
-                data.forEach(item -> {
-                    flattened.addAll(SchemaNode.asArray(item.get(fold.getField())));
-                });
-            } else {
-                flattened.addAll(SchemaNode.asArray(data.get(fold.getField())));
-            }
-        }
-        return flattened;
     }
 }

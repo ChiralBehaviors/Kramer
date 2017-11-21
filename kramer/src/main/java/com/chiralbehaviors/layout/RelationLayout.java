@@ -341,8 +341,9 @@ public class RelationLayout extends SchemaNodeLayout {
         Relation fold = r.getAutoFoldable();
         if (fold != null) {
             return layout.layout(fold)
-                         .measure(datum, isSingular,
-                                  item -> flatten(fold, extractor.apply(item)));
+                         .measure(flatten(fold, datum), isSingular, item -> {
+                             return flatten(fold, extractor.apply(item));
+                         });
         }
         this.extractor = extractor;
         double sum = 0;

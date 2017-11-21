@@ -132,9 +132,9 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
         return new AutoLayoutSkin(this);
     }
 
-    private void autoLayout(JsonNode zeeData,
-                            double width) {
-        control = layout.getKey().autoLayout(width);
+    private void autoLayout(JsonNode zeeData, double width) {
+        control = layout.getKey()
+                        .autoLayout(width);
         double height = getHeight();
         control.getNode()
                .setMinSize(width, height);
@@ -175,10 +175,7 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
     private void setContent() {
         try {
             if (control != null) {
-                Relation relation = root.get();
-                if (relation != null) {
-                    relation.setItem(control, data.get());
-                }
+                control.updateItem(data.get());
             }
         } catch (Throwable e) {
             log.log(Level.SEVERE, "cannot set content", e);
