@@ -19,7 +19,7 @@ package com.chiralbehaviors.layout.table;
 import java.util.List;
 
 import com.chiralbehaviors.layout.LayoutCell;
-import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.SchemaNodeLayout;
 
 import javafx.scene.layout.HBox;
 
@@ -31,12 +31,13 @@ public class TableHeader extends HBox implements LayoutCell<TableHeader> {
 
     private static final String DEFAULT_STYLE = "table-header";
 
-    public TableHeader(double width, double height, List<SchemaNode> children) {
+    public TableHeader(double width, double height,
+                       List<SchemaNodeLayout> children) {
         setDefaultStyles(DEFAULT_STYLE);
-        setMinWidth(width);
-        setPrefWidth(width);
-        setMaxWidth(width);
-        children.forEach(c -> getChildren().add(c.buildColumnHeader()
+        setMinSize(width, height);
+        setPrefSize(width, height);
+        setMaxSize(width, height);
+        children.forEach(c -> getChildren().add(c.columnHeader()
                                                  .apply(height)));
     }
 }

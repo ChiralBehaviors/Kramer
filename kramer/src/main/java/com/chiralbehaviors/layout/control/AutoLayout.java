@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
+import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -33,6 +34,7 @@ import javafx.collections.ListChangeListener;
 import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.Region;
+import javafx.util.Pair;
 
 /**
  * @author hhildebrand
@@ -47,6 +49,7 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
     private LayoutModel                           model;
     private final SimpleObjectProperty<Relation>  root        = new SimpleObjectProperty<>();
     private LayoutProvider                        style;
+    private Pair<SchemaNodeLayout, Double>        layout;
 
     public AutoLayout() {
         this(null);
@@ -100,7 +103,8 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
             return;
         }
         try {
-            top.measure(data, style);
+            layout = style.layout(top)
+                          .measure(data);
         } catch (Throwable e) {
             log.log(Level.SEVERE, "cannot measure data", e);
         }
@@ -128,9 +132,9 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
         return new AutoLayoutSkin(this);
     }
 
-    private void autoLayout(JsonNode zeeData, Relation relation, double width) {
-        relation.autoLayout(width);
-        control = relation.buildControl(zeeData.size(), width);
+    private void autoLayout(JsonNode zeeData,
+                            double width) {
+        control = layout.getKey().autoLayout(width);
         double height = getHeight();
         control.getNode()
                .setMinSize(width, height);
@@ -138,7 +142,7 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
                .setPrefSize(width, height);
         control.getNode()
                .setMaxSize(width, height);
-        relation.setItem(control, zeeData);
+        control.updateItem(zeeData);
         getChildren().add(control.getNode());
     }
 
@@ -161,7 +165,7 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
         }
 
         try {
-            autoLayout(zeeData, relation, width);
+            autoLayout(zeeData, width);
         } catch (Throwable e) {
             log.log(Level.SEVERE,
                     String.format("Unable to resize to %s", width), e);

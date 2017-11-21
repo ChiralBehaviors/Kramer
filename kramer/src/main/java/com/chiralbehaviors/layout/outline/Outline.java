@@ -46,6 +46,7 @@ public class Outline extends StackPane implements LayoutCell<Outline> {
     public Outline(double height, Collection<ColumnSet> columnSets,
                    Function<JsonNode, JsonNode> extractor,
                    int averageCardinality, RelationLayout layout) {
+        assert extractor != null;
         this.extractor = extractor;
         setDefaultStyles(DEFAULT_STYLE);
         double cellHeight = layout.outlineCellHeight(columnSets.stream()

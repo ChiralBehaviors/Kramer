@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Control;
 import javafx.scene.layout.Region;
+import javafx.util.Pair;
 
 /**
  * @author halhildebrand
@@ -37,7 +38,7 @@ abstract public class SchemaNodeLayout {
         LEFT {
             @Override
             public double indent(Indent child, LayoutProvider layout,
-                                 double indentation, boolean isChildRelation) {
+                                 double indentation) {
                 switch (child) {
                     case LEFT:
                         return indentation + layout.getNestedLeftInset();
@@ -54,7 +55,7 @@ abstract public class SchemaNodeLayout {
         RIGHT {
             @Override
             public double indent(Indent child, LayoutProvider layout,
-                                 double indentation, boolean isChildRelation) {
+                                 double indentation) {
                 switch (child) {
                     case LEFT:
                         return layout.getNestedLeftInset();
@@ -70,7 +71,7 @@ abstract public class SchemaNodeLayout {
         SINGULAR {
             @Override
             public double indent(Indent child, LayoutProvider layout,
-                                 double indentation, boolean isChildRelation) {
+                                 double indentation) {
                 switch (child) {
                     case LEFT:
                         return indentation + layout.getNestedLeftInset();
@@ -86,7 +87,7 @@ abstract public class SchemaNodeLayout {
         TOP {
             @Override
             public double indent(Indent child, LayoutProvider layout,
-                                 double indentation, boolean isChildRelation) {
+                                 double indentation) {
                 switch (child) {
                     case LEFT:
                         return layout.getNestedLeftInset();
@@ -101,7 +102,7 @@ abstract public class SchemaNodeLayout {
         };
 
         public double indent(Indent child, LayoutProvider layout,
-                             double indentation, boolean isChildRelation) {
+                             double indentation) {
             switch (child) {
                 case LEFT:
                     return layout.getNestedLeftInset();
@@ -130,7 +131,21 @@ abstract public class SchemaNodeLayout {
         this.height = LayoutProvider.snap(height + delta);
     }
 
+    public LayoutCell<? extends Region> autoLayout(double width) {
+        double justified = LayoutProvider.snap(width);
+        layout(justified);
+        compress(justified);
+        cellHeight(1, justified);
+        return buildControl(1);
+    }
+
     abstract public LayoutCell<? extends Region> buildColumn(double rendered);
+
+    abstract public LayoutCell<? extends Region> buildControl(int cardinality);
+
+    abstract public double calculateTableColumnWidth();
+
+    abstract public double cellHeight(int cardinality, double available);
 
     abstract public Function<Double, ColumnHeader> columnHeader();
 
@@ -178,13 +193,24 @@ abstract public class SchemaNodeLayout {
 
     abstract public double layoutWidth();
 
-    abstract public double measure(JsonNode data, boolean isSingular);
+    public Pair<SchemaNodeLayout, Double> measure(JsonNode data) {
+        return measure(data, data.size() > 1, n -> n);
+    }
+
+    abstract public Pair<SchemaNodeLayout, Double> measure(JsonNode data,
+                                                           boolean isSingular,
+                                                           Function<JsonNode, JsonNode> extractor);
 
     abstract public double nestTableColumn(Indent indent, double indentation);
 
     abstract public OutlineElement outlineElement(int cardinality,
                                                   double labelWidth,
                                                   double justified);
+
+    abstract public double rowHeight(int averageCardinality,
+                                     double justifiedWidth);
+
+    abstract public double tableColumnWidth();
 
     protected void clear() {
         height = -1.0;

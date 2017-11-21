@@ -24,8 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import com.chiralbehaviors.layout.schema.SchemaNode;
-
 /**
  *
  * @author halhildebrand
@@ -40,7 +38,7 @@ public class ColumnSet {
         columns.add(new Column(0d));
     }
 
-    public void add(SchemaNode node) {
+    public void add(SchemaNodeLayout node) {
         columns.get(0)
                .add(node);
     }

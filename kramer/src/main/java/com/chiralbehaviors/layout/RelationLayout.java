@@ -20,7 +20,6 @@ import static com.chiralbehaviors.layout.LayoutProvider.relax;
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -42,6 +41,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import javafx.scene.control.Control;
 import javafx.scene.layout.Region;
+import javafx.util.Pair;
 
 /**
  *
@@ -49,18 +49,36 @@ import javafx.scene.layout.Region;
  *
  */
 public class RelationLayout extends SchemaNodeLayout {
-    boolean                       useTable         = false;
-    private int                   averageCardinality;
-    private double                columnHeaderHeight;
-    private final List<ColumnSet> columnSets       = new ArrayList<>();
-    private int                   maxCardinality;
-    private final Relation        r;
-    private double                rowHeight        = -1;
-    private boolean               singular;
-    private double                tableColumnWidth = 0;
+
+    public static ArrayNode flatten(Relation fold, JsonNode data) {
+        ArrayNode flattened = JsonNodeFactory.instance.arrayNode();
+        if (data != null) {
+            if (data.isArray()) {
+                data.forEach(item -> {
+                    flattened.addAll(SchemaNode.asArray(item.get(fold.getField())));
+                });
+            } else {
+                flattened.addAll(SchemaNode.asArray(data.get(fold.getField())));
+            }
+        }
+        return flattened;
+    }
+
+    boolean                              useTable         = false;
+    private int                          averageCardinality;
+    private final List<SchemaNodeLayout> children         = new ArrayList<>();
+    private double                       columnHeaderHeight;
+    private final List<ColumnSet>        columnSets       = new ArrayList<>();
+    private Function<JsonNode, JsonNode> extractor;
+    private int                          maxCardinality;
+    private final Relation               r;
+    private double                       rowHeight        = -1;
+    private boolean                      singular;
+    private double                       tableColumnWidth = 0;
 
     public RelationLayout(LayoutProvider layout, Relation r) {
         super(layout);
+        assert r != null && layout != null;
         this.r = r;
     }
 
@@ -68,7 +86,6 @@ public class RelationLayout extends SchemaNodeLayout {
     public void adjustHeight(double delta) {
         super.adjustHeight(delta);
         if (useTable) {
-            List<SchemaNode> children = r.getChildren();
             double subDelta = delta / children.size();
             if (delta >= 1.0) {
                 children.forEach(f -> f.adjustHeight(subDelta));
@@ -102,20 +119,21 @@ public class RelationLayout extends SchemaNodeLayout {
     public TableHeader buildColumnHeader() {
         return new TableHeader(snap(justifiedWidth
                                     + layout.getNestedCellInset()),
-                               columnHeaderHeight, r.getChildren());
+                               columnHeaderHeight, children);
     }
 
     public LayoutCell<?> buildControl(int cardinality) {
-        return useTable ? r.buildNestedTable(cardinality)
-                        : r.buildOutline(cardinality);
+        return useTable ? buildNestedTable(cardinality)
+                        : buildOutline(cardinality);
     }
 
     public LayoutCell<NestedTable> buildNestedTable(int cardinality) {
-        return new NestedTable(resolveCardinality(cardinality), this);
+        return new NestedTable(resolveCardinality(cardinality), this,
+                               extractor);
     }
 
     public Outline buildOutline(int cardinality) {
-        Outline outline = new Outline(height, columnSets, n -> n,
+        Outline outline = new Outline(height, columnSets, extractor,
                                       resolveCardinality(cardinality), this);
         outline.getNode()
                .setMinWidth(columnWidth());
@@ -134,10 +152,9 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double calculateTableColumnWidth() {
-        return r.getChildren()
-                .stream()
-                .mapToDouble(c -> c.calculateTableColumnWidth())
-                .sum()
+        return children.stream()
+                       .mapToDouble(c -> c.calculateTableColumnWidth())
+                       .sum()
                + layout.getNestedInset();
     }
 
@@ -149,11 +166,10 @@ public class RelationLayout extends SchemaNodeLayout {
         if (!useTable) {
             height = outlineHeight(cardinality);
         } else {
-            columnHeaderHeight = r.getChildren()
-                                  .stream()
-                                  .mapToDouble(c -> c.columnHeaderHeight())
-                                  .max()
-                                  .orElse(0.0);
+            columnHeaderHeight = children.stream()
+                                         .mapToDouble(c -> c.columnHeaderHeight())
+                                         .max()
+                                         .orElse(0.0);
             double elementHeight = elementHeight();
             rowHeight = rowHeight(elementHeight);
             height = snap((cardinality * snap(elementHeight
@@ -164,11 +180,18 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
+    public double columnHeaderHeight() {
+        return super.columnHeaderHeight() + children.stream()
+                                                    .mapToDouble(c -> c.columnHeaderHeight())
+                                                    .max()
+                                                    .orElse(0.0);
+    }
+
+    @Override
     public Function<Double, ColumnHeader> columnHeader() {
-        List<Function<Double, ColumnHeader>> nestedHeaders = r.getChildren()
-                                                              .stream()
-                                                              .map(c -> c.buildColumnHeader())
-                                                              .collect(Collectors.toList());
+        List<Function<Double, ColumnHeader>> nestedHeaders = children.stream()
+                                                                     .map(c -> c.columnHeader())
+                                                                     .collect(Collectors.toList());
         return rendered -> {
             double width = snap(justifiedWidth + columnHeaderIndentation);
             return new ColumnHeader(width, rendered, this, nestedHeaders);
@@ -188,11 +211,10 @@ public class RelationLayout extends SchemaNodeLayout {
         }
         columnSets.clear();
         justifiedWidth = snap(baseColumnWidth(justified));
-        List<SchemaNode> children = r.getChildren();
         columnSets.clear();
         ColumnSet current = null;
         double halfWidth = snap(justifiedWidth / 2d);
-        for (SchemaNode child : children) {
+        for (SchemaNodeLayout child : children) {
             double childWidth = labelWidth + child.layoutWidth();
             if (childWidth > halfWidth || current == null) {
                 current = new ColumnSet();
@@ -214,9 +236,8 @@ public class RelationLayout extends SchemaNodeLayout {
         return r.extractFrom(node);
     }
 
-    public void forEach(Consumer<? super SchemaNode> action) {
-        r.getChildren()
-         .forEach(c -> action.accept(c));
+    public void forEach(Consumer<? super SchemaNodeLayout> action) {
+        children.forEach(action);
     }
 
     public int getAverageCardinality() {
@@ -227,11 +248,10 @@ public class RelationLayout extends SchemaNodeLayout {
         if (columnHeaderHeight <= 0) {
             columnHeaderHeight = snap((layout.getTextLineHeight()
                                        + layout.getTextVerticalInset())
-                                      + r.getChildren()
-                                         .stream()
-                                         .mapToDouble(c -> c.columnHeaderHeight())
-                                         .max()
-                                         .orElse(0.0));
+                                      + children.stream()
+                                                .mapToDouble(c -> c.columnHeaderHeight())
+                                                .max()
+                                                .orElse(0.0));
         }
         return columnHeaderHeight;
     }
@@ -267,8 +287,7 @@ public class RelationLayout extends SchemaNodeLayout {
     public double justify(double justifed) {
         double available = snap(justifed - layout.getNestedCellInset());
         double[] remaining = new double[] { available };
-        List<SchemaNode> children = r.getChildren();
-        SchemaNode last = children.get(children.size() - 1);
+        SchemaNodeLayout last = children.get(children.size() - 1);
         justifiedWidth = snap(children.stream()
                                       .mapToDouble(child -> {
                                           double childJustified = relax(available
@@ -296,11 +315,10 @@ public class RelationLayout extends SchemaNodeLayout {
         clear();
         double available = baseColumnWidth(width - labelWidth);
         assert available > 0;
-        columnWidth = r.getChildren()
-                       .stream()
-                       .mapToDouble(c -> c.layout(available))
-                       .max()
-                       .orElse(0.0)
+        columnWidth = children.stream()
+                              .mapToDouble(c -> c.layout(available))
+                              .max()
+                              .orElse(0.0)
                       + labelWidth;
         double tableWidth = calculateTableColumnWidth();
         if (tableWidth <= columnWidth()) {
@@ -315,24 +333,31 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double measure(JsonNode datum, boolean isSingular) {
+    public Pair<SchemaNodeLayout, Double> measure(JsonNode datum,
+                                                  boolean isSingular,
+                                                  Function<JsonNode, JsonNode> extractor) {
         clear();
+        children.clear();
+        Relation fold = r.getAutoFoldable();
+        if (fold != null) {
+            return layout.layout(fold)
+                         .measure(datum, isSingular,
+                                  item -> flatten(fold, extractor.apply(item)));
+        }
+        this.extractor = extractor;
         double sum = 0;
         columnWidth = 0;
         singular = isSingular;
         int singularChildren = 0;
         maxCardinality = 0;
 
-        List<SchemaNode> children = r.getChildren();
-        for (SchemaNode child : children) {
+        for (SchemaNode child : r.getChildren()) {
             ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
             int cardSum = 0;
             boolean childSingular = false;
-            List<JsonNode> data = datum.isArray() ? new ArrayList<>(datum.size())
-                                                  : Arrays.asList(datum);
-            if (datum.isArray()) {
-                datum.forEach(n -> data.add(n));
-            }
+            JsonNode data = datum.isArray() ? datum
+                                            : JsonNodeFactory.instance.arrayNode()
+                                                                      .add(datum);
             for (JsonNode node : data) {
                 JsonNode sub = node.get(child.getField());
                 if (sub instanceof ArrayNode) {
@@ -349,9 +374,12 @@ public class RelationLayout extends SchemaNodeLayout {
             } else {
                 sum += data.size() == 0 ? 1 : Math.round(cardSum / data.size());
             }
-            columnWidth = snap(Math.max(columnWidth,
-                                        child.measure(aggregate, childSingular,
-                                                      layout)));
+            Pair<SchemaNodeLayout, Double> measured = layout.layout(child)
+                                                            .measure(aggregate,
+                                                                     childSingular,
+                                                                     n -> n);
+            children.add(measured.getKey());
+            columnWidth = snap(Math.max(columnWidth, measured.getValue()));
             maxCardinality = Math.max(maxCardinality, data.size());
         }
         int effectiveChildren = children.size() - singularChildren;
@@ -367,7 +395,7 @@ public class RelationLayout extends SchemaNodeLayout {
                              .getAsDouble();
         columnWidth = snap(labelWidth + columnWidth);
         maxCardinality = Math.max(1, maxCardinality);
-        return columnWidth();
+        return new Pair<>(this, columnWidth());
     }
 
     @Override
@@ -378,17 +406,15 @@ public class RelationLayout extends SchemaNodeLayout {
         rowHeight = -1.0;
         columnHeaderHeight = -1.0;
         height = -1.0;
-        tableColumnWidth = snap(r.getChildren()
-                                 .stream()
-                                 .mapToDouble(c -> {
-                                     Indent child = indent(indent, c);
-                                     return c.nestTableColumn(child,
-                                                              indent.indent(child,
-                                                                            layout,
-                                                                            indentation,
-                                                                            c.isRelation()));
-                                 })
-                                 .sum());
+        tableColumnWidth = snap(children.stream()
+                                        .mapToDouble(c -> {
+                                            Indent child = indent(indent, c);
+                                            return c.nestTableColumn(child,
+                                                                     indent.indent(child,
+                                                                                   layout,
+                                                                                   indentation));
+                                        })
+                                        .sum());
         return tableColumnWidth();
     }
 
@@ -439,19 +465,17 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     protected double elementHeight() {
-        return snap(r.getChildren()
-                     .stream()
-                     .mapToDouble(child -> child.rowHeight(averageCardinality,
-                                                           justifiedWidth))
-                     .max()
-                     .getAsDouble());
+        return snap(children.stream()
+                            .mapToDouble(child -> child.rowHeight(averageCardinality,
+                                                                  justifiedWidth))
+                            .max()
+                            .getAsDouble());
     }
 
-    protected Indent indent(Indent parent, SchemaNode child) {
-        List<SchemaNode> children = r.getChildren();
+    protected Indent indent(Indent parent, SchemaNodeLayout child) {
 
-        boolean isFirst = isFirst(child, children);
-        boolean isLast = isLast(child, children);
+        boolean isFirst = isFirst(child);
+        boolean isLast = isLast(child);
         if (isFirst && isLast) {
             return Indent.SINGULAR;
         }
@@ -464,11 +488,11 @@ public class RelationLayout extends SchemaNodeLayout {
         }
     }
 
-    protected boolean isFirst(SchemaNode child, List<SchemaNode> children) {
+    protected boolean isFirst(SchemaNodeLayout child) {
         return child.equals(children.get(0));
     }
 
-    protected boolean isLast(SchemaNode child, List<SchemaNode> children) {
+    protected boolean isLast(SchemaNodeLayout child) {
         return child.equals(children.get(children.size() - 1));
     }
 

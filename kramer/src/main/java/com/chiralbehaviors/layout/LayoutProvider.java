@@ -25,6 +25,7 @@ import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
+import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.sun.javafx.scene.text.TextLayout;
@@ -208,12 +209,19 @@ public class LayoutProvider {
 
     public PrimitiveLayout layout(Primitive primitive) {
         return primitives.computeIfAbsent(primitive,
-                                          p -> new PrimitiveLayout(this, p));
+                                          p -> new PrimitiveLayout(this, primitive));
     }
 
     public RelationLayout layout(Relation relation) {
         return relations.computeIfAbsent(relation,
-                                         r -> new RelationLayout(this, r));
+                                         r -> new RelationLayout(this, relation));
+    }
+
+    public SchemaNodeLayout layout(SchemaNode node) {
+        if (node instanceof Relation) {
+            return layout((Relation) node);
+        }
+        return layout((Primitive) node);
     }
 
     @Override

@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Control;
 import javafx.scene.layout.Region;
+import javafx.util.Pair;
 
 /**
  *
@@ -78,7 +79,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return columnWidth();
     }
 
-    public double cellHeight(double justified) {
+    @Override
+    public double cellHeight(int cardinality, double justified) {
         if (height > 0) {
             return height;
         }
@@ -148,7 +150,9 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double measure(JsonNode data, boolean singular) {
+    public Pair<SchemaNodeLayout, Double> measure(JsonNode data,
+                                                  boolean singular,
+                                                  Function<JsonNode, JsonNode> extractor) {
         clear();
         labelWidth = labelWidth(p.getLabel());
         double summedDataWidth = 0;
@@ -174,8 +178,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         if (maxWidth > averageWidth) {
             variableLength = true;
         }
-        return columnWidth;
-
+        return new Pair<>(this, columnWidth);
     }
 
     @Override
@@ -188,6 +191,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     public OutlineElement outlineElement(int cardinality, double labelWidth,
                                          double justified) {
         return new OutlineElement(this, cardinality, labelWidth, justified);
+    }
+
+    @Override
+    public double rowHeight(int averageCardinality, double justifiedWidth) {
+        return cellHeight(1, justifiedWidth);
     }
 
     public double tableColumnWidth() {
