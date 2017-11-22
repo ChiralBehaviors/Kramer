@@ -135,7 +135,6 @@ abstract public class SchemaNodeLayout {
         double justified = LayoutProvider.snap(width);
         layout(justified);
         compress(justified);
-        cellHeight(1, justified);
         return buildControl(1);
     }
 
