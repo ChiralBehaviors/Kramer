@@ -32,30 +32,26 @@ import javafx.scene.layout.AnchorPane;
  *
  */
 public class NestedRow extends AnchorPane implements LayoutCell<NestedRow> {
-    private static final String DEFAULT_STYLE = "nested-row";
+    private static final String            DEFAULT_STYLE = "nested-row";
 
-    private static double cellHeight(double rendered, RelationLayout layout) {
-        int cardinality = layout.resolvedCardinality();
-        double deficit = rendered - layout.getHeight();
-        double childDeficit = deficit / cardinality;
-        double extended = snap(layout.getRowHeight() + childDeficit);
-        return layout.baseRowCellHeight(extended);
-    }
- 
-    private final ObservableList<JsonNode>     nestedItems;
+    private final ObservableList<JsonNode> nestedItems;
 
-    public NestedRow(double rendered, RelationLayout layout) {
+    public NestedRow(double rendered, RelationLayout layout,
+                     int childCardinality) {
         setDefaultStyles(DEFAULT_STYLE);
         getStyleClass().addAll(layout.getField());
-        double cellHeight = cellHeight(rendered, layout);
+        double deficit = rendered - layout.getHeight();
+        double childDeficit = deficit / childCardinality;
+        double extended = snap(layout.getRowHeight() + childDeficit);
+        double cellHeight = layout.baseRowCellHeight(extended);
         ObservableList<JsonNode> items = FXCollections.observableArrayList();
         VirtualFlow<JsonNode, NestedCell> row = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
                                                                            cellHeight,
                                                                            items,
-                                                                           item1 -> {
+                                                                           item -> {
                                                                                NestedCell cell = new NestedCell(cellHeight,
                                                                                                                 layout);
-                                                                               cell.updateItem(item1);
+                                                                               cell.updateItem(item);
                                                                                return cell;
                                                                            });
         this.nestedItems = items;

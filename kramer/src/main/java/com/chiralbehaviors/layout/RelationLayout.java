@@ -75,6 +75,7 @@ public class RelationLayout extends SchemaNodeLayout {
     private double                       rowHeight        = -1;
     private boolean                      singular;
     private double                       tableColumnWidth = 0;
+    private int                          resolvedCardinality;
 
     public RelationLayout(LayoutProvider layout, Relation r) {
         super(layout);
@@ -113,7 +114,7 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public LayoutCell<? extends Region> buildColumn(double rendered) {
-        return new NestedRow(rendered, this);
+        return new NestedRow(rendered, this, resolvedCardinality);
     }
 
     public TableHeader buildColumnHeader() {
@@ -122,17 +123,16 @@ public class RelationLayout extends SchemaNodeLayout {
                                columnHeaderHeight, children);
     }
 
-    public LayoutCell<?> buildControl(int cardinality) {
-        return useTable ? buildNestedTable(cardinality)
-                        : buildOutline(cardinality);
+    public LayoutCell<?> buildControl() {
+        return useTable ? buildNestedTable() : buildOutline();
     }
 
-    public LayoutCell<NestedTable> buildNestedTable(int cardinality) {
-        return new NestedTable(resolveCardinality(cardinality), this);
+    public LayoutCell<NestedTable> buildNestedTable() {
+        return new NestedTable(resolvedCardinality, this);
     }
 
-    public Outline buildOutline(int cardinality) {
-        Outline outline = new Outline(height, columnSets, resolveCardinality(cardinality),
+    public Outline buildOutline() {
+        Outline outline = new Outline(height, columnSets, resolvedCardinality,
                                       this);
         outline.getNode()
                .setMinWidth(columnWidth());
@@ -157,13 +157,13 @@ public class RelationLayout extends SchemaNodeLayout {
                + layout.getNestedInset();
     }
 
-    public double cellHeight(int card, double width) {
+    public double cellHeight(int cardinality, double width) {
         if (height > 0) {
             return height;
         }
-        int cardinality = resolveCardinality(card);
+        resolvedCardinality = resolveCardinality(cardinality);
         if (!useTable) {
-            height = outlineHeight(cardinality);
+            height = outlineHeight(resolvedCardinality);
         } else {
             columnHeaderHeight = children.stream()
                                          .mapToDouble(c -> c.columnHeaderHeight())
@@ -171,8 +171,9 @@ public class RelationLayout extends SchemaNodeLayout {
                                          .orElse(0.0);
             double elementHeight = elementHeight();
             rowHeight = rowHeight(elementHeight);
-            height = snap((cardinality * snap(elementHeight
-                                              + layout.getCellVerticalInset()))
+            height = snap((resolvedCardinality
+                           * snap(elementHeight
+                                  + layout.getCellVerticalInset()))
                           + layout.getVerticalInset() + columnHeaderHeight);
         }
         return height;
@@ -429,11 +430,8 @@ public class RelationLayout extends SchemaNodeLayout {
         return new OutlineElement(this, cardinality, labelWidth, justified);
     }
 
-    public int resolvedCardinality() {
-        return resolveCardinality(averageCardinality);
-    }
-
     public double rowHeight(int cardinality, double justified) {
+        resolvedCardinality = resolveCardinality(cardinality);
         rowHeight = rowHeight(elementHeight());
         height = snap((cardinality * rowHeight) + layout.getVerticalInset());
         return height;
@@ -509,7 +507,8 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     protected int resolveCardinality(int cardinality) {
-        return singular ? 1 : Math.min(cardinality, maxCardinality);
+        int zeeCard = singular ? 1 : Math.min(cardinality, maxCardinality);
+        return zeeCard;
     }
 
     protected double rowHeight(double elementHeight) {

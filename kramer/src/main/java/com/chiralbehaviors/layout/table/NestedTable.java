@@ -20,7 +20,6 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.RelationLayout;
@@ -50,10 +49,10 @@ public class NestedTable extends VBox implements LayoutCell<NestedTable> {
 
     private final ObservableList<JsonNode> items = FXCollections.observableArrayList();
 
-    public NestedTable(int cardinality, RelationLayout layout) {
+    public NestedTable(int childCardinality, RelationLayout layout) {
         setDefaultStyles(DEFAULT_STYLE);
         Region header = layout.buildColumnHeader();
-        getChildren().addAll(header, buildRows(cardinality, layout));
+        getChildren().addAll(header, buildRows(childCardinality, layout));
         setMinWidth(layout.getJustifiedColumnWidth());
         setPrefWidth(layout.getJustifiedColumnWidth());
         setMaxWidth(layout.getJustifiedColumnWidth());
@@ -64,14 +63,18 @@ public class NestedTable extends VBox implements LayoutCell<NestedTable> {
         items.setAll(SchemaNode.asList(item));
     }
 
-    protected Region buildRows(int card, RelationLayout layout) {
+    protected Region buildRows(int childCardinality, RelationLayout layout) {
 
         double cellHeight = layout.baseRowCellHeight(layout.getRowHeight());
         VirtualFlow<JsonNode, NestedCell> rows = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
                                                                             cellHeight,
                                                                             items,
-                                                                            cell(cellHeight,
-                                                                                 layout));
+                                                                            item -> {
+                                                                                NestedCell cell = new NestedCell(cellHeight,
+                                                                                                                 layout);
+                                                                                cell.updateItem(item);
+                                                                                return cell;
+                                                                            });
 
         double width = layout.getJustifiedColumnWidth();
         double height = snap(layout.getHeight()
@@ -86,14 +89,5 @@ public class NestedTable extends VBox implements LayoutCell<NestedTable> {
         scroll.setPrefSize(width, height);
         scroll.setMaxSize(width, height);
         return scroll;
-    }
-
-    protected Function<? super JsonNode, ? extends NestedCell> cell(double cellHeight,
-                                                                    RelationLayout layout) {
-        return item -> {
-            NestedCell cell = new NestedCell(cellHeight, layout);
-            cell.updateItem(item);
-            return cell;
-        };
     }
 }

@@ -37,9 +37,8 @@ public class OutlineCell extends VBox implements LayoutCell<OutlineCell> {
     private static final String        DEFAULT_STYLE = "outline-cell";
     private List<Cell<JsonNode, Span>> spans;
 
-    public OutlineCell(Collection<ColumnSet> columnSets, int averageCardinality,
-                       double cellHeight,
-                       RelationLayout layout) {
+    public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
+                       double cellHeight, RelationLayout layout) {
         setDefaultStyles(DEFAULT_STYLE);
         spans = new ArrayList<>();
         setMinSize(layout.getJustifiedWidth(), cellHeight);
@@ -47,8 +46,9 @@ public class OutlineCell extends VBox implements LayoutCell<OutlineCell> {
         setMaxSize(layout.getJustifiedWidth(), cellHeight);
         columnSets.forEach(cs -> {
             Cell<JsonNode, Span> span = new Span(cs.getWidth(), cs.getColumns(),
-                                                 averageCardinality,
-                                                 cs.getCellHeight(), layout.getLabelWidth());
+                                                 childCardinality,
+                                                 cs.getCellHeight(),
+                                                 layout.getLabelWidth());
             spans.add(span);
             VBox.setVgrow(span.getNode(), Priority.ALWAYS);
             getChildren().add(span.getNode());

@@ -66,14 +66,14 @@ public class OutlineElement extends HBox implements LayoutCell<OutlineElement> {
 
     public OutlineElement(PrimitiveLayout p, int cardinality, double labelWidth,
                           double justified) {
-        this(p.label(labelWidth), p.buildControl(1), cardinality, labelWidth,
+        this(p.label(labelWidth), p.buildControl(), cardinality, labelWidth,
              justified, p.getHeight());
     }
 
     public OutlineElement(RelationLayout layout, int cardinality,
                           double labelWidth,
                           double justified) {
-        this(layout.label(labelWidth), layout.buildControl(1),
+        this(layout.label(labelWidth), layout.buildControl(),
              cardinality, labelWidth, justified, layout.getHeight());
     }
 

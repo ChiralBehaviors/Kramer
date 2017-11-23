@@ -57,7 +57,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public LayoutCell<? extends Region> buildColumn(double rendered) {
-        LayoutCell<? extends Region> control = buildControl(1);
+        LayoutCell<? extends Region> control = buildControl();
         control.getNode()
                .setMinSize(justifiedWidth, rendered);
         control.getNode()
@@ -67,7 +67,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return control;
     }
 
-    public LayoutCell<? extends Region> buildControl(int cardinality) {
+    public LayoutCell<? extends Region> buildControl() {
         LabelCell cell = new LabelCell();
         cell.getNode()
             .getStyleClass()
