@@ -94,7 +94,7 @@ public class Column {
     }
 
     void adjustHeight(double distributed) {
-        double delta = distributed / fields.size();
+        double delta = distributed / (double) fields.size();
         if (delta >= 1.0) {
             fields.forEach(f -> f.adjustHeight(delta));
         }
@@ -105,7 +105,7 @@ public class Column {
                                   .mapToDouble(f -> f.getHeight())
                                   .sum();
         if (calculated < finalHeight) {
-            double delta = snap((finalHeight - calculated) / fields.size());
+            double delta = snap((finalHeight - calculated) / (double) fields.size());
             if (delta >= 1.0) {
                 fields.forEach(f -> f.adjustHeight(delta));
             }

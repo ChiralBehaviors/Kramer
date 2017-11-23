@@ -87,13 +87,16 @@ public class RelationLayout extends SchemaNodeLayout {
     public void adjustHeight(double delta) {
         super.adjustHeight(delta);
         if (useTable) {
-            double subDelta = delta / (double) children.size();
+            double subDelta = delta / (double) resolvedCardinality;
             if (delta >= 1.0) {
-                children.forEach(f -> f.adjustHeight(subDelta));
+                rowHeight = snap(rowHeight + subDelta);
+                if (subDelta > 1.0) {
+                    children.forEach(f -> f.adjustHeight(subDelta));
+                }
             }
             return;
         }
-        double subDelta = delta / columnSets.size();
+        double subDelta = delta / (double) columnSets.size();
         if (subDelta >= 1.0) {
             columnSets.forEach(c -> c.adjustHeight(subDelta));
         }
