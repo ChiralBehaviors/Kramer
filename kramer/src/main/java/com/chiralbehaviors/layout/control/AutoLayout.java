@@ -23,6 +23,7 @@ import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
+import com.chiralbehaviors.layout.StyleProvider;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -47,7 +48,7 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
     private double                                layoutWidth = 0.0;
     private LayoutModel                           model;
     private final SimpleObjectProperty<Relation>  root        = new SimpleObjectProperty<>();
-    private LayoutProvider                        style;
+    private StyleProvider                         style;
     private SchemaNodeLayout                      layout;
 
     public AutoLayout() {

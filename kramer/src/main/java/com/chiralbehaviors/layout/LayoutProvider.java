@@ -44,7 +44,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextBoundsType;
 
 @SuppressWarnings("restriction")
-public class LayoutProvider {
+public class LayoutProvider implements StyleProvider {
 
     public interface LayoutModel {
 
@@ -148,10 +148,18 @@ public class LayoutProvider {
         }
     }
 
+    /* (non-Javadoc)
+     * @see com.chiralbehaviors.layout.StyleProvider#getModel()
+     */
+    @Override
     public LayoutModel getModel() {
         return model;
     }
 
+    /* (non-Javadoc)
+     * @see com.chiralbehaviors.layout.StyleProvider#initialize(java.util.List)
+     */
+    @Override
     public void initialize(List<String> styleSheets) {
         this.styleSheets = styleSheets;
         Label text = new Label("Lorem Ipsum");
@@ -207,16 +215,28 @@ public class LayoutProvider {
         textInsets = text.getInsets();
     }
 
+    /* (non-Javadoc)
+     * @see com.chiralbehaviors.layout.StyleProvider#layout(com.chiralbehaviors.layout.schema.Primitive)
+     */
+    @Override
     public PrimitiveLayout layout(Primitive primitive) {
         return primitives.computeIfAbsent(primitive,
                                           p -> new PrimitiveLayout(this, primitive));
     }
 
+    /* (non-Javadoc)
+     * @see com.chiralbehaviors.layout.StyleProvider#layout(com.chiralbehaviors.layout.schema.Relation)
+     */
+    @Override
     public RelationLayout layout(Relation relation) {
         return relations.computeIfAbsent(relation,
                                          r -> new RelationLayout(this, relation));
     }
 
+    /* (non-Javadoc)
+     * @see com.chiralbehaviors.layout.StyleProvider#layout(com.chiralbehaviors.layout.schema.SchemaNode)
+     */
+    @Override
     public SchemaNodeLayout layout(SchemaNode node) {
         if (node instanceof Relation) {
             return layout((Relation) node);
