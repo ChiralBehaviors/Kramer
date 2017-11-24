@@ -23,16 +23,31 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import javafx.scene.control.Control;
 import javafx.scene.layout.Region;
-import javafx.util.Pair;
 
 /**
  * @author halhildebrand
  *
  */
 abstract public class SchemaNodeLayout {
+
+    public class Fold {
+        public final int      averageCardinality;
+        public final JsonNode datum;
+
+        Fold(JsonNode datum, int averageCardinality) {
+            this.datum = datum;
+            this.averageCardinality = averageCardinality;
+        }
+
+        public SchemaNodeLayout getLayout() {
+            return SchemaNodeLayout.this;
+        }
+    }
 
     public enum Indent {
         LEFT {
@@ -192,13 +207,17 @@ abstract public class SchemaNodeLayout {
 
     abstract public double layoutWidth();
 
-    public Pair<SchemaNodeLayout, Double> measure(JsonNode data) {
-        return measure(data, data.size() > 1, n -> n);
+    public SchemaNodeLayout measure(JsonNode datum) {
+        Fold fold = fold(JsonNodeFactory.instance.objectNode()
+                                                 .set(getField(), datum),
+                         n -> n);
+        fold.getLayout()
+            .measure(fold.datum, n -> n);
+        return fold.getLayout();
     }
 
-    abstract public Pair<SchemaNodeLayout, Double> measure(JsonNode data,
-                                                           boolean isSingular,
-                                                           Function<JsonNode, JsonNode> extractor);
+    abstract public double measure(JsonNode data,
+                                   Function<JsonNode, JsonNode> extractor);
 
     abstract public double nestTableColumn(Indent indent, double indentation);
 
@@ -214,6 +233,31 @@ abstract public class SchemaNodeLayout {
     protected void clear() {
         height = -1.0;
         justifiedWidth = -1.0;
+    }
+
+    protected Fold fold(JsonNode datum) {
+        ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
+        int cardSum = 0;
+        JsonNode data = datum.isArray() ? datum
+                                        : JsonNodeFactory.instance.arrayNode()
+                                                                  .add(datum);
+        for (JsonNode node : data) {
+            JsonNode sub = node.get(getField());
+            if (sub instanceof ArrayNode) {
+                aggregate.addAll((ArrayNode) sub);
+                cardSum += sub.size();
+            } else {
+                aggregate.add(sub);
+            }
+        }
+        return new Fold(aggregate,
+                        data.size() == 0 ? 1
+                                         : Math.round(cardSum / data.size()));
+    }
+
+    protected Fold fold(JsonNode datum,
+                        Function<JsonNode, JsonNode> extractor) {
+        return fold(datum);
     }
 
     protected Control label(double labelWidth, String label) {

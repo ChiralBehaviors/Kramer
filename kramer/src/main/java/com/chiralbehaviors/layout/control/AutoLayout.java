@@ -34,7 +34,6 @@ import javafx.collections.ListChangeListener;
 import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
 import javafx.scene.layout.Region;
-import javafx.util.Pair;
 
 /**
  * @author hhildebrand
@@ -49,7 +48,7 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
     private LayoutModel                           model;
     private final SimpleObjectProperty<Relation>  root        = new SimpleObjectProperty<>();
     private LayoutProvider                        style;
-    private Pair<SchemaNodeLayout, Double>        layout;
+    private SchemaNodeLayout                      layout;
 
     public AutoLayout() {
         this(null);
@@ -133,8 +132,7 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
     }
 
     private void autoLayout(JsonNode zeeData, double width) {
-        control = layout.getKey()
-                        .autoLayout(width);
+        control = layout.autoLayout(width);
         double height = getHeight();
         control.getNode()
                .setMinSize(width, height);

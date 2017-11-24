@@ -41,7 +41,6 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import javafx.scene.control.Control;
 import javafx.scene.layout.Region;
-import javafx.util.Pair;
 
 /**
  *
@@ -50,32 +49,31 @@ import javafx.util.Pair;
  */
 public class RelationLayout extends SchemaNodeLayout {
 
-    public static ArrayNode flatten(Relation fold, JsonNode data) {
+    public static ArrayNode flatten(Relation fold, JsonNode datum) {
         ArrayNode flattened = JsonNodeFactory.instance.arrayNode();
-        if (data != null) {
-            if (data.isArray()) {
-                data.forEach(item -> {
+        if (datum != null) {
+            if (datum.isArray()) {
+                datum.forEach(item -> {
                     flattened.addAll(SchemaNode.asArray(item.get(fold.getField())));
                 });
             } else {
-                flattened.addAll(SchemaNode.asArray(data.get(fold.getField())));
+                flattened.addAll(SchemaNode.asArray(datum.get(fold.getField())));
             }
         }
         return flattened;
     }
 
-    boolean                              useTable         = false;
-    private int                          averageCardinality;
-    private final List<SchemaNodeLayout> children         = new ArrayList<>();
-    private double                       columnHeaderHeight;
-    private final List<ColumnSet>        columnSets       = new ArrayList<>();
-    private Function<JsonNode, JsonNode> extractor;
-    private int                          maxCardinality;
-    private final Relation               r;
-    private double                       rowHeight        = -1;
-    private boolean                      singular;
-    private double                       tableColumnWidth = 0;
-    private int                          resolvedCardinality;
+    protected int                          averageCardinality;
+    protected final List<SchemaNodeLayout> children         = new ArrayList<>();
+    protected double                       columnHeaderHeight;
+    protected final List<ColumnSet>        columnSets       = new ArrayList<>();
+    protected Function<JsonNode, JsonNode> extractor;
+    protected int                          maxCardinality;
+    protected final Relation               r;
+    protected int                          resolvedCardinality;
+    protected double                       rowHeight        = -1;
+    protected double                       tableColumnWidth = 0;
+    protected boolean                      useTable         = false;
 
     public RelationLayout(LayoutProvider layout, Relation r) {
         super(layout);
@@ -183,14 +181,6 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double columnHeaderHeight() {
-        return super.columnHeaderHeight() + children.stream()
-                                                    .mapToDouble(c -> c.columnHeaderHeight())
-                                                    .max()
-                                                    .orElse(0.0);
-    }
-
-    @Override
     public Function<Double, ColumnHeader> columnHeader() {
         List<Function<Double, ColumnHeader>> nestedHeaders = children.stream()
                                                                      .map(c -> c.columnHeader())
@@ -199,6 +189,14 @@ public class RelationLayout extends SchemaNodeLayout {
             double width = snap(justifiedWidth + columnHeaderIndentation);
             return new ColumnHeader(width, rendered, this, nestedHeaders);
         };
+    }
+
+    @Override
+    public double columnHeaderHeight() {
+        return super.columnHeaderHeight() + children.stream()
+                                                    .mapToDouble(c -> c.columnHeaderHeight())
+                                                    .max()
+                                                    .orElse(0.0);
     }
 
     @Override
@@ -236,7 +234,8 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public JsonNode extractFrom(JsonNode node) {
-        return r.extractFrom(extractor.apply(node));
+        JsonNode extracted = extractor.apply(node);
+        return r.extractFrom(extracted);
     }
 
     public void forEach(Consumer<? super SchemaNodeLayout> action) {
@@ -336,55 +335,29 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public Pair<SchemaNodeLayout, Double> measure(JsonNode datum,
-                                                  boolean isSingular,
-                                                  Function<JsonNode, JsonNode> extractor) {
+    public double measure(JsonNode datum,
+                          Function<JsonNode, JsonNode> extractor) {
         clear();
         children.clear();
-        Relation fold = r.getAutoFoldable();
-        if (fold != null) {
-            return layout.layout(fold)
-                         .measure(flatten(fold, datum), isSingular, item -> {
-                             return flatten(r, extractor.apply(item));
-                         });
-        }
-        this.extractor = extractor;
         double sum = 0;
         columnWidth = 0;
-        singular = isSingular;
         int singularChildren = 0;
-        maxCardinality = 0;
+        maxCardinality = 1;
 
         for (SchemaNode child : r.getChildren()) {
-            ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
-            int cardSum = 0;
-            boolean childSingular = false;
-            JsonNode data = datum.isArray() ? datum
-                                            : JsonNodeFactory.instance.arrayNode()
-                                                                      .add(datum);
-            for (JsonNode node : data) {
-                JsonNode sub = node.get(child.getField());
-                if (sub instanceof ArrayNode) {
-                    childSingular = false;
-                    aggregate.addAll((ArrayNode) sub);
-                    cardSum += sub.size();
-                } else {
-                    childSingular = true;
-                    aggregate.add(sub);
-                }
-            }
-            if (childSingular) {
-                singularChildren += 1;
+            Fold fold = layout.layout(child)
+                              .fold(datum, extractor);
+            children.add(fold.getLayout());
+            columnWidth = snap(Math.max(columnWidth, fold.getLayout()
+                                                         .measure(fold.datum,
+                                                                  n -> n)));
+            if (fold.averageCardinality == 1) {
+                singularChildren++;
             } else {
-                sum += data.size() == 0 ? 1 : Math.round(cardSum / data.size());
+                maxCardinality = Math.max(maxCardinality,
+                                          fold.averageCardinality);
+                sum += fold.averageCardinality;
             }
-            Pair<SchemaNodeLayout, Double> measured = layout.layout(child)
-                                                            .measure(aggregate,
-                                                                     childSingular,
-                                                                     n -> n);
-            children.add(measured.getKey());
-            columnWidth = snap(Math.max(columnWidth, measured.getValue()));
-            maxCardinality = Math.max(maxCardinality, data.size());
         }
         int effectiveChildren = children.size() - singularChildren;
         averageCardinality = Math.max(1,
@@ -399,7 +372,7 @@ public class RelationLayout extends SchemaNodeLayout {
                              .getAsDouble();
         columnWidth = snap(labelWidth + columnWidth);
         maxCardinality = Math.max(1, maxCardinality);
-        return new Pair<>(this, columnWidth());
+        return columnWidth();
     }
 
     @Override
@@ -473,6 +446,25 @@ public class RelationLayout extends SchemaNodeLayout {
                             .getAsDouble());
     }
 
+    @Override
+    protected Fold fold(JsonNode datum,
+                        Function<JsonNode, JsonNode> extractor) {
+
+        Relation fold = r.getAutoFoldable();
+        if (fold != null) {
+            ArrayNode flattened = flatten(r, datum);
+            return layout.layout(fold)
+                         .fold(flattened, item -> {
+                             JsonNode extracted = extractor.apply(item);
+                             ArrayNode flat = flatten(r, extracted);
+                             return flat;
+                         });
+        }
+        this.extractor = extractor;
+
+        return fold(datum);
+    }
+
     protected Indent indent(Indent parent, SchemaNodeLayout child) {
 
         boolean isFirst = isFirst(child);
@@ -510,8 +502,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     protected int resolveCardinality(int cardinality) {
-        int zeeCard = singular ? 1 : Math.min(cardinality, maxCardinality);
-        return zeeCard;
+        return Math.min(cardinality, maxCardinality);
     }
 
     protected double rowHeight(double elementHeight) {

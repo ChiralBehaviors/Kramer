@@ -31,7 +31,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Control;
 import javafx.scene.layout.Region;
-import javafx.util.Pair;
 
 /**
  *
@@ -39,11 +38,10 @@ import javafx.util.Pair;
  *
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
-    protected double        scroll = 0.0;
-    private double          maxWidth;
-    private final Primitive p;
+    protected double          maxWidth;
+    protected final Primitive p;
     @SuppressWarnings("unused")
-    private boolean         variableLength;
+    private boolean           variableLength;
 
     public PrimitiveLayout(LayoutProvider layout, Primitive p) {
         super(layout);
@@ -150,9 +148,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public Pair<SchemaNodeLayout, Double> measure(JsonNode data,
-                                                  boolean singular,
-                                                  Function<JsonNode, JsonNode> extractor) {
+    public double measure(JsonNode data, Function<JsonNode, JsonNode> extractor) {
         clear();
         labelWidth = labelWidth(p.getLabel());
         double summedDataWidth = 0;
@@ -178,7 +174,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         if (maxWidth > averageWidth) {
             variableLength = true;
         }
-        return new Pair<>(this, columnWidth);
+        return columnWidth;
     }
 
     @Override
