@@ -39,7 +39,7 @@ public class OutlineCell extends VBox implements LayoutCell<OutlineCell> {
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
                        double cellHeight, RelationLayout layout) {
-        setDefaultStyles(DEFAULT_STYLE);
+        initialize(DEFAULT_STYLE);
         spans = new ArrayList<>();
         setMinSize(layout.getJustifiedWidth(), cellHeight);
         setPrefSize(layout.getJustifiedWidth(), cellHeight);

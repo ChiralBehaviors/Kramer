@@ -38,7 +38,7 @@ public class NestedRow extends AnchorPane implements LayoutCell<NestedRow> {
 
     public NestedRow(double rendered, RelationLayout layout,
                      int childCardinality) {
-        setDefaultStyles(DEFAULT_STYLE);
+        initialize(DEFAULT_STYLE);
         getStyleClass().addAll(layout.getField());
         double deficit = rendered - layout.getHeight();
         double childDeficit = deficit / childCardinality;

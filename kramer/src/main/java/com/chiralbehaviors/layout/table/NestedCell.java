@@ -36,7 +36,7 @@ public class NestedCell extends HBox implements LayoutCell<NestedCell> {
     private final List<Consumer<JsonNode>> consumers     = new ArrayList<>();;
 
     public NestedCell(double rendered, RelationLayout layout) {
-        setDefaultStyles(DEFAULT_STYLE);
+        initialize(DEFAULT_STYLE);
         getStyleClass().add(layout.getField());
         setMinSize(layout.getJustifiedWidth(), rendered);
         setPrefSize(layout.getJustifiedWidth(), rendered);

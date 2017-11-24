@@ -42,7 +42,7 @@ public class LabelCell implements LayoutCell<Region> {
                        + "    -fx-padding: 3 30 3 30;"
                        + "    -fx-text-fill: #242d35;"
                        + "    -fx-font-size: 14px;");
-        setDefaultStyles(DEFAULT_STYLE);
+        initialize(DEFAULT_STYLE);
     }
 
     @Override

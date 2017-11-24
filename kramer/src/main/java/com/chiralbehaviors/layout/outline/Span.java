@@ -37,7 +37,7 @@ public class Span extends HBox implements LayoutCell<Span> {
 
     public Span(double justified, List<Column> columns, int cardinality,
                 double cellHeight, double labelWidth) {
-        setDefaultStyles(DEFAULT_STYLE);
+        initialize(DEFAULT_STYLE);
         setMinSize(justified, cellHeight);
         setPrefSize(justified, cellHeight);
         setMaxSize(justified, cellHeight);

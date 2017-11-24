@@ -36,7 +36,7 @@ public class ColumnHeader extends VBox implements LayoutCell<ColumnHeader> {
     private static final String DEFAULT_STYLE = "column-header";
 
     {
-        setDefaultStyles(DEFAULT_STYLE);
+        initialize(DEFAULT_STYLE);
     }
 
     public ColumnHeader(double width, double height, PrimitiveLayout layout) {

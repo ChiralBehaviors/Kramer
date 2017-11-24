@@ -16,8 +16,17 @@
 
 package com.chiralbehaviors.layout.outline;
 
+import static javafx.scene.input.KeyCode.*;
+import static javafx.scene.input.KeyCombination.*;
+import static org.fxmisc.wellbehaved.event.EventPattern.keyPressed;
+import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.consume;
+import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.sequence;
+import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.unless;
+
 import java.util.Collection;
 import java.util.function.Function;
+
+import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
 
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.LayoutCell;
@@ -31,6 +40,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.input.InputEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 
@@ -44,7 +55,7 @@ public class Outline extends StackPane implements LayoutCell<Outline> {
 
     public Outline(double height, Collection<ColumnSet> columnSets,
                    int averageCardinality, RelationLayout layout) {
-        setDefaultStyles(DEFAULT_STYLE);
+        initialize(DEFAULT_STYLE);
         double cellHeight = layout.outlineCellHeight(columnSets.stream()
                                                                .mapToDouble(cs -> cs.getCellHeight())
                                                                .sum());
@@ -67,6 +78,23 @@ public class Outline extends StackPane implements LayoutCell<Outline> {
         Region pane = new FlyAwayScrollPane<>(list);
         StackPane.setAlignment(pane, Pos.TOP_LEFT);
         getChildren().add(pane);
+    }
+
+    @Override
+    public InputMapTemplate<Outline, InputEvent> fallbackInputMap() {
+        return unless(Node::isDisabled,
+                      sequence(consume(keyPressed(TAB), (list, evt) -> {
+                      }), consume(keyPressed(TAB, SHIFT_DOWN), (list, evt) -> {
+                      }), consume(keyPressed(UP), (list, evt) -> {
+                      }), consume(keyPressed(KP_UP), (list, evt) -> {
+                      }), consume(keyPressed(DOWN), (list, evt) -> {
+                      }), consume(keyPressed(KP_DOWN), (list, evt) -> {
+                      }), consume(keyPressed(LEFT), (list, evt) -> {
+                      }), consume(keyPressed(KP_LEFT), (list, evt) -> {
+                      }), consume(keyPressed(RIGHT), (list, evt) -> {
+                      }), consume(keyPressed(KP_RIGHT), (list, evt) -> {
+                      }), consume(keyPressed(ENTER), (list, evt) -> {
+                      })));
     }
 
     @Override

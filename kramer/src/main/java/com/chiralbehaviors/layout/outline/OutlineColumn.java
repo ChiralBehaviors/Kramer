@@ -37,7 +37,7 @@ public class OutlineColumn extends VBox implements LayoutCell<OutlineColumn> {
 
     public OutlineColumn(Column c, int cardinality, double labelWidth,
                          double cellHeight) {
-        setDefaultStyles(DEFAULT_STYLE);
+        initialize(DEFAULT_STYLE);
         setMinSize(c.getWidth(), cellHeight);
         setMaxSize(c.getWidth(), cellHeight);
         setPrefSize(c.getWidth(), cellHeight);

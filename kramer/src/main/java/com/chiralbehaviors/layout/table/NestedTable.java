@@ -50,7 +50,7 @@ public class NestedTable extends VBox implements LayoutCell<NestedTable> {
     private final ObservableList<JsonNode> items = FXCollections.observableArrayList();
 
     public NestedTable(int childCardinality, RelationLayout layout) {
-        setDefaultStyles(DEFAULT_STYLE);
+        initialize(DEFAULT_STYLE);
         Region header = layout.buildColumnHeader();
         getChildren().addAll(header, buildRows(childCardinality, layout));
         setMinWidth(layout.getJustifiedColumnWidth());

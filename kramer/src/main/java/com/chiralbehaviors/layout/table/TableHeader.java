@@ -33,7 +33,7 @@ public class TableHeader extends HBox implements LayoutCell<TableHeader> {
 
     public TableHeader(double width, double height,
                        List<SchemaNodeLayout> children) {
-        setDefaultStyles(DEFAULT_STYLE);
+        initialize(DEFAULT_STYLE);
         setMinSize(width, height);
         setPrefSize(width, height);
         setMaxSize(width, height);

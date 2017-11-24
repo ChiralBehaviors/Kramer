@@ -42,7 +42,7 @@ public class OutlineElement extends HBox implements LayoutCell<OutlineElement> {
                           int cardinality, double labelWidth,
                           double justified,
                           double height) {
-        setDefaultStyles(DEFAULT_STYLE);
+        initialize(DEFAULT_STYLE);
 
         setMinSize(justified, height);
         setPrefSize(justified, height);
