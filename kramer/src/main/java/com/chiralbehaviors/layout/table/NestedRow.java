@@ -1,0 +1,69 @@
+/**
+ * Copyright (c) 2017 Chiral Behaviors, LLC, all rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.chiralbehaviors.layout.table;
+
+import static com.chiralbehaviors.layout.LayoutProvider.snap;
+
+import com.chiralbehaviors.layout.LayoutCell;
+import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.flowless.VirtualFlow;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.scene.layout.AnchorPane;
+
+/**
+ * @author halhildebrand
+ *
+ */
+public class NestedRow extends AnchorPane implements LayoutCell<NestedRow> {
+    private static final String            DEFAULT_STYLE = "nested-row";
+
+    private final ObservableList<JsonNode> nestedItems;
+
+    public NestedRow(double rendered, RelationLayout layout,
+                     int childCardinality) {
+        setDefaultStyles(DEFAULT_STYLE);
+        getStyleClass().addAll(layout.getField());
+        double deficit = rendered - layout.getHeight();
+        double childDeficit = deficit / childCardinality;
+        double extended = snap(layout.getRowHeight() + childDeficit);
+        double cellHeight = layout.baseRowCellHeight(extended);
+        ObservableList<JsonNode> items = FXCollections.observableArrayList();
+        VirtualFlow<JsonNode, NestedCell> row = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
+                                                                           cellHeight,
+                                                                           items,
+                                                                           item -> {
+                                                                               NestedCell cell = new NestedCell(cellHeight,
+                                                                                                                layout);
+                                                                               cell.updateItem(item);
+                                                                               return cell;
+                                                                           });
+        this.nestedItems = items;
+        double width = layout.getJustifiedColumnWidth();
+        row.setMinSize(width, rendered);
+        row.setPrefSize(width, rendered);
+        row.setMaxSize(width, rendered);
+        getChildren().add(row);
+    }
+
+    @Override
+    public void updateItem(JsonNode item) {
+        nestedItems.setAll(NestedTable.itemsAsArray(item));
+    }
+}

@@ -20,7 +20,11 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.function.Function;
 
+import com.chiralbehaviors.layout.outline.OutlineElement;
+import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import javafx.scene.control.Control;
 import javafx.scene.layout.Region;
@@ -31,11 +35,26 @@ import javafx.scene.layout.Region;
  */
 abstract public class SchemaNodeLayout {
 
+    public class Fold {
+        public final int      averageCardinality;
+        public final JsonNode datum;
+
+        Fold(JsonNode datum, int averageCardinality) {
+            assert averageCardinality > 0;
+            this.datum = datum;
+            this.averageCardinality = averageCardinality;
+        }
+
+        public SchemaNodeLayout getLayout() {
+            return SchemaNodeLayout.this;
+        }
+    }
+
     public enum Indent {
         LEFT {
             @Override
             public double indent(Indent child, LayoutProvider layout,
-                                 double indentation, boolean isChildRelation) {
+                                 double indentation) {
                 switch (child) {
                     case LEFT:
                         return indentation + layout.getNestedLeftInset();
@@ -52,7 +71,7 @@ abstract public class SchemaNodeLayout {
         RIGHT {
             @Override
             public double indent(Indent child, LayoutProvider layout,
-                                 double indentation, boolean isChildRelation) {
+                                 double indentation) {
                 switch (child) {
                     case LEFT:
                         return layout.getNestedLeftInset();
@@ -68,7 +87,7 @@ abstract public class SchemaNodeLayout {
         SINGULAR {
             @Override
             public double indent(Indent child, LayoutProvider layout,
-                                 double indentation, boolean isChildRelation) {
+                                 double indentation) {
                 switch (child) {
                     case LEFT:
                         return indentation + layout.getNestedLeftInset();
@@ -84,7 +103,7 @@ abstract public class SchemaNodeLayout {
         TOP {
             @Override
             public double indent(Indent child, LayoutProvider layout,
-                                 double indentation, boolean isChildRelation) {
+                                 double indentation) {
                 switch (child) {
                     case LEFT:
                         return layout.getNestedLeftInset();
@@ -99,7 +118,7 @@ abstract public class SchemaNodeLayout {
         };
 
         public double indent(Indent child, LayoutProvider layout,
-                             double indentation, boolean isChildRelation) {
+                             double indentation) {
             switch (child) {
                 case LEFT:
                     return layout.getNestedLeftInset();
@@ -114,8 +133,10 @@ abstract public class SchemaNodeLayout {
     }
 
     protected double               columnHeaderIndentation = 0.0;
+    protected double               columnWidth;
     protected double               height                  = -1.0;
     protected double               justifiedWidth          = -1.0;
+    protected double               labelWidth;
     protected final LayoutProvider layout;
 
     public SchemaNodeLayout(LayoutProvider layout) {
@@ -126,27 +147,58 @@ abstract public class SchemaNodeLayout {
         this.height = LayoutProvider.snap(height + delta);
     }
 
-    abstract public Function<Double, Region> columnHeader();
+    public LayoutCell<? extends Region> autoLayout(double width) {
+        double justified = LayoutProvider.snap(width);
+        layout(justified);
+        compress(justified);
+        return buildControl();
+    }
+
+    abstract public LayoutCell<? extends Region> buildColumn(double rendered);
+
+    abstract public LayoutCell<? extends Region> buildControl();
+
+    abstract public double calculateTableColumnWidth();
+
+    abstract public double cellHeight(int cardinality, double available);
+
+    abstract public Function<Double, ColumnHeader> columnHeader();
 
     public double columnHeaderHeight() {
         return layout.getTextLineHeight() + layout.getTextVerticalInset();
     }
 
+    abstract public double columnWidth();
+
     abstract public void compress(double justified);
 
     abstract public JsonNode extractFrom(JsonNode node);
+
+    abstract public String getField();
 
     public double getHeight() {
         return height;
     }
 
-    abstract public double getJustifiedTableColumnWidth();
+    abstract public double getJustifiedColumnWidth();
 
     public double getJustifiedWidth() {
         return justifiedWidth;
     }
 
+    abstract public String getLabel();
+
+    public double getLabelWidth() {
+        return labelWidth;
+    }
+
     abstract public double justify(double justified);
+
+    abstract public Control label(double labelWidth);
+
+    public Control label(double width, double half) {
+        return layout.label(width, getLabel(), half);
+    }
 
     public double labelWidth(String label) {
         return snap(layout.labelWidth(label));
@@ -156,13 +208,58 @@ abstract public class SchemaNodeLayout {
 
     abstract public double layoutWidth();
 
-    abstract public double measure(JsonNode data, boolean isSingular);
+    public SchemaNodeLayout measure(JsonNode datum) {
+        Fold fold = fold(JsonNodeFactory.instance.objectNode()
+                                                 .set(getField(), datum),
+                         n -> n);
+        fold.getLayout()
+            .measure(fold.datum, n -> n);
+        return fold.getLayout();
+    }
+
+    abstract public double measure(JsonNode data,
+                                   Function<JsonNode, JsonNode> extractor);
 
     abstract public double nestTableColumn(Indent indent, double indentation);
+
+    abstract public OutlineElement outlineElement(int cardinality,
+                                                  double labelWidth,
+                                                  double justified);
+
+    abstract public double rowHeight(int averageCardinality,
+                                     double justifiedWidth);
+
+    abstract public double tableColumnWidth();
 
     protected void clear() {
         height = -1.0;
         justifiedWidth = -1.0;
+    }
+
+    protected Fold fold(JsonNode datum) {
+        ArrayNode aggregate = JsonNodeFactory.instance.arrayNode();
+        int cardSum = 0;
+        JsonNode data = datum.isArray() ? datum
+                                        : JsonNodeFactory.instance.arrayNode()
+                                                                  .add(datum);
+        for (JsonNode node : data) {
+            JsonNode sub = node.get(getField());
+            if (sub instanceof ArrayNode) {
+                aggregate.addAll((ArrayNode) sub);
+                cardSum += sub.size();
+            } else {
+                cardSum += 1;
+                aggregate.add(sub);
+            }
+        }
+        return new Fold(aggregate,
+                        data.size() == 0 ? 1
+                                         : Math.round(cardSum / data.size()));
+    }
+
+    protected Fold fold(JsonNode datum,
+                        Function<JsonNode, JsonNode> extractor) {
+        return fold(datum);
     }
 
     protected Control label(double labelWidth, String label) {

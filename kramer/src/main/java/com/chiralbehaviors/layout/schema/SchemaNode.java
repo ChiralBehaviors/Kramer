@@ -19,20 +19,11 @@ package com.chiralbehaviors.layout.schema;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
-import com.chiralbehaviors.layout.LayoutProvider;
-import com.chiralbehaviors.layout.SchemaNodeLayout;
-import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
-import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-
-import javafx.scene.Parent;
-import javafx.scene.layout.Region;
-import javafx.util.Pair;
 
 /**
  * @author hhildebrand
@@ -144,25 +135,6 @@ abstract public class SchemaNode {
         this.field = field;
     }
 
-    public void adjustHeight(double delta) {
-        getLayout().adjustHeight(delta);
-    }
-
-    abstract public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
-                                                                 double rendered);
-
-    abstract public Function<Double, Region> buildColumnHeader();
-
-    abstract public double calculateTableColumnWidth();
-
-    public abstract double cellHeight(int cardinality, double available);
-
-    public double columnHeaderHeight() {
-        return getLayout().columnHeaderHeight();
-    }
-
-    public abstract void compress(double available);
-
     public Function<JsonNode, JsonNode> extract(Function<JsonNode, JsonNode> extractor) {
         return n -> {
             JsonNode extracted = extractor.apply(n);
@@ -182,39 +154,13 @@ abstract public class SchemaNode {
         return label;
     }
 
-    public double getLabelWidth() {
-        return getLayout().labelWidth(label);
-    }
-
-    abstract public SchemaNodeLayout getLayout();
-
     public boolean isRelation() {
         return false;
     }
 
-    public abstract double justify(double width);
-
-    public abstract double layout(double width);
-
-    public abstract double layoutWidth();
-
-    public abstract double measure(JsonNode data, boolean singular,
-                                   LayoutProvider layout);
-
-    abstract public double nestTableColumn(Indent indent, double indentation);
-
-    public abstract Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
-                                                                    double labelWidth,
-                                                                    Function<JsonNode, JsonNode> extractor,
-                                                                    double justified);
-
-    public abstract double rowHeight(int cardinality, double justified);
-
     public void setLabel(String label) {
         this.label = label;
     }
-
-    abstract public double tableColumnWidth();
 
     abstract public String toString(int indent);
 }

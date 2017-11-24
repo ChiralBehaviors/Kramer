@@ -16,14 +16,13 @@
 
 package com.chiralbehaviors.layout;
 
+import static com.chiralbehaviors.layout.LayoutProvider.relax;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
-
-import com.chiralbehaviors.layout.schema.SchemaNode;
 
 /**
  *
@@ -39,7 +38,7 @@ public class ColumnSet {
         columns.add(new Column(0d));
     }
 
-    public void add(SchemaNode node) {
+    public void add(SchemaNodeLayout node) {
         columns.get(0)
                .add(node);
     }
@@ -49,8 +48,7 @@ public class ColumnSet {
         columns.forEach(c -> c.adjustHeight(delta));
     }
 
-    public void compress(int cardinality, double justified, double labelWidth,
-                         boolean scrolled) {
+    public void compress(int cardinality, double justified, double labelWidth) {
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
                                    .size(),
@@ -68,9 +66,9 @@ public class ColumnSet {
         }
 
         // compression
-        double columnWidth = justified / count;
+        double columnWidth = relax(justified / (double) count);
         firstColumn.setWidth(columnWidth);
-        double compressed = columnWidth - labelWidth;
+        double compressed = relax(columnWidth - labelWidth);
         firstColumn.getFields()
                    .forEach(f -> {
                        f.compress(compressed);

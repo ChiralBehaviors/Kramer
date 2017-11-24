@@ -31,6 +31,8 @@ import org.slf4j.LoggerFactory;
 
 import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
 import com.chiralbehaviors.layout.control.AutoLayout;
+import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil.QueryException;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.toy.Page.Route;
@@ -42,8 +44,6 @@ import com.hellblazer.utils.Utils;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TableRow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -71,12 +71,13 @@ public class SinglePageApp extends Application implements LayoutModel {
     private WebTarget                endpoint;
     private final Stack<PageContext> forward = new Stack<>();
     private Button                   forwardButton;
-    private AutoLayout           layout;
+    private AutoLayout               layout;
     private Stage                    primaryStage;
     private Button                   reloadButton;
 
     @Override
-    public void apply(ListView<JsonNode> list, Relation relation) {
+    public void apply(VirtualFlow<JsonNode, Cell<JsonNode, ?>> list,
+                      Relation relation) {
         list.setOnMouseClicked(event -> {
             Route route = back.peek()
                               .getRoute(relation);
@@ -89,29 +90,6 @@ public class SinglePageApp extends Application implements LayoutModel {
                 && event.getClickCount() >= 2) {
                 JsonNode item = list.getSelectionModel()
                                     .getSelectedItem();
-                if (item == null) {
-                    return;
-                }
-                try {
-                    push(extract(route, item));
-                } catch (QueryException e) {
-                    log.error("Unable to push page: %s", route.getPath(), e);
-                }
-            }
-        });
-    }
-
-    @Override
-    public void apply(TableRow<JsonNode> row, Relation relation) {
-        row.setOnMouseClicked(event -> {
-            Route route = back.peek()
-                              .getRoute(relation);
-            if (route == null) {
-                return;
-            }
-            if (!row.isEmpty() && event.getButton() == MouseButton.PRIMARY
-                && event.getClickCount() == 2) {
-                JsonNode item = row.getItem();
                 if (item == null) {
                     return;
                 }
@@ -210,7 +188,7 @@ public class SinglePageApp extends Application implements LayoutModel {
               .add(getClass().getResource("/non-nested.css")
                              .toExternalForm());
         JsonNode data = pageContext.evaluate(endpoint);
-        layout.setItem(data);
+        layout.updateItem(data);
         layout.measure(data);
         AnchorPane.setTopAnchor(layout, 0.0);
         AnchorPane.setLeftAnchor(layout, 0.0);

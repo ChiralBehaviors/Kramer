@@ -19,8 +19,11 @@ package com.chiralbehaviors.layout.control;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
+import com.chiralbehaviors.layout.SchemaNodeLayout;
+import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -28,21 +31,24 @@ import com.fasterxml.jackson.databind.JsonNode;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
+import javafx.scene.control.Control;
 import javafx.scene.control.Skin;
+import javafx.scene.layout.Region;
 
 /**
  * @author hhildebrand
  *
  */
-public class AutoLayout extends JsonControl {
+public class AutoLayout extends Control implements Cell<JsonNode, Region> {
     private static final java.util.logging.Logger log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
 
-    private JsonControl                           control;
+    private LayoutCell<? extends Region>          control;
     private SimpleObjectProperty<JsonNode>        data        = new SimpleObjectProperty<>();
     private double                                layoutWidth = 0.0;
     private LayoutModel                           model;
     private final SimpleObjectProperty<Relation>  root        = new SimpleObjectProperty<>();
     private LayoutProvider                        style;
+    private SchemaNodeLayout                      layout;
 
     public AutoLayout() {
         this(null);
@@ -76,8 +82,18 @@ public class AutoLayout extends JsonControl {
         return data.get();
     }
 
+    @Override
+    public Region getNode() {
+        return this;
+    }
+
     public SchemaNode getRoot() {
         return root.get();
+    }
+
+    @Override
+    public boolean isReusable() {
+        return true;
     }
 
     public void measure(JsonNode data) {
@@ -86,7 +102,8 @@ public class AutoLayout extends JsonControl {
             return;
         }
         try {
-            top.measure(data, style);
+            layout = style.layout(top)
+                          .measure(data);
         } catch (Throwable e) {
             log.log(Level.SEVERE, "cannot measure data", e);
         }
@@ -100,13 +117,13 @@ public class AutoLayout extends JsonControl {
         return root;
     }
 
-    @Override
-    public void setItem(JsonNode node) {
-        data.set(node);
-    }
-
     public void setRoot(Relation rootRelationship) {
         root.set(rootRelationship);
+    }
+
+    @Override
+    public void updateItem(JsonNode item) {
+        data.set(item);
     }
 
     @Override
@@ -114,12 +131,17 @@ public class AutoLayout extends JsonControl {
         return new AutoLayoutSkin(this);
     }
 
-    private void autoLayout(JsonNode zeeData, Relation relation, double width) {
-        relation.autoLayout(width);
-        control = relation.buildControl(zeeData.size(), width);
-        control.setPrefWidth(width);
-        relation.setItem(control, zeeData);
-        getChildren().add(control);
+    private void autoLayout(JsonNode zeeData, double width) {
+        control = layout.autoLayout(width);
+        double height = getHeight();
+        control.getNode()
+               .setMinSize(width, height);
+        control.getNode()
+               .setPrefSize(width, height);
+        control.getNode()
+               .setMaxSize(width, height);
+        control.updateItem(zeeData);
+        getChildren().add(control.getNode());
     }
 
     private void resize(double width) {
@@ -141,7 +163,7 @@ public class AutoLayout extends JsonControl {
         }
 
         try {
-            autoLayout(zeeData, relation, width);
+            autoLayout(zeeData, width);
         } catch (Throwable e) {
             log.log(Level.SEVERE,
                     String.format("Unable to resize to %s", width), e);
@@ -151,10 +173,7 @@ public class AutoLayout extends JsonControl {
     private void setContent() {
         try {
             if (control != null) {
-                Relation relation = root.get();
-                if (relation != null) {
-                    relation.setItem(control, data.get());
-                }
+                control.updateItem(data.get());
             }
         } catch (Throwable e) {
             log.log(Level.SEVERE, "cannot set content", e);

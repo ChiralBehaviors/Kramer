@@ -16,12 +16,12 @@
 
 package com.chiralbehaviors.layout;
 
+import static com.chiralbehaviors.layout.LayoutProvider.snap;
+
 import java.util.ArrayDeque;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import com.chiralbehaviors.layout.schema.SchemaNode;
 
 /**
  *
@@ -30,18 +30,18 @@ import com.chiralbehaviors.layout.schema.SchemaNode;
  */
 public class Column {
 
-    private ArrayDeque<SchemaNode> fields = new ArrayDeque<>();
-    private double                 width  = 0;
+    private ArrayDeque<SchemaNodeLayout> fields = new ArrayDeque<>();
+    private double                       width  = 0;
 
     public Column(double width) {
         this.width = width;
     }
 
-    public void add(SchemaNode node) {
+    public void add(SchemaNodeLayout node) {
         fields.add(node);
     }
 
-    public void addFirst(SchemaNode field) {
+    public void addFirst(SchemaNodeLayout field) {
         fields.addFirst(field);
     }
 
@@ -49,10 +49,8 @@ public class Column {
         return cellHeight(cardinality, fields, labelWidth);
     }
 
-    public List<SchemaNode> getFields() {
-        return Arrays.stream(fields.toArray())
-                     .map(f -> (SchemaNode) f)
-                     .collect(Collectors.toList());
+    public List<SchemaNodeLayout> getFields() {
+        return new ArrayList<>(fields);
     }
 
     public double getWidth() {
@@ -96,7 +94,7 @@ public class Column {
     }
 
     void adjustHeight(double distributed) {
-        double delta = distributed / fields.size();
+        double delta = distributed / (double) fields.size();
         if (delta >= 1.0) {
             fields.forEach(f -> f.adjustHeight(delta));
         }
@@ -104,20 +102,20 @@ public class Column {
 
     void distributeHeight(double finalHeight) {
         double calculated = fields.stream()
-                                  .mapToDouble(f -> f.getLayout()
-                                                     .getHeight())
+                                  .mapToDouble(f -> f.getHeight())
                                   .sum();
         if (calculated < finalHeight) {
-            double delta = (finalHeight - calculated) / fields.size();
+            double delta = snap((finalHeight - calculated) / (double) fields.size());
             if (delta >= 1.0) {
                 fields.forEach(f -> f.adjustHeight(delta));
             }
         }
     }
 
-    private double cellHeight(int cardinality, ArrayDeque<SchemaNode> elements,
+    private double cellHeight(int cardinality,
+                              ArrayDeque<SchemaNodeLayout> elements,
                               double labelWidth) {
-        double available = width - labelWidth;
+        double available = snap(width - labelWidth);
         return elements.stream()
                        .mapToDouble(field -> field.cellHeight(cardinality,
                                                               available))
@@ -125,14 +123,15 @@ public class Column {
                        .orElse(0d);
     }
 
-    private double with(int cardinality, SchemaNode field, double labelWidth) {
-        ArrayDeque<SchemaNode> elements = fields.clone();
+    private double with(int cardinality, SchemaNodeLayout field,
+                        double labelWidth) {
+        ArrayDeque<SchemaNodeLayout> elements = fields.clone();
         elements.add(field);
         return cellHeight(cardinality, elements, labelWidth);
     }
 
     private double without(int cardinality, double labelWidth) {
-        ArrayDeque<SchemaNode> elements = fields.clone();
+        ArrayDeque<SchemaNodeLayout> elements = fields.clone();
         elements.removeLast();
         return cellHeight(cardinality, elements, labelWidth);
     }

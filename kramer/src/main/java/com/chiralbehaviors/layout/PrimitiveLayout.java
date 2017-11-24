@@ -19,22 +19,18 @@ package com.chiralbehaviors.layout;
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
-import com.chiralbehaviors.layout.control.JsonControl;
-import com.chiralbehaviors.layout.control.PrimitiveControl;
+import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.outline.OutlineElement;
+import com.chiralbehaviors.layout.primitives.LabelCell;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.scene.Parent;
 import javafx.scene.control.Control;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
-import javafx.util.Pair;
 
 /**
  *
@@ -42,46 +38,66 @@ import javafx.util.Pair;
  *
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
-    protected double        scroll = 0.0;
-    private double          columnWidth;
-    private double          labelWidth;
-    private double          maxWidth;
-    private final Primitive p;
+    protected double          maxWidth;
+    protected final Primitive p;
     @SuppressWarnings("unused")
-    private boolean         variableLength;
+    private boolean           variableLength;
 
     public PrimitiveLayout(LayoutProvider layout, Primitive p) {
         super(layout);
         this.p = p;
     }
 
-    public PrimitiveControl buildControl(int cardinality) {
-        return new PrimitiveControl(p.getField());
+    public void apply(Cell<JsonNode, ?> list) {
+        layout.getModel()
+              .apply(list, p);
+    }
+
+    @Override
+    public LayoutCell<? extends Region> buildColumn(double rendered) {
+        LayoutCell<? extends Region> control = buildControl();
+        control.getNode()
+               .setMinSize(justifiedWidth, rendered);
+        control.getNode()
+               .setPrefSize(justifiedWidth, rendered);
+        control.getNode()
+               .setMaxSize(justifiedWidth, rendered);
+        return control;
+    }
+
+    public LayoutCell<? extends Region> buildControl() {
+        LabelCell cell = new LabelCell();
+        cell.getNode()
+            .getStyleClass()
+            .add(p.getField());
+        return cell;
     }
 
     public double calculateTableColumnWidth() {
-        return baseColumnWidth();
+        return columnWidth();
     }
 
-    public double cellHeight(double justified) {
+    @Override
+    public double cellHeight(int cardinality, double justified) {
         if (height > 0) {
             return height;
         }
         double rows = Math.ceil((maxWidth / justified) + 0.5);
-        height = (layout.getTextLineHeight() * rows)
-                 + layout.getTextVerticalInset();
+        height = snap((layout.getTextLineHeight() * rows)
+                      + layout.getTextVerticalInset());
         return height;
     }
 
     @Override
-    public Function<Double, Region> columnHeader() {
-        return rendered -> {
-            double width = getJustifiedTableColumnWidth();
-            Control columnHeader = layout.label(width, p.getLabel(), rendered);
-            columnHeader.setMinSize(width, rendered);
-            columnHeader.setMaxSize(width, rendered);
-            return columnHeader;
-        };
+    public Function<Double, ColumnHeader> columnHeader() {
+        return rendered -> new ColumnHeader(snap(justifiedWidth
+                                                 + columnHeaderIndentation),
+                                            rendered, this);
+    }
+
+    @Override
+    public double columnWidth() {
+        return Math.max(columnWidth, labelWidth);
     }
 
     @Override
@@ -95,14 +111,29 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double getJustifiedTableColumnWidth() {
-        return justifiedWidth + columnHeaderIndentation;
+    public String getField() {
+        return p.getField();
+    }
+
+    @Override
+    public double getJustifiedColumnWidth() {
+        return snap(justifiedWidth);
+    }
+
+    @Override
+    public String getLabel() {
+        return p.getLabel();
     }
 
     @Override
     public double justify(double justified) {
-        justifiedWidth = justified;
+        justifiedWidth = snap(justified);
         return justifiedWidth;
+    }
+
+    @Override
+    public Control label(double labelWidth) {
+        return label(labelWidth, p.getLabel());
     }
 
     @Override
@@ -113,11 +144,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double layoutWidth() {
-        return baseColumnWidth();
+        return columnWidth();
     }
 
     @Override
-    public double measure(JsonNode data, boolean singular) {
+    public double measure(JsonNode data, Function<JsonNode, JsonNode> extractor) {
         clear();
         labelWidth = labelWidth(p.getLabel());
         double summedDataWidth = 0;
@@ -144,7 +175,6 @@ public class PrimitiveLayout extends SchemaNodeLayout {
             variableLength = true;
         }
         return columnWidth;
-
     }
 
     @Override
@@ -153,43 +183,29 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return tableColumnWidth();
     }
 
-    public Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
-                                                           double labelWidth,
-                                                           Function<JsonNode, JsonNode> extractor,
-                                                           double justified) {
-        HBox box = new HBox();
-        box.setPrefSize(justified, height);
-        VBox.setVgrow(box, Priority.ALWAYS);
+    @Override
+    public OutlineElement outlineElement(int cardinality, double labelWidth,
+                                         double justified) {
+        return new OutlineElement(this, cardinality, labelWidth, justified);
+    }
 
-        Control labelControl = label(labelWidth, p.getLabel());
-        labelControl.setMinWidth(labelWidth);
-        labelControl.setMaxWidth(labelWidth);
-        JsonControl control = buildControl(cardinality);
-        control.setPrefSize(justified, height);
-
-        box.getChildren()
-           .add(labelControl);
-        box.getChildren()
-           .add(control);
-
-        return new Pair<>(item -> {
-            control.setItem(extractor.apply(item)
-                                     .get(p.getField()));
-        }, box);
+    @Override
+    public double rowHeight(int averageCardinality, double justifiedWidth) {
+        return cellHeight(1, justifiedWidth);
     }
 
     public double tableColumnWidth() {
-        return baseColumnWidth();
-    }
-
-    protected double baseColumnWidth() {
-        return Math.max(columnWidth, labelWidth);
+        return columnWidth();
     }
 
     @Override
     protected void clear() {
         super.clear();
         columnHeaderIndentation = 0.0;
+    }
+
+    protected double getColumnHeaderWidth() {
+        return snap(justifiedWidth + columnHeaderIndentation);
     }
 
     protected double width(JsonNode row) {

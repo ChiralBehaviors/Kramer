@@ -18,22 +18,8 @@ package com.chiralbehaviors.layout.schema;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
-import com.chiralbehaviors.layout.LayoutProvider;
-import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.SchemaNodeLayout.Indent;
-import com.chiralbehaviors.layout.control.JsonControl;
-import com.chiralbehaviors.layout.control.NestedTable;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-
-import javafx.scene.Parent;
-import javafx.scene.layout.Region;
-import javafx.util.Pair;
 
 /**
  * @author hhildebrand
@@ -43,7 +29,6 @@ public class Relation extends SchemaNode {
     private boolean                autoFold = true;
     private final List<SchemaNode> children = new ArrayList<>();
     private Relation               fold;
-    private RelationLayout         layout;
 
     public Relation(String label) {
         super(label);
@@ -51,108 +36,6 @@ public class Relation extends SchemaNode {
 
     public void addChild(SchemaNode child) {
         children.add(child);
-    }
-
-    @Override
-    public void adjustHeight(double delta) {
-        if (isFold()) {
-            fold.adjustHeight(delta);
-        } else {
-            layout.adjustHeight(delta);
-        }
-    }
-
-    public void autoLayout(double width) {
-        double justified = LayoutProvider.snap(width);
-        layout(justified);
-        compress(justified);
-    }
-
-    @Override
-    public Pair<Consumer<JsonNode>, Region> buildColumn(NestedTable table,
-                                                        double rendered) {
-        return table.buildRelation(rendered, layout);
-    }
-
-    @Override
-    public Function<Double, Region> buildColumnHeader() {
-        if (isFold()) {
-            return fold.buildColumnHeader();
-        }
-        return layout.columnHeader();
-    }
-
-    public JsonControl buildControl(int cardinality, double width) {
-        if (isFold()) {
-            return fold.buildControl(layout.getAverageCardinality()
-                                     * cardinality, width);
-        }
-        return buildControl(cardinality, n -> n);
-    }
-
-    public JsonControl buildControl(int cardinality,
-                                    Function<JsonNode, JsonNode> extractor) {
-        return layout.buildControl(cardinality, extractor);
-    }
-
-    public JsonControl buildNestedTable(Function<JsonNode, JsonNode> extractor,
-                                        int cardinality) {
-        if (isFold()) {
-            return fold.buildNestedTable(extract(extractor),
-                                         layout.getAverageCardinality()
-                                                             * cardinality);
-        }
-        return layout.buildNestedTable(cardinality);
-    }
-
-    public JsonControl buildOutline(Function<JsonNode, JsonNode> extractor,
-                                    int cardinality) {
-        if (isFold()) {
-            return fold.buildOutline(extract(extractor),
-                                     layout.getAverageCardinality()
-                                                         * cardinality);
-        }
-        return layout.buildOutline(extractor, cardinality);
-    }
-
-    @Override
-    public double calculateTableColumnWidth() {
-        return isFold() ? fold.calculateTableColumnWidth()
-                        : layout.calculateTableColumnWidth();
-    }
-
-    @Override
-    public double cellHeight(int card, double width) {
-        if (isFold()) {
-            return fold.cellHeight(layout.getAverageCardinality() * card,
-                                   width);
-        }
-        return layout.cellHeight(card, width);
-    }
-
-    @Override
-    public double columnHeaderHeight() {
-        if (isFold()) {
-            return fold.columnHeaderHeight();
-        }
-        return layout.getColumnHeaderHeight();
-    }
-
-    @Override
-    public void compress(double justified) {
-        if (isFold()) {
-            fold.compress(justified);
-        } else {
-            layout.compress(justified);
-        }
-    }
-
-    @Override
-    public JsonNode extractFrom(JsonNode jsonNode) {
-        if (isFold()) {
-            return fold.extractFrom(super.extractFrom(jsonNode));
-        }
-        return super.extractFrom(jsonNode);
     }
 
     public SchemaNode getChild(String field) {
@@ -173,17 +56,14 @@ public class Relation extends SchemaNode {
         return fold;
     }
 
-    @Override
-    public double getLabelWidth() {
-        if (isFold()) {
-            return fold.getLabelWidth();
+    public Relation getAutoFoldable() {
+        if (fold != null) {
+            return fold;
         }
-        return layout.labelWidth(label);
-    }
-
-    @Override
-    public RelationLayout getLayout() {
-        return layout;
+        return autoFold && children.size() == 1
+               && children.get(children.size() - 1) instanceof Relation
+                                                                        ? (Relation) children.get(0)
+                                                                        : null;
     }
 
     @JsonProperty
@@ -196,99 +76,10 @@ public class Relation extends SchemaNode {
         return true;
     }
 
-    @Override
-    public double justify(double width) {
-        if (isFold()) {
-            return fold.justify(width);
-        } else {
-            return layout.justify(width);
-        }
-    }
-
-    @Override
-    public double layout(double width) {
-        return isFold() ? fold.layout(width) : layout.layout(width);
-    }
-
-    @Override
-    public double layoutWidth() {
-        return isFold() ? fold.layoutWidth() : layout.layoutWidth();
-    }
-
-    @Override
-    public double measure(JsonNode data, boolean isSingular,
-                          LayoutProvider provider) {
-        layout = provider.layout(this);
-
-        if (isAutoFoldable()) {
-            fold = ((Relation) children.get(children.size() - 1));
-            return fold.measure(flatten(data), isSingular, provider);
-        }
-        if (data.isNull() || children.size() == 0) {
-            return 24;
-        }
-
-        return layout.measure(data, isSingular);
-    }
-
-    public void measure(JsonNode jsonNode, LayoutProvider layout) {
-        measure(jsonNode, !jsonNode.isArray(), layout);
-    }
-
-    @Override
-    public double nestTableColumn(Indent indent, double indentation) {
-        return isFold() ? fold.nestTableColumn(indent, indentation)
-                        : layout.nestTableColumn(indent, indentation);
-    }
-
-    @Override
-    public Pair<Consumer<JsonNode>, Parent> outlineElement(int cardinality,
-                                                           double labelWidth,
-                                                           Function<JsonNode, JsonNode> extractor,
-                                                           double justified) {
-        if (isFold()) {
-            return fold.outlineElement(layout.getAverageCardinality()
-                                       * cardinality, labelWidth,
-                                       extract(extractor), justified);
-        }
-
-        return layout.outlineElement(cardinality, labelWidth, extractor,
-                                     justified);
-    }
-
-    public double outlineWidth() {
-        return isFold() ? fold.outlineWidth() : layout.outlineWidth();
-    }
-
-    @Override
-    public double rowHeight(int cardinality, double justified) {
-        if (isFold()) {
-            return fold.rowHeight(cardinality * layout.getAverageCardinality(),
-                                  justified);
-        }
-        return layout.rowHeight(cardinality, justified);
-    }
-
     public void setFold(boolean fold) {
         this.fold = (fold && children.size() == 1 && children.get(0)
                                                              .isRelation()) ? (Relation) children.get(0)
                                                                             : null;
-    }
-
-    public void setItem(JsonControl control, JsonNode data) {
-        if (data == null) {
-            data = JsonNodeFactory.instance.arrayNode();
-        }
-        if (isFold()) {
-            fold.setItem(control, flatten(data));
-        } else {
-            control.setItem(data);
-        }
-    }
-
-    @Override
-    public double tableColumnWidth() {
-        return isFold() ? fold.tableColumnWidth() : layout.tableColumnWidth();
     }
 
     @Override
@@ -307,27 +98,10 @@ public class Relation extends SchemaNode {
             }
             buf.append("  - ");
             buf.append(c.toString(indent + 1));
-            buf.append('\n');
+            if (!c.equals(children.get(children.size() - 1))) {
+                buf.append('\n');
+            }
         });
         return buf.toString();
-    }
-
-    private ArrayNode flatten(JsonNode data) {
-        ArrayNode flattened = JsonNodeFactory.instance.arrayNode();
-        if (data != null) {
-            if (data.isArray()) {
-                data.forEach(item -> {
-                    flattened.addAll(SchemaNode.asArray(item.get(fold.getField())));
-                });
-            } else {
-                flattened.addAll(SchemaNode.asArray(data.get(fold.getField())));
-            }
-        }
-        return flattened;
-    }
-
-    private boolean isAutoFoldable() {
-        return fold == null && autoFold && children.size() == 1
-               && children.get(children.size() - 1) instanceof Relation;
     }
 }
