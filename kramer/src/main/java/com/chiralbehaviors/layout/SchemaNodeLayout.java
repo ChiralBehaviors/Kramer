@@ -40,6 +40,7 @@ abstract public class SchemaNodeLayout {
         public final JsonNode datum;
 
         Fold(JsonNode datum, int averageCardinality) {
+            assert averageCardinality > 0;
             this.datum = datum;
             this.averageCardinality = averageCardinality;
         }
@@ -247,6 +248,7 @@ abstract public class SchemaNodeLayout {
                 aggregate.addAll((ArrayNode) sub);
                 cardSum += sub.size();
             } else {
+                cardSum += 1;
                 aggregate.add(sub);
             }
         }

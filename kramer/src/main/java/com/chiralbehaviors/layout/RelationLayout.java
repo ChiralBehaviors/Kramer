@@ -342,7 +342,7 @@ public class RelationLayout extends SchemaNodeLayout {
         double sum = 0;
         columnWidth = 0;
         int singularChildren = 0;
-        maxCardinality = 1;
+        maxCardinality = datum.size();
 
         for (SchemaNode child : r.getChildren()) {
             Fold fold = layout.layout(child)
@@ -354,8 +354,6 @@ public class RelationLayout extends SchemaNodeLayout {
             if (fold.averageCardinality == 1) {
                 singularChildren++;
             } else {
-                maxCardinality = Math.max(maxCardinality,
-                                          fold.averageCardinality);
                 sum += fold.averageCardinality;
             }
         }
@@ -371,7 +369,6 @@ public class RelationLayout extends SchemaNodeLayout {
                              .max()
                              .getAsDouble();
         columnWidth = snap(labelWidth + columnWidth);
-        maxCardinality = Math.max(1, maxCardinality);
         return columnWidth();
     }
 
