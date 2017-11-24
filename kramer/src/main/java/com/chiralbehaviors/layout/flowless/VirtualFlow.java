@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.reactfx.collection.MemoizationList;
 import org.reactfx.util.Lists;
 import org.reactfx.value.Val;

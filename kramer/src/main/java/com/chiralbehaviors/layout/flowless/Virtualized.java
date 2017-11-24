@@ -1,6 +1,5 @@
 package com.chiralbehaviors.layout.flowless;
 
-import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.reactfx.value.Val;
 import org.reactfx.value.Var;
 
