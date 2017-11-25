@@ -33,7 +33,11 @@ import javafx.scene.layout.Region;
  */
 public class NestedCell extends HBox implements LayoutCell<NestedCell> {
     private static final String            DEFAULT_STYLE = "nested-cell";
-    private final List<Consumer<JsonNode>> consumers     = new ArrayList<>();;
+    private final List<Consumer<JsonNode>> consumers     = new ArrayList<>();
+
+    public void setFocus(boolean focus) {
+        super.setFocused(focus);
+    }
 
     public NestedCell(double rendered, RelationLayout layout) {
         initialize(DEFAULT_STYLE);

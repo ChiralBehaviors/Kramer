@@ -16,16 +16,6 @@
 
 package com.chiralbehaviors.layout;
 
-import static javafx.scene.input.KeyCode.A;
-import static javafx.scene.input.KeyCode.C;
-import static javafx.scene.input.KeyCombination.SHORTCUT_DOWN;
-import static org.fxmisc.wellbehaved.event.EventPattern.keyPressed;
-import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.consume;
-import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.sequence;
-import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.unless;
-
-import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
-
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -33,7 +23,6 @@ import javafx.beans.InvalidationListener;
 import javafx.css.PseudoClass;
 import javafx.css.StyleableProperty;
 import javafx.scene.Node;
-import javafx.scene.input.InputEvent;
 import javafx.scene.layout.Region;
 
 /**
@@ -68,14 +57,13 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
 
     default void initialize(String defaultStyle) {
         T node = getNode();
-        InputMapTemplate.installFallback(fallbackInputMap(), node);
         // focusTraversable is styleable through css. Calling setFocusTraversable
         // makes it look to css like the user set the value and css will not
         // override. Initializing focusTraversable by calling set on the
         // CssMetaData ensures that css will be able to override the value.
         @SuppressWarnings("unchecked")
         StyleableProperty<Boolean> styleableProperty = (StyleableProperty<Boolean>) node.focusTraversableProperty();
-        styleableProperty.applyStyle(null, Boolean.FALSE);
+        styleableProperty.applyStyle(null, Boolean.TRUE);
         node.getStyleClass()
             .addAll(defaultStyle);
         /**
@@ -117,15 +105,4 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
     default void updateSelection(Node node, boolean selected) {
         node.pseudoClassStateChanged(PSEUDO_CLASS_SELECTED, selected);
     }
-
-    default InputMapTemplate<T, InputEvent> fallbackInputMap() {
-        return unless(Node::isDisabled,
-                      sequence(consume(keyPressed(A, SHORTCUT_DOWN),
-                                       (area, evt) -> {
-                                       }),
-                               consume(keyPressed(C, SHORTCUT_DOWN),
-                                       (area, evt) -> {
-                                       })));
-    }
-
 }
