@@ -2,18 +2,10 @@
     -fx-background: -fx-control-inner-background;
     -fx-background-color: -fx-background;
     -fx-focus-traversable: true;
-} 
-
-.horizontal-cell:odd {
-    -fx-background: -fx-control-inner-background-alt; 
-} 
+}
 
 .vertical-cell {
     -fx-background: -fx-control-inner-background;
     -fx-background-color: -fx-background;
     -fx-focus-traversable: true;
 }
-
-.vertical-cell:odd {
-    -fx-background: -fx-control-inner-background-alt; 
-} 
