@@ -16,6 +16,7 @@
 
 package com.chiralbehaviors.layout.control;
 
+import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,6 +43,7 @@ import javafx.scene.layout.Region;
  */
 public class AutoLayout extends Control implements Cell<JsonNode, Region> {
     private static final java.util.logging.Logger log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
+    private static final String                   STYLE_SHEET = "auto-layout.css";
 
     private LayoutCell<? extends Region>          control;
     private SimpleObjectProperty<JsonNode>        data        = new SimpleObjectProperty<>();
@@ -61,6 +63,10 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
     }
 
     public AutoLayout(Relation root, LayoutModel model) {
+        URL url = getClass().getResource(STYLE_SHEET);
+        if (url != null) {
+            getStylesheets().add(url.toExternalForm());
+        }
         this.model = model;
         style = new LayoutProvider(this.model);
         this.root.set(root);

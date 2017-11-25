@@ -27,11 +27,14 @@ import javafx.scene.layout.Region;
  */
 abstract public class HorizontalCell<T extends Region> extends HBox
         implements LayoutCell<T> {
-    private final String stylesheet;
+    public static final String STYLE_CLASS = "horizontal-cell";
+
+    private final String       stylesheet;
 
     protected HorizontalCell(String styleSheet) {
         URL url = getClass().getResource(styleSheet);
         stylesheet = url == null ? null : url.toExternalForm();
+        getStyleClass().add(STYLE_CLASS);
     }
 
     @Override

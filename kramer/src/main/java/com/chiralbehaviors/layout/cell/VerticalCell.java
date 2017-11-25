@@ -27,11 +27,14 @@ import javafx.scene.layout.VBox;
  */
 abstract public class VerticalCell<T extends Region> extends VBox
         implements LayoutCell<T> {
-    private final String stylesheet;
+    public static final String STYLE_CLASS = "horizontal-cell";
+
+    private final String       stylesheet;
 
     protected VerticalCell(String styleSheet) {
         URL url = getClass().getResource(styleSheet);
         stylesheet = url == null ? null : url.toExternalForm();
+        getStyleClass().add(STYLE_CLASS);
     }
 
     @Override
