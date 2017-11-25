@@ -1,2 +1,3 @@
-.auto-layout {
+.outline-cell:odd {
+    -fx-background: -fx-control-inner-background-alt; 
 }
