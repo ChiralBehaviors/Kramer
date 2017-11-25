@@ -33,8 +33,10 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
     PseudoClass EXTERNAL_PSEUDOCLASS_STATE = PseudoClass.getPseudoClass("external-focus");
     PseudoClass INTERNAL_PSEUDOCLASS_STATE = PseudoClass.getPseudoClass("internal-focus");
     PseudoClass PSEUDO_CLASS_EMPTY         = PseudoClass.getPseudoClass("empty");
+    PseudoClass PSEUDO_CLASS_EVEN          = PseudoClass.getPseudoClass("even");
     PseudoClass PSEUDO_CLASS_FILLED        = PseudoClass.getPseudoClass("filled");
     PseudoClass PSEUDO_CLASS_FOCUSED       = PseudoClass.getPseudoClass("focused");
+    PseudoClass PSEUDO_CLASS_ODD           = PseudoClass.getPseudoClass("odd");
     PseudoClass PSEUDO_CLASS_SELECTED      = PseudoClass.getPseudoClass("selected");
 
     default void cancelEdit() {
@@ -44,15 +46,6 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
     @Override
     default T getNode() {
         return (T) this;
-    }
-
-    default boolean isEditing() {
-        return false;
-    }
-
-    @Override
-    default boolean isReusable() {
-        return true;
     }
 
     default void initialize(String defaultStyle) {
@@ -93,6 +86,15 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
 
         // initialize default pseudo-class state
         node.pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, true);
+    }
+
+    default boolean isEditing() {
+        return false;
+    }
+
+    @Override
+    default boolean isReusable() {
+        return true;
     }
 
     default void setExternalFocus(boolean externalFocus) {

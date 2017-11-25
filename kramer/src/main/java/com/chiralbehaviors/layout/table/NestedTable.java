@@ -113,8 +113,8 @@ public class NestedTable extends VerticalCell<NestedTable> {
 
     public NestedTable(int childCardinality, RelationLayout layout) {
         super(STYLE_SHEET);
-        InputMapTemplate.installFallback(DEFAULT_INPUT_MAP, this);
         initialize(DEFAULT_STYLE);
+        InputMapTemplate.installFallback(DEFAULT_INPUT_MAP, this);
         Region header = layout.buildColumnHeader();
         double width = layout.getJustifiedColumnWidth();
         double height = snap(layout.getHeight()
@@ -129,6 +129,19 @@ public class NestedTable extends VerticalCell<NestedTable> {
         setMinWidth(layout.getJustifiedColumnWidth());
         setPrefWidth(layout.getJustifiedColumnWidth());
         setMaxWidth(layout.getJustifiedColumnWidth());
+    }
+
+    public NestedTable(VirtualFlow<JsonNode, NestedCell> rows) {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        this.rows = rows;
+    }
+
+    @Override
+    public void updateIndex(int index) {
+        boolean active = ((index % 2) == 0);
+        pseudoClassStateChanged(PSEUDO_CLASS_EVEN, active);
+        pseudoClassStateChanged(PSEUDO_CLASS_ODD, !active);
     }
 
     @Override

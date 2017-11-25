@@ -34,10 +34,14 @@ public class Span extends HorizontalCell<Span> {
     private static final String                       STYLE_SHEET   = "span.css";
     private final List<Cell<JsonNode, OutlineColumn>> columns       = new ArrayList<>();
 
-    public Span(double justified, List<Column> columns, int cardinality,
-                double cellHeight, double labelWidth) {
+    public Span() {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
+    }
+
+    public Span(double justified, List<Column> columns, int cardinality,
+                double cellHeight, double labelWidth) {
+        this();
         setMinSize(justified, cellHeight);
         setPrefSize(justified, cellHeight);
         setMaxSize(justified, cellHeight);
