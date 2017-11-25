@@ -206,7 +206,7 @@ public class LayoutProvider implements StyleProvider {
         flow.layout();
 
         insets = new Insets(flow.snappedTopInset(), flow.snappedRightInset(),
-                            flow.snappedBottomInset(), flow.snappedLeftInset());
+                            flow.snappedBottomInset(), flow.snappedLeftInset() + 2);
 
         textFont = text.getFont();
         textLineHeight = snap(getLineHeight(textFont,
