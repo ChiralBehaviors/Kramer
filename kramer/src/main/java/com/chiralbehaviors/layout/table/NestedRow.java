@@ -16,27 +16,26 @@
 
 package com.chiralbehaviors.layout.table;
 
-import static com.chiralbehaviors.layout.LayoutProvider.snap;
-
-import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
-import javafx.scene.layout.AnchorPane;
 
 /**
  * @author halhildebrand
  *
  */
-public class NestedRow extends AnchorPane implements LayoutCell<NestedRow> {
+public class NestedRow extends HorizontalCell<NestedRow> {
     private static final String               DEFAULT_STYLE = "nested-row";
+    private static final String               STYLE_SHEET   = "nested-row.css";
 
     private VirtualFlow<JsonNode, NestedCell> row;
 
     public NestedRow(double rendered, RelationLayout layout,
                      int childCardinality) {
+        super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().addAll(layout.getField());
         double deficit = rendered - layout.getHeight();

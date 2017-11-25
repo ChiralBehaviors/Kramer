@@ -20,8 +20,8 @@ import java.util.Collection;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.ColumnSet;
-import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.FlyAwayScrollPane;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
@@ -38,12 +38,15 @@ import javafx.scene.layout.StackPane;
  * @author halhildebrand
  *
  */
-public class Outline extends StackPane implements LayoutCell<Outline> {
+public class Outline extends HorizontalCell<Outline> {
     private static final String            DEFAULT_STYLE = "outline";
+    private static final String            STYLE_SHEET   = "outline.css";
+
     private final ObservableList<JsonNode> items         = FXCollections.observableArrayList();
 
     public Outline(double height, Collection<ColumnSet> columnSets,
                    int averageCardinality, RelationLayout layout) {
+        super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         double cellHeight = layout.outlineCellHeight(columnSets.stream()
                                                                .mapToDouble(cs -> cs.getCellHeight())

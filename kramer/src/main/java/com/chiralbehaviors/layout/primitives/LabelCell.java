@@ -16,7 +16,7 @@
 
 package com.chiralbehaviors.layout.primitives;
 
-import com.chiralbehaviors.layout.LayoutCell;
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 

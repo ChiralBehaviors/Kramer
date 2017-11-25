@@ -1,0 +1,5 @@
+.nested-cell {
+    -fx-background: -fx-control-inner-background;
+    -fx-background-color: -fx-background;
+    -fx-focus-traversable: true;
+}

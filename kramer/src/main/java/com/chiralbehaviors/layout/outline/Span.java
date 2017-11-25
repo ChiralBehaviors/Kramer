@@ -20,23 +20,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.chiralbehaviors.layout.Column;
-import com.chiralbehaviors.layout.LayoutCell;
+import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
-
-import javafx.scene.layout.HBox;
 
 /**
  * @author halhildebrand
  *
  */
-public class Span extends HBox implements LayoutCell<Span> {
+public class Span extends HorizontalCell<Span> {
 
     private static final String                       DEFAULT_STYLE = "span";
+    private static final String                       STYLE_SHEET   = "span.css";
     private final List<Cell<JsonNode, OutlineColumn>> columns       = new ArrayList<>();
 
     public Span(double justified, List<Column> columns, int cardinality,
                 double cellHeight, double labelWidth) {
+        super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         setMinSize(justified, cellHeight);
         setPrefSize(justified, cellHeight);

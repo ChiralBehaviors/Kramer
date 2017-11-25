@@ -206,7 +206,7 @@ public class LayoutProvider implements StyleProvider {
         flow.layout();
 
         insets = new Insets(flow.snappedTopInset(), flow.snappedRightInset(),
-                            flow.snappedBottomInset(), flow.snappedLeftInset() + 2);
+                            flow.snappedBottomInset(), flow.snappedLeftInset());
 
         textFont = text.getFont();
         textLineHeight = snap(getLineHeight(textFont,
@@ -221,7 +221,8 @@ public class LayoutProvider implements StyleProvider {
     @Override
     public PrimitiveLayout layout(Primitive primitive) {
         return primitives.computeIfAbsent(primitive,
-                                          p -> new PrimitiveLayout(this, primitive));
+                                          p -> new PrimitiveLayout(this,
+                                                                   primitive));
     }
 
     /* (non-Javadoc)
@@ -230,7 +231,8 @@ public class LayoutProvider implements StyleProvider {
     @Override
     public RelationLayout layout(Relation relation) {
         return relations.computeIfAbsent(relation,
-                                         r -> new RelationLayout(this, relation));
+                                         r -> new RelationLayout(this,
+                                                                 relation));
     }
 
     /* (non-Javadoc)

@@ -21,8 +21,8 @@ import java.util.Collection;
 import java.util.List;
 
 import com.chiralbehaviors.layout.ColumnSet;
-import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -33,12 +33,14 @@ import javafx.scene.layout.VBox;
  * @author halhildebrand
  *
  */
-public class OutlineCell extends VBox implements LayoutCell<OutlineCell> {
+public class OutlineCell extends VerticalCell<OutlineCell> {
     private static final String        DEFAULT_STYLE = "outline-cell";
+    private static final String        STYLE_SHEET   = "outline-cell.css";
     private List<Cell<JsonNode, Span>> spans;
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
                        double cellHeight, RelationLayout layout) {
+        super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         spans = new ArrayList<>();
         setMinSize(layout.getJustifiedWidth(), cellHeight);

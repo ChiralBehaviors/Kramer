@@ -66,7 +66,7 @@ public class ColumnSet {
         }
 
         // compression
-        double columnWidth = relax(justified / (double) count);
+        double columnWidth = relax(justified / count);
         firstColumn.setWidth(columnWidth);
         double compressed = relax(columnWidth - labelWidth);
         firstColumn.getFields()

@@ -41,8 +41,8 @@ import java.util.List;
 
 import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
 
-import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.flowless.FlyAwayScrollPane;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.flowless.VirtualFlowHit;
@@ -55,15 +55,15 @@ import javafx.scene.input.InputEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
 
 /**
  * @author halhildebrand
  *
  */
-public class NestedTable extends VBox implements LayoutCell<NestedTable> {
+public class NestedTable extends VerticalCell<NestedTable> {
     private static final InputMapTemplate<NestedTable, InputEvent> DEFAULT_INPUT_MAP = naviationMap();
     private static final String                                    DEFAULT_STYLE     = "nested-table";
+    private static final String                                    STYLE_SHEET       = "nested-table.css";
 
     public static List<JsonNode> itemsAsArray(JsonNode items) {
         List<JsonNode> itemArray = new ArrayList<>();
@@ -112,6 +112,7 @@ public class NestedTable extends VBox implements LayoutCell<NestedTable> {
     private final VirtualFlow<JsonNode, NestedCell> rows;
 
     public NestedTable(int childCardinality, RelationLayout layout) {
+        super(STYLE_SHEET);
         InputMapTemplate.installFallback(DEFAULT_INPUT_MAP, this);
         initialize(DEFAULT_STYLE);
         Region header = layout.buildColumnHeader();

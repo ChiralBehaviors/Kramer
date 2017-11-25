@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.outline.Outline;
@@ -85,7 +86,7 @@ public class RelationLayout extends SchemaNodeLayout {
     public void adjustHeight(double delta) {
         super.adjustHeight(delta);
         if (useTable) {
-            double subDelta = delta / (double) resolvedCardinality;
+            double subDelta = delta / resolvedCardinality;
             if (delta >= 1.0) {
                 rowHeight = snap(rowHeight + subDelta);
                 if (subDelta > 1.0) {
@@ -94,7 +95,7 @@ public class RelationLayout extends SchemaNodeLayout {
             }
             return;
         }
-        double subDelta = delta / (double) columnSets.size();
+        double subDelta = delta / columnSets.size();
         if (subDelta >= 1.0) {
             columnSets.forEach(c -> c.adjustHeight(subDelta));
         }
@@ -124,6 +125,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                columnHeaderHeight, children);
     }
 
+    @Override
     public LayoutCell<?> buildControl() {
         return useTable ? buildNestedTable() : buildOutline();
     }
@@ -151,6 +153,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return outline;
     }
 
+    @Override
     public double calculateTableColumnWidth() {
         return children.stream()
                        .mapToDouble(c -> c.calculateTableColumnWidth())
@@ -158,6 +161,7 @@ public class RelationLayout extends SchemaNodeLayout {
                + layout.getNestedInset();
     }
 
+    @Override
     public double cellHeight(int cardinality, double width) {
         if (height > 0) {
             return height;
@@ -403,6 +407,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return new OutlineElement(this, cardinality, labelWidth, justified);
     }
 
+    @Override
     public double rowHeight(int cardinality, double justified) {
         resolvedCardinality = resolveCardinality(cardinality);
         rowHeight = rowHeight(elementHeight());
@@ -410,6 +415,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return height;
     }
 
+    @Override
     public double tableColumnWidth() {
         assert tableColumnWidth > 0.0 : String.format("%s tcw <= 0: %s",
                                                       r.getLabel(),

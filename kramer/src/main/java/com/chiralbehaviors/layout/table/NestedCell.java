@@ -20,19 +20,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.HorizontalCell;
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 
 /**
  * @author halhildebrand
  *
  */
-public class NestedCell extends HBox implements LayoutCell<NestedCell> {
+public class NestedCell extends HorizontalCell<NestedCell> {
     private static final String            DEFAULT_STYLE = "nested-cell";
+    private static final String            STYLE_SHEET   = "nested-cell.css";
     private final List<Consumer<JsonNode>> consumers     = new ArrayList<>();
 
     public void setFocus(boolean focus) {
@@ -40,6 +41,7 @@ public class NestedCell extends HBox implements LayoutCell<NestedCell> {
     }
 
     public NestedCell(double rendered, RelationLayout layout) {
+        super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(layout.getField());
         setMinSize(layout.getJustifiedWidth(), rendered);

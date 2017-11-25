@@ -16,14 +16,14 @@
 
 package com.chiralbehaviors.layout.outline;
 
-import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.HorizontalCell;
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Control;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -32,16 +32,17 @@ import javafx.scene.layout.VBox;
  * @author halhildebrand
  *
  */
-public class OutlineElement extends HBox implements LayoutCell<OutlineElement> {
+public class OutlineElement extends HorizontalCell<OutlineElement> {
 
     private static final String                    DEFAULT_STYLE = "outline-element";
+    private static final String                    STYLE_SHEET   = "outline-element.css";
 
-    private final Cell<JsonNode, ? extends Region> cell; 
+    private final Cell<JsonNode, ? extends Region> cell;
 
     public OutlineElement(Control label, LayoutCell<? extends Region> cell,
-                          int cardinality, double labelWidth,
-                          double justified,
+                          int cardinality, double labelWidth, double justified,
                           double height) {
+        super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
 
         setMinSize(justified, height);
@@ -71,10 +72,9 @@ public class OutlineElement extends HBox implements LayoutCell<OutlineElement> {
     }
 
     public OutlineElement(RelationLayout layout, int cardinality,
-                          double labelWidth,
-                          double justified) {
-        this(layout.label(labelWidth), layout.buildControl(),
-             cardinality, labelWidth, justified, layout.getHeight());
+                          double labelWidth, double justified) {
+        this(layout.label(labelWidth), layout.buildControl(), cardinality,
+             labelWidth, justified, layout.getHeight());
     }
 
     @Override

@@ -21,6 +21,7 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 import java.util.List;
 import java.util.function.Function;
 
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.primitives.LabelCell;
@@ -65,6 +66,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return control;
     }
 
+    @Override
     public LayoutCell<? extends Region> buildControl() {
         LabelCell cell = new LabelCell();
         cell.getNode()
@@ -73,6 +75,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return cell;
     }
 
+    @Override
     public double calculateTableColumnWidth() {
         return columnWidth();
     }
@@ -148,7 +151,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double measure(JsonNode data, Function<JsonNode, JsonNode> extractor) {
+    public double measure(JsonNode data,
+                          Function<JsonNode, JsonNode> extractor) {
         clear();
         labelWidth = labelWidth(p.getLabel());
         double summedDataWidth = 0;
@@ -194,6 +198,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return cellHeight(1, justifiedWidth);
     }
 
+    @Override
     public double tableColumnWidth() {
         return columnWidth();
     }
