@@ -36,17 +36,13 @@ import javafx.scene.layout.VBox;
 public class OutlineCell extends VerticalCell<OutlineCell> {
     private static final String        DEFAULT_STYLE = "outline-cell";
     private static final String        STYLE_SHEET   = "outline-cell.css";
-
-    private List<Cell<JsonNode, Span>> spans         = new ArrayList<>();
-
-    public OutlineCell() {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-    }
+    private List<Cell<JsonNode, Span>> spans;
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
                        double cellHeight, RelationLayout layout) {
         super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        spans = new ArrayList<>();
         setMinSize(layout.getJustifiedWidth(), cellHeight);
         setPrefSize(layout.getJustifiedWidth(), cellHeight);
         setMaxSize(layout.getJustifiedWidth(), cellHeight);
@@ -59,13 +55,6 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
             VBox.setVgrow(span.getNode(), Priority.ALWAYS);
             getChildren().add(span.getNode());
         });
-    }
-
-    @Override
-    public void updateIndex(int index) {
-        boolean active = ((index % 2) == 0);
-        pseudoClassStateChanged(PSEUDO_CLASS_EVEN, active);
-        pseudoClassStateChanged(PSEUDO_CLASS_ODD, !active);
     }
 
     @Override

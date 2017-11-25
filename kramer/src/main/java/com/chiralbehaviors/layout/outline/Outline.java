@@ -44,14 +44,10 @@ public class Outline extends HorizontalCell<Outline> {
 
     private final ObservableList<JsonNode> items         = FXCollections.observableArrayList();
 
-    public Outline() {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-    }
-
     public Outline(double height, Collection<ColumnSet> columnSets,
                    int averageCardinality, RelationLayout layout) {
-        this();
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
         double cellHeight = layout.outlineCellHeight(columnSets.stream()
                                                                .mapToDouble(cs -> cs.getCellHeight())
                                                                .sum());

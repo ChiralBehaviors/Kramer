@@ -33,15 +33,10 @@ import javafx.scene.layout.HBox;
  */
 public class ColumnHeader extends VerticalCell<ColumnHeader> {
     private static final String DEFAULT_STYLE = "column-header";
-    private static final String STYLE_SHEET   = "column-header.css";
-
-    public ColumnHeader() {
+    private static final String STYLE_SHEET   = "column-header.css"; 
+    public ColumnHeader(double width, double height, PrimitiveLayout layout) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-    }
-
-    public ColumnHeader(double width, double height, PrimitiveLayout layout) {
-        this();
         setMinSize(width, height);
         setMaxSize(width, height);
         getChildren().add(layout.label(width, height));
@@ -49,7 +44,7 @@ public class ColumnHeader extends VerticalCell<ColumnHeader> {
 
     public ColumnHeader(double width, double height, RelationLayout layout,
                         List<Function<Double, ColumnHeader>> nestedHeaders) {
-        this();
+        super(STYLE_SHEET);
         HBox nested = new HBox();
         setMinSize(width, height);
         setMaxSize(width, height);

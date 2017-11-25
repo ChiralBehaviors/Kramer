@@ -30,21 +30,18 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class OutlineColumn extends VerticalCell<OutlineColumn> {
 
-    private static final String            DEFAULT_STYLE = "span";
-    private static final String            STYLE_SHEET   = "outline-column.css";
-    private final List<Consumer<JsonNode>> fields        = new ArrayList<>();
-
-    public OutlineColumn() {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-    }
+    private static final String      DEFAULT_STYLE = "span";
+    private static final String      STYLE_SHEET   = "outline-column.css";
+    private List<Consumer<JsonNode>> fields;
 
     public OutlineColumn(Column c, int cardinality, double labelWidth,
                          double cellHeight) {
-        this();
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
         setMinSize(c.getWidth(), cellHeight);
         setMaxSize(c.getWidth(), cellHeight);
         setPrefSize(c.getWidth(), cellHeight);
+        fields = new ArrayList<>();
         c.getFields()
          .forEach(field -> {
              OutlineElement cell = field.outlineElement(cardinality, labelWidth,

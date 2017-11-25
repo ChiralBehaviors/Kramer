@@ -39,16 +39,11 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
 
     private final Cell<JsonNode, ? extends Region> cell;
 
-    public OutlineElement(LayoutCell<? extends Region> cell) {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-        this.cell = cell;
-    }
-
     public OutlineElement(Control label, LayoutCell<? extends Region> cell,
                           int cardinality, double labelWidth, double justified,
                           double height) {
-        this(cell);
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
 
         setMinSize(justified, height);
         setPrefSize(justified, height);
@@ -57,6 +52,8 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
 
         label.setMinWidth(labelWidth);
         label.setMaxWidth(labelWidth);
+
+        this.cell = cell;
         double available = justified - labelWidth;
         cell.getNode()
             .setMinSize(available, height);

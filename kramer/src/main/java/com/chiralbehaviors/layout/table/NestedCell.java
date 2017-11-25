@@ -36,13 +36,13 @@ public class NestedCell extends HorizontalCell<NestedCell> {
     private static final String            STYLE_SHEET   = "nested-cell.css";
     private final List<Consumer<JsonNode>> consumers     = new ArrayList<>();
 
-    public NestedCell() {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
+    public void setFocus(boolean focus) {
+        super.setFocused(focus);
     }
 
     public NestedCell(double rendered, RelationLayout layout) {
-        this();
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
         getStyleClass().add(layout.getField());
         setMinSize(layout.getJustifiedWidth(), rendered);
         setPrefSize(layout.getJustifiedWidth(), rendered);
@@ -53,17 +53,6 @@ public class NestedCell extends HorizontalCell<NestedCell> {
             Region control = cell.getNode();
             getChildren().add(control);
         });
-    }
-
-    public void setFocus(boolean focus) {
-        super.setFocused(focus);
-    }
-
-    @Override
-    public void updateIndex(int index) {
-        boolean active = ((index % 2) == 0);
-        pseudoClassStateChanged(PSEUDO_CLASS_EVEN, active);
-        pseudoClassStateChanged(PSEUDO_CLASS_ODD, !active);
     }
 
     @Override

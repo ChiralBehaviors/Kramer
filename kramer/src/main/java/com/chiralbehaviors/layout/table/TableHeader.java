@@ -30,14 +30,10 @@ public class TableHeader extends HorizontalCell<TableHeader> {
     private static final String DEFAULT_STYLE = "table-header";
     private static final String STYLE_SHEET   = "table-header.css";
 
-    public TableHeader() {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-    }
-
     public TableHeader(double width, double height,
                        List<SchemaNodeLayout> children) {
-        this();
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
         setMinSize(width, height);
         setPrefSize(width, height);
         setMaxSize(width, height);
