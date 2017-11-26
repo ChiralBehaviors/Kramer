@@ -131,10 +131,10 @@ public class NestedTable extends VerticalCell<NestedTable> {
         setMaxWidth(layout.getJustifiedColumnWidth());
     }
 
-    public NestedTable(VirtualFlow<JsonNode, NestedCell> rows) {
+    public NestedTable() {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-        this.rows = rows;
+        this.rows = null;
     }
 
     @Override

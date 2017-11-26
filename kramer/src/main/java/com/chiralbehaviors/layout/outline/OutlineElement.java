@@ -39,6 +39,10 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
 
     private final Cell<JsonNode, ? extends Region> cell;
 
+    public OutlineElement() {
+        this(null);
+    }
+
     public OutlineElement(LayoutCell<? extends Region> cell) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
