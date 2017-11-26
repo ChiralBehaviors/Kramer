@@ -33,10 +33,14 @@ public class NestedRow extends HorizontalCell<NestedRow> {
 
     private VirtualFlow<JsonNode, NestedCell> row;
 
-    public NestedRow(double rendered, RelationLayout layout,
-                     int childCardinality) {
+    public NestedRow() {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
+    }
+
+    public NestedRow(double rendered, RelationLayout layout,
+                     int childCardinality) {
+        this();
         getStyleClass().addAll(layout.getField());
         double deficit = rendered - layout.getHeight();
         double childDeficit = deficit / childCardinality;
