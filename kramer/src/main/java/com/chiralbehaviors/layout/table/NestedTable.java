@@ -147,14 +147,11 @@ public class NestedTable extends VerticalCell<NestedTable> {
                                                           double height,
                                                           int childCardinality,
                                                           RelationLayout layout) {
-
-        double cellHeight = layout.baseRowCellHeight(layout.getRowHeight());
         VirtualFlow<JsonNode, NestedCell> rows = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
-                                                                            cellHeight,
+                                                                            layout.getRowHeight(),
                                                                             FXCollections.observableArrayList(),
                                                                             item -> {
-                                                                                NestedCell cell = new NestedCell(cellHeight,
-                                                                                                                 layout);
+                                                                                NestedCell cell = new NestedCell(layout);
                                                                                 cell.updateItem(item);
                                                                                 return cell;
                                                                             });

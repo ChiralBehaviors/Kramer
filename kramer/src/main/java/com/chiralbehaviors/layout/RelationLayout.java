@@ -178,8 +178,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                          .mapToDouble(c -> c.columnHeaderHeight())
                                          .max()
                                          .orElse(0.0);
-            double elementHeight = elementHeight();
-            rowHeight = rowHeight(elementHeight);
+            rowHeight = calculateRowHeight();
             height = snap((resolvedCardinality * rowHeight)
                           + tableInsets.getVerticalInset()
                           + columnHeaderHeight);
@@ -397,9 +396,9 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public double rowHeight(int cardinality, double justified) {
         resolvedCardinality = resolveCardinality(cardinality);
-        rowHeight = rowHeight(elementHeight());
+        rowHeight = calculateRowHeight();
         height = snap((resolvedCardinality * rowHeight)
-                      + tableInsets.getCellVerticalInset());
+                      + tableInsets.getVerticalInset());
         return height;
     }
 
@@ -422,6 +421,26 @@ public class RelationLayout extends SchemaNodeLayout {
         return snap(width - outlineInsets.getCellHorizontalInset());
     }
 
+    protected double calculateRowHeight() {
+        double elementHeight = snap(children.stream()
+                                            .mapToDouble(child -> child.rowHeight(averageChildCardinality,
+                                                                                  justifiedWidth))
+                                            .max()
+                                            .getAsDouble());
+        children.forEach(c -> c.normalizeRowHeight(elementHeight));
+        return snap(elementHeight + tableInsets.getCellVerticalInset());
+    }
+
+    @Override
+    public void normalizeRowHeight(double normalized) {
+        double deficit = normalized - height;
+        double childDeficit = deficit / (double) resolvedCardinality;
+        rowHeight = snap(rowHeight + childDeficit);
+        height = normalized;
+        
+        children.forEach(c -> c.normalizeRowHeight(rowHeight));
+    }
+
     @Override
     protected void clear() {
         super.clear();
@@ -435,11 +454,6 @@ public class RelationLayout extends SchemaNodeLayout {
                                                                   justifiedWidth))
                             .max()
                             .getAsDouble());
-    }
-
-    @Override
-    protected Relation getNode() {
-        return (Relation) node;
     }
 
     @Override
@@ -459,6 +473,11 @@ public class RelationLayout extends SchemaNodeLayout {
         this.extractor = extractor;
 
         return fold(datum);
+    }
+
+    @Override
+    protected Relation getNode() {
+        return (Relation) node;
     }
 
     protected Indent indent(Indent parent, SchemaNodeLayout child) {
@@ -499,14 +518,6 @@ public class RelationLayout extends SchemaNodeLayout {
 
     protected int resolveCardinality(int cardinality) {
         return Math.min(cardinality, maxCardinality);
-    }
-
-    protected double rowHeight(double elementHeight) {
-        return snap(elementHeight + tableInsets.getCellVerticalInset());
-    }
-
-    public double getRowCellHeight() {
-        return snap(getRowHeight() + tableInsets.getCellVerticalInset());
     }
 
 }

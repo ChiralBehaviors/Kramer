@@ -39,6 +39,7 @@ import javafx.scene.layout.Region;
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
     protected double maxWidth;
+
     @SuppressWarnings("unused")
     private boolean  variableLength;
 
@@ -167,6 +168,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     public double nestTableColumn(Indent indent, double indentation) {
         this.columnHeaderIndentation = indentation;
         return tableColumnWidth();
+    }
+
+    @Override
+    public void normalizeRowHeight(double normalized) {
+        height = normalized;
     }
 
     @Override

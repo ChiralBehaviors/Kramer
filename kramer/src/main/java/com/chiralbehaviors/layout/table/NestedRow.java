@@ -42,16 +42,11 @@ public class NestedRow extends HorizontalCell<NestedRow> {
                      int childCardinality) {
         this();
         getStyleClass().addAll(layout.getField());
-        double deficit = rendered - layout.getHeight();
-        double childDeficit = deficit / childCardinality;
-        double extended = layout.getRowHeight() + childDeficit;
-        double cellHeight = layout.baseRowCellHeight(extended);
         row = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
-                                         cellHeight,
+                                         layout.getHeight(),
                                          FXCollections.observableArrayList(),
                                          item -> {
-                                             NestedCell cell = new NestedCell(cellHeight,
-                                                                              layout);
+                                             NestedCell cell = new NestedCell(layout);
                                              cell.updateItem(item);
                                              return cell;
                                          });

@@ -48,20 +48,12 @@ public interface StyleProvider {
             return cell.getTop() + cell.getBottom();
         }
 
-        public double getLeftHorizontalInset() {
-            return container.getLeft();
-        }
-
         public double getCellLeftInset() {
             return cell.getLeft();
         }
 
         public double getCellRightInset() {
             return cell.getRight();
-        }
-
-        public double getRightHorizontalInset() {
-            return container.getRight();
         }
 
         public double getVerticalInset() {

@@ -233,6 +233,8 @@ abstract public class SchemaNodeLayout {
 
     abstract public double nestTableColumn(Indent indent, double indentation);
 
+    abstract public void normalizeRowHeight(double normalized);
+
     abstract public OutlineElement outlineElement(int cardinality,
                                                   double labelWidth,
                                                   double justified);
