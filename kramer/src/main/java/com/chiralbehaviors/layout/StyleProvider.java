@@ -44,48 +44,16 @@ public interface StyleProvider {
             return cell.getLeft() + cell.getRight();
         }
 
-        public double getCellInset() {
-            return cell.getLeft();
-        }
-
         public double getCellVerticalInset() {
             return cell.getTop() + cell.getBottom();
         }
 
-        public double getLeftHorizontalInset() {
-            return container.getLeft();
+        public double getCellLeftInset() {
+            return cell.getLeft() + cell.getLeft();
         }
 
-        public double getListHorizontalInset() {
-            return container.getLeft() + container.getRight();
-        }
-
-        public double getNestedCellInset() {
-            return getNestedRightInset() + getNestedLeftInset();
-        }
-
-        public double getNestedInset() {
-            return getNestedLeftInset() + getNestedRightInset();
-        }
-
-        public double getNestedLeftInset() {
-            return container.getLeft() + cell.getLeft();
-        }
-
-        public double getNestedListInset() {
-            return getNestedLeftInset() + getNestedRightInset();
-        }
-
-        public double getNestedRightInset() {
-            return container.getRight() + cell.getRight();
-        }
-
-        public double getRightCellInset() {
+        public double getCellRightInset() {
             return cell.getRight();
-        }
-
-        public double getRightHorizontalInset() {
-            return container.getRight();
         }
 
         public double getVerticalInset() {
