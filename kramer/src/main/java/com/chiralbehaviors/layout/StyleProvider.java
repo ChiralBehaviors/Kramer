@@ -53,7 +53,7 @@ public interface StyleProvider {
         }
 
         public double getCellLeftInset() {
-            return cell.getLeft() + cell.getLeft();
+            return cell.getLeft();
         }
 
         public double getCellRightInset() {
