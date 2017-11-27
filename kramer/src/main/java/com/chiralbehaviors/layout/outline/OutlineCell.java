@@ -26,6 +26,7 @@ import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.geometry.Point2D;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
@@ -47,9 +48,10 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
                        double cellHeight, RelationLayout layout) {
         super(STYLE_SHEET);
-        setMinSize(layout.getJustifiedWidth(), cellHeight);
-        setPrefSize(layout.getJustifiedWidth(), cellHeight);
-        setMaxSize(layout.getJustifiedWidth(), cellHeight);
+        Point2D expanded = expand(layout.getJustifiedWidth(), cellHeight);
+        setMinSize(expanded.getX(), expanded.getY());
+        setPrefSize(expanded.getX(), expanded.getY());
+        setMaxSize(expanded.getX(), expanded.getY());
         columnSets.forEach(cs -> {
             Cell<JsonNode, Span> span = new Span(cs.getWidth(), cs.getColumns(),
                                                  childCardinality,

@@ -23,6 +23,7 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.StyleProvider.StyledInsets;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.outline.OutlineElement;
+import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -140,9 +141,11 @@ abstract public class SchemaNodeLayout {
     protected double               justifiedWidth          = -1.0;
     protected double               labelWidth;
     protected final LayoutProvider layout;
+    protected final SchemaNode     node;
 
-    public SchemaNodeLayout(LayoutProvider layout) {
+    public SchemaNodeLayout(LayoutProvider layout, SchemaNode node) {
         this.layout = layout;
+        this.node = node;
     }
 
     public void adjustHeight(double delta) {
@@ -176,7 +179,9 @@ abstract public class SchemaNodeLayout {
 
     abstract public JsonNode extractFrom(JsonNode node);
 
-    abstract public String getField();
+    public String getField() {
+        return node.getField();
+    }
 
     public double getHeight() {
         return height;
@@ -188,7 +193,9 @@ abstract public class SchemaNodeLayout {
         return justifiedWidth;
     }
 
-    abstract public String getLabel();
+    public String getLabel() {
+        return node.getLabel();
+    }
 
     public double getLabelWidth() {
         return labelWidth;
@@ -196,7 +203,9 @@ abstract public class SchemaNodeLayout {
 
     abstract public double justify(double justified);
 
-    abstract public Control label(double labelWidth);
+    public Control label(double labelWidth) {
+        return label(labelWidth, node.getLabel());
+    }
 
     public Control label(double width, double half) {
         return layout.label(width, getLabel(), half);
@@ -263,6 +272,8 @@ abstract public class SchemaNodeLayout {
                         Function<JsonNode, JsonNode> extractor) {
         return fold(datum);
     }
+
+    abstract protected SchemaNode getNode();
 
     protected Control label(double labelWidth, String label) {
         return layout.label(labelWidth, label, height);

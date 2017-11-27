@@ -30,7 +30,6 @@ import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.scene.control.Control;
 import javafx.scene.layout.Region;
 
 /**
@@ -39,19 +38,17 @@ import javafx.scene.layout.Region;
  *
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
-    protected double          maxWidth;
-    protected final Primitive p;
+    protected double maxWidth;
     @SuppressWarnings("unused")
-    private boolean           variableLength;
+    private boolean  variableLength;
 
     public PrimitiveLayout(LayoutProvider layout, Primitive p) {
-        super(layout);
-        this.p = p;
+        super(layout, p);
     }
 
     public void apply(Cell<JsonNode, ?> list) {
         layout.getModel()
-              .apply(list, p);
+              .apply(list, getNode());
     }
 
     @Override
@@ -71,7 +68,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         LabelCell cell = new LabelCell();
         cell.getNode()
             .getStyleClass()
-            .add(p.getField());
+            .add(node.getField());
         return cell;
     }
 
@@ -109,13 +106,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public JsonNode extractFrom(JsonNode node) {
-        return p.extractFrom(node);
-    }
-
-    @Override
-    public String getField() {
-        return p.getField();
+    public JsonNode extractFrom(JsonNode datum) {
+        return node.extractFrom(datum);
     }
 
     @Override
@@ -124,19 +116,9 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public String getLabel() {
-        return p.getLabel();
-    }
-
-    @Override
     public double justify(double justified) {
         justifiedWidth = snap(justified);
         return justifiedWidth;
-    }
-
-    @Override
-    public Control label(double labelWidth) {
-        return label(labelWidth, p.getLabel());
     }
 
     @Override
@@ -154,7 +136,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     public double measure(JsonNode data,
                           Function<JsonNode, JsonNode> extractor) {
         clear();
-        labelWidth = labelWidth(p.getLabel());
+        labelWidth = labelWidth(node.getLabel());
         double summedDataWidth = 0;
         maxWidth = 0;
         columnWidth = 0;
@@ -173,7 +155,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
                                                   / data.size());
 
         columnWidth = Math.max(labelWidth,
-                               LayoutProvider.snap(Math.max(p.getDefaultWidth(),
+                               LayoutProvider.snap(Math.max(getNode().getDefaultWidth(),
                                                             averageWidth)));
         if (maxWidth > averageWidth) {
             variableLength = true;
@@ -211,6 +193,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     protected double getColumnHeaderWidth() {
         return snap(justifiedWidth + columnHeaderIndentation);
+    }
+
+    @Override
+    protected Primitive getNode() {
+        return (Primitive) node;
     }
 
     protected double width(JsonNode row) {

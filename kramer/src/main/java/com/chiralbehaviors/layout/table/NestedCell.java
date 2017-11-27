@@ -25,6 +25,7 @@ import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.geometry.Point2D;
 import javafx.scene.layout.Region;
 
 /**
@@ -44,9 +45,10 @@ public class NestedCell extends HorizontalCell<NestedCell> {
     public NestedCell(double rendered, RelationLayout layout) {
         this();
         getStyleClass().add(layout.getField());
-        setMinSize(layout.getJustifiedWidth(), rendered);
-        setPrefSize(layout.getJustifiedWidth(), rendered);
-        setMaxSize(layout.getJustifiedWidth(), rendered);
+        Point2D expanded = expand(layout.getJustifiedWidth(), rendered);
+        setMinSize(expanded.getX(), expanded.getY());
+        setPrefSize(expanded.getX(), expanded.getY());
+        setMaxSize(expanded.getX(), expanded.getY());
         layout.forEach(child -> {
             LayoutCell<? extends Region> cell = child.buildColumn(rendered);
             consumers.add(item -> cell.updateItem(child.extractFrom(item)));

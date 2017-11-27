@@ -310,6 +310,26 @@ public class LayoutProvider implements StyleProvider {
         return String.format("Layout [model=%s\n listCellInsets=%s\n listInsets=%s\n styleSheets=%s\n textFont=%s\n textInsets=%s\n textLineHeight=%s]",
                              model, cellInsets, insets, styleSheets, textFont,
                              textInsets, textLineHeight);
+    }  
+
+    double getNestedLeftInset() {
+        return insets.getLeft() + cellInsets.getLeft();
+    }
+
+    double getNestedListInset() {
+        return getNestedLeftInset() + getNestedRightInset();
+    }
+
+    double getNestedRightInset() {
+        return insets.getRight() + cellInsets.getRight();
+    }
+
+    double getRightCellInset() {
+        return cellInsets.getRight();
+    }
+
+    double getRightHorizontalInset() {
+        return insets.getRight();
     }
 
     double getTextHorizontalInset() {
@@ -322,6 +342,10 @@ public class LayoutProvider implements StyleProvider {
 
     double getTextVerticalInset() {
         return textInsets.getTop() + textInsets.getBottom();
+    }
+
+    double getVerticalInset() {
+        return insets.getTop() + insets.getBottom();
     }
 
     Control label(double labelWidth, String label, double height) {
