@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout;
+package com.chiralbehaviors.layout.cell;
 
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -33,8 +33,10 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
     PseudoClass EXTERNAL_PSEUDOCLASS_STATE = PseudoClass.getPseudoClass("external-focus");
     PseudoClass INTERNAL_PSEUDOCLASS_STATE = PseudoClass.getPseudoClass("internal-focus");
     PseudoClass PSEUDO_CLASS_EMPTY         = PseudoClass.getPseudoClass("empty");
+    PseudoClass PSEUDO_CLASS_EVEN          = PseudoClass.getPseudoClass("even");
     PseudoClass PSEUDO_CLASS_FILLED        = PseudoClass.getPseudoClass("filled");
     PseudoClass PSEUDO_CLASS_FOCUSED       = PseudoClass.getPseudoClass("focused");
+    PseudoClass PSEUDO_CLASS_ODD           = PseudoClass.getPseudoClass("odd");
     PseudoClass PSEUDO_CLASS_SELECTED      = PseudoClass.getPseudoClass("selected");
 
     default void cancelEdit() {
@@ -46,24 +48,15 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         return (T) this;
     }
 
-    default boolean isEditing() {
-        return false;
-    }
-
-    @Override
-    default boolean isReusable() {
-        return true;
-    }
-
-    @SuppressWarnings("unchecked")
-    default void setDefaultStyles(String defaultStyle) {
+    default void initialize(String defaultStyle) {
         T node = getNode();
         // focusTraversable is styleable through css. Calling setFocusTraversable
         // makes it look to css like the user set the value and css will not
         // override. Initializing focusTraversable by calling set on the
         // CssMetaData ensures that css will be able to override the value.
-        ((StyleableProperty<Boolean>) node.focusTraversableProperty()).applyStyle(null,
-                                                                                  Boolean.FALSE);
+        @SuppressWarnings("unchecked")
+        StyleableProperty<Boolean> styleableProperty = (StyleableProperty<Boolean>) node.focusTraversableProperty();
+        styleableProperty.applyStyle(null, Boolean.TRUE);
         node.getStyleClass()
             .addAll(defaultStyle);
         /**
@@ -93,6 +86,15 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
 
         // initialize default pseudo-class state
         node.pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, true);
+    }
+
+    default boolean isEditing() {
+        return false;
+    }
+
+    @Override
+    default boolean isReusable() {
+        return true;
     }
 
     default void setExternalFocus(boolean externalFocus) {

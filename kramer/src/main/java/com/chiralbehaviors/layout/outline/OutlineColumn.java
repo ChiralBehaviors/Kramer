@@ -21,27 +21,30 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.Column;
-import com.chiralbehaviors.layout.LayoutCell;
+import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.fasterxml.jackson.databind.JsonNode;
-
-import javafx.scene.layout.VBox;
 
 /**
  * @author halhildebrand
  *
  */
-public class OutlineColumn extends VBox implements LayoutCell<OutlineColumn> {
+public class OutlineColumn extends VerticalCell<OutlineColumn> {
 
-    private static final String      DEFAULT_STYLE = "span";
-    private List<Consumer<JsonNode>> fields;
+    private static final String            DEFAULT_STYLE = "span";
+    private static final String            STYLE_SHEET   = "outline-column.css";
+    private final List<Consumer<JsonNode>> fields        = new ArrayList<>();
+
+    public OutlineColumn() {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+    }
 
     public OutlineColumn(Column c, int cardinality, double labelWidth,
                          double cellHeight) {
-        setDefaultStyles(DEFAULT_STYLE);
+        this();
         setMinSize(c.getWidth(), cellHeight);
         setMaxSize(c.getWidth(), cellHeight);
         setPrefSize(c.getWidth(), cellHeight);
-        fields = new ArrayList<>();
         c.getFields()
          .forEach(field -> {
              OutlineElement cell = field.outlineElement(cardinality, labelWidth,

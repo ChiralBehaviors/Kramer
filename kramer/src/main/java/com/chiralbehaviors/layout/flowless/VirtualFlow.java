@@ -30,6 +30,7 @@ import javafx.css.StyleableProperty;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
+import javafx.scene.AccessibleAttribute;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.input.ScrollEvent;
@@ -107,57 +108,14 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
     }
 
     public class VirtualFlowSelectionModel extends MultipleSelectionModel<T> {
-
-        /***********************************************************************
-         * * Observable properties * *
-         **********************************************************************/
-
-        /*
-         * We only maintain the values of the selectedIndex and selectedIndices
-         * properties. The value of the selectedItem and selectedItems properties
-         * is determined on-demand. We fire the SELECTED_ITEM and SELECTED_ITEMS
-         * property change events whenever the related SELECTED_INDEX or
-         * SELECTED_INDICES properties change.
-         *
-         * This means that the cost of the ListViewSelectionModel is cheap in most
-         * cases, assuming that the end-consumer isn't calling getSelectedItems
-         * too aggressively. Of course, this is only an issue when the ListViewModel
-         * is being populated by some remote, expensive to query data source.
-         *
-         * In addition, we do not provide ObservableLists for the selected indices or the
-         * selected items properties, as this would allow the API consumer to add
-         * observers to these ObservableLists. This would make life tougher as we would
-         * then be forced to keep these ObservableLists in-sync at all times, which for
-         * the selectedItems ObservableList, would require potentially a lot of work and
-         * memory. Instead, we return a List, and allow for changes to these Lists
-         * to be observed through the SELECTED_INDICES and SELECTED_ITEMS
-         * properties.
-         */
-
         final BitSet                                    selectedIndices;
-
         final ReadOnlyUnbackedObservableList<Integer>   selectedIndicesSeq;
-        /***********************************************************************
-         * * Internal field * *
-         **********************************************************************/
-
         ListChangeListener.Change<T>                    selectedItemChange;
-
-        // Fix for RT-20945 (and numerous other issues!)
         private int                                     atomicityCount = 0;
-
         private final ReadOnlyUnbackedObservableList<T> selectedItemsSeq;
-
-        /***********************************************************************
-         * * Constructors * *
-         **********************************************************************/
 
         public VirtualFlowSelectionModel() {
             selectedIndexProperty().addListener(valueModel -> {
-                // we used to lazily retrieve the selected item, but now we just
-                // do it when the selection changes. This is hardly likely to be
-                // expensive, and we still lazily handle the multiple selection
-                // cases over in MultipleSelectionModel.
                 setSelectedItem(getModelItem(getSelectedIndex()));
             });
 
@@ -599,11 +557,16 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         }
 
         protected void focus(int index) {
-            // TODO
+            VirtualFlow.this.notifyAccessibleAttributeChanged(AccessibleAttribute.FOCUS_ITEM);
+            C cell = getCell(index);
+            cell.getNode()
+                .requestFocus();
+            focusedIndex = index;
+
         }
 
         protected int getFocusedIndex() {
-            return -1; // TODO
+            return focusedIndex;
         }
 
         /**
@@ -857,29 +820,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
     }
 
     /**
-     * Creates a viewport that lays out content horizontally from left to right
-     */
-    public static <T, C extends Cell<T, ?>> VirtualFlow<T, C> createHorizontal(double cellBreadth,
-                                                                               double cellLength,
-                                                                               ObservableList<T> items,
-                                                                               Function<? super T, ? extends C> cellFactory) {
-        return createHorizontal(cellBreadth, cellLength, items, cellFactory,
-                                Gravity.FRONT);
-    }
-
-    /**
-     * Creates a viewport that lays out content horizontally
-     */
-    public static <T, C extends Cell<T, ?>> VirtualFlow<T, C> createHorizontal(double cellBreadth,
-                                                                               double cellLength,
-                                                                               ObservableList<T> items,
-                                                                               Function<? super T, ? extends C> cellFactory,
-                                                                               Gravity gravity) {
-        return new VirtualFlow<>(cellBreadth, cellLength, items, cellFactory,
-                                 new HorizontalHelper(), gravity);
-    }
-
-    /**
      * Creates a viewport that lays out content vertically from top to bottom
      */
     public static <T, C extends Cell<T, ?>> VirtualFlow<T, C> createVertical(double cellBreadth,
@@ -999,12 +939,14 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
     protected final ObservableList<T>              items;
 
     private final Var<Double>                      breadthOffset;
+
     // non-negative
     private final Var<Double>                      breadthOffset0 = Var.newSimpleVar(0.0);
-
     private final CellListManager<T, C>            cellListManager;
 
     private final CellPositioner<T, C>             cellPositioner;
+
+    private int                                    focusedIndex   = -1;
     private final StyleableObjectProperty<Gravity> gravity        = new StyleableObjectProperty<Gravity>() {
                                                                       @Override
                                                                       public Object getBean() {

@@ -20,7 +20,10 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.function.Function;
 
+import com.chiralbehaviors.layout.StyleProvider.StyledInsets;
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.outline.OutlineElement;
+import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -53,15 +56,15 @@ abstract public class SchemaNodeLayout {
     public enum Indent {
         LEFT {
             @Override
-            public double indent(Indent child, LayoutProvider layout,
+            public double indent(Indent child, StyledInsets insets,
                                  double indentation) {
                 switch (child) {
                     case LEFT:
-                        return indentation + layout.getNestedLeftInset();
+                        return indentation + insets.getCellLeftInset();
                     case SINGULAR:
-                        return indentation + (2 * layout.getNestedLeftInset());
+                        return indentation + (2 * insets.getCellLeftInset());
                     case RIGHT:
-                        return layout.getNestedRightInset();
+                        return insets.getCellRightInset();
                     default:
                         return 0;
                 }
@@ -70,15 +73,15 @@ abstract public class SchemaNodeLayout {
         NONE,
         RIGHT {
             @Override
-            public double indent(Indent child, LayoutProvider layout,
+            public double indent(Indent child, StyledInsets insets,
                                  double indentation) {
                 switch (child) {
                     case LEFT:
-                        return layout.getNestedLeftInset();
+                        return insets.getCellLeftInset();
                     case RIGHT:
-                        return indentation + layout.getNestedRightInset();
+                        return indentation + insets.getCellRightInset();
                     case SINGULAR:
-                        return indentation + (2 * layout.getNestedRightInset());
+                        return indentation + (2 * insets.getCellRightInset());
                     default:
                         return 0;
                 }
@@ -86,15 +89,15 @@ abstract public class SchemaNodeLayout {
         },
         SINGULAR {
             @Override
-            public double indent(Indent child, LayoutProvider layout,
+            public double indent(Indent child, StyledInsets insets,
                                  double indentation) {
                 switch (child) {
                     case LEFT:
-                        return indentation + layout.getNestedLeftInset();
+                        return indentation + insets.getCellLeftInset();
                     case RIGHT:
-                        return indentation + layout.getNestedRightInset();
+                        return indentation + insets.getCellRightInset();
                     case SINGULAR:
-                        return indentation + layout.getNestedInset();
+                        return indentation + insets.getCellHorizontalInset();
                     default:
                         return 0;
                 }
@@ -102,30 +105,30 @@ abstract public class SchemaNodeLayout {
         },
         TOP {
             @Override
-            public double indent(Indent child, LayoutProvider layout,
+            public double indent(Indent child, StyledInsets insets,
                                  double indentation) {
                 switch (child) {
                     case LEFT:
-                        return layout.getNestedLeftInset();
+                        return insets.getCellLeftInset();
                     case RIGHT:
-                        return layout.getNestedRightInset();
+                        return insets.getCellRightInset();
                     case SINGULAR:
-                        return layout.getNestedInset();
+                        return insets.getCellHorizontalInset();
                     default:
                         return 0;
                 }
             }
         };
 
-        public double indent(Indent child, LayoutProvider layout,
+        public double indent(Indent child, StyledInsets insets,
                              double indentation) {
             switch (child) {
                 case LEFT:
-                    return layout.getNestedLeftInset();
+                    return insets.getCellLeftInset();
                 case RIGHT:
-                    return layout.getNestedRightInset();
+                    return insets.getCellRightInset();
                 case SINGULAR:
-                    return layout.getNestedInset();
+                    return insets.getCellHorizontalInset();
                 default:
                     return 0;
             }
@@ -138,9 +141,11 @@ abstract public class SchemaNodeLayout {
     protected double               justifiedWidth          = -1.0;
     protected double               labelWidth;
     protected final LayoutProvider layout;
+    protected final SchemaNode     node;
 
-    public SchemaNodeLayout(LayoutProvider layout) {
+    public SchemaNodeLayout(LayoutProvider layout, SchemaNode node) {
         this.layout = layout;
+        this.node = node;
     }
 
     public void adjustHeight(double delta) {
@@ -174,7 +179,9 @@ abstract public class SchemaNodeLayout {
 
     abstract public JsonNode extractFrom(JsonNode node);
 
-    abstract public String getField();
+    public String getField() {
+        return node.getField();
+    }
 
     public double getHeight() {
         return height;
@@ -186,7 +193,9 @@ abstract public class SchemaNodeLayout {
         return justifiedWidth;
     }
 
-    abstract public String getLabel();
+    public String getLabel() {
+        return node.getLabel();
+    }
 
     public double getLabelWidth() {
         return labelWidth;
@@ -194,7 +203,9 @@ abstract public class SchemaNodeLayout {
 
     abstract public double justify(double justified);
 
-    abstract public Control label(double labelWidth);
+    public Control label(double labelWidth) {
+        return label(labelWidth, node.getLabel());
+    }
 
     public Control label(double width, double half) {
         return layout.label(width, getLabel(), half);
@@ -221,6 +232,8 @@ abstract public class SchemaNodeLayout {
                                    Function<JsonNode, JsonNode> extractor);
 
     abstract public double nestTableColumn(Indent indent, double indentation);
+
+    abstract public void normalizeRowHeight(double normalized);
 
     abstract public OutlineElement outlineElement(int cardinality,
                                                   double labelWidth,
@@ -261,6 +274,8 @@ abstract public class SchemaNodeLayout {
                         Function<JsonNode, JsonNode> extractor) {
         return fold(datum);
     }
+
+    abstract protected SchemaNode getNode();
 
     protected Control label(double labelWidth, String label) {
         return layout.label(labelWidth, label, height);

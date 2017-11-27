@@ -16,14 +16,14 @@
 
 package com.chiralbehaviors.layout.outline;
 
-import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.HorizontalCell;
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Control;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -32,17 +32,27 @@ import javafx.scene.layout.VBox;
  * @author halhildebrand
  *
  */
-public class OutlineElement extends HBox implements LayoutCell<OutlineElement> {
+public class OutlineElement extends HorizontalCell<OutlineElement> {
 
     private static final String                    DEFAULT_STYLE = "outline-element";
+    private static final String                    STYLE_SHEET   = "outline-element.css";
 
-    private final Cell<JsonNode, ? extends Region> cell; 
+    private final Cell<JsonNode, ? extends Region> cell;
+
+    public OutlineElement() {
+        this(null);
+    }
+
+    public OutlineElement(LayoutCell<? extends Region> cell) {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        this.cell = cell;
+    }
 
     public OutlineElement(Control label, LayoutCell<? extends Region> cell,
-                          int cardinality, double labelWidth,
-                          double justified,
+                          int cardinality, double labelWidth, double justified,
                           double height) {
-        setDefaultStyles(DEFAULT_STYLE);
+        this(cell);
 
         setMinSize(justified, height);
         setPrefSize(justified, height);
@@ -51,8 +61,6 @@ public class OutlineElement extends HBox implements LayoutCell<OutlineElement> {
 
         label.setMinWidth(labelWidth);
         label.setMaxWidth(labelWidth);
-
-        this.cell = cell;
         double available = justified - labelWidth;
         cell.getNode()
             .setMinSize(available, height);
@@ -71,10 +79,9 @@ public class OutlineElement extends HBox implements LayoutCell<OutlineElement> {
     }
 
     public OutlineElement(RelationLayout layout, int cardinality,
-                          double labelWidth,
-                          double justified) {
-        this(layout.label(labelWidth), layout.buildControl(),
-             cardinality, labelWidth, justified, layout.getHeight());
+                          double labelWidth, double justified) {
+        this(layout.label(labelWidth), layout.buildControl(), cardinality,
+             labelWidth, justified, layout.getHeight());
     }
 
     @Override

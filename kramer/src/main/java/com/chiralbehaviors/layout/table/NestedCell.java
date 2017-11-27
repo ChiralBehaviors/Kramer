@@ -20,33 +20,49 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.HorizontalCell;
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 
 /**
  * @author halhildebrand
  *
  */
-public class NestedCell extends HBox implements LayoutCell<NestedCell> {
+public class NestedCell extends HorizontalCell<NestedCell> {
     private static final String            DEFAULT_STYLE = "nested-cell";
-    private final List<Consumer<JsonNode>> consumers     = new ArrayList<>();;
+    private static final String            STYLE_SHEET   = "nested-cell.css";
+    private final List<Consumer<JsonNode>> consumers     = new ArrayList<>();
 
-    public NestedCell(double rendered, RelationLayout layout) {
-        setDefaultStyles(DEFAULT_STYLE);
+    public NestedCell() {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+    }
+
+    public NestedCell(RelationLayout layout) {
+        this();
         getStyleClass().add(layout.getField());
-        setMinSize(layout.getJustifiedWidth(), rendered);
-        setPrefSize(layout.getJustifiedWidth(), rendered);
-        setMaxSize(layout.getJustifiedWidth(), rendered);
+        setMinSize(layout.getJustifiedWidth(), layout.getRowHeight());
+        setPrefSize(layout.getJustifiedWidth(), layout.getRowHeight());
+        setMaxSize(layout.getJustifiedWidth(), layout.getRowHeight());
         layout.forEach(child -> {
-            LayoutCell<? extends Region> cell = child.buildColumn(rendered);
+            LayoutCell<? extends Region> cell = child.buildColumn(layout.baseRowCellHeight(layout.getRowHeight()));
             consumers.add(item -> cell.updateItem(child.extractFrom(item)));
-            Region control = cell.getNode();
-            getChildren().add(control);
+            getChildren().add(cell.getNode());
         });
+    }
+
+    public void setFocus(boolean focus) {
+        super.setFocused(focus);
+    }
+
+    @Override
+    public void updateIndex(int index) {
+        boolean active = ((index % 2) == 0);
+        pseudoClassStateChanged(PSEUDO_CLASS_EVEN, active);
+        pseudoClassStateChanged(PSEUDO_CLASS_ODD, !active);
     }
 
     @Override

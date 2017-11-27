@@ -21,25 +21,27 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 import java.util.List;
 import java.util.function.Function;
 
-import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.VerticalCell;
 
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 
 /**
  * @author halhildebrand
  *
  */
-public class ColumnHeader extends VBox implements LayoutCell<ColumnHeader> {
+public class ColumnHeader extends VerticalCell<ColumnHeader> {
     private static final String DEFAULT_STYLE = "column-header";
+    private static final String STYLE_SHEET   = "column-header.css";
 
-    {
-        setDefaultStyles(DEFAULT_STYLE);
+    public ColumnHeader() {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
     }
 
     public ColumnHeader(double width, double height, PrimitiveLayout layout) {
+        this();
         setMinSize(width, height);
         setMaxSize(width, height);
         getChildren().add(layout.label(width, height));
@@ -47,6 +49,7 @@ public class ColumnHeader extends VBox implements LayoutCell<ColumnHeader> {
 
     public ColumnHeader(double width, double height, RelationLayout layout,
                         List<Function<Double, ColumnHeader>> nestedHeaders) {
+        this();
         HBox nested = new HBox();
         setMinSize(width, height);
         setMaxSize(width, height);

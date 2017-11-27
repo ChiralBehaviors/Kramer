@@ -16,13 +16,15 @@
 
 package com.chiralbehaviors.layout.control;
 
+import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.LayoutProvider;
 import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
+import com.chiralbehaviors.layout.StyleProvider;
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -41,13 +43,14 @@ import javafx.scene.layout.Region;
  */
 public class AutoLayout extends Control implements Cell<JsonNode, Region> {
     private static final java.util.logging.Logger log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
+    private static final String                   STYLE_SHEET = "auto-layout.css";
 
     private LayoutCell<? extends Region>          control;
     private SimpleObjectProperty<JsonNode>        data        = new SimpleObjectProperty<>();
     private double                                layoutWidth = 0.0;
     private LayoutModel                           model;
     private final SimpleObjectProperty<Relation>  root        = new SimpleObjectProperty<>();
-    private LayoutProvider                        style;
+    private StyleProvider                         style;
     private SchemaNodeLayout                      layout;
 
     public AutoLayout() {
@@ -60,6 +63,10 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
     }
 
     public AutoLayout(Relation root, LayoutModel model) {
+        URL url = getClass().getResource(STYLE_SHEET);
+        if (url != null) {
+            getStylesheets().add(url.toExternalForm());
+        }
         this.model = model;
         style = new LayoutProvider(this.model);
         this.root.set(root);

@@ -16,45 +16,40 @@
 
 package com.chiralbehaviors.layout.table;
 
-import static com.chiralbehaviors.layout.LayoutProvider.snap;
-
-import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.scene.layout.AnchorPane;
 
 /**
  * @author halhildebrand
  *
  */
-public class NestedRow extends AnchorPane implements LayoutCell<NestedRow> {
-    private static final String            DEFAULT_STYLE = "nested-row";
+public class NestedRow extends HorizontalCell<NestedRow> {
+    private static final String               DEFAULT_STYLE = "nested-row";
+    private static final String               STYLE_SHEET   = "nested-row.css";
 
-    private final ObservableList<JsonNode> nestedItems;
+    private VirtualFlow<JsonNode, NestedCell> row;
+
+    public NestedRow() {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+    }
 
     public NestedRow(double rendered, RelationLayout layout,
                      int childCardinality) {
-        setDefaultStyles(DEFAULT_STYLE);
+        this();
         getStyleClass().addAll(layout.getField());
-        double deficit = rendered - layout.getHeight();
-        double childDeficit = deficit / childCardinality;
-        double extended = snap(layout.getRowHeight() + childDeficit);
-        double cellHeight = layout.baseRowCellHeight(extended);
-        ObservableList<JsonNode> items = FXCollections.observableArrayList();
-        VirtualFlow<JsonNode, NestedCell> row = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
-                                                                           cellHeight,
-                                                                           items,
-                                                                           item -> {
-                                                                               NestedCell cell = new NestedCell(cellHeight,
-                                                                                                                layout);
-                                                                               cell.updateItem(item);
-                                                                               return cell;
-                                                                           });
-        this.nestedItems = items;
+        row = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
+                                         layout.getHeight(),
+                                         FXCollections.observableArrayList(),
+                                         item -> {
+                                             NestedCell cell = new NestedCell(layout);
+                                             cell.updateItem(item);
+                                             return cell;
+                                         });
         double width = layout.getJustifiedColumnWidth();
         row.setMinSize(width, rendered);
         row.setPrefSize(width, rendered);
@@ -64,6 +59,7 @@ public class NestedRow extends AnchorPane implements LayoutCell<NestedRow> {
 
     @Override
     public void updateItem(JsonNode item) {
-        nestedItems.setAll(NestedTable.itemsAsArray(item));
+        row.getItems()
+           .setAll(NestedTable.itemsAsArray(item));
     }
 }

@@ -21,11 +21,12 @@ import java.util.Collection;
 import java.util.List;
 
 import com.chiralbehaviors.layout.ColumnSet;
-import com.chiralbehaviors.layout.LayoutCell;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.geometry.Point2D;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
@@ -33,17 +34,24 @@ import javafx.scene.layout.VBox;
  * @author halhildebrand
  *
  */
-public class OutlineCell extends VBox implements LayoutCell<OutlineCell> {
+public class OutlineCell extends VerticalCell<OutlineCell> {
     private static final String        DEFAULT_STYLE = "outline-cell";
-    private List<Cell<JsonNode, Span>> spans;
+    private static final String        STYLE_SHEET   = "outline-cell.css";
+
+    private List<Cell<JsonNode, Span>> spans         = new ArrayList<>();
+
+    public OutlineCell() {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+    }
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
                        double cellHeight, RelationLayout layout) {
-        setDefaultStyles(DEFAULT_STYLE);
-        spans = new ArrayList<>();
-        setMinSize(layout.getJustifiedWidth(), cellHeight);
-        setPrefSize(layout.getJustifiedWidth(), cellHeight);
-        setMaxSize(layout.getJustifiedWidth(), cellHeight);
+        super(STYLE_SHEET);
+        Point2D expanded = expand(layout.getJustifiedWidth(), cellHeight);
+        setMinSize(expanded.getX(), expanded.getY());
+        setPrefSize(expanded.getX(), expanded.getY());
+        setMaxSize(expanded.getX(), expanded.getY());
         columnSets.forEach(cs -> {
             Cell<JsonNode, Span> span = new Span(cs.getWidth(), cs.getColumns(),
                                                  childCardinality,
@@ -53,6 +61,13 @@ public class OutlineCell extends VBox implements LayoutCell<OutlineCell> {
             VBox.setVgrow(span.getNode(), Priority.ALWAYS);
             getChildren().add(span.getNode());
         });
+    }
+
+    @Override
+    public void updateIndex(int index) {
+        boolean active = ((index % 2) == 0);
+        pseudoClassStateChanged(PSEUDO_CLASS_EVEN, active);
+        pseudoClassStateChanged(PSEUDO_CLASS_ODD, !active);
     }
 
     @Override

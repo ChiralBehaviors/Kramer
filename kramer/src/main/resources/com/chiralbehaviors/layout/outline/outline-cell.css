@@ -1,0 +1,7 @@
+.outline-cell:odd {
+    -fx-background: -fx-control-inner-background-alt; 
+}
+
+.outline-cell { 
+    /*-fx-padding: 0 0.583em 0 0.583em; /* 3 7 3 7 */
+}

@@ -23,9 +23,16 @@ import java.util.Map;
 
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
+import com.chiralbehaviors.layout.outline.Outline;
+import com.chiralbehaviors.layout.outline.OutlineCell;
+import com.chiralbehaviors.layout.outline.OutlineColumn;
+import com.chiralbehaviors.layout.outline.OutlineElement;
+import com.chiralbehaviors.layout.outline.Span;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.table.NestedCell;
+import com.chiralbehaviors.layout.table.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.sun.javafx.scene.text.TextLayout;
@@ -39,12 +46,14 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextBoundsType;
+import javafx.util.Pair;
 
 @SuppressWarnings("restriction")
-public class LayoutProvider {
+public class LayoutProvider implements StyleProvider {
 
     public interface LayoutModel {
 
@@ -148,10 +157,68 @@ public class LayoutProvider {
         }
     }
 
+    /* (non-Javadoc)
+     * @see com.chiralbehaviors.layout.StyleProvider#getModel()
+     */
+    @Override
     public LayoutModel getModel() {
         return model;
     }
 
+    public Pair<StyledInsets, StyledInsets> insets(RelationLayout layout) {
+        VBox root = new VBox();
+
+        NestedTable nestedTable = new NestedTable();
+        NestedCell nestedCell = new NestedCell();
+
+        Outline outline = new Outline();
+        OutlineCell outlineCell = new OutlineCell();
+        OutlineColumn outlineColumn = new OutlineColumn();
+        OutlineElement element = new OutlineElement();
+        Span span = new Span();
+
+        root.getChildren()
+            .addAll(nestedTable, nestedCell, outline, outlineCell,
+                    outlineColumn, element, span);
+        Scene scene = new Scene(root, 800, 600);
+        if (styleSheets != null) {
+            scene.getStylesheets()
+                 .addAll(styleSheets);
+        }
+        nestedTable.applyCss();
+        nestedTable.layout();
+
+        nestedCell.applyCss();
+        nestedCell.layout();
+
+        outline.applyCss();
+        outline.layout();
+
+        outlineCell.applyCss();
+        outlineCell.layout();
+
+        outlineColumn.applyCss();
+        outlineColumn.layout();
+
+        element.applyCss();
+        element.layout();
+
+        span.applyCss();
+        span.layout();
+
+        return new Pair<>(new StyledInsets(insets(nestedTable),
+                                           insets(nestedCell)),
+                          new StyledInsets(insets(outline),
+                                           insets(outlineCell)));
+    }
+
+    private Insets insets(Region region) {
+        return new Insets(region.snappedTopInset(), region.snappedRightInset(),
+                          region.snappedBottomInset(),
+                          region.snappedLeftInset());
+    }
+
+    @Override
     public void initialize(List<String> styleSheets) {
         this.styleSheets = styleSheets;
         Label text = new Label("Lorem Ipsum");
@@ -207,16 +274,30 @@ public class LayoutProvider {
         textInsets = text.getInsets();
     }
 
+    /* (non-Javadoc)
+     * @see com.chiralbehaviors.layout.StyleProvider#layout(com.chiralbehaviors.layout.schema.Primitive)
+     */
+    @Override
     public PrimitiveLayout layout(Primitive primitive) {
         return primitives.computeIfAbsent(primitive,
-                                          p -> new PrimitiveLayout(this, primitive));
+                                          p -> new PrimitiveLayout(this,
+                                                                   primitive));
     }
 
+    /* (non-Javadoc)
+     * @see com.chiralbehaviors.layout.StyleProvider#layout(com.chiralbehaviors.layout.schema.Relation)
+     */
+    @Override
     public RelationLayout layout(Relation relation) {
         return relations.computeIfAbsent(relation,
-                                         r -> new RelationLayout(this, relation));
+                                         r -> new RelationLayout(this,
+                                                                 relation));
     }
 
+    /* (non-Javadoc)
+     * @see com.chiralbehaviors.layout.StyleProvider#layout(com.chiralbehaviors.layout.schema.SchemaNode)
+     */
+    @Override
     public SchemaNodeLayout layout(SchemaNode node) {
         if (node instanceof Relation) {
             return layout((Relation) node);
@@ -229,35 +310,7 @@ public class LayoutProvider {
         return String.format("Layout [model=%s\n listCellInsets=%s\n listInsets=%s\n styleSheets=%s\n textFont=%s\n textInsets=%s\n textLineHeight=%s]",
                              model, cellInsets, insets, styleSheets, textFont,
                              textInsets, textLineHeight);
-    }
-
-    double getCellHorizontalInset() {
-        return cellInsets.getLeft() + cellInsets.getRight();
-    }
-
-    double getCellInset() {
-        return cellInsets.getLeft();
-    }
-
-    double getCellVerticalInset() {
-        return cellInsets.getTop() + cellInsets.getBottom();
-    }
-
-    double getLeftHorizontalInset() {
-        return insets.getLeft();
-    }
-
-    double getListHorizontalInset() {
-        return insets.getLeft() + insets.getRight();
-    }
-
-    double getNestedCellInset() {
-        return getNestedRightInset() + getNestedLeftInset();
-    }
-
-    double getNestedInset() {
-        return getNestedLeftInset() + getNestedRightInset();
-    }
+    }  
 
     double getNestedLeftInset() {
         return insets.getLeft() + cellInsets.getLeft();
