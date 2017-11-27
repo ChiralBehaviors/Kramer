@@ -20,6 +20,7 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.function.Function;
 
+import com.chiralbehaviors.layout.StyleProvider.StyledInsets;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.table.ColumnHeader;
@@ -54,15 +55,15 @@ abstract public class SchemaNodeLayout {
     public enum Indent {
         LEFT {
             @Override
-            public double indent(Indent child, LayoutProvider layout,
+            public double indent(Indent child, StyledInsets insets,
                                  double indentation) {
                 switch (child) {
                     case LEFT:
-                        return indentation + layout.getNestedLeftInset();
+                        return indentation + insets.getNestedLeftInset();
                     case SINGULAR:
-                        return indentation + (2 * layout.getNestedLeftInset());
+                        return indentation + (2 * insets.getNestedLeftInset());
                     case RIGHT:
-                        return layout.getNestedRightInset();
+                        return insets.getNestedRightInset();
                     default:
                         return 0;
                 }
@@ -71,15 +72,15 @@ abstract public class SchemaNodeLayout {
         NONE,
         RIGHT {
             @Override
-            public double indent(Indent child, LayoutProvider layout,
+            public double indent(Indent child, StyledInsets insets,
                                  double indentation) {
                 switch (child) {
                     case LEFT:
-                        return layout.getNestedLeftInset();
+                        return insets.getNestedLeftInset();
                     case RIGHT:
-                        return indentation + layout.getNestedRightInset();
+                        return indentation + insets.getNestedRightInset();
                     case SINGULAR:
-                        return indentation + (2 * layout.getNestedRightInset());
+                        return indentation + (2 * insets.getNestedRightInset());
                     default:
                         return 0;
                 }
@@ -87,15 +88,15 @@ abstract public class SchemaNodeLayout {
         },
         SINGULAR {
             @Override
-            public double indent(Indent child, LayoutProvider layout,
+            public double indent(Indent child, StyledInsets insets,
                                  double indentation) {
                 switch (child) {
                     case LEFT:
-                        return indentation + layout.getNestedLeftInset();
+                        return indentation + insets.getNestedLeftInset();
                     case RIGHT:
-                        return indentation + layout.getNestedRightInset();
+                        return indentation + insets.getNestedRightInset();
                     case SINGULAR:
-                        return indentation + layout.getNestedInset();
+                        return indentation + insets.getNestedInset();
                     default:
                         return 0;
                 }
@@ -103,30 +104,30 @@ abstract public class SchemaNodeLayout {
         },
         TOP {
             @Override
-            public double indent(Indent child, LayoutProvider layout,
+            public double indent(Indent child, StyledInsets insets,
                                  double indentation) {
                 switch (child) {
                     case LEFT:
-                        return layout.getNestedLeftInset();
+                        return insets.getNestedLeftInset();
                     case RIGHT:
-                        return layout.getNestedRightInset();
+                        return insets.getNestedRightInset();
                     case SINGULAR:
-                        return layout.getNestedInset();
+                        return insets.getNestedInset();
                     default:
                         return 0;
                 }
             }
         };
 
-        public double indent(Indent child, LayoutProvider layout,
+        public double indent(Indent child, StyledInsets insets,
                              double indentation) {
             switch (child) {
                 case LEFT:
-                    return layout.getNestedLeftInset();
+                    return insets.getNestedLeftInset();
                 case RIGHT:
-                    return layout.getNestedRightInset();
+                    return insets.getNestedRightInset();
                 case SINGULAR:
-                    return layout.getNestedInset();
+                    return insets.getNestedInset();
                 default:
                     return 0;
             }

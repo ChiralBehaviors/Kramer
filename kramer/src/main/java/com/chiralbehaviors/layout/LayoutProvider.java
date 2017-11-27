@@ -23,9 +23,16 @@ import java.util.Map;
 
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
+import com.chiralbehaviors.layout.outline.Outline;
+import com.chiralbehaviors.layout.outline.OutlineCell;
+import com.chiralbehaviors.layout.outline.OutlineColumn;
+import com.chiralbehaviors.layout.outline.OutlineElement;
+import com.chiralbehaviors.layout.outline.Span;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.table.NestedCell;
+import com.chiralbehaviors.layout.table.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.sun.javafx.scene.text.TextLayout;
@@ -39,9 +46,11 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextBoundsType;
+import javafx.util.Pair;
 
 @SuppressWarnings("restriction")
 public class LayoutProvider implements StyleProvider {
@@ -156,9 +165,59 @@ public class LayoutProvider implements StyleProvider {
         return model;
     }
 
-    /* (non-Javadoc)
-     * @see com.chiralbehaviors.layout.StyleProvider#initialize(java.util.List)
-     */
+    public Pair<StyledInsets, StyledInsets> insets(RelationLayout layout) {
+        VBox root = new VBox();
+
+        NestedTable nestedTable = new NestedTable();
+        NestedCell nestedCell = new NestedCell();
+
+        Outline outline = new Outline();
+        OutlineCell outlineCell = new OutlineCell();
+        OutlineColumn outlineColumn = new OutlineColumn();
+        OutlineElement element = new OutlineElement();
+        Span span = new Span();
+
+        root.getChildren()
+            .addAll(nestedTable, nestedCell, outline, outlineCell,
+                    outlineColumn, element, span);
+        Scene scene = new Scene(root, 800, 600);
+        if (styleSheets != null) {
+            scene.getStylesheets()
+                 .addAll(styleSheets);
+        }
+        nestedTable.applyCss();
+        nestedTable.layout();
+
+        nestedCell.applyCss();
+        nestedCell.layout();
+
+        outline.applyCss();
+        outline.layout();
+
+        outlineCell.applyCss();
+        outlineCell.layout();
+
+        outlineColumn.applyCss();
+        outlineColumn.layout();
+
+        element.applyCss();
+        element.layout();
+
+        span.applyCss();
+        span.layout();
+
+        return new Pair<>(new StyledInsets(insets(nestedTable),
+                                           insets(nestedCell)),
+                          new StyledInsets(insets(outline),
+                                           insets(outlineCell)));
+    }
+
+    private Insets insets(Region region) {
+        return new Insets(region.snappedTopInset(), region.snappedRightInset(),
+                          region.snappedBottomInset(),
+                          region.snappedLeftInset());
+    }
+
     @Override
     public void initialize(List<String> styleSheets) {
         this.styleSheets = styleSheets;
@@ -253,54 +312,6 @@ public class LayoutProvider implements StyleProvider {
                              textInsets, textLineHeight);
     }
 
-    double getCellHorizontalInset() {
-        return cellInsets.getLeft() + cellInsets.getRight();
-    }
-
-    double getCellInset() {
-        return cellInsets.getLeft();
-    }
-
-    double getCellVerticalInset() {
-        return cellInsets.getTop() + cellInsets.getBottom();
-    }
-
-    double getLeftHorizontalInset() {
-        return insets.getLeft();
-    }
-
-    double getListHorizontalInset() {
-        return insets.getLeft() + insets.getRight();
-    }
-
-    double getNestedCellInset() {
-        return getNestedRightInset() + getNestedLeftInset();
-    }
-
-    double getNestedInset() {
-        return getNestedLeftInset() + getNestedRightInset();
-    }
-
-    double getNestedLeftInset() {
-        return insets.getLeft() + cellInsets.getLeft();
-    }
-
-    double getNestedListInset() {
-        return getNestedLeftInset() + getNestedRightInset();
-    }
-
-    double getNestedRightInset() {
-        return insets.getRight() + cellInsets.getRight();
-    }
-
-    double getRightCellInset() {
-        return cellInsets.getRight();
-    }
-
-    double getRightHorizontalInset() {
-        return insets.getRight();
-    }
-
     double getTextHorizontalInset() {
         return textInsets.getLeft() + textInsets.getRight();
     }
@@ -311,10 +322,6 @@ public class LayoutProvider implements StyleProvider {
 
     double getTextVerticalInset() {
         return textInsets.getTop() + textInsets.getBottom();
-    }
-
-    double getVerticalInset() {
-        return insets.getTop() + insets.getBottom();
     }
 
     Control label(double labelWidth, String label, double height) {

@@ -25,6 +25,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.chiralbehaviors.layout.StyleProvider.StyledInsets;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
@@ -42,6 +43,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import javafx.scene.control.Control;
 import javafx.scene.layout.Region;
+import javafx.util.Pair;
 
 /**
  *
@@ -70,16 +72,21 @@ public class RelationLayout extends SchemaNodeLayout {
     protected final List<ColumnSet>        columnSets       = new ArrayList<>();
     protected Function<JsonNode, JsonNode> extractor;
     protected int                          maxCardinality;
+    protected final StyledInsets           outlineInsets;
     protected final Relation               r;
     protected int                          resolvedCardinality;
     protected double                       rowHeight        = -1;
     protected double                       tableColumnWidth = 0;
+    protected final StyledInsets           tableInsets;
     protected boolean                      useTable         = false;
 
     public RelationLayout(LayoutProvider layout, Relation r) {
         super(layout);
         assert r != null && layout != null;
         this.r = r;
+        Pair<StyledInsets, StyledInsets> insets = layout.insets(this);
+        tableInsets = insets.getKey();
+        outlineInsets = insets.getValue();
     }
 
     @Override
@@ -107,11 +114,11 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double baseOutlineCellHeight(double cellHeight) {
-        return snap(cellHeight - layout.getCellVerticalInset());
+        return snap(cellHeight - outlineInsets.getCellVerticalInset());
     }
 
     public double baseRowCellHeight(double extended) {
-        return snap(extended - layout.getCellVerticalInset());
+        return snap(extended - tableInsets.getCellVerticalInset());
     }
 
     @Override
@@ -121,7 +128,7 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public TableHeader buildColumnHeader() {
         return new TableHeader(snap(justifiedWidth
-                                    + layout.getNestedCellInset()),
+                                    + tableInsets.getNestedCellInset()),
                                columnHeaderHeight, children);
     }
 
@@ -158,7 +165,7 @@ public class RelationLayout extends SchemaNodeLayout {
         return children.stream()
                        .mapToDouble(c -> c.calculateTableColumnWidth())
                        .sum()
-               + layout.getNestedInset();
+               + tableInsets.getNestedInset();
     }
 
     @Override
@@ -178,8 +185,9 @@ public class RelationLayout extends SchemaNodeLayout {
             rowHeight = rowHeight(elementHeight);
             height = snap((resolvedCardinality
                            * snap(elementHeight
-                                  + layout.getCellVerticalInset()))
-                          + layout.getVerticalInset() + columnHeaderHeight);
+                                  + outlineInsets.getCellVerticalInset()))
+                          + outlineInsets.getVerticalInset()
+                          + columnHeaderHeight);
         }
         return height;
     }
@@ -205,7 +213,7 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public double columnWidth() {
-        return snap(columnWidth + layout.getNestedInset());
+        return snap(columnWidth + outlineInsets.getNestedInset());
     }
 
     @Override
@@ -267,13 +275,11 @@ public class RelationLayout extends SchemaNodeLayout {
         return r.getField();
     }
 
-    public double getJustifiedCellWidth() {
-        return snap(justifiedWidth + layout.getCellHorizontalInset());
-    }
-
     @Override
     public double getJustifiedColumnWidth() {
-        return snap(justifiedWidth + layout.getNestedInset());
+        return snap(justifiedWidth
+                    + (useTable ? tableInsets.getNestedInset()
+                                : outlineInsets.getNestedInset()));
     }
 
     @Override
@@ -291,7 +297,7 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public double justify(double justifed) {
-        double available = snap(justifed - layout.getNestedCellInset());
+        double available = snap(justifed - tableInsets.getNestedCellInset());
         double[] remaining = new double[] { available };
         SchemaNodeLayout last = children.get(children.size() - 1);
         justifiedWidth = snap(children.stream()
@@ -379,7 +385,7 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public double nestTableColumn(Indent indent, double indentation) {
         columnHeaderIndentation = snap(indentation
-                                       + layout.getNestedCellInset());
+                                       + tableInsets.getNestedCellInset());
         useTable = true;
         rowHeight = -1.0;
         columnHeaderHeight = -1.0;
@@ -389,7 +395,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                             Indent child = indent(indent, c);
                                             return c.nestTableColumn(child,
                                                                      indent.indent(child,
-                                                                                   layout,
+                                                                                   tableInsets,
                                                                                    indentation));
                                         })
                                         .sum());
@@ -397,7 +403,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double outlineCellHeight(double baseHeight) {
-        return baseHeight + layout.getCellVerticalInset();
+        return baseHeight + outlineInsets.getCellVerticalInset();
     }
 
     @Override
@@ -411,7 +417,8 @@ public class RelationLayout extends SchemaNodeLayout {
     public double rowHeight(int cardinality, double justified) {
         resolvedCardinality = resolveCardinality(cardinality);
         rowHeight = rowHeight(elementHeight());
-        height = snap((cardinality * rowHeight) + layout.getVerticalInset());
+        height = snap((cardinality * rowHeight)
+                      + tableInsets.getVerticalInset());
         return height;
     }
 
@@ -420,7 +427,7 @@ public class RelationLayout extends SchemaNodeLayout {
         assert tableColumnWidth > 0.0 : String.format("%s tcw <= 0: %s",
                                                       r.getLabel(),
                                                       tableColumnWidth);
-        return snap(tableColumnWidth + layout.getNestedInset());
+        return snap(tableColumnWidth + tableInsets.getNestedInset());
     }
 
     @Override
@@ -431,7 +438,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     protected double baseColumnWidth(double width) {
-        return snap(width - layout.getNestedInset());
+        return snap(width - outlineInsets.getNestedInset());
     }
 
     @Override
@@ -500,8 +507,8 @@ public class RelationLayout extends SchemaNodeLayout {
 
     protected double outlineHeight(int cardinality, double elementHeight) {
         return snap((cardinality
-                     * (elementHeight + layout.getCellVerticalInset()))
-                    + layout.getVerticalInset());
+                     * (elementHeight + outlineInsets.getCellVerticalInset()))
+                    + outlineInsets.getVerticalInset());
     }
 
     protected int resolveCardinality(int cardinality) {
@@ -509,7 +516,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     protected double rowHeight(double elementHeight) {
-        return snap(elementHeight + layout.getCellVerticalInset());
+        return snap(elementHeight + tableInsets.getCellVerticalInset());
     }
 
 }
