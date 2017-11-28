@@ -239,7 +239,8 @@ abstract public class SchemaNodeLayout {
 
     abstract public OutlineElement outlineElement(String parent,
                                                   int cardinality,
-                                                  double labelWidth, double justified);
+                                                  double labelWidth,
+                                                  double justified);
 
     abstract public double rowHeight(int averageCardinality,
                                      double justifiedWidth);

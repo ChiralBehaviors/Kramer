@@ -162,6 +162,48 @@ public class LayoutProvider implements StyleProvider {
     }
 
     @Override
+    public void initialize(List<String> styleSheets) {
+        this.styleSheets = styleSheets;
+        Label text = new Label("Lorem Ipsum");
+        text.setStyle("-fx-background-color: " + "         rgba(0,0,0,0.08),"
+                      + "        linear-gradient(#9a9a9a, #909090),"
+                      + "        white 0%;"
+                      + "    -fx-background-insets: 0 0 -1 0,0,1;"
+                      + "    -fx-background-radius: 5,5,4;"
+                      + "    -fx-padding: 3 30 3 30;"
+                      + "    -fx-text-fill: #242d35;"
+                      + "    -fx-font-size: 14px;");
+        Label labelText = new Label("Lorem Ipsum");
+
+        ObservableList<String> items = FXCollections.observableArrayList();
+
+        VBox root = new VBox();
+        root.getChildren()
+            .addAll(text, labelText);
+        Scene scene = new Scene(root, 800, 600);
+        if (styleSheets != null) {
+            scene.getStylesheets()
+                 .addAll(styleSheets);
+        }
+        text.applyCss();
+        text.layout();
+
+        labelText.applyCss();
+        labelText.layout();
+        for (int i = 0; i < 100; i++) {
+            items.add("Lorem ipsum");
+        }
+        root.applyCss();
+        root.layout();
+
+        textFont = text.getFont();
+        textLineHeight = snap(getLineHeight(textFont,
+                                            TextBoundsType.LOGICAL_VERTICAL_CENTER))
+                         + 1;
+        textInsets = text.getInsets();
+    }
+
+    @Override
     public Pair<StyledInsets, StyledInsets> insets(RelationLayout layout) {
         VBox root = new VBox();
 
@@ -207,48 +249,6 @@ public class LayoutProvider implements StyleProvider {
                                            nestedCell.getInsets()),
                           new StyledInsets(outline.getInsets(),
                                            outlineCell.getInsets()));
-    }
-
-    @Override
-    public void initialize(List<String> styleSheets) {
-        this.styleSheets = styleSheets;
-        Label text = new Label("Lorem Ipsum");
-        text.setStyle("-fx-background-color: " + "         rgba(0,0,0,0.08),"
-                      + "        linear-gradient(#9a9a9a, #909090),"
-                      + "        white 0%;"
-                      + "    -fx-background-insets: 0 0 -1 0,0,1;"
-                      + "    -fx-background-radius: 5,5,4;"
-                      + "    -fx-padding: 3 30 3 30;"
-                      + "    -fx-text-fill: #242d35;"
-                      + "    -fx-font-size: 14px;");
-        Label labelText = new Label("Lorem Ipsum");
-
-        ObservableList<String> items = FXCollections.observableArrayList();
-
-        VBox root = new VBox();
-        root.getChildren()
-            .addAll(text, labelText);
-        Scene scene = new Scene(root, 800, 600);
-        if (styleSheets != null) {
-            scene.getStylesheets()
-                 .addAll(styleSheets);
-        }
-        text.applyCss();
-        text.layout();
-
-        labelText.applyCss();
-        labelText.layout();
-        for (int i = 0; i < 100; i++) {
-            items.add("Lorem ipsum");
-        }
-        root.applyCss();
-        root.layout();
-
-        textFont = text.getFont();
-        textLineHeight = snap(getLineHeight(textFont,
-                                            TextBoundsType.LOGICAL_VERTICAL_CENTER))
-                         + 1;
-        textInsets = text.getInsets();
     }
 
     @Override

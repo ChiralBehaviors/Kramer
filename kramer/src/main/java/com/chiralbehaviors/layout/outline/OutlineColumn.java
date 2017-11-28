@@ -21,8 +21,11 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.Column;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.fasterxml.jackson.databind.JsonNode;
+
+import javafx.scene.Node;
 
 /**
  * @author halhildebrand
@@ -34,6 +37,16 @@ public class OutlineColumn extends VerticalCell<OutlineColumn> {
     private static final String            SCHEMA_CLASS_TEMPLATE = "%s-outline-column";
     private static final String            STYLE_SHEET           = "outline-column.css";
     private final List<Consumer<JsonNode>> fields                = new ArrayList<>();
+    private final FocusTraversal           focus;
+    {
+        focus = new FocusTraversal() {
+
+            @Override
+            protected Node getNode() {
+                return OutlineColumn.this;
+            }
+        };
+    }
 
     public OutlineColumn(String field) {
         super(STYLE_SHEET);
@@ -54,6 +67,16 @@ public class OutlineColumn extends VerticalCell<OutlineColumn> {
              fields.add(item -> cell.updateItem(f.extractFrom(item)));
              getChildren().add(cell.getNode());
          });
+    }
+
+    @Override
+    public void dispose() {
+        focus.unbind();
+    }
+
+    @Override
+    public void reset() {
+        focus.unbind();
     }
 
     @Override

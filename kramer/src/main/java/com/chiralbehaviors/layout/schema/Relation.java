@@ -38,6 +38,16 @@ public class Relation extends SchemaNode {
         children.add(child);
     }
 
+    public Relation getAutoFoldable() {
+        if (fold != null) {
+            return fold;
+        }
+        return autoFold && children.size() == 1
+               && children.get(children.size() - 1) instanceof Relation
+                                                                        ? (Relation) children.get(0)
+                                                                        : null;
+    }
+
     public SchemaNode getChild(String field) {
         for (SchemaNode child : children) {
             if (child.getField()
@@ -54,16 +64,6 @@ public class Relation extends SchemaNode {
 
     public Relation getFold() {
         return fold;
-    }
-
-    public Relation getAutoFoldable() {
-        if (fold != null) {
-            return fold;
-        }
-        return autoFold && children.size() == 1
-               && children.get(children.size() - 1) instanceof Relation
-                                                                        ? (Relation) children.get(0)
-                                                                        : null;
     }
 
     @JsonProperty

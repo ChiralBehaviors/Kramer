@@ -47,11 +47,11 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
 
     private LayoutCell<? extends Region>          control;
     private SimpleObjectProperty<JsonNode>        data        = new SimpleObjectProperty<>();
+    private SchemaNodeLayout                      layout;
     private double                                layoutWidth = 0.0;
     private LayoutModel                           model;
     private final SimpleObjectProperty<Relation>  root        = new SimpleObjectProperty<>();
     private StyleProvider                         style;
-    private SchemaNodeLayout                      layout;
 
     public AutoLayout() {
         this(null);

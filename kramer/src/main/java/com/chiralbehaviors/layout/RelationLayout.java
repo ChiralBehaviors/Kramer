@@ -382,6 +382,16 @@ public class RelationLayout extends SchemaNodeLayout {
         return tableColumnWidth();
     }
 
+    @Override
+    public void normalizeRowHeight(double normalized) {
+        double deficit = normalized - height;
+        double childDeficit = deficit / (double) resolvedCardinality;
+        rowHeight = snap(rowHeight + childDeficit);
+        height = normalized;
+
+        children.forEach(c -> c.normalizeRowHeight(rowHeight));
+    }
+
     public double outlineCellHeight(double baseHeight) {
         return baseHeight + outlineInsets.getCellVerticalInset();
     }
@@ -430,16 +440,6 @@ public class RelationLayout extends SchemaNodeLayout {
                                             .getAsDouble());
         children.forEach(c -> c.normalizeRowHeight(elementHeight));
         return snap(elementHeight + tableInsets.getCellVerticalInset());
-    }
-
-    @Override
-    public void normalizeRowHeight(double normalized) {
-        double deficit = normalized - height;
-        double childDeficit = deficit / (double) resolvedCardinality;
-        rowHeight = snap(rowHeight + childDeficit);
-        height = normalized;
-
-        children.forEach(c -> c.normalizeRowHeight(rowHeight));
     }
 
     @Override

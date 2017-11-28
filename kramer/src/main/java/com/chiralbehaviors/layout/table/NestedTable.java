@@ -17,19 +17,8 @@
 package com.chiralbehaviors.layout.table;
 
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
-import static javafx.scene.input.KeyCode.DOWN;
-import static javafx.scene.input.KeyCode.ENTER;
-import static javafx.scene.input.KeyCode.KP_DOWN;
-import static javafx.scene.input.KeyCode.KP_LEFT;
-import static javafx.scene.input.KeyCode.KP_RIGHT;
-import static javafx.scene.input.KeyCode.KP_UP;
-import static javafx.scene.input.KeyCode.LEFT;
 import static javafx.scene.input.KeyCode.PAGE_DOWN;
 import static javafx.scene.input.KeyCode.PAGE_UP;
-import static javafx.scene.input.KeyCode.RIGHT;
-import static javafx.scene.input.KeyCode.TAB;
-import static javafx.scene.input.KeyCode.UP;
-import static javafx.scene.input.KeyCombination.SHIFT_DOWN;
 import static org.fxmisc.wellbehaved.event.EventPattern.keyPressed;
 import static org.fxmisc.wellbehaved.event.EventPattern.mouseClicked;
 import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.consume;
@@ -42,6 +31,7 @@ import java.util.List;
 import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
 
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.flowless.FlyAwayScrollPane;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
@@ -61,10 +51,23 @@ import javafx.scene.layout.Region;
  *
  */
 public class NestedTable extends VerticalCell<NestedTable> {
-    private static final InputMapTemplate<NestedTable, InputEvent> DEFAULT_INPUT_MAP     = naviationMap();
+    private static final InputMapTemplate<NestedTable, InputEvent> DEFAULT_INPUT_MAP;
     private static final String                                    DEFAULT_STYLE         = "nested-table";
-    private static final String                                    STYLE_SHEET           = "nested-table.css";
     private static final String                                    SCHEMA_CLASS_TEMPLATE = "%s-nested-table";
+    private static final String                                    STYLE_SHEET           = "nested-table.css";
+
+    static {
+        DEFAULT_INPUT_MAP = unless(Node::isDisabled,
+                                   sequence(consume(mouseClicked(MouseButton.PRIMARY),
+                                                    (table,
+                                                     evt) -> table.select(evt)),
+                                            consume(keyPressed(PAGE_UP),
+                                                    (table,
+                                                     evt) -> table.scrollUp()),
+                                            consume(keyPressed(PAGE_DOWN),
+                                                    (table,
+                                                     evt) -> table.scrollDown())));
+    }
 
     public static List<JsonNode> itemsAsArray(JsonNode items) {
         List<JsonNode> itemArray = new ArrayList<>();
@@ -73,44 +76,18 @@ public class NestedTable extends VerticalCell<NestedTable> {
         return itemArray;
     }
 
-    protected static void activate() {
-        // TODO Auto-generated method stub
-    }
-
-    private static InputMapTemplate<NestedTable, InputEvent> naviationMap() {
-        return unless(Node::isDisabled,
-                      sequence(consume(mouseClicked(MouseButton.PRIMARY),
-                                       (table, evt) -> table.select(evt)),
-                               consume(keyPressed(PAGE_UP),
-                                       (table, evt) -> table.scrollUp()),
-                               consume(keyPressed(PAGE_DOWN),
-                                       (table, evt) -> table.scrollDown()),
-                               consume(keyPressed(TAB),
-                                       (table, evt) -> table.traverseNext()),
-                               consume(keyPressed(TAB, SHIFT_DOWN),
-                                       (table,
-                                        evt) -> table.traversePrevious()),
-                               consume(keyPressed(UP),
-                                       (table, evt) -> table.selectPrevious()),
-                               consume(keyPressed(KP_UP),
-                                       (table, evt) -> table.selectPrevious()),
-                               consume(keyPressed(DOWN),
-                                       (table, evt) -> table.selectNext()),
-                               consume(keyPressed(KP_DOWN),
-                                       (table, evt) -> table.selectNext()),
-                               consume(keyPressed(LEFT),
-                                       (table, evt) -> table.traverseLeft()),
-                               consume(keyPressed(KP_LEFT),
-                                       (table, evt) -> table.traverseLeft()),
-                               consume(keyPressed(RIGHT),
-                                       (table, evt) -> table.traverseRight()),
-                               consume(keyPressed(KP_RIGHT),
-                                       (table, evt) -> table.traverseRight()),
-                               consume(keyPressed(ENTER),
-                                       (table, evt) -> activate())));
-    }
-
+    private final FocusTraversal                    focus;
     private final VirtualFlow<JsonNode, NestedCell> rows;
+    {
+        focus = new FocusTraversal() {
+
+            @Override
+            protected Node getNode() {
+                return NestedTable.this;
+            }
+
+        };
+    }
 
     public NestedTable(int childCardinality, RelationLayout layout) {
         super(STYLE_SHEET);
@@ -139,6 +116,16 @@ public class NestedTable extends VerticalCell<NestedTable> {
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
         this.rows = null;
+    }
+
+    @Override
+    public void dispose() {
+        focus.unbind();
+    }
+
+    @Override
+    public void reset() {
+        focus.unbind();
     }
 
     @Override
@@ -177,37 +164,10 @@ public class NestedTable extends VerticalCell<NestedTable> {
         VirtualFlowHit<NestedCell> hit = rows.hit(evt.getX(), evt.getY());
         if (hit.isCellHit()) {
             NestedCell node = hit.getCell()
-               .getNode();
-            node
-               .setFocus(true);
+                                 .getNode();
+            node.setFocus(true);
             node.setExternalFocus(false);
-            
+
         }
-    }
-
-    protected void selectNext() {
-        rows.getSelectionModel()
-            .selectNext();
-    }
-
-    protected void selectPrevious() {
-        rows.getSelectionModel()
-            .selectPrevious();
-    }
-
-    protected void traverseLeft() {
-        // TODO Auto-generated method stub
-    }
-
-    protected void traverseNext() {
-        // TODO Auto-generated method stub
-    }
-
-    protected void traversePrevious() {
-        // TODO Auto-generated method stub
-    }
-
-    protected void traverseRight() {
-        // TODO Auto-generated method stub
     }
 }

@@ -44,6 +44,7 @@ import javafx.scene.input.InputEvent;
 abstract public class FocusTraversal {
 
     private final static InputMapTemplate<FocusTraversal, InputEvent> TRAVERSAL_INPUT_MAP;
+
     static {
         TRAVERSAL_INPUT_MAP = unless(c -> c.isDisabled(),
                                      sequence(consume(keyPressed(TAB),
@@ -82,12 +83,17 @@ abstract public class FocusTraversal {
                                                        evt) -> traversal.activate())));
     }
 
-    private boolean isDisabled() {
-        return false;
+    public FocusTraversal() {
+        bind();
     }
 
     public void activate() {
 
+    }
+
+    public void bind() {
+        InputMapTemplate.installFallback(TRAVERSAL_INPUT_MAP, this,
+                                         c -> getNode());
     }
 
     public void selectNext() {
@@ -114,12 +120,14 @@ abstract public class FocusTraversal {
 
     }
 
-    protected void bind(Node node) {
-        InputMapTemplate.installFallback(TRAVERSAL_INPUT_MAP, this, c -> node);
+    public void unbind() {
+        InputMapTemplate.uninstall(TRAVERSAL_INPUT_MAP, this, c -> getNode());
     }
 
-    protected void unbind(Node node) {
-        InputMapTemplate.uninstall(TRAVERSAL_INPUT_MAP, this, c -> node);
+    abstract protected Node getNode();
+
+    private boolean isDisabled() {
+        return false;
     }
 
 }

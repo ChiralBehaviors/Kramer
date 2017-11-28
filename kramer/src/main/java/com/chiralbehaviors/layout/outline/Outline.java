@@ -21,6 +21,7 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.FlyAwayScrollPane;
@@ -31,6 +32,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 
@@ -43,7 +45,18 @@ public class Outline extends HorizontalCell<Outline> {
     private static final String            SCHEMA_CLASS_TEMPLATE = "%s-outline";
     private static final String            STYLE_SHEET           = "outline.css";
 
+    private final FocusTraversal           focus;
     private final ObservableList<JsonNode> items                 = FXCollections.observableArrayList();
+    
+    {
+        focus = new FocusTraversal() {
+
+            @Override
+            protected Node getNode() {
+                return Outline.this;
+            }
+        };
+    }
 
     public Outline(double height, Collection<ColumnSet> columnSets,
                    int averageCardinality, RelationLayout layout) {
@@ -76,6 +89,16 @@ public class Outline extends HorizontalCell<Outline> {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+    }
+
+    @Override
+    public void dispose() {
+        focus.unbind();
+    }
+
+    @Override
+    public void reset() {
+        focus.unbind();
     }
 
     @Override

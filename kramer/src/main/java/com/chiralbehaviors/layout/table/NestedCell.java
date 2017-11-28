@@ -21,10 +21,12 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.scene.Node;
 import javafx.scene.layout.Region;
 
 /**
@@ -33,14 +35,18 @@ import javafx.scene.layout.Region;
  */
 public class NestedCell extends HorizontalCell<NestedCell> {
     private static final String            DEFAULT_STYLE         = "nested-cell";
-    private static final String            STYLE_SHEET           = "nested-cell.css";
     private static final String            SCHEMA_CLASS_TEMPLATE = "%s-nested-cell";
+    private static final String            STYLE_SHEET           = "nested-cell.css";
     private final List<Consumer<JsonNode>> consumers             = new ArrayList<>();
+    private final FocusTraversal           focus;
+    {
+        focus = new FocusTraversal() {
 
-    public NestedCell(String field) {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+            @Override
+            protected Node getNode() {
+                return NestedCell.this;
+            }
+        };
     }
 
     public NestedCell(RelationLayout layout) {
@@ -53,6 +59,22 @@ public class NestedCell extends HorizontalCell<NestedCell> {
             consumers.add(item -> cell.updateItem(child.extractFrom(item)));
             getChildren().add(cell.getNode());
         });
+    }
+
+    public NestedCell(String field) {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+    }
+
+    @Override
+    public void dispose() {
+        focus.unbind();
+    }
+
+    @Override
+    public void reset() {
+        focus.unbind();
     }
 
     public void setFocus(boolean focus) {

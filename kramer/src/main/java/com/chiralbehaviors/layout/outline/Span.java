@@ -20,9 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.chiralbehaviors.layout.Column;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
+
+import javafx.scene.Node;
 
 /**
  * @author halhildebrand
@@ -34,6 +37,16 @@ public class Span extends HorizontalCell<Span> {
     private static final String                       S_SPAN        = "%s-span";
     private static final String                       STYLE_SHEET   = "span.css";
     private final List<Cell<JsonNode, OutlineColumn>> columns       = new ArrayList<>();
+    private final FocusTraversal                      focus;
+    {
+        focus = new FocusTraversal() {
+
+            @Override
+            protected Node getNode() {
+                return Span.this;
+            }
+        };
+    }
 
     public Span(String field) {
         super(STYLE_SHEET);
@@ -56,6 +69,16 @@ public class Span extends HorizontalCell<Span> {
             this.columns.add(cell);
             getChildren().add(cell.getNode());
         });
+    }
+
+    @Override
+    public void dispose() {
+        focus.unbind();
+    }
+
+    @Override
+    public void reset() {
+        focus.unbind();
     }
 
     @Override

@@ -22,10 +22,12 @@ import java.util.List;
 
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.scene.Node;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
@@ -39,7 +41,18 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
     private static final String        SCHEMA_CLASS_TEMPLATE = "%s-outline-cell";
     private static final String        STYLE_SHEET           = "outline-cell.css";
 
+    private final FocusTraversal       focus;
+
     private List<Cell<JsonNode, Span>> spans                 = new ArrayList<>();
+    {
+        focus = new FocusTraversal() {
+
+            @Override
+            protected Node getNode() {
+                return OutlineCell.this;
+            }
+        };
+    }
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
                        double cellHeight, RelationLayout layout) {
@@ -63,6 +76,16 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+    }
+
+    @Override
+    public void dispose() {
+        focus.unbind();
+    }
+
+    @Override
+    public void reset() {
+        focus.unbind();
     }
 
     @Override

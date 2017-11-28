@@ -17,11 +17,13 @@
 package com.chiralbehaviors.layout.table;
 
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
+import javafx.scene.Node;
 
 /**
  * @author halhildebrand
@@ -29,15 +31,20 @@ import javafx.collections.FXCollections;
  */
 public class NestedRow extends HorizontalCell<NestedRow> {
     private static final String               DEFAULT_STYLE         = "nested-row";
-    private static final String               STYLE_SHEET           = "nested-row.css";
     private static final String               SCHEMA_CLASS_TEMPLATE = "%s-nested-row";
+    private static final String               STYLE_SHEET           = "nested-row.css";
 
+    private final FocusTraversal              focus;
     private VirtualFlow<JsonNode, NestedCell> row;
+    {
+        focus = new FocusTraversal() {
 
-    public NestedRow(String field) {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+            @Override
+            protected Node getNode() {
+                return NestedRow.this;
+            }
+
+        };
     }
 
     public NestedRow(double rendered, RelationLayout layout,
@@ -57,6 +64,22 @@ public class NestedRow extends HorizontalCell<NestedRow> {
         row.setPrefSize(width, rendered);
         row.setMaxSize(width, rendered);
         getChildren().add(row);
+    }
+
+    public NestedRow(String field) {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+    }
+
+    @Override
+    public void dispose() {
+        focus.unbind();
+    }
+
+    @Override
+    public void reset() {
+        focus.unbind();
     }
 
     @Override

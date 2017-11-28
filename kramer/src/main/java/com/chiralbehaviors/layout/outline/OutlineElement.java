@@ -17,11 +17,13 @@
 package com.chiralbehaviors.layout.outline;
 
 import com.chiralbehaviors.layout.SchemaNodeLayout;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.scene.Node;
 import javafx.scene.control.Control;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -38,19 +40,22 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     private static final String                    STYLE_SHEET           = "outline-element.css";
 
     private final Cell<JsonNode, ? extends Region> cell;
+    private final FocusTraversal                   focus;
+    {
+        focus = new FocusTraversal() {
+
+            @Override
+            protected Node getNode() {
+                return OutlineElement.this;
+            }
+        };
+    }
 
     public OutlineElement(LayoutCell<? extends Region> cell, String field) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
         this.cell = cell;
-    }
-
-    public OutlineElement(String field, SchemaNodeLayout layout,
-                          int cardinality, double labelWidth,
-                          double justified) {
-        this(field, layout.label(labelWidth), layout.buildControl(),
-             cardinality, labelWidth, justified, layout.getHeight());
     }
 
     public OutlineElement(String field) {
@@ -78,6 +83,23 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
             .setMaxSize(available, height);
         getChildren().addAll(label, cell.getNode());
 
+    }
+
+    public OutlineElement(String field, SchemaNodeLayout layout,
+                          int cardinality, double labelWidth,
+                          double justified) {
+        this(field, layout.label(labelWidth), layout.buildControl(),
+             cardinality, labelWidth, justified, layout.getHeight());
+    }
+
+    @Override
+    public void dispose() {
+        focus.unbind();
+    }
+
+    @Override
+    public void reset() {
+        focus.unbind();
     }
 
     @Override
