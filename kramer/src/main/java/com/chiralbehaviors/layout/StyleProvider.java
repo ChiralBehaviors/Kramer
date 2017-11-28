@@ -24,6 +24,7 @@ import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 
 import javafx.geometry.Insets;
+import javafx.util.Pair;
 
 /**
  * @author halhildebrand
@@ -70,5 +71,7 @@ public interface StyleProvider {
     RelationLayout layout(Relation relation);
 
     SchemaNodeLayout layout(SchemaNode node);
+
+    Pair<StyledInsets, StyledInsets> insets(RelationLayout layout);
 
 }

@@ -62,7 +62,8 @@ abstract public class SchemaNodeLayout {
                     case LEFT:
                         return indentation + insets.getCellLeftInset();
                     case SINGULAR:
-                        return indentation + (2 * insets.getCellLeftInset());
+                        return indentation + insets.getCellLeftInset()
+                               + insets.getCellRightInset();
                     case RIGHT:
                         return insets.getCellRightInset();
                     default:
@@ -81,7 +82,8 @@ abstract public class SchemaNodeLayout {
                     case RIGHT:
                         return indentation + insets.getCellRightInset();
                     case SINGULAR:
-                        return indentation + (2 * insets.getCellRightInset());
+                        return indentation + insets.getCellLeftInset()
+                               + insets.getCellRightInset();
                     default:
                         return 0;
                 }

@@ -2,6 +2,8 @@
     -fx-background: -fx-control-inner-background-alt; 
 }
 
-.nested-cell { 
-    -fx-padding: 0.25em 0.583em 0.25em 0.583em; /* 3 7 3 7 */
+.nested-cell {  
+    -fx-background-color: -fx-box-border, -fx-control-inner-background;
+    -fx-padding:  0.25em 0.583em 0.25em 0.583em; /* 3 7 3 7 */
+    -fx-background-insets: 0, 1
 }
