@@ -7,3 +7,9 @@
     -fx-padding:  0.25em 0 0.25em 0.583em; /* 3 7 3 7 */
     -fx-background-insets: 0, 1
 }
+
+
+.outline-cell:filled:selected:focused:disabled,
+.outline-cell:filled:selected:disabled {
+    -fx-opacity: 0.4;
+}

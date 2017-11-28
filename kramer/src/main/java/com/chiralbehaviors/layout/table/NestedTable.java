@@ -176,9 +176,12 @@ public class NestedTable extends VerticalCell<NestedTable> {
     protected void select(MouseEvent evt) {
         VirtualFlowHit<NestedCell> hit = rows.hit(evt.getX(), evt.getY());
         if (hit.isCellHit()) {
-            hit.getCell()
-               .getNode()
+            NestedCell node = hit.getCell()
+               .getNode();
+            node
                .setFocus(true);
+            node.setExternalFocus(false);
+            
         }
     }
 

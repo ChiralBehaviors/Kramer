@@ -7,3 +7,13 @@
     -fx-padding:  0.25em 0.583em 0.25em 0.583em; /* 3 7 3 7 */
     -fx-background-insets: 0, 1
 }
+
+.nested-cell:focused {
+    -fx-background-color: -fx-shadow-highlight-color, -fx-outer-border, -fx-inner-border, -fx-body-color;
+    -fx-background-insets: 0 0 -1 0, 0, 1, 2;
+}
+
+.nested-cell:filled:selected:focused:disabled,
+.nested-cell:filled:selected:disabled {
+    -fx-opacity: 0.4;
+}
