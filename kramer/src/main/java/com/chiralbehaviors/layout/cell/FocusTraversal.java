@@ -34,78 +34,92 @@ import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.unless;
 
 import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
 
+import javafx.scene.Node;
 import javafx.scene.input.InputEvent;
 
 /**
  * @author halhildebrand
  *
  */
-public class FocusTraversal {
+abstract public class FocusTraversal {
 
-    private final InputMapTemplate<LayoutCell<?>, InputEvent> template;
-
-    {
-        template = unless(c -> c.getNode()
-                                .isDisabled(),
-                          sequence(consume(keyPressed(TAB),
-                                           (cell, evt) -> traverseNext(cell)),
-                                   consume(keyPressed(TAB, SHIFT_DOWN),
-                                           (cell,
-                                            evt) -> traversePrevious(cell)),
-                                   consume(keyPressed(UP),
-                                           (cell, evt) -> selectPrevious(cell)),
-                                   consume(keyPressed(KP_UP),
-                                           (cell, evt) -> selectPrevious(cell)),
-                                   consume(keyPressed(DOWN),
-                                           (cell, evt) -> selectNext(cell)),
-                                   consume(keyPressed(KP_DOWN),
-                                           (cell, evt) -> selectNext(cell)),
-                                   consume(keyPressed(LEFT),
-                                           (cell, evt) -> traverseLeft(cell)),
-                                   consume(keyPressed(KP_LEFT),
-                                           (cell, evt) -> traverseLeft(cell)),
-                                   consume(keyPressed(RIGHT),
-                                           (cell, evt) -> traverseRight(cell)),
-                                   consume(keyPressed(KP_RIGHT),
-                                           (cell, evt) -> traverseRight(cell)),
-                                   consume(keyPressed(ENTER),
-                                           (cell, evt) -> activate(cell))));
+    private final static InputMapTemplate<FocusTraversal, InputEvent> TRAVERSAL_INPUT_MAP;
+    static {
+        TRAVERSAL_INPUT_MAP = unless(c -> c.isDisabled(),
+                                     sequence(consume(keyPressed(TAB),
+                                                      (traversal,
+                                                       evt) -> traversal.traverseNext()),
+                                              consume(keyPressed(TAB,
+                                                                 SHIFT_DOWN),
+                                                      (traversal,
+                                                       evt) -> traversal.traversePrevious()),
+                                              consume(keyPressed(UP),
+                                                      (traversal,
+                                                       evt) -> traversal.selectPrevious()),
+                                              consume(keyPressed(KP_UP),
+                                                      (traversal,
+                                                       evt) -> traversal.selectPrevious()),
+                                              consume(keyPressed(DOWN),
+                                                      (traversal,
+                                                       evt) -> traversal.selectNext()),
+                                              consume(keyPressed(KP_DOWN),
+                                                      (traversal,
+                                                       evt) -> traversal.selectNext()),
+                                              consume(keyPressed(LEFT),
+                                                      (traversal,
+                                                       evt) -> traversal.traverseLeft()),
+                                              consume(keyPressed(KP_LEFT),
+                                                      (traversal,
+                                                       evt) -> traversal.traverseLeft()),
+                                              consume(keyPressed(RIGHT),
+                                                      (traversal,
+                                                       evt) -> traversal.traverseRight()),
+                                              consume(keyPressed(KP_RIGHT),
+                                                      (traversal,
+                                                       evt) -> traversal.traverseRight()),
+                                              consume(keyPressed(ENTER),
+                                                      (traversal,
+                                                       evt) -> traversal.activate())));
     }
 
-    public void activate(LayoutCell<?> cell) {
-
+    private boolean isDisabled() {
+        return false;
     }
 
-    public void selectNext(LayoutCell<?> cell) {
-
-    }
-
-    public void selectPrevious(LayoutCell<?> cell) {
-
-    }
-
-    public void traverseLeft(LayoutCell<?> cell) {
-
-    }
-
-    public void traverseNext(LayoutCell<?> cell) {
+    public void activate() {
 
     }
 
-    public void traversePrevious(LayoutCell<?> cell) {
+    public void selectNext() {
 
     }
 
-    public void traverseRight(LayoutCell<?> cell) {
+    public void selectPrevious() {
 
     }
 
-    protected void bind(LayoutCell<?> cell) {
-        InputMapTemplate.installFallback(template, cell, c -> c.getNode());
+    public void traverseLeft() {
+
     }
 
-    protected void unbind(LayoutCell<?> cell) {
-        InputMapTemplate.uninstall(template, cell, c -> c.getNode());
+    public void traverseNext() {
+
+    }
+
+    public void traversePrevious() {
+
+    }
+
+    public void traverseRight() {
+
+    }
+
+    protected void bind(Node node) {
+        InputMapTemplate.installFallback(TRAVERSAL_INPUT_MAP, this, c -> node);
+    }
+
+    protected void unbind(Node node) {
+        InputMapTemplate.uninstall(TRAVERSAL_INPUT_MAP, this, c -> node);
     }
 
 }

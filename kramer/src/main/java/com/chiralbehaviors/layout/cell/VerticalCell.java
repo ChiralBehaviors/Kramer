@@ -18,7 +18,6 @@ package com.chiralbehaviors.layout.cell;
 
 import java.net.URL;
 
-import javafx.geometry.Point2D;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
@@ -36,11 +35,6 @@ abstract public class VerticalCell<T extends Region> extends VBox
         URL url = getClass().getResource(styleSheet);
         stylesheet = url == null ? null : url.toExternalForm();
         getStyleClass().add(STYLE_CLASS);
-    }
-
-    public Point2D expand(double width, double height) {
-        return new Point2D(width + snappedLeftInset() + snappedRightInset(),
-                           height + snappedLeftInset() + snappedRightInset());
     }
 
     @Override
