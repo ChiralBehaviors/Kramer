@@ -46,7 +46,6 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextBoundsType;
@@ -157,14 +156,12 @@ public class LayoutProvider implements StyleProvider {
         }
     }
 
-    /* (non-Javadoc)
-     * @see com.chiralbehaviors.layout.StyleProvider#getModel()
-     */
     @Override
     public LayoutModel getModel() {
         return model;
     }
 
+    @Override
     public Pair<StyledInsets, StyledInsets> insets(RelationLayout layout) {
         VBox root = new VBox();
 
@@ -206,16 +203,10 @@ public class LayoutProvider implements StyleProvider {
         span.applyCss();
         span.layout();
 
-        return new Pair<>(new StyledInsets(insets(nestedTable),
-                                           insets(nestedCell)),
-                          new StyledInsets(insets(outline),
-                                           insets(outlineCell)));
-    }
-
-    private Insets insets(Region region) {
-        return new Insets(region.snappedTopInset(), region.snappedRightInset(),
-                          region.snappedBottomInset(),
-                          region.snappedLeftInset());
+        return new Pair<>(new StyledInsets(nestedTable.getInsets(),
+                                           nestedCell.getInsets()),
+                          new StyledInsets(outline.getInsets(),
+                                           outlineCell.getInsets()));
     }
 
     @Override
@@ -234,15 +225,9 @@ public class LayoutProvider implements StyleProvider {
 
         ObservableList<String> items = FXCollections.observableArrayList();
 
-        VirtualFlow<String, ?> flow = VirtualFlow.createVertical(100, 100,
-                                                                 items,
-                                                                 color -> {
-                                                                     return Cell.wrapNode(new Label(color));
-                                                                 });
-
         VBox root = new VBox();
         root.getChildren()
-            .addAll(flow, text, labelText);
+            .addAll(text, labelText);
         Scene scene = new Scene(root, 800, 600);
         if (styleSheets != null) {
             scene.getStylesheets()
@@ -256,16 +241,8 @@ public class LayoutProvider implements StyleProvider {
         for (int i = 0; i < 100; i++) {
             items.add("Lorem ipsum");
         }
-        flow.requestLayout();
-
         root.applyCss();
         root.layout();
-
-        flow.applyCss();
-        flow.layout();
-
-        insets = new Insets(flow.snappedTopInset(), flow.snappedRightInset(),
-                            flow.snappedBottomInset(), flow.snappedLeftInset());
 
         textFont = text.getFont();
         textLineHeight = snap(getLineHeight(textFont,
@@ -274,9 +251,6 @@ public class LayoutProvider implements StyleProvider {
         textInsets = text.getInsets();
     }
 
-    /* (non-Javadoc)
-     * @see com.chiralbehaviors.layout.StyleProvider#layout(com.chiralbehaviors.layout.schema.Primitive)
-     */
     @Override
     public PrimitiveLayout layout(Primitive primitive) {
         return primitives.computeIfAbsent(primitive,
@@ -284,9 +258,6 @@ public class LayoutProvider implements StyleProvider {
                                                                    primitive));
     }
 
-    /* (non-Javadoc)
-     * @see com.chiralbehaviors.layout.StyleProvider#layout(com.chiralbehaviors.layout.schema.Relation)
-     */
     @Override
     public RelationLayout layout(Relation relation) {
         return relations.computeIfAbsent(relation,
@@ -294,9 +265,6 @@ public class LayoutProvider implements StyleProvider {
                                                                  relation));
     }
 
-    /* (non-Javadoc)
-     * @see com.chiralbehaviors.layout.StyleProvider#layout(com.chiralbehaviors.layout.schema.SchemaNode)
-     */
     @Override
     public SchemaNodeLayout layout(SchemaNode node) {
         if (node instanceof Relation) {
@@ -310,26 +278,10 @@ public class LayoutProvider implements StyleProvider {
         return String.format("Layout [model=%s\n listCellInsets=%s\n listInsets=%s\n styleSheets=%s\n textFont=%s\n textInsets=%s\n textLineHeight=%s]",
                              model, cellInsets, insets, styleSheets, textFont,
                              textInsets, textLineHeight);
-    }  
-
-    double getNestedLeftInset() {
-        return insets.getLeft() + cellInsets.getLeft();
-    }
-
-    double getNestedListInset() {
-        return getNestedLeftInset() + getNestedRightInset();
-    }
-
-    double getNestedRightInset() {
-        return insets.getRight() + cellInsets.getRight();
     }
 
     double getRightCellInset() {
         return cellInsets.getRight();
-    }
-
-    double getRightHorizontalInset() {
-        return insets.getRight();
     }
 
     double getTextHorizontalInset() {
@@ -342,10 +294,6 @@ public class LayoutProvider implements StyleProvider {
 
     double getTextVerticalInset() {
         return textInsets.getTop() + textInsets.getBottom();
-    }
-
-    double getVerticalInset() {
-        return insets.getTop() + insets.getBottom();
     }
 
     Control label(double labelWidth, String label, double height) {
