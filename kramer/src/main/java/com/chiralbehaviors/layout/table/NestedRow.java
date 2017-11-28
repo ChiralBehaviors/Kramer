@@ -19,11 +19,14 @@ package com.chiralbehaviors.layout.table;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
+import com.chiralbehaviors.layout.cell.MouseHandler;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
+import com.chiralbehaviors.layout.flowless.VirtualFlowHit;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
 import javafx.scene.Node;
+import javafx.scene.input.MouseEvent;
 
 /**
  * @author halhildebrand
@@ -36,6 +39,7 @@ public class NestedRow extends HorizontalCell<NestedRow> {
 
     private final FocusTraversal              focus;
     private VirtualFlow<JsonNode, NestedCell> row;
+    private final MouseHandler                mouseHandler;
     {
         focus = new FocusTraversal() {
 
@@ -44,6 +48,25 @@ public class NestedRow extends HorizontalCell<NestedRow> {
                 return NestedRow.this;
             }
 
+        };
+        mouseHandler = new MouseHandler() {
+
+            @Override
+            public Node getNode() {
+                return NestedRow.this;
+            }
+
+            public void select(MouseEvent evt) {
+                VirtualFlowHit<NestedCell> hit = row.hit(evt.getX(),
+                                                         evt.getY());
+                if (hit.isCellHit()) {
+                    NestedCell node = hit.getCell()
+                                         .getNode();
+                    node.setFocus(true);
+                    node.setExternalFocus(false);
+
+                }
+            }
         };
     }
 
@@ -75,11 +98,7 @@ public class NestedRow extends HorizontalCell<NestedRow> {
     @Override
     public void dispose() {
         focus.unbind();
-    }
-
-    @Override
-    public void reset() {
-        focus.unbind();
+        mouseHandler.unbind();
     }
 
     @Override

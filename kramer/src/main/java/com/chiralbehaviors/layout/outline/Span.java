@@ -77,11 +77,6 @@ public class Span extends HorizontalCell<Span> {
     }
 
     @Override
-    public void reset() {
-        focus.unbind();
-    }
-
-    @Override
     public void updateItem(JsonNode item) {
         columns.forEach(c -> c.updateItem(item));
     }

@@ -72,11 +72,6 @@ public class NestedCell extends HorizontalCell<NestedCell> {
         focus.unbind();
     }
 
-    @Override
-    public void reset() {
-        focus.unbind();
-    }
-
     public void setFocus(boolean focus) {
         super.setFocused(focus);
     }

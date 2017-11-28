@@ -72,12 +72,7 @@ public class OutlineColumn extends VerticalCell<OutlineColumn> {
     @Override
     public void dispose() {
         focus.unbind();
-    }
-
-    @Override
-    public void reset() {
-        focus.unbind();
-    }
+    } 
 
     @Override
     public void updateItem(JsonNode item) {

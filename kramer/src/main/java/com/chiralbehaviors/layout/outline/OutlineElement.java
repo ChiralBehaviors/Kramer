@@ -98,11 +98,6 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     }
 
     @Override
-    public void reset() {
-        focus.unbind();
-    }
-
-    @Override
     public void updateItem(JsonNode item) {
         cell.updateItem(item);
     }

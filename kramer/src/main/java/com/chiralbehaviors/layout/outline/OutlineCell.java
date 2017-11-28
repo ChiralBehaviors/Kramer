@@ -84,11 +84,6 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
     }
 
     @Override
-    public void reset() {
-        focus.unbind();
-    }
-
-    @Override
     public void updateIndex(int index) {
         boolean active = ((index % 2) == 0);
         pseudoClassStateChanged(PSEUDO_CLASS_EVEN, active);
