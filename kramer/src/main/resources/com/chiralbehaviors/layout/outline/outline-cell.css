@@ -8,6 +8,11 @@
     -fx-background-insets: 0, 1
 }
 
+.outline-cell:focused {
+    -fx-background-color: -fx-shadow-highlight-color, -fx-outer-border, -fx-inner-border, -fx-body-color;
+    -fx-background-insets: 0 0 -1 0, 0, 1, 2;
+}
+
 
 .outline-cell:filled:selected:focused:disabled,
 .outline-cell:filled:selected:disabled {
