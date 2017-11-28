@@ -237,9 +237,9 @@ abstract public class SchemaNodeLayout {
 
     abstract public void normalizeRowHeight(double normalized);
 
-    abstract public OutlineElement outlineElement(int cardinality,
-                                                  double labelWidth,
-                                                  double justified);
+    abstract public OutlineElement outlineElement(String parent,
+                                                  int cardinality,
+                                                  double labelWidth, double justified);
 
     abstract public double rowHeight(int averageCardinality,
                                      double justifiedWidth);

@@ -61,9 +61,10 @@ import javafx.scene.layout.Region;
  *
  */
 public class NestedTable extends VerticalCell<NestedTable> {
-    private static final InputMapTemplate<NestedTable, InputEvent> DEFAULT_INPUT_MAP = naviationMap();
-    private static final String                                    DEFAULT_STYLE     = "nested-table";
-    private static final String                                    STYLE_SHEET       = "nested-table.css";
+    private static final InputMapTemplate<NestedTable, InputEvent> DEFAULT_INPUT_MAP     = naviationMap();
+    private static final String                                    DEFAULT_STYLE         = "nested-table";
+    private static final String                                    STYLE_SHEET           = "nested-table.css";
+    private static final String                                    SCHEMA_CLASS_TEMPLATE = "%s-nested-table";
 
     public static List<JsonNode> itemsAsArray(JsonNode items) {
         List<JsonNode> itemArray = new ArrayList<>();
@@ -114,6 +115,8 @@ public class NestedTable extends VerticalCell<NestedTable> {
     public NestedTable(int childCardinality, RelationLayout layout) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE,
+                                          layout.getField()));
         InputMapTemplate.installFallback(DEFAULT_INPUT_MAP, this);
         Region header = layout.buildColumnHeader();
         double width = layout.getJustifiedColumnWidth();
@@ -131,9 +134,10 @@ public class NestedTable extends VerticalCell<NestedTable> {
         setMaxWidth(layout.getJustifiedColumnWidth());
     }
 
-    public NestedTable() {
+    public NestedTable(String field) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
         this.rows = null;
     }
 

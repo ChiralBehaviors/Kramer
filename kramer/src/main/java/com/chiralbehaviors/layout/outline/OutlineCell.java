@@ -35,25 +35,23 @@ import javafx.scene.layout.VBox;
  *
  */
 public class OutlineCell extends VerticalCell<OutlineCell> {
-    private static final String        DEFAULT_STYLE = "outline-cell";
-    private static final String        STYLE_SHEET   = "outline-cell.css";
 
-    private List<Cell<JsonNode, Span>> spans         = new ArrayList<>();
+    private static final String        DEFAULT_STYLE         = "outline-cell";
+    private static final String        SCHEMA_CLASS_TEMPLATE = "%s-outline-cell";
+    private static final String        STYLE_SHEET           = "outline-cell.css";
 
-    public OutlineCell() {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-    }
+    private List<Cell<JsonNode, Span>> spans                 = new ArrayList<>();
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
                        double cellHeight, RelationLayout layout) {
-        super(STYLE_SHEET);
+        this(layout.getField());
         Point2D expanded = expand(layout.getJustifiedWidth(), cellHeight);
         setMinSize(expanded.getX(), expanded.getY());
         setPrefSize(expanded.getX(), expanded.getY());
         setMaxSize(expanded.getX(), expanded.getY());
         columnSets.forEach(cs -> {
-            Cell<JsonNode, Span> span = new Span(cs.getWidth(), cs.getColumns(),
+            Cell<JsonNode, Span> span = new Span(layout.getField(),
+                                                 cs.getWidth(), cs.getColumns(),
                                                  childCardinality,
                                                  cs.getCellHeight(),
                                                  layout.getLabelWidth());
@@ -61,6 +59,12 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
             VBox.setVgrow(span.getNode(), Priority.ALWAYS);
             getChildren().add(span.getNode());
         });
+    }
+
+    public OutlineCell(String field) {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
     }
 
     @Override

@@ -28,19 +28,21 @@ import javafx.collections.FXCollections;
  *
  */
 public class NestedRow extends HorizontalCell<NestedRow> {
-    private static final String               DEFAULT_STYLE = "nested-row";
-    private static final String               STYLE_SHEET   = "nested-row.css";
+    private static final String               DEFAULT_STYLE         = "nested-row";
+    private static final String               STYLE_SHEET           = "nested-row.css";
+    private static final String               SCHEMA_CLASS_TEMPLATE = "%s-nested-row";
 
     private VirtualFlow<JsonNode, NestedCell> row;
 
-    public NestedRow() {
+    public NestedRow(String field) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
     }
 
     public NestedRow(double rendered, RelationLayout layout,
                      int childCardinality) {
-        this();
+        this(layout.getField());
         getStyleClass().addAll(layout.getField());
         row = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
                                          layout.getHeight(),

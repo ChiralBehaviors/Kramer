@@ -16,8 +16,7 @@
 
 package com.chiralbehaviors.layout.outline;
 
-import com.chiralbehaviors.layout.PrimitiveLayout;
-import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.Cell;
@@ -34,25 +33,34 @@ import javafx.scene.layout.VBox;
  */
 public class OutlineElement extends HorizontalCell<OutlineElement> {
 
-    private static final String                    DEFAULT_STYLE = "outline-element";
-    private static final String                    STYLE_SHEET   = "outline-element.css";
+    private static final String                    DEFAULT_STYLE         = "outline-element";
+    private static final String                    SCHEMA_CLASS_TEMPLATE = "%s-outline-element";
+    private static final String                    STYLE_SHEET           = "outline-element.css";
 
     private final Cell<JsonNode, ? extends Region> cell;
 
-    public OutlineElement() {
-        this(null);
-    }
-
-    public OutlineElement(LayoutCell<? extends Region> cell) {
+    public OutlineElement(LayoutCell<? extends Region> cell, String field) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
         this.cell = cell;
     }
 
-    public OutlineElement(Control label, LayoutCell<? extends Region> cell,
-                          int cardinality, double labelWidth, double justified,
-                          double height) {
-        this(cell);
+    public OutlineElement(String field, SchemaNodeLayout layout,
+                          int cardinality, double labelWidth,
+                          double justified) {
+        this(field, layout.label(labelWidth), layout.buildControl(),
+             cardinality, labelWidth, justified, layout.getHeight());
+    }
+
+    public OutlineElement(String field) {
+        this(null, field);
+    }
+
+    public OutlineElement(String field, Control label,
+                          LayoutCell<? extends Region> cell, int cardinality,
+                          double labelWidth, double justified, double height) {
+        this(cell, field);
 
         setMinSize(justified, height);
         setPrefSize(justified, height);
@@ -70,18 +78,6 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
             .setMaxSize(available, height);
         getChildren().addAll(label, cell.getNode());
 
-    }
-
-    public OutlineElement(PrimitiveLayout p, int cardinality, double labelWidth,
-                          double justified) {
-        this(p.label(labelWidth), p.buildControl(), cardinality, labelWidth,
-             justified, p.getHeight());
-    }
-
-    public OutlineElement(RelationLayout layout, int cardinality,
-                          double labelWidth, double justified) {
-        this(layout.label(labelWidth), layout.buildControl(), cardinality,
-             labelWidth, justified, layout.getHeight());
     }
 
     @Override

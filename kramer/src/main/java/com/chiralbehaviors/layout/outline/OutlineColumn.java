@@ -30,26 +30,28 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class OutlineColumn extends VerticalCell<OutlineColumn> {
 
-    private static final String            DEFAULT_STYLE = "span";
-    private static final String            STYLE_SHEET   = "outline-column.css";
-    private final List<Consumer<JsonNode>> fields        = new ArrayList<>();
+    private static final String            DEFAULT_STYLE         = "span";
+    private static final String            SCHEMA_CLASS_TEMPLATE = "%s-outline-column";
+    private static final String            STYLE_SHEET           = "outline-column.css";
+    private final List<Consumer<JsonNode>> fields                = new ArrayList<>();
 
-    public OutlineColumn() {
+    public OutlineColumn(String field) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
     }
 
-    public OutlineColumn(Column c, int cardinality, double labelWidth,
-                         double cellHeight) {
-        this();
+    public OutlineColumn(String field, Column c, int cardinality,
+                         double labelWidth, double cellHeight) {
+        this(field);
         setMinSize(c.getWidth(), cellHeight);
         setMaxSize(c.getWidth(), cellHeight);
         setPrefSize(c.getWidth(), cellHeight);
         c.getFields()
-         .forEach(field -> {
-             OutlineElement cell = field.outlineElement(cardinality, labelWidth,
-                                                        c.getWidth());
-             fields.add(item -> cell.updateItem(field.extractFrom(item)));
+         .forEach(f -> {
+             OutlineElement cell = f.outlineElement(field, cardinality,
+                                                    labelWidth, c.getWidth());
+             fields.add(item -> cell.updateItem(f.extractFrom(item)));
              getChildren().add(cell.getNode());
          });
     }

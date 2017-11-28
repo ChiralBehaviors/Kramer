@@ -387,10 +387,11 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public OutlineElement outlineElement(int cardinality, double labelWidth,
-                                         double justified) {
+    public OutlineElement outlineElement(String parent, int cardinality,
+                                         double labelWidth, double justified) {
 
-        return new OutlineElement(this, cardinality, labelWidth, justified);
+        return new OutlineElement(parent, this, cardinality, labelWidth,
+                                  justified);
     }
 
     @Override
@@ -437,7 +438,7 @@ public class RelationLayout extends SchemaNodeLayout {
         double childDeficit = deficit / (double) resolvedCardinality;
         rowHeight = snap(rowHeight + childDeficit);
         height = normalized;
-        
+
         children.forEach(c -> c.normalizeRowHeight(rowHeight));
     }
 

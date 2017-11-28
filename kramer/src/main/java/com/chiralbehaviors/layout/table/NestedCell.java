@@ -32,18 +32,19 @@ import javafx.scene.layout.Region;
  *
  */
 public class NestedCell extends HorizontalCell<NestedCell> {
-    private static final String            DEFAULT_STYLE = "nested-cell";
-    private static final String            STYLE_SHEET   = "nested-cell.css";
-    private final List<Consumer<JsonNode>> consumers     = new ArrayList<>();
+    private static final String            DEFAULT_STYLE         = "nested-cell";
+    private static final String            STYLE_SHEET           = "nested-cell.css";
+    private static final String            SCHEMA_CLASS_TEMPLATE = "%s-nested-cell";
+    private final List<Consumer<JsonNode>> consumers             = new ArrayList<>();
 
-    public NestedCell() {
+    public NestedCell(String field) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
     }
 
     public NestedCell(RelationLayout layout) {
-        this();
-        getStyleClass().add(layout.getField());
+        this(layout.getField());
         setMinSize(layout.getJustifiedWidth(), layout.getRowHeight());
         setPrefSize(layout.getJustifiedWidth(), layout.getRowHeight());
         setMaxSize(layout.getJustifiedWidth(), layout.getRowHeight());

@@ -165,14 +165,14 @@ public class LayoutProvider implements StyleProvider {
     public Pair<StyledInsets, StyledInsets> insets(RelationLayout layout) {
         VBox root = new VBox();
 
-        NestedTable nestedTable = new NestedTable();
-        NestedCell nestedCell = new NestedCell();
+        NestedTable nestedTable = new NestedTable(layout.getField());
+        NestedCell nestedCell = new NestedCell(layout.getField());
 
-        Outline outline = new Outline();
-        OutlineCell outlineCell = new OutlineCell();
-        OutlineColumn outlineColumn = new OutlineColumn();
-        OutlineElement element = new OutlineElement();
-        Span span = new Span();
+        Outline outline = new Outline(layout.getField());
+        OutlineCell outlineCell = new OutlineCell(layout.getField());
+        OutlineColumn outlineColumn = new OutlineColumn(layout.getField());
+        OutlineElement element = new OutlineElement(layout.getField());
+        Span span = new Span(layout.getField());
 
         root.getChildren()
             .addAll(nestedTable, nestedCell, outline, outlineCell,

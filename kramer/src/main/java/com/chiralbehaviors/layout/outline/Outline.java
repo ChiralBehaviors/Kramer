@@ -39,19 +39,15 @@ import javafx.scene.layout.StackPane;
  *
  */
 public class Outline extends HorizontalCell<Outline> {
-    private static final String            DEFAULT_STYLE = "outline";
-    private static final String            STYLE_SHEET   = "outline.css";
+    private static final String            DEFAULT_STYLE         = "outline";
+    private static final String            SCHEMA_CLASS_TEMPLATE = "%s-outline";
+    private static final String            STYLE_SHEET           = "outline.css";
 
-    private final ObservableList<JsonNode> items         = FXCollections.observableArrayList();
-
-    public Outline() {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-    }
+    private final ObservableList<JsonNode> items                 = FXCollections.observableArrayList();
 
     public Outline(double height, Collection<ColumnSet> columnSets,
                    int averageCardinality, RelationLayout layout) {
-        this();
+        this(layout.getField());
         double cellHeight = layout.outlineCellHeight(columnSets.stream()
                                                                .mapToDouble(cs -> cs.getCellHeight())
                                                                .sum());
@@ -74,6 +70,12 @@ public class Outline extends HorizontalCell<Outline> {
         Region pane = new FlyAwayScrollPane<>(list);
         StackPane.setAlignment(pane, Pos.TOP_LEFT);
         getChildren().add(pane);
+    }
+
+    public Outline(String field) {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
     }
 
     @Override
