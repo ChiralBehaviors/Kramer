@@ -25,7 +25,6 @@ import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.MouseHandler;
 import com.chiralbehaviors.layout.cell.VerticalCell;
-import com.chiralbehaviors.layout.flowless.FlyAwayScrollPane;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.flowless.VirtualFlowHit;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -65,25 +64,7 @@ public class NestedTable extends VerticalCell<NestedTable> {
             }
 
         };
-        mouseHandler = new MouseHandler() {
 
-            @Override
-            public Node getNode() {
-                return NestedTable.this;
-            }
-
-            public void select(MouseEvent evt) {
-                VirtualFlowHit<NestedCell> hit = rows.hit(evt.getX(),
-                                                          evt.getY());
-                if (hit.isCellHit()) {
-                    NestedCell node = hit.getCell()
-                                         .getNode();
-                    node.setFocus(true);
-                    node.setExternalFocus(false);
-
-                }
-            }
-        };
     }
 
     public NestedTable(int childCardinality, RelationLayout layout) {
@@ -97,14 +78,39 @@ public class NestedTable extends VerticalCell<NestedTable> {
                              - layout.getColumnHeaderHeight());
 
         rows = buildRows(width, height, childCardinality, layout);
-        Region scroll = new FlyAwayScrollPane<>(rows);
-        scroll.setMinSize(width, height);
-        scroll.setPrefSize(width, height);
-        scroll.setMaxSize(width, height);
-        getChildren().addAll(header, scroll);
+        getChildren().addAll(header, rows);
         setMinWidth(layout.getJustifiedColumnWidth());
         setPrefWidth(layout.getJustifiedColumnWidth());
         setMaxWidth(layout.getJustifiedColumnWidth());
+        mouseHandler = new MouseHandler() {
+
+            @Override
+            public Node getNode() {
+                return NestedTable.this;
+            }
+
+            public void select(MouseEvent evt) {
+                VirtualFlowHit<NestedCell> hit = rows.hit(evt.getX(),
+                                                          evt.getY() - layout.getColumnHeaderHeight());
+                if (hit.isCellHit()) {
+                    NestedCell node = hit.getCell()
+                                         .getNode();
+                    node.setFocus(true);
+                }
+            }
+
+            @Override
+            public void scrollDown() {
+                // TODO Auto-generated method stub
+                
+            }
+
+            @Override
+            public void scrollUp() {
+                // TODO Auto-generated method stub
+                
+            }
+        };
     }
 
     public NestedTable(String field) {
@@ -112,6 +118,7 @@ public class NestedTable extends VerticalCell<NestedTable> {
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
         this.rows = null;
+        mouseHandler = null;
     }
 
     @Override

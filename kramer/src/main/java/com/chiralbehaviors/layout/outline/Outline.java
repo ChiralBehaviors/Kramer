@@ -24,7 +24,6 @@ import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.MouseHandler;
-import com.chiralbehaviors.layout.flowless.FlyAwayScrollPane;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.flowless.VirtualFlowHit;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -32,11 +31,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
 
 /**
  * @author halhildebrand
@@ -73,9 +69,20 @@ public class Outline extends HorizontalCell<Outline> {
                 if (hit.isCellHit()) {
                     OutlineCell node = hit.getCell()
                                           .getNode();
-                    node.setExternalFocus(false);
-
+                    node.setFocus(true);
                 }
+            }
+
+            @Override
+            public void scrollDown() {
+                // TODO Auto-generated method stub
+                
+            }
+
+            @Override
+            public void scrollUp() {
+                // TODO Auto-generated method stub
+                
             }
         };
     }
@@ -101,9 +108,7 @@ public class Outline extends HorizontalCell<Outline> {
         list.setPrefSize(layout.getJustifiedColumnWidth(), height);
         list.setMaxSize(layout.getJustifiedColumnWidth(), height);
 
-        Region pane = new FlyAwayScrollPane<>(list);
-        StackPane.setAlignment(pane, Pos.TOP_LEFT);
-        getChildren().add(pane);
+        getChildren().add(list);
     }
 
     public Outline(String field) {

@@ -66,17 +66,11 @@ abstract public class MouseHandler {
         return false;
     }
 
-    public void scrollDown() {
-        // TODO Auto-generated method stub
-    }
+    abstract public void scrollDown();
 
-    public void scrollUp() {
-        // TODO Auto-generated method stub
-    }
+    abstract public void scrollUp();
 
-    public void select(MouseEvent evt) {
-        // TODO Auto-generated method stub
-    }
+    abstract public void select(MouseEvent evt);
 
     public void unbind() {
         InputMapTemplate.uninstall(DEFAULT_INPUT_MAP, this, c -> getNode());

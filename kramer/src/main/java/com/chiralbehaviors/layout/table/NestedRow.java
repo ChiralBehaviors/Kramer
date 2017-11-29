@@ -63,9 +63,20 @@ public class NestedRow extends HorizontalCell<NestedRow> {
                     NestedCell node = hit.getCell()
                                          .getNode();
                     node.setFocus(true);
-                    node.setExternalFocus(false);
 
                 }
+            }
+
+            @Override
+            public void scrollDown() {
+                // TODO Auto-generated method stub
+                
+            }
+
+            @Override
+            public void scrollUp() {
+                // TODO Auto-generated method stub
+                
             }
         };
     }
