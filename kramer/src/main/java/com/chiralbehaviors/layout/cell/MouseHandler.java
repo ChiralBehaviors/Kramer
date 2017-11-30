@@ -16,9 +16,6 @@
 
 package com.chiralbehaviors.layout.cell;
 
-import static javafx.scene.input.KeyCode.PAGE_DOWN;
-import static javafx.scene.input.KeyCode.PAGE_UP;
-import static org.fxmisc.wellbehaved.event.EventPattern.keyPressed;
 import static org.fxmisc.wellbehaved.event.EventPattern.mouseClicked;
 import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.consume;
 import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.sequence;
@@ -40,14 +37,8 @@ abstract public class MouseHandler {
     static {
         DEFAULT_INPUT_MAP = unless(h -> h.isDisabled(),
                                    sequence(consume(mouseClicked(MouseButton.PRIMARY),
-                                                    (table,
-                                                     evt) -> table.select(evt)),
-                                            consume(keyPressed(PAGE_UP),
-                                                    (table,
-                                                     evt) -> table.scrollUp()),
-                                            consume(keyPressed(PAGE_DOWN),
-                                                    (table,
-                                                     evt) -> table.scrollDown())));
+                                                    (handler,
+                                                     evt) -> handler.select(evt))));
     }
 
     public MouseHandler() {
@@ -55,7 +46,7 @@ abstract public class MouseHandler {
     }
 
     public void bind() {
-        InputMapTemplate.installFallback(DEFAULT_INPUT_MAP, this,
+        InputMapTemplate.installOverride(DEFAULT_INPUT_MAP, this,
                                          c -> getNode());
     }
 
@@ -65,10 +56,6 @@ abstract public class MouseHandler {
         // TODO Auto-generated method stub
         return false;
     }
-
-    abstract public void scrollDown();
-
-    abstract public void scrollUp();
 
     abstract public void select(MouseEvent evt);
 

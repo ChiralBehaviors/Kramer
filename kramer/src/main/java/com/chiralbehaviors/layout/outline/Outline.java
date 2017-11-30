@@ -24,6 +24,7 @@ import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.MouseHandler;
+import com.chiralbehaviors.layout.flowless.ScrollHandler;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.flowless.VirtualFlowHit;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -46,6 +47,7 @@ public class Outline extends HorizontalCell<Outline> {
     private final FocusTraversal               focus;
     private final ObservableList<JsonNode>     items                 = FXCollections.observableArrayList();
     private final MouseHandler                 mouseHandler;
+    private ScrollHandler                      scrollHandler;
     private VirtualFlow<JsonNode, OutlineCell> list;
 
     {
@@ -72,18 +74,6 @@ public class Outline extends HorizontalCell<Outline> {
                     node.setFocus(true);
                 }
             }
-
-            @Override
-            public void scrollDown() {
-                // TODO Auto-generated method stub
-                
-            }
-
-            @Override
-            public void scrollUp() {
-                // TODO Auto-generated method stub
-                
-            }
         };
     }
 
@@ -109,6 +99,7 @@ public class Outline extends HorizontalCell<Outline> {
         list.setMaxSize(layout.getJustifiedColumnWidth(), height);
 
         getChildren().add(list);
+        scrollHandler = new ScrollHandler(list);
     }
 
     public Outline(String field) {
@@ -121,6 +112,9 @@ public class Outline extends HorizontalCell<Outline> {
     public void dispose() {
         focus.unbind();
         mouseHandler.unbind();
+        if (scrollHandler != null) {
+            scrollHandler.unbind();
+        }
     }
 
     @Override

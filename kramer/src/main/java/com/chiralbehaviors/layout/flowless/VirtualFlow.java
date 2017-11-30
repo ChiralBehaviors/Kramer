@@ -1464,4 +1464,12 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         }
     }
 
+    public void scrollDown() {
+        scrollYBy(sizeTracker.getCellLength());
+    }
+
+    public void scrollUp() {
+        scrollYBy(-sizeTracker.getCellLength());
+    }
+
 }

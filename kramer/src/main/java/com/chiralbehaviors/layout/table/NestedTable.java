@@ -25,6 +25,7 @@ import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.MouseHandler;
 import com.chiralbehaviors.layout.cell.VerticalCell;
+import com.chiralbehaviors.layout.flowless.ScrollHandler;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.flowless.VirtualFlowHit;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -54,6 +55,7 @@ public class NestedTable extends VerticalCell<NestedTable> {
     private final FocusTraversal                    focus;
     private final MouseHandler                      mouseHandler;
     private final VirtualFlow<JsonNode, NestedCell> rows;
+    private ScrollHandler                           scrollHandler;
 
     {
         focus = new FocusTraversal() {
@@ -98,19 +100,8 @@ public class NestedTable extends VerticalCell<NestedTable> {
                     node.setFocus(true);
                 }
             }
-
-            @Override
-            public void scrollDown() {
-                // TODO Auto-generated method stub
-                
-            }
-
-            @Override
-            public void scrollUp() {
-                // TODO Auto-generated method stub
-                
-            }
         };
+        scrollHandler = new ScrollHandler(rows);
     }
 
     public NestedTable(String field) {
@@ -125,6 +116,9 @@ public class NestedTable extends VerticalCell<NestedTable> {
     public void dispose() {
         focus.unbind();
         mouseHandler.unbind();
+        if (scrollHandler != null) {
+            scrollHandler.unbind();
+        }
     }
 
     @Override

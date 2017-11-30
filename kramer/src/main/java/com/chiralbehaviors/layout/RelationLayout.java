@@ -217,10 +217,11 @@ public class RelationLayout extends SchemaNodeLayout {
             return;
         }
         columnSets.clear();
-        justifiedWidth = snap(baseColumnWidth(justified));
+        justifiedWidth = snap(justified);
         columnSets.clear();
         ColumnSet current = null;
-        double halfWidth = snap(justifiedWidth / 2d);
+        double available = baseColumnWidth(justified);
+        double halfWidth = snap(available / 2d);
         for (SchemaNodeLayout child : children) {
             double childWidth = labelWidth + child.layoutWidth();
             if (childWidth > halfWidth || current == null) {
@@ -234,8 +235,8 @@ public class RelationLayout extends SchemaNodeLayout {
                 current.add(child);
             }
         }
-        columnSets.forEach(cs -> cs.compress(averageChildCardinality,
-                                             justifiedWidth, labelWidth));
+        columnSets.forEach(cs -> cs.compress(averageChildCardinality, available,
+                                             labelWidth));
     }
 
     @Override

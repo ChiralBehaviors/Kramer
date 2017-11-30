@@ -61,7 +61,6 @@ final class SizeTracker {
 
     private final Val<Double>                           totalLengthEstimate;
     private final ObservableObjectValue<Bounds>         viewportBounds;
-
     private double                                      width, height;
 
     /**
@@ -157,7 +156,6 @@ final class SizeTracker {
         this.subscription = Subscription.multi(totalLengthEstimate.pin(),
                                                lengthOffsetEstimate.pin());
     }
-
     public Val<Double> averageLengthEstimateProperty() {
         return averageLengthEstimate;
     }
@@ -180,6 +178,10 @@ final class SizeTracker {
 
     public double getCellLayoutBreadth() {
         return breadthForCells.getValue();
+    }
+
+    public double getCellLength() {
+        return height;
     }
 
     public double getViewportBreadth() {

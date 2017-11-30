@@ -20,6 +20,7 @@ import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.MouseHandler;
+import com.chiralbehaviors.layout.flowless.ScrollHandler;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.flowless.VirtualFlowHit;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -40,6 +41,7 @@ public class NestedRow extends HorizontalCell<NestedRow> {
     private final FocusTraversal              focus;
     private VirtualFlow<JsonNode, NestedCell> row;
     private final MouseHandler                mouseHandler;
+    private ScrollHandler                     scrollHandler;
     {
         focus = new FocusTraversal() {
 
@@ -66,18 +68,6 @@ public class NestedRow extends HorizontalCell<NestedRow> {
 
                 }
             }
-
-            @Override
-            public void scrollDown() {
-                // TODO Auto-generated method stub
-                
-            }
-
-            @Override
-            public void scrollUp() {
-                // TODO Auto-generated method stub
-                
-            }
         };
     }
 
@@ -98,6 +88,7 @@ public class NestedRow extends HorizontalCell<NestedRow> {
         row.setPrefSize(width, rendered);
         row.setMaxSize(width, rendered);
         getChildren().add(row);
+        scrollHandler = new ScrollHandler(row);
     }
 
     public NestedRow(String field) {
@@ -110,6 +101,9 @@ public class NestedRow extends HorizontalCell<NestedRow> {
     public void dispose() {
         focus.unbind();
         mouseHandler.unbind();
+        if (scrollHandler != null) {
+            scrollHandler.unbind();
+        }
     }
 
     @Override
