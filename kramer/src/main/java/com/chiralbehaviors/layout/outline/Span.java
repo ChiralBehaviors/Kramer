@@ -20,9 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.chiralbehaviors.layout.Column;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
+
+import javafx.scene.Node;
 
 /**
  * @author halhildebrand
@@ -31,29 +34,46 @@ import com.fasterxml.jackson.databind.JsonNode;
 public class Span extends HorizontalCell<Span> {
 
     private static final String                       DEFAULT_STYLE = "span";
+    private static final String                       S_SPAN        = "%s-span";
     private static final String                       STYLE_SHEET   = "span.css";
     private final List<Cell<JsonNode, OutlineColumn>> columns       = new ArrayList<>();
+    private final FocusTraversal                      focus;
+    {
+        focus = new FocusTraversal() {
 
-    public Span() {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
+            @Override
+            protected Node getNode() {
+                return Span.this;
+            }
+        };
     }
 
-    public Span(double justified, List<Column> columns, int cardinality,
-                double cellHeight, double labelWidth) {
-        this();
+    public Span(String field) {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(S_SPAN, field));
+    }
+
+    public Span(String field, double justified, List<Column> columns,
+                int cardinality, double cellHeight, double labelWidth) {
+        this(field);
         setMinSize(justified, cellHeight);
         setPrefSize(justified, cellHeight);
         setMaxSize(justified, cellHeight);
 
         columns.forEach(c -> {
-            Cell<JsonNode, OutlineColumn> cell = new OutlineColumn(c,
+            Cell<JsonNode, OutlineColumn> cell = new OutlineColumn(field, c,
                                                                    cardinality,
                                                                    labelWidth,
                                                                    cellHeight);
             this.columns.add(cell);
             getChildren().add(cell.getNode());
         });
+    }
+
+    @Override
+    public void dispose() {
+        focus.unbind();
     }
 
     @Override

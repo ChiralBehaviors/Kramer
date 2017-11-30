@@ -217,10 +217,11 @@ public class RelationLayout extends SchemaNodeLayout {
             return;
         }
         columnSets.clear();
-        justifiedWidth = snap(baseColumnWidth(justified));
+        justifiedWidth = snap(justified);
         columnSets.clear();
         ColumnSet current = null;
-        double halfWidth = snap(justifiedWidth / 2d);
+        double available = baseColumnWidth(justified);
+        double halfWidth = snap(available / 2d);
         for (SchemaNodeLayout child : children) {
             double childWidth = labelWidth + child.layoutWidth();
             if (childWidth > halfWidth || current == null) {
@@ -234,8 +235,8 @@ public class RelationLayout extends SchemaNodeLayout {
                 current.add(child);
             }
         }
-        columnSets.forEach(cs -> cs.compress(averageChildCardinality,
-                                             justifiedWidth, labelWidth));
+        columnSets.forEach(cs -> cs.compress(averageChildCardinality, available,
+                                             labelWidth));
     }
 
     @Override
@@ -382,15 +383,26 @@ public class RelationLayout extends SchemaNodeLayout {
         return tableColumnWidth();
     }
 
+    @Override
+    public void normalizeRowHeight(double normalized) {
+        double deficit = normalized - height;
+        double childDeficit = deficit / (double) resolvedCardinality;
+        rowHeight = snap(rowHeight + childDeficit);
+        height = normalized;
+
+        children.forEach(c -> c.normalizeRowHeight(rowHeight));
+    }
+
     public double outlineCellHeight(double baseHeight) {
         return baseHeight + outlineInsets.getCellVerticalInset();
     }
 
     @Override
-    public OutlineElement outlineElement(int cardinality, double labelWidth,
-                                         double justified) {
+    public OutlineElement outlineElement(String parent, int cardinality,
+                                         double labelWidth, double justified) {
 
-        return new OutlineElement(this, cardinality, labelWidth, justified);
+        return new OutlineElement(parent, this, cardinality, labelWidth,
+                                  justified);
     }
 
     @Override
@@ -429,16 +441,6 @@ public class RelationLayout extends SchemaNodeLayout {
                                             .getAsDouble());
         children.forEach(c -> c.normalizeRowHeight(elementHeight));
         return snap(elementHeight + tableInsets.getCellVerticalInset());
-    }
-
-    @Override
-    public void normalizeRowHeight(double normalized) {
-        double deficit = normalized - height;
-        double childDeficit = deficit / (double) resolvedCardinality;
-        rowHeight = snap(rowHeight + childDeficit);
-        height = normalized;
-        
-        children.forEach(c -> c.normalizeRowHeight(rowHeight));
     }
 
     @Override

@@ -45,16 +45,16 @@ public interface StyleProvider {
             return cell.getLeft() + cell.getRight();
         }
 
-        public double getCellVerticalInset() {
-            return cell.getTop() + cell.getBottom();
-        }
-
         public double getCellLeftInset() {
             return cell.getLeft();
         }
 
         public double getCellRightInset() {
             return cell.getRight();
+        }
+
+        public double getCellVerticalInset() {
+            return cell.getTop() + cell.getBottom();
         }
 
         public double getVerticalInset() {
@@ -66,12 +66,12 @@ public interface StyleProvider {
 
     void initialize(List<String> styleSheets);
 
+    Pair<StyledInsets, StyledInsets> insets(RelationLayout layout);
+
     PrimitiveLayout layout(Primitive primitive);
 
     RelationLayout layout(Relation relation);
 
     SchemaNodeLayout layout(SchemaNode node);
-
-    Pair<StyledInsets, StyledInsets> insets(RelationLayout layout);
 
 }

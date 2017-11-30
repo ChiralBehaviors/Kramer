@@ -162,54 +162,6 @@ public class LayoutProvider implements StyleProvider {
     }
 
     @Override
-    public Pair<StyledInsets, StyledInsets> insets(RelationLayout layout) {
-        VBox root = new VBox();
-
-        NestedTable nestedTable = new NestedTable();
-        NestedCell nestedCell = new NestedCell();
-
-        Outline outline = new Outline();
-        OutlineCell outlineCell = new OutlineCell();
-        OutlineColumn outlineColumn = new OutlineColumn();
-        OutlineElement element = new OutlineElement();
-        Span span = new Span();
-
-        root.getChildren()
-            .addAll(nestedTable, nestedCell, outline, outlineCell,
-                    outlineColumn, element, span);
-        Scene scene = new Scene(root, 800, 600);
-        if (styleSheets != null) {
-            scene.getStylesheets()
-                 .addAll(styleSheets);
-        }
-        nestedTable.applyCss();
-        nestedTable.layout();
-
-        nestedCell.applyCss();
-        nestedCell.layout();
-
-        outline.applyCss();
-        outline.layout();
-
-        outlineCell.applyCss();
-        outlineCell.layout();
-
-        outlineColumn.applyCss();
-        outlineColumn.layout();
-
-        element.applyCss();
-        element.layout();
-
-        span.applyCss();
-        span.layout();
-
-        return new Pair<>(new StyledInsets(nestedTable.getInsets(),
-                                           nestedCell.getInsets()),
-                          new StyledInsets(outline.getInsets(),
-                                           outlineCell.getInsets()));
-    }
-
-    @Override
     public void initialize(List<String> styleSheets) {
         this.styleSheets = styleSheets;
         Label text = new Label("Lorem Ipsum");
@@ -249,6 +201,54 @@ public class LayoutProvider implements StyleProvider {
                                             TextBoundsType.LOGICAL_VERTICAL_CENTER))
                          + 1;
         textInsets = text.getInsets();
+    }
+
+    @Override
+    public Pair<StyledInsets, StyledInsets> insets(RelationLayout layout) {
+        VBox root = new VBox();
+
+        NestedTable nestedTable = new NestedTable(layout.getField());
+        NestedCell nestedCell = new NestedCell(layout.getField());
+
+        Outline outline = new Outline(layout.getField());
+        OutlineCell outlineCell = new OutlineCell(layout.getField());
+        OutlineColumn outlineColumn = new OutlineColumn(layout.getField());
+        OutlineElement element = new OutlineElement(layout.getField());
+        Span span = new Span(layout.getField());
+
+        root.getChildren()
+            .addAll(nestedTable, nestedCell, outline, outlineCell,
+                    outlineColumn, element, span);
+        Scene scene = new Scene(root, 800, 600);
+        if (styleSheets != null) {
+            scene.getStylesheets()
+                 .addAll(styleSheets);
+        }
+        nestedTable.applyCss();
+        nestedTable.layout();
+
+        nestedCell.applyCss();
+        nestedCell.layout();
+
+        outline.applyCss();
+        outline.layout();
+
+        outlineCell.applyCss();
+        outlineCell.layout();
+
+        outlineColumn.applyCss();
+        outlineColumn.layout();
+
+        element.applyCss();
+        element.layout();
+
+        span.applyCss();
+        span.layout();
+
+        return new Pair<>(new StyledInsets(nestedTable.getInsets(),
+                                           nestedCell.getInsets()),
+                          new StyledInsets(outline.getInsets(),
+                                           outlineCell.getInsets()));
     }
 
     @Override

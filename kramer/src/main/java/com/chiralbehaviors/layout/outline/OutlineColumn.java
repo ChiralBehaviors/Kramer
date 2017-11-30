@@ -21,8 +21,11 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.Column;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.fasterxml.jackson.databind.JsonNode;
+
+import javafx.scene.Node;
 
 /**
  * @author halhildebrand
@@ -30,29 +33,46 @@ import com.fasterxml.jackson.databind.JsonNode;
  */
 public class OutlineColumn extends VerticalCell<OutlineColumn> {
 
-    private static final String            DEFAULT_STYLE = "span";
-    private static final String            STYLE_SHEET   = "outline-column.css";
-    private final List<Consumer<JsonNode>> fields        = new ArrayList<>();
+    private static final String            DEFAULT_STYLE         = "span";
+    private static final String            SCHEMA_CLASS_TEMPLATE = "%s-outline-column";
+    private static final String            STYLE_SHEET           = "outline-column.css";
+    private final List<Consumer<JsonNode>> fields                = new ArrayList<>();
+    private final FocusTraversal           focus;
+    {
+        focus = new FocusTraversal() {
 
-    public OutlineColumn() {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
+            @Override
+            protected Node getNode() {
+                return OutlineColumn.this;
+            }
+        };
     }
 
-    public OutlineColumn(Column c, int cardinality, double labelWidth,
-                         double cellHeight) {
-        this();
+    public OutlineColumn(String field) {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+    }
+
+    public OutlineColumn(String field, Column c, int cardinality,
+                         double labelWidth, double cellHeight) {
+        this(field);
         setMinSize(c.getWidth(), cellHeight);
         setMaxSize(c.getWidth(), cellHeight);
         setPrefSize(c.getWidth(), cellHeight);
         c.getFields()
-         .forEach(field -> {
-             OutlineElement cell = field.outlineElement(cardinality, labelWidth,
-                                                        c.getWidth());
-             fields.add(item -> cell.updateItem(field.extractFrom(item)));
+         .forEach(f -> {
+             OutlineElement cell = f.outlineElement(field, cardinality,
+                                                    labelWidth, c.getWidth());
+             fields.add(item -> cell.updateItem(f.extractFrom(item)));
              getChildren().add(cell.getNode());
          });
     }
+
+    @Override
+    public void dispose() {
+        focus.unbind();
+    } 
 
     @Override
     public void updateItem(JsonNode item) {

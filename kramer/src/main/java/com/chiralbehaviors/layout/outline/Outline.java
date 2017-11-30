@@ -21,41 +21,69 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
-import com.chiralbehaviors.layout.flowless.Cell;
-import com.chiralbehaviors.layout.flowless.FlyAwayScrollPane;
+import com.chiralbehaviors.layout.cell.MouseHandler;
+import com.chiralbehaviors.layout.flowless.ScrollHandler;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
+import com.chiralbehaviors.layout.flowless.VirtualFlowHit;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.Pos;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.StackPane;
+import javafx.scene.Node;
+import javafx.scene.input.MouseEvent;
 
 /**
  * @author halhildebrand
  *
  */
 public class Outline extends HorizontalCell<Outline> {
-    private static final String            DEFAULT_STYLE = "outline";
-    private static final String            STYLE_SHEET   = "outline.css";
+    private static final String                DEFAULT_STYLE         = "outline";
+    private static final String                SCHEMA_CLASS_TEMPLATE = "%s-outline";
+    private static final String                STYLE_SHEET           = "outline.css";
 
-    private final ObservableList<JsonNode> items         = FXCollections.observableArrayList();
+    private final FocusTraversal               focus;
+    private final ObservableList<JsonNode>     items                 = FXCollections.observableArrayList();
+    private final MouseHandler                 mouseHandler;
+    private ScrollHandler                      scrollHandler;
+    private VirtualFlow<JsonNode, OutlineCell> list;
 
-    public Outline() {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
+    {
+        focus = new FocusTraversal() {
+
+            @Override
+            protected Node getNode() {
+                return Outline.this;
+            }
+        };
+        mouseHandler = new MouseHandler() {
+
+            @Override
+            public Node getNode() {
+                return Outline.this;
+            }
+
+            public void select(MouseEvent evt) {
+                VirtualFlowHit<OutlineCell> hit = list.hit(evt.getX(),
+                                                           evt.getY());
+                if (hit.isCellHit()) {
+                    OutlineCell node = hit.getCell()
+                                          .getNode();
+                    node.setFocus(true);
+                }
+            }
+        };
     }
 
     public Outline(double height, Collection<ColumnSet> columnSets,
                    int averageCardinality, RelationLayout layout) {
-        this();
+        this(layout.getField());
         double cellHeight = layout.outlineCellHeight(columnSets.stream()
                                                                .mapToDouble(cs -> cs.getCellHeight())
                                                                .sum());
-        Function<JsonNode, Cell<JsonNode, ?>> cell = item -> {
+        Function<JsonNode, OutlineCell> cell = item -> {
             OutlineCell outlineCell = new OutlineCell(columnSets,
                                                       averageCardinality,
                                                       layout.baseOutlineCellHeight(cellHeight),
@@ -63,17 +91,30 @@ public class Outline extends HorizontalCell<Outline> {
             outlineCell.updateItem(item);
             return outlineCell;
         };
-        VirtualFlow<JsonNode, Cell<JsonNode, ?>> list = VirtualFlow.createVertical(layout.getJustifiedWidth(),
-                                                                                   cellHeight,
-                                                                                   items,
-                                                                                   jsonNode -> cell.apply(jsonNode));
+        list = VirtualFlow.createVertical(layout.getJustifiedWidth(),
+                                          cellHeight, items,
+                                          jsonNode -> cell.apply(jsonNode));
         list.setMinSize(layout.getJustifiedColumnWidth(), height);
         list.setPrefSize(layout.getJustifiedColumnWidth(), height);
         list.setMaxSize(layout.getJustifiedColumnWidth(), height);
 
-        Region pane = new FlyAwayScrollPane<>(list);
-        StackPane.setAlignment(pane, Pos.TOP_LEFT);
-        getChildren().add(pane);
+        getChildren().add(list);
+        scrollHandler = new ScrollHandler(list);
+    }
+
+    public Outline(String field) {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+    }
+
+    @Override
+    public void dispose() {
+        focus.unbind();
+        mouseHandler.unbind();
+        if (scrollHandler != null) {
+            scrollHandler.unbind();
+        }
     }
 
     @Override

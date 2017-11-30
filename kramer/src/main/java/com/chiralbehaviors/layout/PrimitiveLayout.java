@@ -176,9 +176,10 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public OutlineElement outlineElement(int cardinality, double labelWidth,
-                                         double justified) {
-        return new OutlineElement(this, cardinality, labelWidth, justified);
+    public OutlineElement outlineElement(String parent, int cardinality,
+                                         double labelWidth, double justified) {
+        return new OutlineElement(parent, this, cardinality, labelWidth,
+                                  justified);
     }
 
     @Override

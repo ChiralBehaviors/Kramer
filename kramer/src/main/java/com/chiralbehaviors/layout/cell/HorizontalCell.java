@@ -18,7 +18,6 @@ package com.chiralbehaviors.layout.cell;
 
 import java.net.URL;
 
-import javafx.geometry.Point2D;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 
@@ -36,11 +35,6 @@ abstract public class HorizontalCell<T extends Region> extends HBox
         URL url = getClass().getResource(styleSheet);
         stylesheet = url == null ? null : url.toExternalForm();
         getStyleClass().add(STYLE_CLASS);
-    }
-
-    public Point2D expand(double width, double height) {
-        return new Point2D(width + snappedLeftInset() + snappedRightInset(),
-                           height + snappedLeftInset() + snappedRightInset());
     }
 
     @Override

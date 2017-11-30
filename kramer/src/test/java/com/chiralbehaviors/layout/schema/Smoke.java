@@ -16,6 +16,8 @@
 
 package com.chiralbehaviors.layout.schema;
 
+import java.net.URL;
+
 import com.chiralbehaviors.layout.control.AutoLayout;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -36,6 +38,11 @@ public class Smoke extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         AutoLayout layout = new AutoLayout();
+        URL url = getClass().getResource("/smoke.css");
+        if (url != null) {
+            layout.getStylesheets()
+                  .add(url.toExternalForm());
+        }
         AnchorPane.setTopAnchor(layout, 0.0);
         AnchorPane.setLeftAnchor(layout, 0.0);
         AnchorPane.setBottomAnchor(layout, 0.0);
