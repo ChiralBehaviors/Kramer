@@ -336,7 +336,7 @@ public class RelationLayout extends SchemaNodeLayout {
         maxCardinality = datum.size();
 
         for (SchemaNode child : getNode().getChildren()) {
-            Fold fold = layout.layout(child)
+            Fold fold = layout.layout(child, outlineInsets)
                               .fold(datum, extractor);
             children.add(fold.getLayout());
             columnWidth = snap(Math.max(columnWidth, fold.getLayout()
@@ -424,7 +424,7 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public String toString() {
-        return String.format("RelationLayout [%s %s x %s, {%s, %s, %s} ]",
+        return String.format("RelationLayout [%s %s height x %s card, width {o: %s, t: %s, j: %s} ]",
                              node.getField(), height, averageChildCardinality,
                              columnWidth, tableColumnWidth, justifiedWidth);
     }

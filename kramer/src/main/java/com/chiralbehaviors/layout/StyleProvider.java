@@ -68,10 +68,14 @@ public interface StyleProvider {
 
     Pair<StyledInsets, StyledInsets> insets(RelationLayout layout);
 
-    PrimitiveLayout layout(Primitive primitive);
+    PrimitiveLayout layout(Primitive primitive, StyledInsets outlineInsets);
 
     RelationLayout layout(Relation relation);
 
-    SchemaNodeLayout layout(SchemaNode node);
+    SchemaNodeLayout layout(SchemaNode top);
+
+    SchemaNodeLayout layout(SchemaNode node, StyledInsets outlineInsets);
+
+    StyledInsets outlineInsets(SchemaNode node);
 
 }

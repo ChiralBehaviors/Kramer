@@ -252,10 +252,12 @@ public class LayoutProvider implements StyleProvider {
     }
 
     @Override
-    public PrimitiveLayout layout(Primitive primitive) {
+    public PrimitiveLayout layout(Primitive primitive,
+                                  StyledInsets outlineInsets) {
         return primitives.computeIfAbsent(primitive,
                                           p -> new PrimitiveLayout(this,
-                                                                   primitive));
+                                                                   primitive,
+                                                                   outlineInsets));
     }
 
     @Override
@@ -265,12 +267,53 @@ public class LayoutProvider implements StyleProvider {
                                                                  relation));
     }
 
+    public SchemaNodeLayout layout(SchemaNode top) {
+        return layout(top, outlineInsets(top));
+    }
+
     @Override
-    public SchemaNodeLayout layout(SchemaNode node) {
+    public SchemaNodeLayout layout(SchemaNode node,
+                                   StyledInsets outlineInsets) {
         if (node instanceof Relation) {
             return layout((Relation) node);
         }
-        return layout((Primitive) node);
+        return layout((Primitive) node, outlineInsets);
+    }
+
+    @Override
+    public StyledInsets outlineInsets(SchemaNode node) {
+        VBox root = new VBox();
+
+        Outline outline = new Outline(node.getField());
+        OutlineCell outlineCell = new OutlineCell(node.getField());
+        OutlineColumn outlineColumn = new OutlineColumn(node.getField());
+        OutlineElement element = new OutlineElement(node.getField());
+        Span span = new Span(node.getField());
+
+        root.getChildren()
+            .addAll(outline, outlineCell, outlineColumn, element, span);
+        Scene scene = new Scene(root, 800, 600);
+        if (styleSheets != null) {
+            scene.getStylesheets()
+                 .addAll(styleSheets);
+        }
+
+        outline.applyCss();
+        outline.layout();
+
+        outlineCell.applyCss();
+        outlineCell.layout();
+
+        outlineColumn.applyCss();
+        outlineColumn.layout();
+
+        element.applyCss();
+        element.layout();
+
+        span.applyCss();
+        span.layout();
+
+        return new StyledInsets(outline.getInsets(), outlineCell.getInsets());
     }
 
     @Override

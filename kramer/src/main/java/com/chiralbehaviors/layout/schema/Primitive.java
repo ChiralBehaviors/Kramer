@@ -28,8 +28,8 @@ public class Primitive extends SchemaNode {
         super();
     }
 
-    public Primitive(String label) {
-        super(label);
+    public Primitive(String field) {
+        super(field);
     }
 
     public double getDefaultWidth() {

@@ -21,6 +21,7 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 import java.util.List;
 import java.util.function.Function;
 
+import com.chiralbehaviors.layout.StyleProvider.StyledInsets;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.outline.OutlineElement;
@@ -38,13 +39,17 @@ import javafx.scene.layout.Region;
  *
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
-    protected double maxWidth;
+    protected double             maxWidth;
+    protected boolean            list;
+    protected final StyledInsets outlineInsets;
 
     @SuppressWarnings("unused")
-    private boolean  variableLength;
+    private boolean              variableLength;
 
-    public PrimitiveLayout(LayoutProvider layout, Primitive p) {
+    public PrimitiveLayout(LayoutProvider layout, Primitive p,
+                           StyledInsets outlineInsets) {
         super(layout, p);
+        this.outlineInsets = outlineInsets;
     }
 
     public void apply(Cell<JsonNode, ?> list) {
@@ -84,8 +89,12 @@ public class PrimitiveLayout extends SchemaNodeLayout {
             return height;
         }
         double rows = Math.ceil((maxWidth / justified) + 0.5);
-        height = snap((layout.getTextLineHeight() * rows)
-                      + layout.getTextVerticalInset());
+        double cellHeight = snap((layout.getTextLineHeight() * rows)
+                                 + layout.getTextVerticalInset());
+        height = list ? (cellHeight * cardinality)
+                        + outlineInsets.getCellVerticalInset()
+                        + outlineInsets.getVerticalInset()
+                      : cellHeight;
         return height;
     }
 
@@ -141,7 +150,9 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         double summedDataWidth = 0;
         maxWidth = 0;
         columnWidth = 0;
-        for (JsonNode prim : SchemaNode.asList(data)) {
+        List<JsonNode> normalized = SchemaNode.asList(data);
+        list = normalized.size() > 1;
+        for (JsonNode prim : normalized) {
             List<JsonNode> rows = SchemaNode.asList(prim);
             double summedWidth = 0;
             for (JsonNode row : rows) {
@@ -190,6 +201,13 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public double tableColumnWidth() {
         return columnWidth();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("PrimitiveLayout [%s %s height, width {c: %s, j: %s} ]",
+                             node.getField(), height, columnWidth,
+                             justifiedWidth);
     }
 
     @Override

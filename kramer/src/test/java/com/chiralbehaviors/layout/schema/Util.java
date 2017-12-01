@@ -73,6 +73,14 @@ final public class Util {
         return root;
     }
 
+    public static JsonNode primArrayData() throws IOException {
+        return new ObjectMapper().readTree(Util.class.getResourceAsStream("/prim-array.json"));
+    }
+
+    public static Primitive primArraySchema() {
+        return new Primitive("ArrayOfPrims");
+    }
+
     public static JsonNode testData() throws IOException {
         return new ObjectMapper().readTree(Util.class.getResourceAsStream("/columns.json"));
     }
