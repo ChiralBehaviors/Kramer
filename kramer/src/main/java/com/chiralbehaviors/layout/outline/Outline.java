@@ -57,6 +57,21 @@ public class Outline extends HorizontalCell<Outline> {
             protected Node getNode() {
                 return Outline.this;
             }
+            int focusedIndex;
+
+            @Override
+            public void activate() {
+                list.getSelectionModel()
+                    .select(focusedIndex);
+
+                if (focusedIndex >= 0) {
+                    edit();
+                }
+
+            } 
+
+            private void edit() {
+            }
         };
         mouseHandler = new MouseHandler() {
 

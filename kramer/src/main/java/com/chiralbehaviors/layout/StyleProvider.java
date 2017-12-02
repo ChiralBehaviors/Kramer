@@ -56,6 +56,10 @@ public interface StyleProvider {
             return cell.getTop() + cell.getBottom();
         }
 
+        public double getHorizontalInset() {
+            return container.getLeft() + container.getRight();
+        }
+
         public double getVerticalInset() {
             return container.getTop() + container.getBottom();
         }
@@ -71,6 +75,6 @@ public interface StyleProvider {
 
     SchemaNodeLayout layout(SchemaNode top);
 
-    StyledInsets listInsets(PrimitiveLayout node);
+    Insets listInsets(PrimitiveLayout node);
 
 }

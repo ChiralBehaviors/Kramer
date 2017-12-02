@@ -22,7 +22,6 @@ import static com.chiralbehaviors.layout.schema.SchemaNode.asList;
 import java.util.List;
 import java.util.function.Function;
 
-import com.chiralbehaviors.layout.StyleProvider.StyledInsets;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.outline.OutlineElement;
@@ -34,6 +33,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
+import javafx.geometry.Insets;
 import javafx.scene.layout.Region;
 
 /**
@@ -42,12 +42,12 @@ import javafx.scene.layout.Region;
  *
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
-    protected int                averageCardinality;
-    protected final StyledInsets listInsets;
-    protected double             maxWidth;
-    private double               cellHeight;
+    protected int          averageCardinality;
+    protected final Insets listInsets;
+    protected double       maxWidth;
+    private double         cellHeight;
     @SuppressWarnings("unused")
-    private boolean              variableLength;
+    private boolean        variableLength;
 
     public PrimitiveLayout(LayoutProvider layout, Primitive p) {
         super(layout, p);
@@ -69,7 +69,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public LayoutCell<?> buildCell() {
-        LabelCell cell = new LabelCell();
+        LabelCell cell = new LabelCell(this);
         cell.getNode()
             .getStyleClass()
             .add(node.getField());
@@ -115,9 +115,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         cellHeight = snap((layout.getTextLineHeight() * rows)
                           + layout.getTextVerticalInset());
         if (list) {
-            cellHeight = cellHeight + listInsets.getCellVerticalInset();
-            height = (cellHeight * resolvedCardinality)
-                     + listInsets.getVerticalInset();
+            height = (cellHeight * resolvedCardinality) + listInsets.getTop()
+                     + listInsets.getBottom();
         } else {
             height = cellHeight;
         }
