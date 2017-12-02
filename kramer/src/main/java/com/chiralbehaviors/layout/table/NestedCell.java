@@ -73,11 +73,6 @@ public class NestedCell extends HorizontalCell<NestedCell> {
     }
 
     @Override
-    public void setFocus(boolean focus) {
-        setFocused(focus);
-    }
-
-    @Override
     public void updateIndex(int index) {
         boolean active = ((index % 2) == 0);
         pseudoClassStateChanged(PSEUDO_CLASS_EVEN, active);

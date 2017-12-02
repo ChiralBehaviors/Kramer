@@ -14,25 +14,25 @@ import org.reactfx.util.Lists;
 import org.reactfx.value.Val;
 import org.reactfx.value.Var;
 
+import com.chiralbehaviors.layout.cell.FocusTraversal;
+import com.chiralbehaviors.layout.cell.MouseHandler;
 import com.sun.javafx.collections.MappingChange;
 import com.sun.javafx.collections.NonIterableChange;
 import com.sun.javafx.scene.control.ReadOnlyUnbackedObservableList;
 
-import javafx.beans.property.ObjectProperty;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ListChangeListener.Change;
 import javafx.collections.ObservableList;
 import javafx.css.CssMetaData;
-import javafx.css.StyleConverter;
 import javafx.css.Styleable;
-import javafx.css.StyleableObjectProperty;
-import javafx.css.StyleableProperty;
 import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
 import javafx.scene.AccessibleAttribute;
+import javafx.scene.Node;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.Rectangle;
@@ -113,6 +113,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         ListChangeListener.Change<T>                    selectedItemChange;
         private int                                     atomicityCount = 0;
         private final ReadOnlyUnbackedObservableList<T> selectedItemsSeq;
+        private int                                     focusedIndex   = -1;
 
         public VirtualFlowSelectionModel() {
             selectedIndexProperty().addListener(valueModel -> {
@@ -272,6 +273,10 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
                                                                                                 Collections.singletonList(index),
                                                                                                 selectedIndicesSeq));
             }
+        }
+
+        public int getFocusedIndex() {
+            return focusedIndex;
         }
 
         @Override
@@ -556,17 +561,13 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
             }
         }
 
-        protected void focus(int index) {
+        public void focus(int index) {
             VirtualFlow.this.notifyAccessibleAttributeChanged(AccessibleAttribute.FOCUS_ITEM);
             C cell = getCell(index);
             cell.getNode()
                 .requestFocus();
             focusedIndex = index;
 
-        }
-
-        protected int getFocusedIndex() {
-            return focusedIndex;
         }
 
         /**
@@ -792,30 +793,10 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         }
     }
 
-    @SuppressWarnings("unchecked") // Because of the cast we have to perform, below
-    private static final CssMetaData<VirtualFlow<?, ?>, Gravity>   GRAVITY = new CssMetaData<VirtualFlow<?, ?>, Gravity>("-flowless-gravity",
-                                                                                                                         // JavaFX seems to have an odd return type on getEnumConverter: "? extends Enum<?>", not E as the second generic type.
-                                                                                                                         // Even though if you look at the source, the EnumConverter type it uses does have the type E.
-                                                                                                                         // To get round this, we cast on return:
-                                                                                                                         (StyleConverter<?, Gravity>) StyleConverter.getEnumConverter(Gravity.class),
-                                                                                                                         Gravity.FRONT) {
-
-                                                                               @Override
-                                                                               public StyleableProperty<Gravity> getStyleableProperty(VirtualFlow<?, ?> virtualFlow) {
-                                                                                   return virtualFlow.gravity;
-                                                                               }
-
-                                                                               @Override
-                                                                               public boolean isSettable(VirtualFlow<?, ?> virtualFlow) {
-                                                                                   return !virtualFlow.gravity.isBound();
-                                                                               }
-                                                                           };
-
     private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
 
     static {
         List<CssMetaData<? extends Styleable, ?>> styleables = new ArrayList<>(Region.getClassCssMetaData());
-        styleables.add(GRAVITY);
         STYLEABLES = Collections.unmodifiableList(styleables);
     }
 
@@ -936,43 +917,68 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         };
     }
 
-    protected final ObservableList<T>              items;
+    protected final ObservableList<T>       items;
 
-    private final Var<Double>                      breadthOffset;
+    protected final MouseHandler            mouseHandler;
+
+    private final Var<Double>               breadthOffset;
 
     // non-negative
-    private final Var<Double>                      breadthOffset0 = Var.newSimpleVar(0.0);
-    private final CellListManager<T, C>            cellListManager;
+    private final Var<Double>               breadthOffset0 = Var.newSimpleVar(0.0);
+    private final CellListManager<T, C>     cellListManager;
 
-    private final CellPositioner<T, C>             cellPositioner;
+    private final CellPositioner<T, C>      cellPositioner;
 
-    private int                                    focusedIndex   = -1;
-    private final StyleableObjectProperty<Gravity> gravity        = new StyleableObjectProperty<Gravity>() {
-                                                                      @Override
-                                                                      public Object getBean() {
-                                                                          return VirtualFlow.this;
-                                                                      }
+    private final Var<Double>               lengthOffsetEstimate;
 
-                                                                      @Override
-                                                                      public CssMetaData<? extends Styleable, Gravity> getCssMetaData() {
-                                                                          return GRAVITY;
-                                                                      }
+    private final Navigator<T, C>           navigator;
 
-                                                                      @Override
-                                                                      public String getName() {
-                                                                          return "gravity";
-                                                                      }
-                                                                  };
+    private final OrientationHelper         orientation;
 
-    private final Var<Double>                      lengthOffsetEstimate;
+    private final VirtualFlowSelectionModel selectionModel = new VirtualFlowSelectionModel();
 
-    private final Navigator<T, C>                  navigator;
+    private final SizeTracker               sizeTracker;
 
-    private final OrientationHelper                orientation;
+    private final FocusTraversal            focus;
 
-    private final VirtualFlowSelectionModel        selectionModel = new VirtualFlowSelectionModel();
+    {
 
-    private final SizeTracker                      sizeTracker;
+        focus = new FocusTraversal() {
+
+            @Override
+            protected Node getNode() {
+                return VirtualFlow.this;
+            }
+
+            @Override
+            public void activate() {
+                int focusedIndex = selectionModel.getFocusedIndex();
+                selectionModel.select(focusedIndex);
+                if (focusedIndex >= 0) {
+                    edit();
+                }
+            }
+
+            private void edit() {
+            }
+        };
+        mouseHandler = new MouseHandler() {
+
+            @Override
+            public Node getNode() {
+                return VirtualFlow.this;
+            }
+
+            public void select(MouseEvent evt) {
+                VirtualFlowHit<C> hit = hit(evt.getX(), evt.getY());
+                if (hit.isCellHit()) {
+                    hit.getCell()
+                       .setFocus(true);
+                }
+            }
+        };
+
+    }
 
     protected VirtualFlow(double cellBreadth, double cellLength,
                           ObservableList<T> items,
@@ -984,15 +990,13 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         this.items = items;
         this.orientation = orientation;
         this.cellListManager = new CellListManager<T, C>(items, cellFactory);
-        this.gravity.set(gravity);
         MemoizationList<C> cells = cellListManager.getLazyCellList();
         this.sizeTracker = new SizeTracker(cellBreadth, cellLength, orientation,
                                            layoutBoundsProperty(), cells);
         this.cellPositioner = new CellPositioner<>(cellListManager, orientation,
                                                    sizeTracker);
         this.navigator = new Navigator<>(cellListManager, cellPositioner,
-                                         orientation, this.gravity,
-                                         sizeTracker);
+                                         orientation, sizeTracker);
 
         getChildren().add(navigator);
         clipProperty().bind(Val.map(layoutBoundsProperty(),
@@ -1080,34 +1084,12 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         return getClassCssMetaData();
     }
 
-    public Gravity getGravity() {
-        return gravity.get();
-    }
-
     public ObservableList<T> getItems() {
         return items;
     }
 
     public VirtualFlowSelectionModel getSelectionModel() {
         return selectionModel;
-    }
-
-    /**
-     * The gravity of the virtual flow. When there are not enough cells to fill
-     * the full height (vertical virtual flow) or width (horizontal virtual
-     * flow), the cells are placed either at the front (vertical: top,
-     * horizontal: left), or rear (vertical: bottom, horizontal: right) of the
-     * virtual flow, depending on the value of the gravity property.
-     *
-     * The gravity can also be styled in CSS, using the "-flowless-gravity"
-     * property, for example:
-     *
-     * <pre>
-     * .virtual-flow { -flowless-gravity: rear; }
-     * </pre>
-     */
-    public ObjectProperty<Gravity> gravityProperty() {
-        return gravity;
     }
 
     /**
@@ -1171,6 +1153,14 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         return lengthOffsetEstimate;
     }
 
+    public void scrollDown() {
+        scrollYBy(sizeTracker.getCellLength());
+    }
+
+    public void scrollUp() {
+        scrollYBy(-sizeTracker.getCellLength());
+    }
+
     /**
      * Scroll the content horizontally by the given amount.
      *
@@ -1213,10 +1203,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
     @Override
     public void scrollYToPixel(double pixel) {
         orientation.scrollVerticallyToPixel(this, pixel);
-    }
-
-    public void setGravity(Gravity gravity) {
-        this.gravity.set(gravity);
     }
 
     /**
@@ -1462,14 +1448,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
             double shift = Math.max(spaceAfter, -spaceBefore);
             setBreadthOffset(bOff - shift);
         }
-    }
-
-    public void scrollDown() {
-        scrollYBy(sizeTracker.getCellLength());
-    }
-
-    public void scrollUp() {
-        scrollYBy(-sizeTracker.getCellLength());
     }
 
 }

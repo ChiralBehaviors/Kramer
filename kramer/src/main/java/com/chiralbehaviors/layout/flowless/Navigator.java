@@ -12,7 +12,6 @@ import org.reactfx.collection.QuasiListModification;
 import com.chiralbehaviors.layout.flowless.VirtualFlow.Gravity;
 
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.ObjectProperty;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.layout.Region;
@@ -30,33 +29,28 @@ import javafx.scene.layout.Region;
  */
 final class Navigator<T, C extends Cell<T, ?>> extends Region
         implements TargetPositionVisitor {
-    private final CellListManager<T, C>   cellListManager;
-    private final MemoizationList<C>      cells;
-    private TargetPosition                currentPosition = TargetPosition.BEGINNING;
-    private final ObjectProperty<Gravity> gravity;
-    private final Subscription            itemsSubscription;
-    private final OrientationHelper       orientation;
-    private final CellPositioner<T, C>    positioner;
+    private final CellListManager<T, C> cellListManager;
+    private final MemoizationList<C>    cells;
+    private TargetPosition              currentPosition = TargetPosition.BEGINNING;
+    private final Subscription          itemsSubscription;
+    private final OrientationHelper     orientation;
+    private final CellPositioner<T, C>  positioner;
 
-    private final SizeTracker             sizeTracker;
-    private TargetPosition                targetPosition  = TargetPosition.BEGINNING;
+    private final SizeTracker           sizeTracker;
+    private TargetPosition              targetPosition  = TargetPosition.BEGINNING;
 
     public Navigator(CellListManager<T, C> cellListManager,
                      CellPositioner<T, C> positioner,
-                     OrientationHelper orientation,
-                     ObjectProperty<Gravity> gravity, SizeTracker sizeTracker) {
+                     OrientationHelper orientation, SizeTracker sizeTracker) {
         this.cellListManager = cellListManager;
         this.cells = cellListManager.getLazyCellList();
         this.positioner = positioner;
         this.orientation = orientation;
-        this.gravity = gravity;
         this.sizeTracker = sizeTracker;
 
         this.itemsSubscription = LiveList.observeQuasiChanges(cellListManager.getLazyCellList(),
                                                               this::itemsChanged);
         Bindings.bindContent(getChildren(), cellListManager.getNodes());
-        // When gravity changes, we must redo our layout:
-        gravity.addListener((prop, oldVal, newVal) -> requestLayout());
     }
 
     public void dispose() {
@@ -219,16 +213,12 @@ final class Navigator<T, C extends Cell<T, ?>> extends Region
 
     private double distanceFromGround(int itemIndex) {
         C cell = positioner.getVisibleCell(itemIndex);
-        return gravity.get() == Gravity.FRONT ? orientation.minY(cell)
-                                              : sizeTracker.getViewportLength()
-                                                - orientation.maxY(cell);
+        return orientation.minY(cell);
     }
 
     private double distanceFromSky(int itemIndex) {
         C cell = positioner.getVisibleCell(itemIndex);
-        return gravity.get() == Gravity.FRONT ? sizeTracker.getViewportLength()
-                                                - orientation.maxY(cell)
-                                              : orientation.minY(cell);
+        return sizeTracker.getViewportLength() - orientation.maxY(cell);
     }
 
     private int fillBackwardFrom(int itemIndex) {
@@ -268,21 +258,15 @@ final class Navigator<T, C extends Cell<T, ?>> extends Region
     }
 
     private int fillTowardsGroundFrom0(int itemIndex) {
-        return gravity.get() == Gravity.FRONT ? fillBackwardFrom0(itemIndex)
-                                              : fillForwardFrom0(itemIndex);
+        return fillBackwardFrom0(itemIndex);
     }
 
     private int fillTowardsGroundFrom0(int itemIndex, double upTo) {
-        return gravity.get() == Gravity.FRONT ? fillBackwardFrom0(itemIndex,
-                                                                  upTo)
-                                              : fillForwardFrom0(itemIndex,
-                                                                 sizeTracker.getViewportLength()
-                                                                            - upTo);
+        return fillBackwardFrom0(itemIndex, upTo);
     }
 
     private int fillTowardsSkyFrom0(int itemIndex) {
-        return gravity.get() == Gravity.FRONT ? fillForwardFrom0(itemIndex)
-                                              : fillBackwardFrom0(itemIndex);
+        return fillForwardFrom0(itemIndex);
     }
 
     /**
@@ -391,16 +375,9 @@ final class Navigator<T, C extends Cell<T, ?>> extends Region
 
     private void shiftCellsTowardsGround(int groundCellIndex, int lastCellIndex,
                                          double amount) {
-        if (gravity.get() == Gravity.FRONT) {
-            assert groundCellIndex <= lastCellIndex;
-            for (int i = groundCellIndex; i <= lastCellIndex; ++i) {
-                positioner.shiftCellBy(positioner.getVisibleCell(i), -amount);
-            }
-        } else {
-            assert groundCellIndex >= lastCellIndex;
-            for (int i = groundCellIndex; i >= lastCellIndex; --i) {
-                positioner.shiftCellBy(positioner.getVisibleCell(i), amount);
-            }
+        assert groundCellIndex <= lastCellIndex;
+        for (int i = groundCellIndex; i <= lastCellIndex; ++i) {
+            positioner.shiftCellBy(positioner.getVisibleCell(i), -amount);
         }
     }
 }

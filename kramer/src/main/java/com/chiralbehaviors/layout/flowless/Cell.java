@@ -93,6 +93,10 @@ public interface Cell<T, N extends Node> {
         // do nothing by default
     }
 
+    default void setFocus(boolean focussed) {
+        // do nothing by default
+    }
+
     /**
      * Called to update index of a visible cell.
      *
