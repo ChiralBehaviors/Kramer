@@ -21,6 +21,7 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.MouseHandler;
 import com.chiralbehaviors.layout.flowless.ScrollHandler;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
@@ -46,7 +47,7 @@ public class PrimitiveList extends HorizontalCell<PrimitiveList> {
     private final ObservableList<JsonNode>       items                 = FXCollections.observableArrayList();
     private final MouseHandler                   mouseHandler;
     private ScrollHandler                        scrollHandler;
-    private VirtualFlow<JsonNode, PrimitiveCell> list;
+    private VirtualFlow<JsonNode, LayoutCell<?>> list;
 
     {
         focus = new FocusTraversal() {
@@ -64,7 +65,7 @@ public class PrimitiveList extends HorizontalCell<PrimitiveList> {
             }
 
             public void select(MouseEvent evt) {
-                VirtualFlowHit<PrimitiveCell> hit = list.hit(evt.getX(),
+                VirtualFlowHit<LayoutCell<?>> hit = list.hit(evt.getX(),
                                                              evt.getY());
                 if (hit.isCellHit()) {
                     hit.getCell()
@@ -76,8 +77,8 @@ public class PrimitiveList extends HorizontalCell<PrimitiveList> {
 
     public PrimitiveList(PrimitiveLayout layout) {
         this(layout.getField());
-        Function<JsonNode, PrimitiveCell> cell = item -> {
-            PrimitiveCell outlineCell = new PrimitiveCell(layout);
+        Function<JsonNode, LayoutCell<?>> cell = item -> {
+            LayoutCell<?> outlineCell = layout.buildCell();
             outlineCell.updateItem(item);
             return outlineCell;
         };

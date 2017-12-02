@@ -83,10 +83,6 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
         focus.unbind();
     }
 
-    public void setFocus(boolean focus) {
-        super.setFocused(focus);
-    }
-
     @Override
     public void updateIndex(int index) {
         boolean active = ((index % 2) == 0);
