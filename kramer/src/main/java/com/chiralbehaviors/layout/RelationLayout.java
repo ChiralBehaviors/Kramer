@@ -424,7 +424,7 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public String toString() {
-        return String.format("RelationLayout [%s %s x %s, {%s, %s, %s} ]",
+        return String.format("RelationLayout [%s %s height x %s card, width {o: %s, t: %s, j: %s} ]",
                              node.getField(), height, averageChildCardinality,
                              columnWidth, tableColumnWidth, justifiedWidth);
     }

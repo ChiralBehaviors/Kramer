@@ -19,7 +19,6 @@ package com.chiralbehaviors.layout;
 import java.util.List;
 
 import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
-import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 
@@ -68,10 +67,10 @@ public interface StyleProvider {
 
     Pair<StyledInsets, StyledInsets> insets(RelationLayout layout);
 
-    PrimitiveLayout layout(Primitive primitive);
-
     RelationLayout layout(Relation relation);
 
-    SchemaNodeLayout layout(SchemaNode node);
+    SchemaNodeLayout layout(SchemaNode top);
+
+    StyledInsets listInsets(PrimitiveLayout node);
 
 }

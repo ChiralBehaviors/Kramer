@@ -28,6 +28,8 @@ import com.chiralbehaviors.layout.outline.OutlineCell;
 import com.chiralbehaviors.layout.outline.OutlineColumn;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.outline.Span;
+import com.chiralbehaviors.layout.primitives.PrimitiveCell;
+import com.chiralbehaviors.layout.primitives.PrimitiveList;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -251,7 +253,6 @@ public class LayoutProvider implements StyleProvider {
                                            outlineCell.getInsets()));
     }
 
-    @Override
     public PrimitiveLayout layout(Primitive primitive) {
         return primitives.computeIfAbsent(primitive,
                                           p -> new PrimitiveLayout(this,
@@ -271,6 +272,30 @@ public class LayoutProvider implements StyleProvider {
             return layout((Relation) node);
         }
         return layout((Primitive) node);
+    }
+
+    @Override
+    public StyledInsets listInsets(PrimitiveLayout primitiveLayout) {
+        VBox root = new VBox();
+
+        PrimitiveList list = new PrimitiveList(primitiveLayout.getField());
+        PrimitiveCell cell = new PrimitiveCell(primitiveLayout.getField()); 
+
+        root.getChildren()
+            .addAll(list, cell);
+        Scene scene = new Scene(root, 800, 600);
+        if (styleSheets != null) {
+            scene.getStylesheets()
+                 .addAll(styleSheets);
+        }
+
+        list.applyCss();
+        list.layout();
+
+        cell.applyCss();
+        cell.layout(); 
+
+        return new StyledInsets(list.getInsets(), cell.getInsets());
     }
 
     @Override

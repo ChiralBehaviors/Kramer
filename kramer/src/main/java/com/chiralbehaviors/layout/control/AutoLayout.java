@@ -41,17 +41,17 @@ import javafx.scene.layout.Region;
  * @author hhildebrand
  *
  */
-public class AutoLayout extends Control implements Cell<JsonNode, Region> {
-    private static final java.util.logging.Logger log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
-    private static final String                   STYLE_SHEET = "auto-layout.css";
+public class AutoLayout extends Control implements Cell<JsonNode, AutoLayout> {
+    private static final java.util.logging.Logger  log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
+    private static final String                    STYLE_SHEET = "auto-layout.css";
 
-    private LayoutCell<? extends Region>          control;
-    private SimpleObjectProperty<JsonNode>        data        = new SimpleObjectProperty<>();
-    private SchemaNodeLayout                      layout;
-    private double                                layoutWidth = 0.0;
-    private LayoutModel                           model;
-    private final SimpleObjectProperty<Relation>  root        = new SimpleObjectProperty<>();
-    private StyleProvider                         style;
+    private LayoutCell<? extends Region>           control;
+    private SimpleObjectProperty<JsonNode>         data        = new SimpleObjectProperty<>();
+    private SchemaNodeLayout                       layout;
+    private double                                 layoutWidth = 0.0;
+    private LayoutModel                            model;
+    private final SimpleObjectProperty<SchemaNode> root        = new SimpleObjectProperty<>();
+    private StyleProvider                          style;
 
     public AutoLayout() {
         this(null);
@@ -90,7 +90,7 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
     }
 
     @Override
-    public Region getNode() {
+    public AutoLayout getNode() {
         return this;
     }
 
@@ -104,7 +104,7 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
     }
 
     public void measure(JsonNode data) {
-        Relation top = root.get();
+        SchemaNode top = root.get();
         if (top == null) {
             return;
         }
@@ -116,16 +116,16 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
         }
     }
 
-    public SimpleObjectProperty<Relation> root() {
+    public SchemaNode root() {
+        return root.get();
+    }
+
+    public Property<SchemaNode> rootProperty() {
         return root;
     }
 
-    public Property<Relation> rootProperty() {
-        return root;
-    }
-
-    public void setRoot(Relation rootRelationship) {
-        root.set(rootRelationship);
+    public void setRoot(SchemaNode rootNode) {
+        root.set(rootNode);
     }
 
     @Override
@@ -159,8 +159,8 @@ public class AutoLayout extends Control implements Cell<JsonNode, Region> {
         layoutWidth = width;
         getChildren().clear();
 
-        Relation relation = root.get();
-        if (relation == null) {
+        SchemaNode node = root.get();
+        if (node == null) {
             return;
         }
 
