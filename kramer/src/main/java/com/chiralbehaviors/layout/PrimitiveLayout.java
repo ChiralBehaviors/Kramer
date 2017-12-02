@@ -17,6 +17,7 @@
 package com.chiralbehaviors.layout;
 
 import static com.chiralbehaviors.layout.LayoutProvider.snap;
+import static com.chiralbehaviors.layout.schema.SchemaNode.asList;
 
 import java.util.List;
 import java.util.function.Function;
@@ -26,10 +27,12 @@ import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.primitives.LabelCell;
+import com.chiralbehaviors.layout.primitives.PrimitiveList;
 import com.chiralbehaviors.layout.schema.Primitive;
-import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import javafx.scene.layout.Region;
 
@@ -39,22 +42,44 @@ import javafx.scene.layout.Region;
  *
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
+    protected int                averageCardinality;
+    protected final StyledInsets listInsets;
     protected double             maxWidth;
-    protected boolean            list;
-    protected final StyledInsets outlineInsets;
-
+    private double               cellHeight;
     @SuppressWarnings("unused")
     private boolean              variableLength;
 
-    public PrimitiveLayout(LayoutProvider layout, Primitive p,
-                           StyledInsets outlineInsets) {
+    public PrimitiveLayout(LayoutProvider layout, Primitive p) {
         super(layout, p);
-        this.outlineInsets = outlineInsets;
+        this.listInsets = layout.listInsets(this);
     }
 
     public void apply(Cell<JsonNode, ?> list) {
         layout.getModel()
               .apply(list, getNode());
+    }
+
+    @Override
+    public LayoutCell<? extends Region> autoLayout(double width) {
+        double justified = LayoutProvider.snap(width);
+        layout(justified);
+        compress(justified);
+        cellHeight(averageCardinality, justified);
+        return buildControl();
+    }
+
+    public LayoutCell<?> buildCell() {
+        LabelCell cell = new LabelCell();
+        cell.getNode()
+            .getStyleClass()
+            .add(node.getField());
+        cell.getNode()
+            .setMinSize(justifiedWidth, cellHeight);
+        cell.getNode()
+            .setPrefSize(justifiedWidth, cellHeight);
+        cell.getNode()
+            .setMaxSize(justifiedWidth, cellHeight);
+        return cell;
     }
 
     @Override
@@ -71,11 +96,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public LayoutCell<? extends Region> buildControl() {
-        LabelCell cell = new LabelCell();
-        cell.getNode()
-            .getStyleClass()
-            .add(node.getField());
-        return cell;
+        return averageCardinality > 1 ? new PrimitiveList(this) : buildCell();
     }
 
     @Override
@@ -88,13 +109,18 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         if (height > 0) {
             return height;
         }
+        int resolvedCardinality = Math.min(cardinality, averageCardinality);
         double rows = Math.ceil((maxWidth / justified) + 0.5);
-        double cellHeight = snap((layout.getTextLineHeight() * rows)
-                                 + layout.getTextVerticalInset());
-        height = list ? (cellHeight * cardinality)
-                        + outlineInsets.getCellVerticalInset()
-                        + outlineInsets.getVerticalInset()
-                      : cellHeight;
+        boolean list = resolvedCardinality > 1;
+        cellHeight = snap((layout.getTextLineHeight() * rows)
+                          + layout.getTextVerticalInset());
+        if (list) {
+            cellHeight = cellHeight + listInsets.getCellVerticalInset();
+            height = (cellHeight * resolvedCardinality)
+                     + listInsets.getVerticalInset();
+        } else {
+            height = cellHeight;
+        }
         return height;
     }
 
@@ -120,6 +146,10 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return node.extractFrom(datum);
     }
 
+    public double getCellHeight() {
+        return cellHeight;
+    }
+
     @Override
     public double getJustifiedColumnWidth() {
         return snap(justifiedWidth);
@@ -143,6 +173,14 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
+    public SchemaNodeLayout measure(JsonNode datum) {
+        ArrayNode setOf = JsonNodeFactory.instance.arrayNode();
+        setOf.add(datum);
+        measure(setOf, n -> n);
+        return this;
+    }
+
+    @Override
     public double measure(JsonNode data,
                           Function<JsonNode, JsonNode> extractor) {
         clear();
@@ -150,18 +188,27 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         double summedDataWidth = 0;
         maxWidth = 0;
         columnWidth = 0;
-        List<JsonNode> normalized = SchemaNode.asList(data);
-        list = normalized.size() > 1;
+        List<JsonNode> normalized = asList(data);
+        int cardSum = 0;
         for (JsonNode prim : normalized) {
-            List<JsonNode> rows = SchemaNode.asList(prim);
-            double summedWidth = 0;
-            for (JsonNode row : rows) {
-                double w = width(row);
-                summedWidth += w;
+            if (prim.isArray()) {
+                cardSum += prim.size();
+                double summedWidth = 0;
+                for (JsonNode row : prim) {
+                    double w = width(row);
+                    summedWidth += w;
+                    maxWidth = Math.max(maxWidth, w);
+                }
+                summedDataWidth += prim.size() == 0 ? 1
+                                                    : summedWidth / prim.size();
+            } else {
+                cardSum += 1;
+                double w = width(prim);
+                summedDataWidth += w;
                 maxWidth = Math.max(maxWidth, w);
             }
-            summedDataWidth += rows.isEmpty() ? 1 : summedWidth / rows.size();
         }
+        averageCardinality = cardSum / data.size();
         double averageWidth = data.size() == 0 ? 0
                                                : (summedDataWidth
                                                   / data.size());

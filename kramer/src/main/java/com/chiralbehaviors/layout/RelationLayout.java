@@ -336,7 +336,7 @@ public class RelationLayout extends SchemaNodeLayout {
         maxCardinality = datum.size();
 
         for (SchemaNode child : getNode().getChildren()) {
-            Fold fold = layout.layout(child, outlineInsets)
+            Fold fold = layout.layout(child)
                               .fold(datum, extractor);
             children.add(fold.getLayout());
             columnWidth = snap(Math.max(columnWidth, fold.getLayout()
