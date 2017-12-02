@@ -20,6 +20,7 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
@@ -131,14 +132,16 @@ public class NestedTable extends VerticalCell<NestedTable> {
                                                           double height,
                                                           int childCardinality,
                                                           RelationLayout layout) {
-        VirtualFlow<JsonNode, NestedCell> rows = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
-                                                                            layout.getRowHeight(),
-                                                                            FXCollections.observableArrayList(),
-                                                                            item -> {
-                                                                                NestedCell cell = new NestedCell(layout);
-                                                                                cell.updateItem(item);
-                                                                                return cell;
-                                                                            });
+        Function<JsonNode, NestedCell> factory = item -> {
+            NestedCell cell = new NestedCell(layout);
+            cell.updateItem(item);
+            return cell;
+        };
+        VirtualFlow<JsonNode, NestedCell> rows = new VirtualFlow<JsonNode, NestedCell>(DEFAULT_STYLE,
+                                                                                       layout.getJustifiedColumnWidth(),
+                                                                                       layout.getRowHeight(),
+                                                                                       FXCollections.observableArrayList(),
+                                                                                       factory);
         rows.setMinSize(width, height);
         rows.setPrefSize(width, height);
         rows.setMaxSize(width, height);

@@ -15,11 +15,13 @@ import org.reactfx.value.Val;
 import org.reactfx.value.Var;
 
 import com.chiralbehaviors.layout.cell.FocusTraversal;
+import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.MouseHandler;
 import com.sun.javafx.collections.MappingChange;
 import com.sun.javafx.collections.NonIterableChange;
 import com.sun.javafx.scene.control.ReadOnlyUnbackedObservableList;
 
+import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ListChangeListener.Change;
 import javafx.collections.ObservableList;
@@ -74,46 +76,16 @@ import javafx.scene.shape.Rectangle;
  *            {@link javafx.scene.Node}.
  */
 @SuppressWarnings("restriction")
-public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
-        implements Virtualized {
-
-    /**
-     * Determines how the cells in the viewport should be laid out and where any
-     * extra unused space should exist if there are not enough cells to
-     * completely fill up the viewport
-     */
-    public static enum Gravity {
-        /**
-         * If using a {@link VerticalHelper vertical viewport}, lays out the
-         * content from top-to-bottom. The first visible item will appear at the
-         * top and the last visible item (or unused space) towards the bottom.
-         * <p>
-         * If using a {@link HorizontalHelper horizontal viewport}, lays out the
-         * content from left-to-right. The first visible item will appear at the
-         * left and the last visible item (or unused space) towards the right.
-         * </p>
-         */
-        FRONT,
-        /**
-         * If using a {@link VerticalHelper vertical viewport}, lays out the
-         * content from bottom-to-top. The first visible item will appear at the
-         * bottom and the last visible item (or unused space) towards the top.
-         * <p>
-         * If using a {@link HorizontalHelper horizontal viewport}, lays out the
-         * content from right-to-left. The first visible item will appear at the
-         * right and the last visible item (or unused space) towards the left.
-         * </p>
-         */
-        REAR
-    }
+public class VirtualFlow<T, C extends Cell<T, ?>> extends
+        HorizontalCell<VirtualFlow<T, Cell<T, ?>>> implements Virtualized {
 
     public class VirtualFlowSelectionModel extends MultipleSelectionModel<T> {
         final BitSet                                    selectedIndices;
         final ReadOnlyUnbackedObservableList<Integer>   selectedIndicesSeq;
         ListChangeListener.Change<T>                    selectedItemChange;
         private int                                     atomicityCount = 0;
-        private final ReadOnlyUnbackedObservableList<T> selectedItemsSeq;
         private int                                     focusedIndex   = -1;
+        private final ReadOnlyUnbackedObservableList<T> selectedItemsSeq;
 
         public VirtualFlowSelectionModel() {
             selectedIndexProperty().addListener(valueModel -> {
@@ -273,6 +245,15 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
                                                                                                 Collections.singletonList(index),
                                                                                                 selectedIndicesSeq));
             }
+        }
+
+        public void focus(int index) {
+            VirtualFlow.this.notifyAccessibleAttributeChanged(AccessibleAttribute.FOCUS_ITEM);
+            C cell = getCell(index);
+            cell.getNode()
+                .requestFocus();
+            focusedIndex = index;
+
         }
 
         public int getFocusedIndex() {
@@ -561,15 +542,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
             }
         }
 
-        public void focus(int index) {
-            VirtualFlow.this.notifyAccessibleAttributeChanged(AccessibleAttribute.FOCUS_ITEM);
-            C cell = getCell(index);
-            cell.getNode()
-                .requestFocus();
-            focusedIndex = index;
-
-        }
-
         /**
          * Returns the number of items in the data model that underpins the
          * control. An example would be that a ListView selection model would
@@ -802,25 +774,28 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
 
     /**
      * Creates a viewport that lays out content vertically from top to bottom
-     */
-    public static <T, C extends Cell<T, ?>> VirtualFlow<T, C> createVertical(double cellBreadth,
-                                                                             double cellLength,
-                                                                             ObservableList<T> items,
-                                                                             Function<? super T, ? extends C> cellFactory) {
-        return createVertical(cellBreadth, cellLength, items, cellFactory,
-                              Gravity.FRONT);
-    }
-
-    /**
-     * Creates a viewport that lays out content vertically from top to bottom
+     * 
+     * @param styleSheet
      */
     public static <T, C extends Cell<T, ?>> VirtualFlow<T, C> createVertical(double cellBreadth,
                                                                              double cellLength,
                                                                              ObservableList<T> items,
                                                                              Function<? super T, ? extends C> cellFactory,
-                                                                             Gravity gravity) {
-        return new VirtualFlow<>(cellBreadth, cellLength, items, cellFactory,
-                                 gravity);
+                                                                             String styleSheet) {
+        return createVertical(styleSheet, cellBreadth, cellLength, items,
+                              cellFactory);
+    }
+
+    /**
+     * Creates a viewport that lays out content vertically from top to bottom
+     */
+    public static <T, C extends Cell<T, ?>> VirtualFlow<T, C> createVertical(String styleSheet,
+                                                                             double cellBreadth,
+                                                                             double cellLength,
+                                                                             ObservableList<T> items,
+                                                                             Function<? super T, ? extends C> cellFactory) {
+        return new VirtualFlow<>(styleSheet, cellBreadth, cellLength, items,
+                                 cellFactory);
     }
 
     public static List<CssMetaData<? extends Styleable, ?>> getClassCssMetaData() {
@@ -917,36 +892,23 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         };
     }
 
+    protected final FocusTraversal          focus;
     protected final ObservableList<T>       items;
-
     protected final MouseHandler            mouseHandler;
-
+    protected final ScrollHandler           scrollHandler  = new ScrollHandler(this);
     private final Var<Double>               breadthOffset;
-
     // non-negative
     private final Var<Double>               breadthOffset0 = Var.newSimpleVar(0.0);
     private final CellListManager<T, C>     cellListManager;
-
     private final CellPositioner<T, C>      cellPositioner;
-
     private final Var<Double>               lengthOffsetEstimate;
-
     private final Navigator<T, C>           navigator;
-
     private final VirtualFlowSelectionModel selectionModel = new VirtualFlowSelectionModel();
-
     private final SizeTracker               sizeTracker;
-
-    private final FocusTraversal            focus;
 
     {
 
         focus = new FocusTraversal() {
-
-            @Override
-            protected Node getNode() {
-                return VirtualFlow.this;
-            }
 
             @Override
             public void activate() {
@@ -955,6 +917,11 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
                 if (focusedIndex >= 0) {
                     edit();
                 }
+            }
+
+            @Override
+            protected Node getNode() {
+                return VirtualFlow.this;
             }
 
             private void edit() {
@@ -978,10 +945,14 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
 
     }
 
-    protected VirtualFlow(double cellBreadth, double cellLength,
-                          ObservableList<T> items,
-                          Function<? super T, ? extends C> cellFactory,
-                          Gravity gravity) {
+    public VirtualFlow(String styleSheet) {
+        this(styleSheet, 0, 0, FXCollections.observableArrayList(), n -> null);
+    }
+
+    public VirtualFlow(String styleSheet, double cellBreadth, double cellLength,
+                       ObservableList<T> items,
+                       Function<? super T, ? extends C> cellFactory) {
+        super(styleSheet);
         breadthOffset = breadthOffset0.asVar(this::setBreadthOffset);
         this.getStyleClass()
             .add("virtual-flow");

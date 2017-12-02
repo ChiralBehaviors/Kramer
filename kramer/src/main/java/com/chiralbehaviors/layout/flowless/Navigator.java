@@ -9,8 +9,6 @@ import org.reactfx.collection.MemoizationList;
 import org.reactfx.collection.QuasiListChange;
 import org.reactfx.collection.QuasiListModification;
 
-import com.chiralbehaviors.layout.flowless.VirtualFlow.Gravity;
-
 import javafx.beans.binding.Bindings;
 import javafx.scene.Node;
 import javafx.scene.Parent;
