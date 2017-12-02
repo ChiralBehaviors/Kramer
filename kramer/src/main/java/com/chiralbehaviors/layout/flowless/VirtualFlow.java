@@ -820,7 +820,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
                                                                              Function<? super T, ? extends C> cellFactory,
                                                                              Gravity gravity) {
         return new VirtualFlow<>(cellBreadth, cellLength, items, cellFactory,
-                                 new VerticalHelper(), gravity);
+                                 gravity);
     }
 
     public static List<CssMetaData<? extends Styleable, ?>> getClassCssMetaData() {
@@ -933,8 +933,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
 
     private final Navigator<T, C>           navigator;
 
-    private final OrientationHelper         orientation;
-
     private final VirtualFlowSelectionModel selectionModel = new VirtualFlowSelectionModel();
 
     private final SizeTracker               sizeTracker;
@@ -983,20 +981,19 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
     protected VirtualFlow(double cellBreadth, double cellLength,
                           ObservableList<T> items,
                           Function<? super T, ? extends C> cellFactory,
-                          OrientationHelper orientation, Gravity gravity) {
+                          Gravity gravity) {
         breadthOffset = breadthOffset0.asVar(this::setBreadthOffset);
         this.getStyleClass()
             .add("virtual-flow");
         this.items = items;
-        this.orientation = orientation;
         this.cellListManager = new CellListManager<T, C>(items, cellFactory);
         MemoizationList<C> cells = cellListManager.getLazyCellList();
-        this.sizeTracker = new SizeTracker(cellBreadth, cellLength, orientation,
+        this.sizeTracker = new SizeTracker(cellBreadth, cellLength,
                                            layoutBoundsProperty(), cells);
-        this.cellPositioner = new CellPositioner<>(cellListManager, orientation,
+        this.cellPositioner = new CellPositioner<>(cellListManager,
                                                    sizeTracker);
         this.navigator = new Navigator<>(cellListManager, cellPositioner,
-                                         orientation, sizeTracker);
+                                         sizeTracker);
 
         getChildren().add(navigator);
         clipProperty().bind(Val.map(layoutBoundsProperty(),
@@ -1041,12 +1038,12 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
 
     @Override
     public Var<Double> estimatedScrollXProperty() {
-        return orientation.estimatedScrollXProperty(this);
+        return this.breadthOffsetProperty();
     }
 
     @Override
     public Var<Double> estimatedScrollYProperty() {
-        return orientation.estimatedScrollYProperty(this);
+        return this.lengthOffsetEstimateProperty();
     }
 
     /**
@@ -1076,7 +1073,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
 
     @Override
     public final Orientation getContentBias() {
-        return orientation.getContentBias();
+        return Orientation.HORIZONTAL;
     }
 
     @Override
@@ -1110,13 +1107,13 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
      *         bottom left corner of the content of a vertical flow.
      */
     public VirtualFlowHit<C> hit(double x, double y) {
-        double bOff = orientation.getX(x, y);
-        double lOff = orientation.getY(x, y);
+        double bOff = x;
+        double lOff = y;
 
         bOff += breadthOffset0.getValue();
 
         if (items.isEmpty()) {
-            return orientation.hitAfterCells(bOff, lOff);
+            return VirtualFlowHit.hitAfterCells(bOff, lOff);
         }
 
         layout();
@@ -1130,22 +1127,45 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
                                         .getAsInt();
         lastVisible = navigator.fillForwardFrom0(lastVisible, lOff);
         C lastCell = cellPositioner.getVisibleCell(lastVisible);
+        Node node2 = firstCell.getNode();
 
-        if (lOff < orientation.minY(firstCell)) {
-            return orientation.hitBeforeCells(bOff,
-                                              lOff - orientation.minY(firstCell));
-        } else if (lOff >= orientation.maxY(lastCell)) {
-            return orientation.hitAfterCells(bOff,
-                                             lOff - orientation.maxY(lastCell));
+        if (lOff < node2.getLayoutY() + node2.getLayoutBounds()
+                                             .getMinY()) {
+            Node node = firstCell.getNode();
+            return VirtualFlowHit.hitBeforeCells(bOff,
+                                                 lOff - (node.getLayoutY()
+                                                         + node.getLayoutBounds()
+                                                               .getMinY()));
         } else {
-            for (int i = firstVisible; i <= lastVisible; ++i) {
-                C cell = cellPositioner.getVisibleCell(i);
-                if (lOff < orientation.maxY(cell)) {
-                    return orientation.cellHit(i, cell, bOff,
-                                               lOff - orientation.minY(cell));
+            Node node = lastCell.getNode();
+            if (lOff >= node.getLayoutY() + node.getLayoutBounds()
+                                                .getMinY()
+                        + node.getLayoutBounds()
+                              .getHeight()) {
+                Node node1 = lastCell.getNode();
+                return VirtualFlowHit.hitAfterCells(bOff,
+                                                    lOff - (node1.getLayoutY()
+                                                            + node1.getLayoutBounds()
+                                                                   .getMinY()
+                                                            + node1.getLayoutBounds()
+                                                                   .getHeight()));
+            } else {
+                for (int i = firstVisible; i <= lastVisible; ++i) {
+                    C cell = cellPositioner.getVisibleCell(i);
+                    Node node1 = cell.getNode();
+                    if (lOff < node1.getLayoutY() + node1.getLayoutBounds()
+                                                         .getMinY()
+                               + node1.getLayoutBounds()
+                                      .getHeight()) {
+                        Node node3 = cell.getNode();
+                        return VirtualFlowHit.cellHit(i, cell, bOff,
+                                                      lOff - (node3.getLayoutY()
+                                                              + node3.getLayoutBounds()
+                                                                     .getMinY()));
+                    }
                 }
+                throw new AssertionError("unreachable code");
             }
-            throw new AssertionError("unreachable code");
         }
     }
 
@@ -1169,7 +1189,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
      */
     @Override
     public void scrollXBy(double deltaX) {
-        orientation.scrollHorizontallyBy(this, deltaX);
+        this.scrollBreadth(deltaX);
     }
 
     /**
@@ -1180,7 +1200,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
      */
     @Override
     public void scrollXToPixel(double pixel) {
-        orientation.scrollHorizontallyToPixel(this, pixel);
+        this.setBreadthOffset(pixel);
     }
 
     /**
@@ -1191,7 +1211,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
      */
     @Override
     public void scrollYBy(double deltaY) {
-        orientation.scrollVerticallyBy(this, deltaY);
+        this.scrollLength(deltaY);
     }
 
     /**
@@ -1202,7 +1222,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
      */
     @Override
     public void scrollYToPixel(double pixel) {
-        orientation.scrollVerticallyToPixel(this, pixel);
+        this.setLengthOffset(pixel);
     }
 
     /**
@@ -1240,9 +1260,10 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
      * call (e.g., this method does not "scroll" twice).
      */
     public void show(int itemIndex, Bounds region) {
-        navigator.showLengthRegion(itemIndex, orientation.minY(region),
-                                   orientation.maxY(region));
-        showBreadthRegion(orientation.minX(region), orientation.maxX(region));
+        navigator.showLengthRegion(itemIndex, region.getMinY(),
+                                   region.getMinY() + region.getHeight());
+        showBreadthRegion(region.getMinX(),
+                          region.getMinX() + region.getWidth());
     }
 
     /**
@@ -1280,7 +1301,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
 
     @Override
     public Val<Double> totalHeightEstimateProperty() {
-        return orientation.heightEstimateProperty(this);
+        return this.totalLengthEstimateProperty();
     }
 
     public Val<Double> totalLengthEstimateProperty() {
@@ -1289,7 +1310,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
 
     @Override
     public Val<Double> totalWidthEstimateProperty() {
-        return orientation.widthEstimateProperty(this);
+        return this.totalBreadthEstimateProperty();
     }
 
     /**
@@ -1333,26 +1354,27 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends Region
         // navigate to the target position and fill viewport
         while (true) {
             double oldLayoutBreadth = sizeTracker.getCellLayoutBreadth();
-            orientation.resize(navigator, oldLayoutBreadth,
-                               sizeTracker.getViewportLength());
+            navigator.resize(oldLayoutBreadth, sizeTracker.getViewportLength());
             navigator.layout();
             if (oldLayoutBreadth == sizeTracker.getCellLayoutBreadth()) {
                 break;
             }
         }
 
-        double viewBreadth = orientation.breadth(this);
-        double navigatorBreadth = orientation.breadth(navigator);
+        double viewBreadth = this.getLayoutBounds()
+                                 .getWidth();
+        double navigatorBreadth = navigator.getLayoutBounds()
+                                           .getWidth();
         double totalBreadth = breadthOffset0.getValue();
         double breadthDifference = navigatorBreadth - totalBreadth;
         if (breadthDifference < viewBreadth) {
             // viewport is scrolled all the way to the end of its breadth.
             //  but now viewport size (breadth) has increased
             double adjustment = viewBreadth - breadthDifference;
-            orientation.relocate(navigator, -(totalBreadth - adjustment), 0);
+            navigator.relocate(-(totalBreadth - adjustment), (double) 0);
             breadthOffset0.setValue(totalBreadth - adjustment);
         } else {
-            orientation.relocate(navigator, -breadthOffset0.getValue(), 0);
+            navigator.relocate(-breadthOffset0.getValue(), (double) 0);
         }
     }
 
