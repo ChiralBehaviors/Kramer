@@ -1,5 +1,8 @@
 package com.chiralbehaviors.layout.flowless;
 
+import static com.chiralbehaviors.layout.cell.SelectionEvent.DOUBLE_SELECT;
+import static com.chiralbehaviors.layout.cell.SelectionEvent.SINGLE_SELECT;
+import static com.chiralbehaviors.layout.cell.SelectionEvent.TRIPLE_SELECT;
 import static javafx.scene.control.SelectionMode.SINGLE;
 
 import java.util.ArrayList;
@@ -17,6 +20,7 @@ import org.reactfx.value.Var;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.MouseHandler;
+import com.chiralbehaviors.layout.cell.SelectionEvent;
 import com.sun.javafx.collections.MappingChange;
 import com.sun.javafx.collections.NonIterableChange;
 import com.sun.javafx.scene.control.ReadOnlyUnbackedObservableList;
@@ -36,8 +40,8 @@ import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.Region;
 import javafx.scene.shape.Rectangle;
+import javafx.util.Duration;
 
 /**
  * A VirtualFlow is a memory-efficient viewport that only renders enough of its
@@ -727,37 +731,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
         }
     }
 
-    static class ShiftParams {
-        private final int     clearIndex;
-        private final boolean selected;
-        private final int     setIndex;
-
-        ShiftParams(int clearIndex, int setIndex, boolean selected) {
-            this.clearIndex = clearIndex;
-            this.setIndex = setIndex;
-            this.selected = selected;
-        }
-
-        public final int getClearIndex() {
-            return clearIndex;
-        }
-
-        public final int getSetIndex() {
-            return setIndex;
-        }
-
-        public final boolean isSelected() {
-            return selected;
-        }
-    }
-
-    private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
-
-    static {
-        List<CssMetaData<? extends Styleable, ?>> styleables = new ArrayList<>(Region.getClassCssMetaData());
-        STYLEABLES = Collections.unmodifiableList(styleables);
-    }
-
     /**
      * Creates a viewport that lays out content vertically from top to bottom
      * 
@@ -782,10 +755,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
                                                                              Function<? super T, ? extends C> cellFactory) {
         return new VirtualFlow<>(styleSheet, cellBreadth, cellLength, items,
                                  cellFactory);
-    }
-
-    public static List<CssMetaData<? extends Styleable, ?>> getClassCssMetaData() {
-        return STYLEABLES;
     }
 
     static <T> ListChangeListener.Change<T> buildClearAndSelectChange(ObservableList<T> list,
@@ -913,17 +882,43 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
             private void edit() {
             }
         };
-        mouseHandler = new MouseHandler() {
+        mouseHandler = new MouseHandler(new Duration(300)) {
+
+            @Override
+            public void doubleClick(MouseEvent mouseEvent) {
+                VirtualFlowHit<C> hit = hit(mouseEvent.getX(),
+                                            mouseEvent.getY());
+                if (hit.isCellHit()) {
+                    selectionModel.select(hit.getCellIndex());
+                    VirtualFlow.this.fireEvent(new SelectionEvent(hit.getCell(),
+                                                                  DOUBLE_SELECT));
+                }
+            }
 
             @Override
             public Node getNode() {
                 return VirtualFlow.this;
             }
 
-            public void select(MouseEvent evt) {
-                VirtualFlowHit<C> hit = hit(evt.getX(), evt.getY());
+            @Override
+            public void singleClick(MouseEvent mouseEvent) {
+                VirtualFlowHit<C> hit = hit(mouseEvent.getX(),
+                                            mouseEvent.getY());
                 if (hit.isCellHit()) {
                     selectionModel.select(hit.getCellIndex());
+                    VirtualFlow.this.fireEvent(new SelectionEvent(hit.getCell(),
+                                                                  SINGLE_SELECT));
+                }
+            }
+
+            @Override
+            public void tripleClick(MouseEvent mouseEvent) {
+                VirtualFlowHit<C> hit = hit(mouseEvent.getX(),
+                                            mouseEvent.getY());
+                if (hit.isCellHit()) {
+                    selectionModel.select(hit.getCellIndex());
+                    VirtualFlow.this.fireEvent(new SelectionEvent(hit.getCell(),
+                                                                  TRIPLE_SELECT));
                 }
             }
         };

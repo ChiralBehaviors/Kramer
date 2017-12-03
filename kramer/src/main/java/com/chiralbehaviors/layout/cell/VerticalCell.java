@@ -17,7 +17,12 @@
 package com.chiralbehaviors.layout.cell;
 
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
+import javafx.css.CssMetaData;
+import javafx.css.Styleable;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
@@ -27,9 +32,20 @@ import javafx.scene.layout.VBox;
  */
 abstract public class VerticalCell<T extends Region> extends VBox
         implements LayoutCell<T> {
-    public static final String STYLE_CLASS = "horizontal-cell";
+    public static final String                                     STYLE_CLASS = "horizontal-cell";
 
-    private final String       stylesheet;
+    private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
+
+    static {
+        List<CssMetaData<? extends Styleable, ?>> styleables = new ArrayList<>(Region.getClassCssMetaData());
+        STYLEABLES = Collections.unmodifiableList(styleables);
+    }
+
+    public static List<CssMetaData<? extends Styleable, ?>> getClassCssMetaData() {
+        return STYLEABLES;
+    }
+
+    private final String stylesheet;
 
     protected VerticalCell(String styleSheet) {
         URL url = getClass().getResource(styleSheet);

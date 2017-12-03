@@ -64,6 +64,7 @@ public class NestedTable extends VerticalCell<NestedTable> {
         setMinWidth(layout.getJustifiedColumnWidth());
         setPrefWidth(layout.getJustifiedColumnWidth());
         setMaxWidth(layout.getJustifiedColumnWidth());
+        layout.apply(rows);
     }
 
     public NestedTable(String field) {

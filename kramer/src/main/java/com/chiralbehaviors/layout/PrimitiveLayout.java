@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.cell.LayoutCell;
-import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.primitives.LabelCell;
 import com.chiralbehaviors.layout.primitives.PrimitiveList;
@@ -54,9 +53,9 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         this.listInsets = layout.listInsets(this);
     }
 
-    public void apply(Cell<JsonNode, ?> list) {
+    public void apply(LayoutCell<?> cell) {
         layout.getModel()
-              .apply(list, getNode());
+              .apply(cell, getNode());
     }
 
     @Override

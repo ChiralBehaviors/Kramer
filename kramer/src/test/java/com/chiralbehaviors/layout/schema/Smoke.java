@@ -16,9 +16,17 @@
 
 package com.chiralbehaviors.layout.schema;
 
+import static com.chiralbehaviors.layout.cell.SelectionEvent.DOUBLE_SELECT;
+
 import java.net.URL;
 
+import org.fxmisc.wellbehaved.event.InputMap;
+import org.fxmisc.wellbehaved.event.Nodes;
+
+import com.chiralbehaviors.layout.StyleProvider.LayoutModel;
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.control.AutoLayout;
+import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.application.Application;
@@ -37,7 +45,18 @@ public class Smoke extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        AutoLayout layout = new AutoLayout();
+        LayoutModel model = new LayoutModel() {
+            @Override
+            public <T extends LayoutCell<?>> void apply(VirtualFlow<JsonNode, T> list,
+                                                        Relation relation) {
+                Nodes.addInputMap(list,
+                                  InputMap.consume(DOUBLE_SELECT,
+                                                   e -> System.out.println("event: "
+                                                                           + list.getSelectionModel()
+                                                                                 .getSelectedItem())));
+            }
+        };
+        AutoLayout layout = new AutoLayout(Util.build(), model);
         URL url = getClass().getResource("/smoke.css");
         if (url != null) {
             layout.getStylesheets()
@@ -54,7 +73,6 @@ public class Smoke extends Application {
         primaryStage.show();
 
         JsonNode data = Util.testData();
-        layout.setRoot(Util.build());
         layout.measure(data);
         layout.updateItem(data);
         layout.autoLayout();

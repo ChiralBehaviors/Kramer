@@ -62,6 +62,7 @@ public class Outline extends VirtualFlow<JsonNode, OutlineCell> {
                   outlineCell.updateItem(item);
                   return outlineCell;
               });
+        layout.apply(this);
     }
 
     @Override

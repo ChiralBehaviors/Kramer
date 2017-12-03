@@ -27,7 +27,6 @@ import java.util.stream.Collectors;
 
 import com.chiralbehaviors.layout.StyleProvider.StyledInsets;
 import com.chiralbehaviors.layout.cell.LayoutCell;
-import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.outline.Outline;
 import com.chiralbehaviors.layout.outline.OutlineElement;
@@ -105,7 +104,7 @@ public class RelationLayout extends SchemaNodeLayout {
         }
     }
 
-    public void apply(VirtualFlow<JsonNode, Cell<JsonNode, ?>> list) {
+    public <T extends LayoutCell<?>> void apply(VirtualFlow<JsonNode, T> list) {
         layout.getModel()
               .apply(list, getNode());
     }

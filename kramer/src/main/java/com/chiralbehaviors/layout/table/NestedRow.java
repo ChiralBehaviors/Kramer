@@ -43,6 +43,7 @@ public class NestedRow extends VirtualFlow<JsonNode, NestedCell> {
         setMinSize(width, rendered);
         setPrefSize(width, rendered);
         setMaxSize(width, rendered);
+        layout.apply(this);
     }
 
     public NestedRow(String field) {

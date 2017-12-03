@@ -21,7 +21,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.chiralbehaviors.layout.LayoutProvider;
-import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.StyleProvider;
 import com.chiralbehaviors.layout.cell.LayoutCell;
@@ -49,7 +48,7 @@ public class AutoLayout extends Control implements Cell<JsonNode, AutoLayout> {
     private SimpleObjectProperty<JsonNode>         data        = new SimpleObjectProperty<>();
     private SchemaNodeLayout                       layout;
     private double                                 layoutWidth = 0.0;
-    private LayoutModel                            model;
+    private StyleProvider.LayoutModel              model;
     private final SimpleObjectProperty<SchemaNode> root        = new SimpleObjectProperty<>();
     private StyleProvider                          style;
 
@@ -58,11 +57,11 @@ public class AutoLayout extends Control implements Cell<JsonNode, AutoLayout> {
     }
 
     public AutoLayout(Relation root) {
-        this(root, new LayoutModel() {
+        this(root, new StyleProvider.LayoutModel() {
         });
     }
 
-    public AutoLayout(Relation root, LayoutModel model) {
+    public AutoLayout(Relation root, StyleProvider.LayoutModel model) {
         URL url = getClass().getResource(STYLE_SHEET);
         if (url != null) {
             getStylesheets().add(url.toExternalForm());
