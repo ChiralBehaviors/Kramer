@@ -41,31 +41,17 @@ import javafx.scene.shape.Rectangle;
 
 /**
  * A VirtualFlow is a memory-efficient viewport that only renders enough of its
- * content to completely fill up the viewport through its {@link Navigator}.
- * Based on the viewport's {@link Gravity}, it sequentially lays out the
- * {@link javafx.scene.Node}s of the {@link Cell}s until the viewport is
- * completely filled up or it has no additional cell's nodes to render.
+ * content to completely fill up the viewport through its {@link Navigator}. The
+ * flow sequentially lays out the {@link javafx.scene.Node}s of the
+ * {@link Cell}s until the viewport is completely filled up or it has no
+ * additional cell's nodes to render.
  *
  * <p>
  * Since this viewport does not fully render all of its content, the scroll
  * values are estimates based on the nodes that are currently displayed in the
  * viewport. If every node that could be rendered is the same width or same
  * height, then the corresponding scroll values (e.g., scrollX or totalX) are
- * accurate. <em>Note:</em> the VirtualFlow does not have scroll bars by
- * default. These can be added by wrapping this object in a
- * {@link VirtualizedScrollPane}.
- * </p>
- *
- * <p>
- * Since the viewport can be used to lay out its content horizontally or
- * vertically, it uses two orientation-agnostic terms to refer to its width and
- * height: "breadth" and "length," respectively. The viewport always lays out
- * its {@link Cell cell}'s {@link javafx.scene.Node}s from "top-to-bottom" or
- * from "bottom-to-top" (these terms should be understood in reference to the
- * viewport's {@link OrientationHelper orientation} and {@link Gravity}). Thus,
- * its length ("height") is independent as the viewport's bounds are dependent
- * upon its parent's bounds whereas its breadth ("width") is dependent upon its
- * length.
+ * accurate.
  * </p>
  *
  * @param <T>
@@ -937,8 +923,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
             public void select(MouseEvent evt) {
                 VirtualFlowHit<C> hit = hit(evt.getX(), evt.getY());
                 if (hit.isCellHit()) {
-                    hit.getCell()
-                       .setFocus(true);
+                    selectionModel.select(hit.getCellIndex());
                 }
             }
         };
