@@ -38,14 +38,10 @@ public class AutoLayoutExplorer extends Application {
 
     public void initRootLayout(Stage primaryStage) throws IOException {
         QueryState queryState = new QueryState();
-        queryState.setTargetURL("http://graphql-swapi.parseapp.com/");
+        queryState.setTargetURL("http://localhost:5000/api/workspace/pNi_Y_WJVqO-vMMjaicSNw");
         queryState.setQuery(Utils.getDocument(getClass().getResourceAsStream("/testQuery.gql")));
-        queryState.setSelection("allFilms");
+        queryState.setSelection("workspaces");
         AutoLayoutController controller = new AutoLayoutController(queryState);
-        controller.getLayout()
-                  .getStylesheets()
-                  .add(getClass().getResource("/non-nested.css")
-                                 .toExternalForm());
         primaryStage.setScene(new Scene(controller.getRoot(), 800, 800));
         primaryStage.show();
     }

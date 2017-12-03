@@ -20,6 +20,7 @@ import static com.chiralbehaviors.layout.cell.SelectionEvent.DOUBLE_SELECT;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -109,8 +110,13 @@ public class SinglePageApp extends Application
         VBox vbox = new VBox(locationBar(), anchor);
         primaryStage.setScene(new Scene(vbox, 800, 600));
         Map<String, String> parameters = getParameters().getNamed();
-        application = new ObjectMapper(new YAMLFactory()).readValue(Utils.resolveResource(getClass(),
-                                                                                          parameters.get("app")),
+        String app = parameters.get("app");
+        URL url = Utils.resolveResourceURL(getClass(), app);
+        if (url == null) {
+            throw new IllegalArgumentException(String.format("App resource not found: %s",
+                                                             app));
+        }
+        application = new ObjectMapper(new YAMLFactory()).readValue(url.openStream(),
                                                                     GraphqlApplication.class);
         endpoint = ClientBuilder.newClient()
                                 .target(application.getEndpoint()
@@ -184,9 +190,6 @@ public class SinglePageApp extends Application
 
     private AutoLayout layout(PageContext pageContext) throws QueryException {
         AutoLayout layout = new AutoLayout(pageContext.getRoot(), this);
-        layout.getStylesheets()
-              .add(getClass().getResource("/non-nested.css")
-                             .toExternalForm());
         JsonNode data = pageContext.evaluate(endpoint);
         layout.updateItem(data);
         layout.measure(data);

@@ -49,10 +49,11 @@ public class PageContext {
     }
 
     public JsonNode evaluate(WebTarget endpoint) throws QueryException {
-        return GraphQlUtil.evaluate(endpoint,
+        JsonNode result = GraphQlUtil.evaluate(endpoint,
                                                  new QueryRequest(page.getQuery(),
                                                                   variables))
                                        .get(root.getField());
+        return result;
     }
 
     public Page getPage() {

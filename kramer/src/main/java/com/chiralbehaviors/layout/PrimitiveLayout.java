@@ -206,10 +206,12 @@ public class PrimitiveLayout extends SchemaNodeLayout {
                 maxWidth = Math.max(maxWidth, w);
             }
         }
-        averageCardinality = cardSum / data.size();
-        double averageWidth = data.size() == 0 ? 0
-                                               : (summedDataWidth
-                                                  / data.size());
+        double averageWidth = 0;
+        averageCardinality = 1;
+        if (data.size() > 0) {
+            averageCardinality = cardSum / data.size();
+            averageWidth = summedDataWidth / data.size();
+        }
 
         columnWidth = Math.max(labelWidth,
                                LayoutProvider.snap(Math.max(getNode().getDefaultWidth(),

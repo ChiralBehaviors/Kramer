@@ -151,9 +151,14 @@ public interface GraphQlUtil {
             throw new IllegalStateException(String.format("Invalid query: %s",
                                                           query));
         }
-        Relation parent = new Relation(operationName.get() != null ? operationName.get()
-                                                                   : "query");
-        children.forEach(c -> parent.addChild(c));
+
+        Relation parent;
+        if (operationName.get() != null) {
+            parent = new Relation(operationName.get());
+            children.forEach(c -> parent.addChild(c));
+        } else {
+            parent = children.get(0);
+        }
         return parent;
     }
 
