@@ -41,12 +41,7 @@ public class TestGraphQlUtil {
     public void testFragments() throws Exception {
 
         Relation relation = GraphQlUtil.buildSchema(readFile("target/test-classes/fragment.query"));
-        assertNotNull(relation);
-        assertEquals("query", relation.getField());
-        assertEquals(1, relation.getChildren()
-                                .size());
-        relation = (Relation) relation.getChildren()
-                                      .get(0);
+        assertNotNull(relation); 
         assertEquals("workspaces", relation.getField());
         assertEquals(3, relation.getChildren()
                                 .size());
