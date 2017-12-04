@@ -134,12 +134,15 @@ public class AutoLayout extends VerticalCell<AutoLayout> {
         }
         LayoutCell<?> old = control;
         control = layout.autoLayout(width);
-        VBox.setVgrow(control.getNode(), Priority.ALWAYS);
         Region node = control.getNode();
+        VBox.setVgrow(node, Priority.ALWAYS);
         getChildren().setAll(node);
         if (old != null) {
             old.dispose();
         }
+        node.setMinWidth(width );
+        node.setPrefWidth(width );
+        node.setMaxWidth(width );
         control.updateItem(zeeData);
     }
 
