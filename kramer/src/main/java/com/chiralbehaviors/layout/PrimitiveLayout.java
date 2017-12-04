@@ -59,12 +59,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public LayoutCell<? extends Region> autoLayout(double width) {
-        double justified = LayoutProvider.snap(width);
-        layout(justified);
-        compress(justified);
-        cellHeight(averageCardinality, justified);
-        return buildControl();
+    public void calculateCellHeight() {
+        cellHeight(averageCardinality, justifiedWidth);
     }
 
     public LayoutCell<?> buildCell() {

@@ -18,7 +18,7 @@ package com.chiralbehaviors.layout.schema;
 
 import java.net.URL;
 
-import com.chiralbehaviors.layout.control.AutoLayout;
+import com.chiralbehaviors.layout.AutoLayout;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.application.Application;

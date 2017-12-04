@@ -157,6 +157,11 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
+    public void calculateCellHeight() {
+        cellHeight(averageChildCardinality, justifiedWidth);
+    }
+
+    @Override
     public double calculateTableColumnWidth() {
         return children.stream()
                        .mapToDouble(c -> c.calculateTableColumnWidth())

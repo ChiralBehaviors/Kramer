@@ -158,12 +158,15 @@ abstract public class SchemaNodeLayout {
         double justified = LayoutProvider.snap(width);
         layout(justified);
         compress(justified);
+        calculateCellHeight();
         return buildControl();
     }
 
     abstract public LayoutCell<? extends Region> buildColumn(double rendered);
 
     abstract public LayoutCell<? extends Region> buildControl();
+
+    abstract public void calculateCellHeight();
 
     abstract public double calculateTableColumnWidth();
 
