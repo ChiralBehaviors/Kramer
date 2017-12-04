@@ -53,6 +53,15 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         this.listInsets = layout.listInsets(this);
     }
 
+    @Override
+    public LayoutCell<? extends Region> autoLayout(double width) {
+        double justified = LayoutProvider.snap(width);
+        layout(justified);
+        compress(justified);
+        calculateCellHeight();
+        return buildControl();
+    }
+
     public void apply(LayoutCell<?> cell) {
         layout.getModel()
               .apply(cell, getNode());

@@ -17,6 +17,7 @@
 package com.chiralbehaviors.layout.outline;
 
 import java.util.Collection;
+import java.util.List;
 
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.RelationLayout;
@@ -76,6 +77,7 @@ public class Outline extends VirtualFlow<JsonNode, OutlineCell> {
 
     @Override
     public void updateItem(JsonNode item) {
-        items.setAll(SchemaNode.asList(item));
+        List<JsonNode> list = SchemaNode.asList(item);
+        items.setAll(list);
     }
 }

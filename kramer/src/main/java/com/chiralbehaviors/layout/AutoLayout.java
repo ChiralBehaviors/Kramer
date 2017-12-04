@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
+import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 
 /**
@@ -45,6 +46,7 @@ public class AutoLayout extends HorizontalCell<AutoLayout> {
     private StyleProvider.LayoutModel              model;
     private final SimpleObjectProperty<SchemaNode> root        = new SimpleObjectProperty<>();
     private StyleProvider                          style;
+    private AnchorPane                             anchor      = new AnchorPane();
 
     public AutoLayout() {
         this(null);
@@ -64,6 +66,7 @@ public class AutoLayout extends HorizontalCell<AutoLayout> {
         data.addListener((o, p, c) -> setContent());
         getStylesheets().addListener((ListChangeListener<String>) c -> style = new LayoutProvider(getStylesheets(),
                                                                                                   AutoLayout.this.model));
+        getChildren().add(anchor);
     }
 
     public void autoLayout() {
@@ -132,7 +135,13 @@ public class AutoLayout extends HorizontalCell<AutoLayout> {
         }
         LayoutCell<?> old = control;
         control = layout.autoLayout(width);
-        getChildren().setAll(control.getNode());
+        Region node = control.getNode();
+        AnchorPane.setTopAnchor(node, 0d);
+        AnchorPane.setLeftAnchor(node, 0d);
+        AnchorPane.setBottomAnchor(node, 0d);
+        AnchorPane.setRightAnchor(node, 0d);
+        anchor.getChildren()
+              .setAll(node);
         if (old != null) {
             old.dispose();
         }

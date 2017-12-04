@@ -39,7 +39,6 @@ import javafx.scene.Node;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
@@ -953,13 +952,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
 
         lengthOffsetEstimate = sizeTracker.lengthOffsetEstimateProperty()
                                           .asVar(this::setLengthOffset);
-
-        // scroll content by mouse scroll
-        this.addEventHandler(ScrollEvent.SCROLL, se -> {
-            scrollXBy(-se.getDeltaX());
-            scrollYBy(-se.getDeltaY());
-            se.consume();
-        });
     }
 
     public Var<Double> breadthOffsetProperty() {

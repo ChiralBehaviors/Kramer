@@ -41,6 +41,11 @@ public class PrimitiveList extends VirtualFlow<JsonNode, LayoutCell<?>> {
                   outlineCell.updateItem(item);
                   return outlineCell;
               });
+        double width = layout.getJustifiedColumnWidth();
+        double height = layout.getHeight();
+        setMinSize(width, height);
+        setPrefSize(width, height);
+        setMaxSize(width, height);
     }
 
     public PrimitiveList(String field) {

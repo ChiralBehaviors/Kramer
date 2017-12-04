@@ -158,7 +158,6 @@ abstract public class SchemaNodeLayout {
         double justified = LayoutProvider.snap(width);
         layout(justified);
         compress(justified);
-        calculateCellHeight();
         return buildControl();
     }
 
