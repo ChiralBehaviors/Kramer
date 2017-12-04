@@ -32,7 +32,7 @@ import javafx.scene.layout.VBox;
  */
 abstract public class VerticalCell<T extends Region> extends VBox
         implements LayoutCell<T> {
-    public static final String                                     STYLE_CLASS = "horizontal-cell";
+    public static final String                                     STYLE_CLASS = "vertical-cell";
 
     private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
 
