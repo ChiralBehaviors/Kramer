@@ -1,23 +1,14 @@
 {
-  allFilms {
-    films {
-      episodeID
-      title
-      starshipConnection {
-        starships {
-          name
-          maxAtmospheringSpeed
-          pilotConnection {
-            pilots {
-              name
-              gender
-              birthYear
-              homeworld {
-                name
-                population
-              }
-            }
-          }
+  workspaces {
+    id 
+    name
+    description 
+    IRI
+    imports {
+      _edge {
+        ... on _workspace_import {
+          lookupOrder
+          namespace
         }
       }
     }

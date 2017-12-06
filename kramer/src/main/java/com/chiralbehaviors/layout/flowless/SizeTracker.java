@@ -56,7 +56,6 @@ final class SizeTracker {
 
     private final Val<Double>                           maxKnownMinBreadth;
 
-    private final OrientationHelper                     orientation;
     private final Subscription                          subscription;
 
     private final Val<Double>                           totalLengthEstimate;
@@ -65,25 +64,17 @@ final class SizeTracker {
 
     /**
      * Constructs a SizeTracker
-     *
-     * @param orientation
-     *            if vertical, breadth = width and length = height; if
-     *            horizontal, breadth = height and length = width
      */
     public SizeTracker(double breadth, double length,
-                       OrientationHelper orientation,
                        ObservableObjectValue<Bounds> viewportBounds,
                        MemoizationList<? extends Cell<?, ?>> lazyCells) {
         this.width = breadth;
         this.height = length;
-        this.orientation = orientation;
         this.viewportBounds = viewportBounds;
         this.cells = lazyCells;
         this.maxKnownMinBreadth = Var.newSimpleVar(width);
         this.breadthForCells = Val.combine(maxKnownMinBreadth, viewportBounds,
-                                           (a,
-                                            b) -> Math.max(a,
-                                                           orientation.breadth(b)));
+                                           (a, b) -> Math.max(a, b.getWidth()));
 
         Val<Function<Cell<?, ?>, Double>> lengthFn = avoidFalseInvalidations(breadthForCells).map(m -> cell -> height);
 
@@ -108,7 +99,9 @@ final class SizeTracker {
 
         this.totalLengthEstimate = Val.combine(averageLengthEstimate,
                                                cells.sizeProperty(),
-                                               (avg, n) -> n * avg);
+                                               (avg, n) -> {
+                                                   return n * avg;
+                                               });
 
         Val<Integer> firstVisibleIndex = Val.create(() -> cells.getMemoizedCount() == 0 ? null
                                                                                         : cells.indexOfMemoizedItem(0),
@@ -143,7 +136,13 @@ final class SizeTracker {
                                                                                            - knownCnt)
                                                                                           * avgLen);
 
-        Val<Double> firstCellMinY = firstVisibleCell.flatMap(orientation::minYProperty);
+        Val<Double> firstCellMinY = firstVisibleCell.flatMap(node -> Val.combine(node.getNode()
+                                                                                     .layoutYProperty(),
+                                                                                 node.getNode()
+                                                                                     .layoutBoundsProperty(),
+                                                                                 (layoutY,
+                                                                                  layoutBounds) -> layoutY.doubleValue()
+                                                                                                   + layoutBounds.getMinY()));
 
         lengthOffsetEstimate = Val.combine(totalKnownLengthBeforeFirstVisibleCell,
                                            unknownLengthEstimateBeforeFirstVisibleCell,
@@ -156,6 +155,7 @@ final class SizeTracker {
         this.subscription = Subscription.multi(totalLengthEstimate.pin(),
                                                lengthOffsetEstimate.pin());
     }
+
     public Val<Double> averageLengthEstimateProperty() {
         return averageLengthEstimate;
     }
@@ -185,11 +185,13 @@ final class SizeTracker {
     }
 
     public double getViewportBreadth() {
-        return orientation.breadth(viewportBounds.get());
+        return viewportBounds.get()
+                             .getWidth();
     }
 
     public double getViewportLength() {
-        return orientation.length(viewportBounds.get());
+        return viewportBounds.get()
+                             .getHeight();
     }
 
     public double lengthFor(int itemIndex) {

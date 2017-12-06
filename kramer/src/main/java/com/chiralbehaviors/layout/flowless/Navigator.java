@@ -9,10 +9,7 @@ import org.reactfx.collection.MemoizationList;
 import org.reactfx.collection.QuasiListChange;
 import org.reactfx.collection.QuasiListModification;
 
-import com.chiralbehaviors.layout.flowless.VirtualFlow.Gravity;
-
 import javafx.beans.binding.Bindings;
-import javafx.beans.property.ObjectProperty;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.layout.Region;
@@ -30,33 +27,25 @@ import javafx.scene.layout.Region;
  */
 final class Navigator<T, C extends Cell<T, ?>> extends Region
         implements TargetPositionVisitor {
-    private final CellListManager<T, C>   cellListManager;
-    private final MemoizationList<C>      cells;
-    private TargetPosition                currentPosition = TargetPosition.BEGINNING;
-    private final ObjectProperty<Gravity> gravity;
-    private final Subscription            itemsSubscription;
-    private final OrientationHelper       orientation;
-    private final CellPositioner<T, C>    positioner;
+    private final CellListManager<T, C> cellListManager;
+    private final MemoizationList<C>    cells;
+    private TargetPosition              currentPosition = TargetPosition.BEGINNING;
+    private final Subscription          itemsSubscription;
+    private final CellPositioner<T, C>  positioner;
 
-    private final SizeTracker             sizeTracker;
-    private TargetPosition                targetPosition  = TargetPosition.BEGINNING;
+    private final SizeTracker           sizeTracker;
+    private TargetPosition              targetPosition  = TargetPosition.BEGINNING;
 
     public Navigator(CellListManager<T, C> cellListManager,
-                     CellPositioner<T, C> positioner,
-                     OrientationHelper orientation,
-                     ObjectProperty<Gravity> gravity, SizeTracker sizeTracker) {
+                     CellPositioner<T, C> positioner, SizeTracker sizeTracker) {
         this.cellListManager = cellListManager;
         this.cells = cellListManager.getLazyCellList();
         this.positioner = positioner;
-        this.orientation = orientation;
-        this.gravity = gravity;
         this.sizeTracker = sizeTracker;
 
         this.itemsSubscription = LiveList.observeQuasiChanges(cellListManager.getLazyCellList(),
                                                               this::itemsChanged);
         Bindings.bindContent(getChildren(), cellListManager.getNodes());
-        // When gravity changes, we must redo our layout:
-        gravity.addListener((prop, oldVal, newVal) -> requestLayout());
     }
 
     public void dispose() {
@@ -172,25 +161,39 @@ final class Navigator<T, C extends Cell<T, ?>> extends Region
 
     // does not re-place the anchor cell
     int fillBackwardFrom0(int itemIndex, double upTo) {
-        double min = orientation.minY(positioner.getVisibleCell(itemIndex));
+        Node node = positioner.getVisibleCell(itemIndex)
+                              .getNode();
+        double min = node.getLayoutY() + node.getLayoutBounds()
+                                             .getMinY();
         int i = itemIndex;
         while (min > upTo && i > 0) {
             --i;
             C c = positioner.placeEndFromStart(i, min);
-            min = orientation.minY(c);
+            Node node1 = c.getNode();
+            min = node1.getLayoutY() + node1.getLayoutBounds()
+                                            .getMinY();
         }
         return i;
     }
 
     int fillForwardFrom0(int itemIndex, double upTo) {
-        double max = orientation.maxY(positioner.getVisibleCell(itemIndex));
+        Node node = positioner.getVisibleCell(itemIndex)
+                              .getNode();
+        double max = node.getLayoutY() + node.getLayoutBounds()
+                                             .getMinY()
+                     + node.getLayoutBounds()
+                           .getHeight();
         int i = itemIndex;
         while (max < upTo && i < cellListManager.getLazyCellList()
                                                 .size()
                                  - 1) {
             ++i;
             C c = positioner.placeStartAt(i, max);
-            max = orientation.maxY(c);
+            Node node1 = c.getNode();
+            max = node1.getLayoutY() + node1.getLayoutBounds()
+                                            .getMinY()
+                  + node1.getLayoutBounds()
+                         .getHeight();
         }
         return i;
     }
@@ -219,16 +222,19 @@ final class Navigator<T, C extends Cell<T, ?>> extends Region
 
     private double distanceFromGround(int itemIndex) {
         C cell = positioner.getVisibleCell(itemIndex);
-        return gravity.get() == Gravity.FRONT ? orientation.minY(cell)
-                                              : sizeTracker.getViewportLength()
-                                                - orientation.maxY(cell);
+        Node node = cell.getNode();
+        return node.getLayoutY() + node.getLayoutBounds()
+                                       .getMinY();
     }
 
     private double distanceFromSky(int itemIndex) {
         C cell = positioner.getVisibleCell(itemIndex);
-        return gravity.get() == Gravity.FRONT ? sizeTracker.getViewportLength()
-                                                - orientation.maxY(cell)
-                                              : orientation.minY(cell);
+        Node node = cell.getNode();
+        return sizeTracker.getViewportLength() - (node.getLayoutY()
+                                                  + node.getLayoutBounds()
+                                                        .getMinY()
+                                                  + node.getLayoutBounds()
+                                                        .getHeight());
     }
 
     private int fillBackwardFrom(int itemIndex) {
@@ -239,7 +245,9 @@ final class Navigator<T, C extends Cell<T, ?>> extends Region
         // resize and/or reposition the starting cell
         // in case the preferred or available size changed
         C cell = positioner.getVisibleCell(itemIndex);
-        double length0 = orientation.minY(cell);
+        Node node = cell.getNode();
+        double length0 = node.getLayoutY() + node.getLayoutBounds()
+                                                 .getMinY();
         positioner.placeStartAt(itemIndex, length0);
 
         return fillBackwardFrom0(itemIndex, upTo);
@@ -257,7 +265,9 @@ final class Navigator<T, C extends Cell<T, ?>> extends Region
         // resize and/or reposition the starting cell
         // in case the preferred or available size changed
         C cell = positioner.getVisibleCell(itemIndex);
-        double length0 = orientation.minY(cell);
+        Node node = cell.getNode();
+        double length0 = node.getLayoutY() + node.getLayoutBounds()
+                                                 .getMinY();
         positioner.placeStartAt(itemIndex, length0);
 
         return fillForwardFrom0(itemIndex, upTo);
@@ -268,21 +278,15 @@ final class Navigator<T, C extends Cell<T, ?>> extends Region
     }
 
     private int fillTowardsGroundFrom0(int itemIndex) {
-        return gravity.get() == Gravity.FRONT ? fillBackwardFrom0(itemIndex)
-                                              : fillForwardFrom0(itemIndex);
+        return fillBackwardFrom0(itemIndex);
     }
 
     private int fillTowardsGroundFrom0(int itemIndex, double upTo) {
-        return gravity.get() == Gravity.FRONT ? fillBackwardFrom0(itemIndex,
-                                                                  upTo)
-                                              : fillForwardFrom0(itemIndex,
-                                                                 sizeTracker.getViewportLength()
-                                                                            - upTo);
+        return fillBackwardFrom0(itemIndex, upTo);
     }
 
     private int fillTowardsSkyFrom0(int itemIndex) {
-        return gravity.get() == Gravity.FRONT ? fillForwardFrom0(itemIndex)
-                                              : fillBackwardFrom0(itemIndex);
+        return fillForwardFrom0(itemIndex);
     }
 
     /**
@@ -319,12 +323,18 @@ final class Navigator<T, C extends Cell<T, ?>> extends Region
         // crop to the visible cells
         int first = Math.min(ground, sky);
         int last = Math.max(ground, sky);
-        while (first < last
-               && orientation.maxY(positioner.getVisibleCell(first)) <= 0.0) {
+        Node node = positioner.getVisibleCell(first)
+                              .getNode();
+        while (first < last && node.getLayoutY() + node.getLayoutBounds()
+                                                       .getMinY()
+                               + node.getLayoutBounds()
+                                     .getHeight() <= 0.0) {
             ++first;
         }
-        while (last > first
-               && orientation.minY(positioner.getVisibleCell(last)) >= sizeTracker.getViewportLength()) {
+        Node node1 = positioner.getVisibleCell(last)
+                               .getNode();
+        while (last > first && node1.getLayoutY() + node1.getLayoutBounds()
+                                                         .getMinY() >= sizeTracker.getViewportLength()) {
             --last;
         }
         positioner.cropTo(first, last + 1);
@@ -335,7 +345,10 @@ final class Navigator<T, C extends Cell<T, ?>> extends Region
         if (firstVisible.isPresent()) {
             int idx = firstVisible.getAsInt();
             C cell = positioner.getVisibleCell(idx);
-            return new StartOffStart(idx, orientation.minY(cell));
+            Node node = cell.getNode();
+            return new StartOffStart(idx,
+                                     node.getLayoutY() + node.getLayoutBounds()
+                                                             .getMinY());
         } else {
             return TargetPosition.BEGINNING;
         }
@@ -375,32 +388,31 @@ final class Navigator<T, C extends Cell<T, ?>> extends Region
     private void placeToViewport(int itemIndex, double fromY, double toY) {
         C cell = positioner.getVisibleCell(itemIndex);
         double d = positioner.shortestDeltaToViewport(cell, fromY, toY);
-        positioner.placeStartAt(itemIndex, orientation.minY(cell) + d);
+        Node node = cell.getNode();
+        positioner.placeStartAt(itemIndex,
+                                node.getLayoutY() + node.getLayoutBounds()
+                                                        .getMinY()
+                                           + d);
     }
 
     private void placeToViewport(int itemIndex, Offset from, Offset to) {
         C cell = positioner.getVisibleCell(itemIndex);
         double fromY = from.isFromStart() ? from.getValue()
-                                          : orientation.length(cell)
+                                          : ((Node) cell.getNode()).getLayoutBounds()
+                                                                   .getHeight()
                                             + to.getValue();
         double toY = to.isFromStart() ? to.getValue()
-                                      : orientation.length(cell)
+                                      : ((Node) cell.getNode()).getLayoutBounds()
+                                                               .getHeight()
                                         + to.getValue();
         placeToViewport(itemIndex, fromY, toY);
     }
 
     private void shiftCellsTowardsGround(int groundCellIndex, int lastCellIndex,
                                          double amount) {
-        if (gravity.get() == Gravity.FRONT) {
-            assert groundCellIndex <= lastCellIndex;
-            for (int i = groundCellIndex; i <= lastCellIndex; ++i) {
-                positioner.shiftCellBy(positioner.getVisibleCell(i), -amount);
-            }
-        } else {
-            assert groundCellIndex >= lastCellIndex;
-            for (int i = groundCellIndex; i >= lastCellIndex; --i) {
-                positioner.shiftCellBy(positioner.getVisibleCell(i), amount);
-            }
+        assert groundCellIndex <= lastCellIndex;
+        for (int i = groundCellIndex; i <= lastCellIndex; ++i) {
+            positioner.shiftCellBy(positioner.getVisibleCell(i), -amount);
         }
     }
 }

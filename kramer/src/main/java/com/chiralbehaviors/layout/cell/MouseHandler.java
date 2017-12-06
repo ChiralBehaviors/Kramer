@@ -23,10 +23,14 @@ import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.unless;
 
 import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
 
+import javafx.animation.PauseTransition;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.Node;
 import javafx.scene.input.InputEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.util.Duration;
 
 /**
  * @author halhildebrand
@@ -34,6 +38,7 @@ import javafx.scene.input.MouseEvent;
  */
 abstract public class MouseHandler {
     private static final InputMapTemplate<MouseHandler, InputEvent> DEFAULT_INPUT_MAP;
+
     static {
         DEFAULT_INPUT_MAP = unless(h -> h.isDisabled(),
                                    sequence(consume(mouseClicked(MouseButton.PRIMARY),
@@ -41,8 +46,30 @@ abstract public class MouseHandler {
                                                      evt) -> handler.select(evt))));
     }
 
-    public MouseHandler() {
+    private final PauseTransition clickTimer;
+    private volatile MouseEvent   mouseEvent;
+    private final IntegerProperty sequentialClickCount = new SimpleIntegerProperty(0);
+
+    public MouseHandler(Duration maxTimeBetweenSequentialClicks) {
         bind();
+        clickTimer = new PauseTransition(maxTimeBetweenSequentialClicks);
+        clickTimer.setOnFinished(event -> {
+            int count = sequentialClickCount.get();
+            sequentialClickCount.set(0);
+            switch (count) {
+                case 1:
+                    singleClick(mouseEvent);
+                    break;
+                case 2:
+                    doubleClick(mouseEvent);
+                    break;
+                case 3:
+                    tripleClick(mouseEvent);
+                    break;
+                default:
+            }
+        });
+
     }
 
     public void bind() {
@@ -50,17 +77,29 @@ abstract public class MouseHandler {
                                          c -> getNode());
     }
 
+    public void doubleClick(MouseEvent mouseEvent) {
+    }
+
     abstract public Node getNode();
 
     public boolean isDisabled() {
-        // TODO Auto-generated method stub
         return false;
     }
 
-    abstract public void select(MouseEvent evt);
+    public void singleClick(MouseEvent mouseEvent) {
+    }
+
+    public void tripleClick(MouseEvent mouseEvent) {
+    }
 
     public void unbind() {
         InputMapTemplate.uninstall(DEFAULT_INPUT_MAP, this, c -> getNode());
+    }
+
+    private void select(MouseEvent evt) {
+        mouseEvent = evt;
+        sequentialClickCount.set(sequentialClickCount.get() + 1);
+        clickTimer.playFromStart();
     }
 
 }

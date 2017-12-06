@@ -42,8 +42,8 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
     private static final String        STYLE_SHEET           = "outline-cell.css";
 
     private final FocusTraversal       focus;
-
     private List<Cell<JsonNode, Span>> spans                 = new ArrayList<>();
+    
     {
         focus = new FocusTraversal() {
 

@@ -6,6 +6,8 @@ import java.util.OptionalInt;
 
 import org.reactfx.collection.MemoizationList;
 
+import javafx.scene.Node;
+
 /**
  * Helper class for properly {@link javafx.scene.Node#resize(double, double)
  * resizing} and {@link javafx.scene.Node#relocate(double, double) relocating} a
@@ -14,14 +16,11 @@ import org.reactfx.collection.MemoizationList;
  */
 final class CellPositioner<T, C extends Cell<T, ?>> {
     private final CellListManager<T, C> cellManager;
-    private final OrientationHelper     orientation;
     private final SizeTracker           sizeTracker;
 
     public CellPositioner(CellListManager<T, C> cellManager,
-                          OrientationHelper orientation,
                           SizeTracker sizeTracker) {
         this.cellManager = cellManager;
-        this.orientation = orientation;
         this.sizeTracker = sizeTracker;
     }
 
@@ -113,7 +112,8 @@ final class CellPositioner<T, C extends Cell<T, ?>> {
     public C placeEndFromEnd(int itemIndex, double endOffEnd) {
         C cell = getSizedCell(itemIndex);
         double y = sizeTracker.getViewportLength() + endOffEnd
-                   - orientation.length(cell);
+                   - ((Node) cell.getNode()).getLayoutBounds()
+                                            .getHeight();
         relocate(cell, 0, y);
         cell.getNode()
             .setVisible(true);
@@ -149,7 +149,9 @@ final class CellPositioner<T, C extends Cell<T, ?>> {
      */
     public C placeEndFromStart(int itemIndex, double endOffStart) {
         C cell = getSizedCell(itemIndex);
-        relocate(cell, 0, endOffStart - orientation.length(cell));
+        relocate(cell, 0,
+                 endOffStart - ((Node) cell.getNode()).getLayoutBounds()
+                                                      .getHeight());
         cell.getNode()
             .setVisible(true);
         return cell;
@@ -232,7 +234,10 @@ final class CellPositioner<T, C extends Cell<T, ?>> {
      * terms mean.
      */
     public void shiftCellBy(C cell, double delta) {
-        double y = orientation.minY(cell) + delta;
+        Node node = cell.getNode();
+        double y = node.getLayoutY() + node.getLayoutBounds()
+                                           .getMinY()
+                   + delta;
         relocate(cell, 0, y);
     }
 
@@ -241,11 +246,15 @@ final class CellPositioner<T, C extends Cell<T, ?>> {
      * in order to fully display a partially-displayed cell's node.
      */
     public double shortestDeltaToViewport(C cell) {
-        return shortestDeltaToViewport(cell, 0.0, orientation.length(cell));
+        return shortestDeltaToViewport(cell, 0.0,
+                                       ((Node) cell.getNode()).getLayoutBounds()
+                                                              .getHeight());
     }
 
     public double shortestDeltaToViewport(C cell, double fromY, double toY) {
-        double cellMinY = orientation.minY(cell);
+        Node node = cell.getNode();
+        double cellMinY = node.getLayoutY() + node.getLayoutBounds()
+                                                  .getMinY();
         double gapBefore = cellMinY + fromY;
         double gapAfter = sizeTracker.getViewportLength() - (cellMinY + toY);
 
@@ -265,11 +274,11 @@ final class CellPositioner<T, C extends Cell<T, ?>> {
         C cell = cellManager.getCell(itemIndex);
         double breadth = sizeTracker.breadthFor(itemIndex);
         double length = sizeTracker.lengthFor(itemIndex);
-        orientation.resize(cell, breadth, length);
+        ((Node) cell.getNode()).resize(breadth, length);
         return cell;
     }
 
     private void relocate(C cell, double breadth0, double length0) {
-        orientation.relocate(cell, breadth0, length0);
+        ((Node) cell.getNode()).relocate(breadth0, length0);
     }
 }

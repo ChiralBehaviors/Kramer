@@ -28,7 +28,7 @@ import javax.ws.rs.client.WebTarget;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.chiralbehaviors.layout.control.AutoLayout;
+import com.chiralbehaviors.layout.AutoLayout;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -122,8 +122,6 @@ public class AutoLayoutController {
         page.selectedToggleProperty()
             .addListener((o, p, c) -> {
                 try {
-                    anchor.getChildren()
-                          .clear();
                     RadioButton prev = (RadioButton) p;
                     RadioButton current = (RadioButton) c;
 
@@ -133,13 +131,13 @@ public class AutoLayoutController {
 
                     if (current == showLayout) {
                         anchor.getChildren()
-                              .add(layout);
+                              .setAll(layout);
                     } else if (current == showSchema) {
                         anchor.getChildren()
-                              .add(schemaView);
+                              .setAll(schemaView);
                     } else if (current == showQuery) {
                         anchor.getChildren()
-                              .add(graphiql);
+                              .setAll(graphiql);
                     } else {
                         throw new IllegalStateException(String.format("Invalid radio button: %s",
                                                                       current));
@@ -275,8 +273,7 @@ public class AutoLayoutController {
                                                              queryState.getSelection());
         schemaView.setRoot(schema);
         layout.setRoot(schema);
-        layout.measure(data);
+        layout.measure(data); 
         layout.updateItem(data);
-        layout.autoLayout();
     }
 }

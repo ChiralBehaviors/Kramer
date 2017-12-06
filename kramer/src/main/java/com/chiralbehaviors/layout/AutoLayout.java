@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.control;
+package com.chiralbehaviors.layout;
 
-import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.chiralbehaviors.layout.LayoutProvider;
-import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
-import com.chiralbehaviors.layout.SchemaNodeLayout;
-import com.chiralbehaviors.layout.StyleProvider;
 import com.chiralbehaviors.layout.cell.LayoutCell;
-import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -33,15 +28,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
-import javafx.scene.control.Control;
-import javafx.scene.control.Skin;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
 /**
  * @author hhildebrand
  *
  */
-public class AutoLayout extends Control implements Cell<JsonNode, AutoLayout> {
+public class AutoLayout extends VerticalCell<AutoLayout> {
     private static final java.util.logging.Logger  log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
     private static final String                    STYLE_SHEET = "auto-layout.css";
 
@@ -49,7 +44,7 @@ public class AutoLayout extends Control implements Cell<JsonNode, AutoLayout> {
     private SimpleObjectProperty<JsonNode>         data        = new SimpleObjectProperty<>();
     private SchemaNodeLayout                       layout;
     private double                                 layoutWidth = 0.0;
-    private LayoutModel                            model;
+    private StyleProvider.LayoutModel              model;
     private final SimpleObjectProperty<SchemaNode> root        = new SimpleObjectProperty<>();
     private StyleProvider                          style;
 
@@ -58,15 +53,12 @@ public class AutoLayout extends Control implements Cell<JsonNode, AutoLayout> {
     }
 
     public AutoLayout(Relation root) {
-        this(root, new LayoutModel() {
+        this(root, new StyleProvider.LayoutModel() {
         });
     }
 
-    public AutoLayout(Relation root, LayoutModel model) {
-        URL url = getClass().getResource(STYLE_SHEET);
-        if (url != null) {
-            getStylesheets().add(url.toExternalForm());
-        }
+    public AutoLayout(Relation root, StyleProvider.LayoutModel model) {
+        super(STYLE_SHEET);
         this.model = model;
         style = new LayoutProvider(this.model);
         this.root.set(root);
@@ -105,7 +97,7 @@ public class AutoLayout extends Control implements Cell<JsonNode, AutoLayout> {
 
     public void measure(JsonNode data) {
         SchemaNode top = root.get();
-        if (top == null) {
+        if (top == null || data == null || data.isNull() || data.size() == 0) {
             return;
         }
         try {
@@ -133,31 +125,33 @@ public class AutoLayout extends Control implements Cell<JsonNode, AutoLayout> {
         data.set(item);
     }
 
-    @Override
-    protected Skin<?> createDefaultSkin() {
-        return new AutoLayoutSkin(this);
-    }
-
     private void autoLayout(JsonNode zeeData, double width) {
+        if (width < 10.0) {
+            return;
+        }
+        if (layout == null) {
+            measure(zeeData);
+        }
+        LayoutCell<?> old = control;
         control = layout.autoLayout(width);
-        double height = getHeight();
-        control.getNode()
-               .setMinSize(width, height);
-        control.getNode()
-               .setPrefSize(width, height);
-        control.getNode()
-               .setMaxSize(width, height);
+        Region node = control.getNode();
+        VBox.setVgrow(node, Priority.ALWAYS);
+        getChildren().setAll(node);
+        if (old != null) {
+            old.dispose();
+        }
+        node.setMinWidth(width );
+        node.setPrefWidth(width );
+        node.setMaxWidth(width );
         control.updateItem(zeeData);
-        getChildren().add(control.getNode());
     }
 
     private void resize(double width) {
-        if (layoutWidth == width) {
+        if (layoutWidth == width || width < 10.0) {
             return;
         }
 
         layoutWidth = width;
-        getChildren().clear();
 
         SchemaNode node = root.get();
         if (node == null) {
@@ -178,10 +172,14 @@ public class AutoLayout extends Control implements Cell<JsonNode, AutoLayout> {
     }
 
     private void setContent() {
+        JsonNode datum = data.get();
         try {
-            if (control != null) {
-                control.updateItem(data.get());
+            if (control == null) {
+                autoLayout(datum, getWidth());
+            } else {
+                control.updateItem(datum);
             }
+            layout();
         } catch (Throwable e) {
             log.log(Level.SEVERE, "cannot set content", e);
         }

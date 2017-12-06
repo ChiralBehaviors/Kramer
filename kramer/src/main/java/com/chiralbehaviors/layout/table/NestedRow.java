@@ -17,78 +17,33 @@
 package com.chiralbehaviors.layout.table;
 
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.cell.FocusTraversal;
-import com.chiralbehaviors.layout.cell.HorizontalCell;
-import com.chiralbehaviors.layout.cell.MouseHandler;
-import com.chiralbehaviors.layout.flowless.ScrollHandler;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
-import com.chiralbehaviors.layout.flowless.VirtualFlowHit;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
-import javafx.scene.Node;
-import javafx.scene.input.MouseEvent;
 
 /**
  * @author halhildebrand
  *
  */
-public class NestedRow extends HorizontalCell<NestedRow> {
-    private static final String               DEFAULT_STYLE         = "nested-row";
-    private static final String               SCHEMA_CLASS_TEMPLATE = "%s-nested-row";
-    private static final String               STYLE_SHEET           = "nested-row.css";
-
-    private final FocusTraversal              focus;
-    private VirtualFlow<JsonNode, NestedCell> row;
-    private final MouseHandler                mouseHandler;
-    private ScrollHandler                     scrollHandler;
-    {
-        focus = new FocusTraversal() {
-
-            @Override
-            protected Node getNode() {
-                return NestedRow.this;
-            }
-
-        };
-        mouseHandler = new MouseHandler() {
-
-            @Override
-            public Node getNode() {
-                return NestedRow.this;
-            }
-
-            public void select(MouseEvent evt) {
-                VirtualFlowHit<NestedCell> hit = row.hit(evt.getX(),
-                                                         evt.getY());
-                if (hit.isCellHit()) {
-                    NestedCell node = hit.getCell()
-                                         .getNode();
-                    node.setFocus(true);
-
-                }
-            }
-        };
-    }
+public class NestedRow extends VirtualFlow<JsonNode, NestedCell> {
+    private static final String DEFAULT_STYLE         = "nested-row";
+    private static final String SCHEMA_CLASS_TEMPLATE = "%s-nested-row";
+    private static final String STYLE_SHEET           = "nested-row.css";
 
     public NestedRow(double rendered, RelationLayout layout,
                      int childCardinality) {
-        this(layout.getField());
-        getStyleClass().addAll(layout.getField());
-        row = VirtualFlow.createVertical(layout.getJustifiedColumnWidth(),
-                                         layout.getHeight(),
-                                         FXCollections.observableArrayList(),
-                                         item -> {
-                                             NestedCell cell = new NestedCell(layout);
-                                             cell.updateItem(item);
-                                             return cell;
-                                         });
+        super(layout.getField(), layout.getJustifiedColumnWidth(),
+              layout.getHeight(), FXCollections.observableArrayList(), item -> {
+                  NestedCell cell = new NestedCell(layout);
+                  cell.updateItem(item);
+                  return cell;
+              });
         double width = layout.getJustifiedColumnWidth();
-        row.setMinSize(width, rendered);
-        row.setPrefSize(width, rendered);
-        row.setMaxSize(width, rendered);
-        getChildren().add(row);
-        scrollHandler = new ScrollHandler(row);
+        setMinSize(width, rendered);
+        setPrefSize(width, rendered);
+        setMaxSize(width, rendered);
+        layout.apply(this);
     }
 
     public NestedRow(String field) {
@@ -108,7 +63,6 @@ public class NestedRow extends HorizontalCell<NestedRow> {
 
     @Override
     public void updateItem(JsonNode item) {
-        row.getItems()
-           .setAll(NestedTable.itemsAsArray(item));
+        items.setAll(NestedTable.itemsAsArray(item));
     }
 }

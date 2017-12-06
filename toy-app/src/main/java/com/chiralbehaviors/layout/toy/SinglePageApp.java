@@ -16,8 +16,11 @@
 
 package com.chiralbehaviors.layout.toy;
 
+import static com.chiralbehaviors.layout.cell.SelectionEvent.DOUBLE_SELECT;
+
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -26,12 +29,14 @@ import java.util.StringTokenizer;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.WebTarget;
 
+import org.fxmisc.wellbehaved.event.InputMap;
+import org.fxmisc.wellbehaved.event.Nodes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
-import com.chiralbehaviors.layout.control.AutoLayout;
-import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.AutoLayout;
+import com.chiralbehaviors.layout.StyleProvider;
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil.QueryException;
 import com.chiralbehaviors.layout.schema.Relation;
@@ -46,7 +51,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -57,7 +61,8 @@ import javafx.stage.Stage;
  * @author hhildebrand
  *
  */
-public class SinglePageApp extends Application implements LayoutModel {
+public class SinglePageApp extends Application
+        implements StyleProvider.LayoutModel {
     private static final Logger log = LoggerFactory.getLogger(SinglePageApp.class);
 
     public static void main(String[] args) {
@@ -76,30 +81,26 @@ public class SinglePageApp extends Application implements LayoutModel {
     private Button                   reloadButton;
 
     @Override
-    public void apply(VirtualFlow<JsonNode, Cell<JsonNode, ?>> list,
-                      Relation relation) {
-        list.setOnMouseClicked(event -> {
+    public <T extends LayoutCell<?>> void apply(VirtualFlow<JsonNode, T> list,
+                                                Relation relation) {
+
+        Nodes.addInputMap(list, InputMap.consume(DOUBLE_SELECT, e -> {
             Route route = back.peek()
                               .getRoute(relation);
             if (route == null) {
                 return;
             }
-            if (!list.getItems()
-                     .isEmpty()
-                && event.getButton() == MouseButton.PRIMARY
-                && event.getClickCount() >= 2) {
-                JsonNode item = list.getSelectionModel()
-                                    .getSelectedItem();
-                if (item == null) {
-                    return;
-                }
-                try {
-                    push(extract(route, item));
-                } catch (QueryException e) {
-                    log.error("Unable to push page: %s", route.getPath(), e);
-                }
+            JsonNode item = list.getSelectionModel()
+                                .getSelectedItem();
+            if (item == null) {
+                return;
             }
-        });
+            try {
+                push(extract(route, item));
+            } catch (QueryException ex) {
+                log.error("Unable to push page: %s", route.getPath(), ex);
+            }
+        }));
     }
 
     public void initRootLayout(Stage ps) throws IOException, URISyntaxException,
@@ -109,8 +110,13 @@ public class SinglePageApp extends Application implements LayoutModel {
         VBox vbox = new VBox(locationBar(), anchor);
         primaryStage.setScene(new Scene(vbox, 800, 600));
         Map<String, String> parameters = getParameters().getNamed();
-        application = new ObjectMapper(new YAMLFactory()).readValue(Utils.resolveResource(getClass(),
-                                                                                          parameters.get("app")),
+        String app = parameters.get("app");
+        URL url = Utils.resolveResourceURL(getClass(), app);
+        if (url == null) {
+            throw new IllegalArgumentException(String.format("App resource not found: %s",
+                                                             app));
+        }
+        application = new ObjectMapper(new YAMLFactory()).readValue(url.openStream(),
                                                                     GraphqlApplication.class);
         endpoint = ClientBuilder.newClient()
                                 .target(application.getEndpoint()
@@ -184,9 +190,6 @@ public class SinglePageApp extends Application implements LayoutModel {
 
     private AutoLayout layout(PageContext pageContext) throws QueryException {
         AutoLayout layout = new AutoLayout(pageContext.getRoot(), this);
-        layout.getStylesheets()
-              .add(getClass().getResource("/non-nested.css")
-                             .toExternalForm());
         JsonNode data = pageContext.evaluate(endpoint);
         layout.updateItem(data);
         layout.measure(data);

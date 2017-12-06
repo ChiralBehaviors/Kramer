@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.cell.LayoutCell;
-import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.primitives.LabelCell;
 import com.chiralbehaviors.layout.primitives.PrimitiveList;
@@ -54,18 +53,23 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         this.listInsets = layout.listInsets(this);
     }
 
-    public void apply(Cell<JsonNode, ?> list) {
-        layout.getModel()
-              .apply(list, getNode());
-    }
-
     @Override
     public LayoutCell<? extends Region> autoLayout(double width) {
         double justified = LayoutProvider.snap(width);
         layout(justified);
         compress(justified);
-        cellHeight(averageCardinality, justified);
+        calculateCellHeight();
         return buildControl();
+    }
+
+    public void apply(LayoutCell<?> cell) {
+        layout.getModel()
+              .apply(cell, getNode());
+    }
+
+    @Override
+    public void calculateCellHeight() {
+        cellHeight(averageCardinality, justifiedWidth);
     }
 
     public LayoutCell<?> buildCell() {
@@ -207,10 +211,12 @@ public class PrimitiveLayout extends SchemaNodeLayout {
                 maxWidth = Math.max(maxWidth, w);
             }
         }
-        averageCardinality = cardSum / data.size();
-        double averageWidth = data.size() == 0 ? 0
-                                               : (summedDataWidth
-                                                  / data.size());
+        double averageWidth = 0;
+        averageCardinality = 1;
+        if (data.size() > 0) {
+            averageCardinality = cardSum / data.size();
+            averageWidth = summedDataWidth / data.size();
+        }
 
         columnWidth = Math.max(labelWidth,
                                LayoutProvider.snap(Math.max(getNode().getDefaultWidth(),

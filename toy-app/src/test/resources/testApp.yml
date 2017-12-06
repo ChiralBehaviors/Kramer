@@ -1,4 +1,4 @@
-endpoint: "http://graphql-swapi.parseapp.com/"
+endpoint: "http://localhost:5000/api/workspace/pNi_Y_WJVqO-vMMjaicSNw"
 root: films
 routes:
   films:

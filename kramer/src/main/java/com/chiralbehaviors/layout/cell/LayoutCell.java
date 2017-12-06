@@ -48,9 +48,6 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         return (T) this;
     }
 
-    default void setFocus(boolean focussed) {
-    }
-
     default void initialize(String defaultStyle) {
         T node = getNode();
         // focusTraversable is styleable through css. Calling setFocusTraversable

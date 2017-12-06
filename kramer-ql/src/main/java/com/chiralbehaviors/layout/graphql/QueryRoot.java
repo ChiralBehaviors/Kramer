@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016 Chiral Behaviors, LLC, all rights reserved.
+ * Copyright (c) 2017 Chiral Behaviors, LLC, all rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,24 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.control;
+package com.chiralbehaviors.layout.graphql;
 
-import javafx.scene.control.SkinBase;
+import com.chiralbehaviors.layout.schema.Relation;
+import com.fasterxml.jackson.databind.JsonNode;
 
-public class AutoLayoutSkin extends SkinBase<AutoLayout> {
+/**
+ * @author halhildebrand
+ *
+ */
+public class QueryRoot extends Relation {
 
-    protected AutoLayoutSkin(AutoLayout control) {
-        super(control);
+    public QueryRoot(String label) {
+        super(label); 
     }
+
+    @Override
+    public JsonNode extractFrom(JsonNode jsonNode) { 
+        return jsonNode;
+    }
+
 }

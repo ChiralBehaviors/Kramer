@@ -18,9 +18,12 @@ package com.chiralbehaviors.layout;
 
 import java.util.List;
 
-import com.chiralbehaviors.layout.LayoutProvider.LayoutModel;
+import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.flowless.VirtualFlow;
+import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.geometry.Insets;
 import javafx.util.Pair;
@@ -30,6 +33,16 @@ import javafx.util.Pair;
  *
  */
 public interface StyleProvider {
+
+    interface LayoutModel {
+
+        default <T extends LayoutCell<?>> void apply(T cell, Primitive p) {
+        }
+
+        default <T extends LayoutCell<?>> void apply(VirtualFlow<JsonNode, T> list,
+                                                     Relation relation) {
+        }
+    }
 
     class StyledInsets {
         public final Insets cell;
@@ -65,7 +78,7 @@ public interface StyleProvider {
         }
     }
 
-    LayoutModel getModel();
+    StyleProvider.LayoutModel getModel();
 
     void initialize(List<String> styleSheets);
 

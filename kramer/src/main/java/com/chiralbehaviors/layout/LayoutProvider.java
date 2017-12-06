@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.chiralbehaviors.layout.flowless.Cell;
-import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.outline.Outline;
 import com.chiralbehaviors.layout.outline.OutlineCell;
 import com.chiralbehaviors.layout.outline.OutlineColumn;
@@ -54,16 +52,6 @@ import javafx.util.Pair;
 
 @SuppressWarnings("restriction")
 public class LayoutProvider implements StyleProvider {
-
-    public interface LayoutModel {
-
-        default void apply(Cell<JsonNode, ?> list, Primitive p) {
-        }
-
-        default void apply(VirtualFlow<JsonNode, Cell<JsonNode, ?>> list,
-                           Relation relation) {
-        }
-    }
 
     private static final FontLoader FONT_LOADER = Toolkit.getToolkit()
                                                          .getFontLoader();
@@ -129,7 +117,7 @@ public class LayoutProvider implements StyleProvider {
 
     private Insets                                cellInsets     = ZERO_INSETS;
     private Insets                                insets         = ZERO_INSETS;
-    private final LayoutModel                     model;
+    private final StyleProvider.LayoutModel                     model;
     private final Map<Primitive, PrimitiveLayout> primitives     = new HashMap<>();
     private final Map<Relation, RelationLayout>   relations      = new HashMap<>();
     private List<String>                          styleSheets;
@@ -137,19 +125,19 @@ public class LayoutProvider implements StyleProvider {
     private Insets                                textInsets     = ZERO_INSETS;
     private double                                textLineHeight = 0;
 
-    public LayoutProvider(LayoutModel model) {
+    public LayoutProvider(StyleProvider.LayoutModel model) {
         this(Collections.emptyList(), model, true);
     }
 
-    public LayoutProvider(LayoutModel model, boolean initialize) {
+    public LayoutProvider(StyleProvider.LayoutModel model, boolean initialize) {
         this(Collections.emptyList(), model, initialize);
     }
 
-    public LayoutProvider(List<String> styleSheets, LayoutModel model) {
+    public LayoutProvider(List<String> styleSheets, StyleProvider.LayoutModel model) {
         this(styleSheets, model, true);
     }
 
-    public LayoutProvider(List<String> styleSheets, LayoutModel model,
+    public LayoutProvider(List<String> styleSheets, StyleProvider.LayoutModel model,
                           boolean initialize) {
         this.model = model;
         if (initialize) {
@@ -158,7 +146,7 @@ public class LayoutProvider implements StyleProvider {
     }
 
     @Override
-    public LayoutModel getModel() {
+    public StyleProvider.LayoutModel getModel() {
         return model;
     }
 
