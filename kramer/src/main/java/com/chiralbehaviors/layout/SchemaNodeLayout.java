@@ -271,8 +271,10 @@ abstract public class SchemaNodeLayout {
             }
         }
         return new Fold(aggregate,
-                        data.size() == 0 ? 1
-                                         : Math.round(cardSum / data.size()));
+                        (cardSum == 0
+                         || data.size() == 0) ? 1
+                                              : Math.round(cardSum
+                                                           / data.size()));
     }
 
     protected Fold fold(JsonNode datum,
