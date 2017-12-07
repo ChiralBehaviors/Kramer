@@ -53,23 +53,9 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         this.listInsets = layout.listInsets(this);
     }
 
-    @Override
-    public LayoutCell<? extends Region> autoLayout(double width) {
-        double justified = LayoutProvider.snap(width);
-        layout(justified);
-        compress(justified);
-        calculateCellHeight();
-        return buildControl();
-    }
-
     public void apply(LayoutCell<?> cell) {
         layout.getModel()
               .apply(cell, getNode());
-    }
-
-    @Override
-    public void calculateCellHeight() {
-        cellHeight(averageCardinality, justifiedWidth);
     }
 
     public LayoutCell<?> buildCell() {
@@ -101,6 +87,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public LayoutCell<? extends Region> buildControl() {
         return averageCardinality > 1 ? new PrimitiveList(this) : buildCell();
+    }
+
+    @Override
+    public void calculateCellHeight() {
+        cellHeight(averageCardinality, justifiedWidth);
     }
 
     @Override
@@ -260,6 +251,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return String.format("PrimitiveLayout [%s %s height, width {c: %s, j: %s} ]",
                              node.getField(), height, columnWidth,
                              justifiedWidth);
+    }
+
+    @Override
+    protected void calculateRootHeight() {
+        calculateCellHeight();
     }
 
     @Override

@@ -178,14 +178,7 @@ public class RelationLayout extends SchemaNodeLayout {
         if (!useTable) {
             height = outlineHeight(resolvedCardinality);
         } else {
-            columnHeaderHeight = children.stream()
-                                         .mapToDouble(c -> c.columnHeaderHeight())
-                                         .max()
-                                         .orElse(0.0);
-            rowHeight = calculateRowHeight();
-            height = snap((resolvedCardinality * rowHeight)
-                          + tableInsets.getVerticalInset()
-                          + columnHeaderHeight);
+            calculateTableHeights();
         }
         return height;
     }
@@ -437,6 +430,11 @@ public class RelationLayout extends SchemaNodeLayout {
         return snap(width - outlineInsets.getCellHorizontalInset());
     }
 
+    @Override
+    protected void calculateRootHeight() {
+        cellHeight(maxCardinality, justifiedWidth);
+    }
+
     protected double calculateRowHeight() {
         double elementHeight = snap(children.stream()
                                             .mapToDouble(child -> child.rowHeight(averageChildCardinality,
@@ -526,4 +524,13 @@ public class RelationLayout extends SchemaNodeLayout {
         return Math.min(cardinality, maxCardinality);
     }
 
+    private void calculateTableHeights() {
+        columnHeaderHeight = children.stream()
+                                     .mapToDouble(c -> c.columnHeaderHeight())
+                                     .max()
+                                     .orElse(0.0);
+        rowHeight = calculateRowHeight();
+        height = snap((resolvedCardinality * rowHeight)
+                      + tableInsets.getVerticalInset() + columnHeaderHeight);
+    }
 }

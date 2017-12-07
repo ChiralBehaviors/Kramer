@@ -20,7 +20,8 @@
 
 package com.chiralbehaviors.layout.graphql;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -73,7 +74,7 @@ public class TestGraphQlUtil {
                                 .count());
     }
 
-    static String readFile(String path) throws IOException {
+    public static String readFile(String path) throws IOException {
         byte[] encoded = Files.readAllBytes(Paths.get(path));
         return new String(encoded, Charset.defaultCharset());
     }
