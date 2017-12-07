@@ -432,7 +432,9 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     protected void calculateRootHeight() {
-        cellHeight(maxCardinality, justifiedWidth);
+        if (useTable) {
+            cellHeight(maxCardinality, justifiedWidth);
+        }
     }
 
     protected double calculateRowHeight() {
