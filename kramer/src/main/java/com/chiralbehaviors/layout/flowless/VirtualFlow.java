@@ -18,9 +18,9 @@ import org.reactfx.value.Val;
 import org.reactfx.value.Var;
 
 import com.chiralbehaviors.layout.cell.FocusTraversal;
-import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.MouseHandler;
 import com.chiralbehaviors.layout.cell.SelectionEvent;
+import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.sun.javafx.collections.MappingChange;
 import com.sun.javafx.collections.NonIterableChange;
 import com.sun.javafx.scene.control.ReadOnlyUnbackedObservableList;
@@ -66,7 +66,7 @@ import javafx.util.Duration;
  */
 @SuppressWarnings("restriction")
 public class VirtualFlow<T, C extends Cell<T, ?>> extends
-        HorizontalCell<VirtualFlow<T, Cell<T, ?>>> implements Virtualized {
+        VerticalCell<VirtualFlow<T, Cell<T, ?>>> implements Virtualized {
 
     public class VirtualFlowSelectionModel extends MultipleSelectionModel<T> {
         final BitSet                                    selectedIndices;
