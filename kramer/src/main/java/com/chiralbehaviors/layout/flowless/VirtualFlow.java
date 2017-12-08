@@ -65,8 +65,8 @@ import javafx.util.Duration;
  *            {@link javafx.scene.Node}.
  */
 @SuppressWarnings("restriction")
-public class VirtualFlow<T, C extends Cell<T, ?>> extends
-        RegionCell<VirtualFlow<T, Cell<T, ?>>> implements Virtualized {
+public class VirtualFlow<T, C extends Cell<T, ?>>
+        extends RegionCell<VirtualFlow<T, Cell<T, ?>>> implements Virtualized {
 
     public class VirtualFlowSelectionModel extends MultipleSelectionModel<T> {
         final BitSet                                    selectedIndices;
@@ -977,12 +977,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
         navigator.dispose();
         sizeTracker.dispose();
         cellListManager.dispose();
-    }
-
-    @Override
-    public Var<Double> estimatedScrollXProperty() {
-        return this.breadthOffsetProperty();
-    }
+    } 
 
     @Override
     public Var<Double> estimatedScrollYProperty() {
@@ -1122,29 +1117,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
 
     public void scrollUp() {
         scrollYBy(-sizeTracker.getCellLength());
-    }
-
-    /**
-     * Scroll the content horizontally by the given amount.
-     *
-     * @param deltaX
-     *            positive value scrolls right, negative value scrolls left
-     */
-    @Override
-    public void scrollXBy(double deltaX) {
-        this.scrollBreadth(deltaX);
-    }
-
-    /**
-     * Scroll the content horizontally to the pixel
-     *
-     * @param pixel
-     *            - the pixel position to which to scroll
-     */
-    @Override
-    public void scrollXToPixel(double pixel) {
-        this.setBreadthOffset(pixel);
-    }
+    } 
 
     /**
      * Scroll the content vertically by the given amount.
@@ -1413,6 +1386,5 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
             double shift = Math.max(spaceAfter, -spaceBefore);
             setBreadthOffset(bOff - shift);
         }
-    }
-
+    } 
 }
