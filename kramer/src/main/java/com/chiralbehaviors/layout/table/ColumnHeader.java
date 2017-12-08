@@ -43,6 +43,7 @@ public class ColumnHeader extends VerticalCell<ColumnHeader> {
     public ColumnHeader(double width, double height, PrimitiveLayout layout) {
         this();
         setMinSize(width, height);
+        setPrefSize(width, height);
         setMaxSize(width, height);
         getChildren().add(layout.label(width, height));
     }
@@ -52,6 +53,7 @@ public class ColumnHeader extends VerticalCell<ColumnHeader> {
         this();
         HBox nested = new HBox();
         setMinSize(width, height);
+        setPrefSize(width, height);
         setMaxSize(width, height);
         double half = snap(height / 2.0);
         getChildren().addAll(layout.label(width, half), nested);
