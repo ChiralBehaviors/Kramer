@@ -43,11 +43,6 @@ public class TestGraphQlUtil {
 
         Relation relation = GraphQlUtil.buildSchema(readFile("target/test-classes/fragment.query"));
         assertNotNull(relation);
-        assertEquals("query", relation.getField());
-        assertEquals(1, relation.getChildren()
-                                .size());
-        relation = (Relation) relation.getChildren()
-                                      .get(0);
         assertEquals("workspaces", relation.getField());
         assertEquals(3, relation.getChildren()
                                 .size());
