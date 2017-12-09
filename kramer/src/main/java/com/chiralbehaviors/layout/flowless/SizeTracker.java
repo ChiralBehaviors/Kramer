@@ -168,10 +168,6 @@ final class SizeTracker {
         subscription.unsubscribe();
     }
 
-    public void forgetSizeOf(int itemIndex) {
-        lengths.forget(itemIndex, itemIndex + 1);
-    }
-
     public Optional<Double> getAverageLengthEstimate() {
         return averageLengthEstimate.getOpt();
     }

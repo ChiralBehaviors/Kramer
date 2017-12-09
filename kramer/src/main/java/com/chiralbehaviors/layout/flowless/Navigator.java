@@ -11,7 +11,6 @@ import org.reactfx.collection.QuasiListModification;
 
 import javafx.beans.binding.Bindings;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.layout.Region;
 
 /**
@@ -140,17 +139,6 @@ final class Navigator<T, C extends Cell<T, ?>> extends Region
 
     @Override
     protected void layoutChildren() {
-        // invalidate breadth for each cell that has dirty layout
-        int n = cells.getMemoizedCount();
-        for (int i = 0; i < n; ++i) {
-            int j = cells.indexOfMemoizedItem(i);
-            Node node = cells.get(j)
-                             .getNode();
-            if (node instanceof Parent && ((Parent) node).isNeedsLayout()) {
-                sizeTracker.forgetSizeOf(j);
-            }
-        }
-
         if (!cells.isEmpty()) {
             targetPosition.clamp(cells.size())
                           .accept(this);

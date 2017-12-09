@@ -29,7 +29,9 @@ import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
 /**
  * @author halhildebrand
@@ -60,6 +62,10 @@ public class NestedTable extends VerticalCell<NestedTable> {
                              - layout.getColumnHeaderHeight());
 
         rows = buildRows(width, height, childCardinality, layout);
+
+        VBox.setVgrow(header, Priority.NEVER);
+        VBox.setVgrow(rows, Priority.ALWAYS);
+
         getChildren().addAll(header, rows);
         setMinWidth(layout.getJustifiedColumnWidth());
         setPrefWidth(layout.getJustifiedColumnWidth());

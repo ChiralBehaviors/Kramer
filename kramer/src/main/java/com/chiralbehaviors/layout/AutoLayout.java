@@ -25,6 +25,7 @@ import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
@@ -140,9 +141,12 @@ public class AutoLayout extends VerticalCell<AutoLayout> {
         if (old != null) {
             old.dispose();
         }
-        node.setMinWidth(width );
-        node.setPrefWidth(width );
-        node.setMaxWidth(width );
+        node.setMinWidth(width);
+        node.setPrefWidth(width);
+        node.setMaxWidth(width);
+
+        setMinSize(width, layout.getHeight());
+        setPrefSize(width, layout.getHeight());
         control.updateItem(zeeData);
     }
 
@@ -163,19 +167,21 @@ public class AutoLayout extends VerticalCell<AutoLayout> {
             return;
         }
 
-        try {
-            autoLayout(zeeData, width);
-        } catch (Throwable e) {
-            log.log(Level.SEVERE,
-                    String.format("Unable to resize to %s", width), e);
-        }
+        Platform.runLater(() -> {
+            try {
+                autoLayout(zeeData, width);
+            } catch (Throwable e) {
+                log.log(Level.SEVERE,
+                        String.format("Unable to resize to %s", width), e);
+            }
+        });
     }
 
     private void setContent() {
         JsonNode datum = data.get();
         try {
             if (control == null) {
-                autoLayout(datum, getWidth());
+                Platform.runLater(() -> autoLayout(datum, getWidth()));
             } else {
                 control.updateItem(datum);
             }

@@ -55,8 +55,7 @@ public class ScrollHandler {
         bind();
     }
 
-    public void scroll(ScrollEvent se) {
-        flow.scrollXBy(-se.getDeltaX());
+    public void scroll(ScrollEvent se) { 
         flow.scrollYBy(-se.getDeltaY());
     }
 

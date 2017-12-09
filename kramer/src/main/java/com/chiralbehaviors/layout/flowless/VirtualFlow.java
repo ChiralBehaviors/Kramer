@@ -18,8 +18,8 @@ import org.reactfx.value.Val;
 import org.reactfx.value.Var;
 
 import com.chiralbehaviors.layout.cell.FocusTraversal;
-import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.MouseHandler;
+import com.chiralbehaviors.layout.cell.RegionCell;
 import com.chiralbehaviors.layout.cell.SelectionEvent;
 import com.sun.javafx.collections.MappingChange;
 import com.sun.javafx.collections.NonIterableChange;
@@ -65,8 +65,8 @@ import javafx.util.Duration;
  *            {@link javafx.scene.Node}.
  */
 @SuppressWarnings("restriction")
-public class VirtualFlow<T, C extends Cell<T, ?>> extends
-        HorizontalCell<VirtualFlow<T, Cell<T, ?>>> implements Virtualized {
+public class VirtualFlow<T, C extends Cell<T, ?>>
+        extends RegionCell<VirtualFlow<T, Cell<T, ?>>> {
 
     public class VirtualFlowSelectionModel extends MultipleSelectionModel<T> {
         final BitSet                                    selectedIndices;
@@ -850,9 +850,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
     protected final ObservableList<T>       items;
     protected final MouseHandler            mouseHandler;
     protected final ScrollHandler           scrollHandler  = new ScrollHandler(this);
-    private final Var<Double>               breadthOffset;
-    // non-negative
-    private final Var<Double>               breadthOffset0 = Var.newSimpleVar(0.0);
     private final CellListManager<T, C>     cellListManager;
     private final CellPositioner<T, C>      cellPositioner;
     private final Var<Double>               lengthOffsetEstimate;
@@ -932,7 +929,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
                        ObservableList<T> items,
                        Function<? super T, ? extends C> cellFactory) {
         super(styleSheet);
-        breadthOffset = breadthOffset0.asVar(this::setBreadthOffset);
         this.getStyleClass()
             .add("virtual-flow");
         this.items = items;
@@ -954,10 +950,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
                                           .asVar(this::setLengthOffset);
     }
 
-    public Var<Double> breadthOffsetProperty() {
-        return breadthOffset;
-    }
-
     public Bounds cellToViewport(C cell, Bounds bounds) {
         return cell.getNode()
                    .localToParent(bounds);
@@ -977,16 +969,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
         navigator.dispose();
         sizeTracker.dispose();
         cellListManager.dispose();
-    }
-
-    @Override
-    public Var<Double> estimatedScrollXProperty() {
-        return this.breadthOffsetProperty();
-    }
-
-    @Override
-    public Var<Double> estimatedScrollYProperty() {
-        return this.lengthOffsetEstimateProperty();
     }
 
     /**
@@ -1050,13 +1032,10 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
      *         bottom left corner of the content of a vertical flow.
      */
     public VirtualFlowHit<C> hit(double x, double y) {
-        double bOff = x;
         double lOff = y;
 
-        bOff += breadthOffset0.getValue();
-
         if (items.isEmpty()) {
-            return VirtualFlowHit.hitAfterCells(bOff, lOff);
+            return VirtualFlowHit.hitAfterCells(0, lOff);
         }
 
         layout();
@@ -1075,10 +1054,11 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
         if (lOff < node2.getLayoutY() + node2.getLayoutBounds()
                                              .getMinY()) {
             Node node = firstCell.getNode();
-            return VirtualFlowHit.hitBeforeCells(bOff,
-                                                 lOff - (node.getLayoutY()
-                                                         + node.getLayoutBounds()
-                                                               .getMinY()));
+            return VirtualFlowHit.hitBeforeCells(0,
+                                                 lOff
+                                                    - (node.getLayoutY()
+                                                       + node.getLayoutBounds()
+                                                             .getMinY()));
         } else {
             Node node = lastCell.getNode();
             if (lOff >= node.getLayoutY() + node.getLayoutBounds()
@@ -1086,12 +1066,13 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
                         + node.getLayoutBounds()
                               .getHeight()) {
                 Node node1 = lastCell.getNode();
-                return VirtualFlowHit.hitAfterCells(bOff,
-                                                    lOff - (node1.getLayoutY()
-                                                            + node1.getLayoutBounds()
-                                                                   .getMinY()
-                                                            + node1.getLayoutBounds()
-                                                                   .getHeight()));
+                return VirtualFlowHit.hitAfterCells(0,
+                                                    lOff
+                                                       - (node1.getLayoutY()
+                                                          + node1.getLayoutBounds()
+                                                                 .getMinY()
+                                                          + node1.getLayoutBounds()
+                                                                 .getHeight()));
             } else {
                 for (int i = firstVisible; i <= lastVisible; ++i) {
                     C cell = cellPositioner.getVisibleCell(i);
@@ -1101,7 +1082,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
                                + node1.getLayoutBounds()
                                       .getHeight()) {
                         Node node3 = cell.getNode();
-                        return VirtualFlowHit.cellHit(i, cell, bOff,
+                        return VirtualFlowHit.cellHit(i, cell, 0,
                                                       lOff - (node3.getLayoutY()
                                                               + node3.getLayoutBounds()
                                                                      .getMinY()));
@@ -1125,34 +1106,11 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
     }
 
     /**
-     * Scroll the content horizontally by the given amount.
-     *
-     * @param deltaX
-     *            positive value scrolls right, negative value scrolls left
-     */
-    @Override
-    public void scrollXBy(double deltaX) {
-        this.scrollBreadth(deltaX);
-    }
-
-    /**
-     * Scroll the content horizontally to the pixel
-     *
-     * @param pixel
-     *            - the pixel position to which to scroll
-     */
-    @Override
-    public void scrollXToPixel(double pixel) {
-        this.setBreadthOffset(pixel);
-    }
-
-    /**
      * Scroll the content vertically by the given amount.
      *
      * @param deltaY
      *            positive value scrolls down, negative value scrolls up
      */
-    @Override
     public void scrollYBy(double deltaY) {
         this.scrollLength(deltaY);
     }
@@ -1163,7 +1121,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
      * @param pixel
      *            - the pixel position to which to scroll
      */
-    @Override
     public void scrollYToPixel(double pixel) {
         this.setLengthOffset(pixel);
     }
@@ -1205,8 +1162,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
     public void show(int itemIndex, Bounds region) {
         navigator.showLengthRegion(itemIndex, region.getMinY(),
                                    region.getMinY() + region.getHeight());
-        showBreadthRegion(region.getMinX(),
-                          region.getMinX() + region.getWidth());
     }
 
     /**
@@ -1242,18 +1197,8 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
         return sizeTracker.maxCellBreadthProperty();
     }
 
-    @Override
-    public Val<Double> totalHeightEstimateProperty() {
-        return this.totalLengthEstimateProperty();
-    }
-
     public Val<Double> totalLengthEstimateProperty() {
         return sizeTracker.totalLengthEstimateProperty();
-    }
-
-    @Override
-    public Val<Double> totalWidthEstimateProperty() {
-        return this.totalBreadthEstimateProperty();
     }
 
     /**
@@ -1303,51 +1248,10 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
                 break;
             }
         }
-
-        double viewBreadth = this.getLayoutBounds()
-                                 .getWidth();
-        double navigatorBreadth = navigator.getLayoutBounds()
-                                           .getWidth();
-        double totalBreadth = breadthOffset0.getValue();
-        double breadthDifference = navigatorBreadth - totalBreadth;
-        if (breadthDifference < viewBreadth) {
-            // viewport is scrolled all the way to the end of its breadth.
-            //  but now viewport size (breadth) has increased
-            double adjustment = viewBreadth - breadthDifference;
-            navigator.relocate(-(totalBreadth - adjustment), (double) 0);
-            breadthOffset0.setValue(totalBreadth - adjustment);
-        } else {
-            navigator.relocate(-breadthOffset0.getValue(), (double) 0);
-        }
-    }
-
-    void scrollBreadth(double deltaBreadth) {
-        setBreadthOffset(breadthOffset0.getValue() + deltaBreadth);
     }
 
     void scrollLength(double deltaLength) {
         setLengthOffset(lengthOffsetEstimate.getValue() + deltaLength);
-    }
-
-    void setBreadthOffset(double pixels) {
-        double total = totalBreadthEstimateProperty().getValue();
-        double breadth = sizeTracker.getViewportBreadth();
-        double max = Math.max(total - breadth, 0);
-        double current = breadthOffset0.getValue();
-
-        if (pixels > max) {
-            pixels = max;
-        }
-        if (pixels < 0) {
-            pixels = 0;
-        }
-
-        if (pixels != current) {
-            breadthOffset0.setValue(pixels);
-            requestLayout();
-            // TODO: could be safely relocated right away?
-            // (Does relocation request layout?)
-        }
     }
 
     void setLengthOffset(double pixels) {
@@ -1374,11 +1278,11 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
     }
 
     private double computePrefBreadth() {
-        return 100;
+        return sizeTracker.getCellLayoutBreadth();
     }
 
     private double computePrefLength(double breadth) {
-        return 100;
+        return sizeTracker.getCellLength();
     }
 
     private void jumpToAbsolutePosition(double pixels) {
@@ -1401,18 +1305,4 @@ public class VirtualFlow<T, C extends Cell<T, ?>> extends
             navigator.setTargetPosition(new EndOffEnd(items.size() - 1, 0.0));
         }
     }
-
-    private void showBreadthRegion(double fromX, double toX) {
-        double bOff = breadthOffset0.getValue();
-        double spaceBefore = fromX - bOff;
-        double spaceAfter = sizeTracker.getViewportBreadth() - toX + bOff;
-        if (spaceBefore < 0 && spaceAfter > 0) {
-            double shift = Math.min(-spaceBefore, spaceAfter);
-            setBreadthOffset(bOff - shift);
-        } else if (spaceAfter < 0 && spaceBefore > 0) {
-            double shift = Math.max(spaceAfter, -spaceBefore);
-            setBreadthOffset(bOff - shift);
-        }
-    }
-
 }

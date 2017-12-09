@@ -158,6 +158,7 @@ abstract public class SchemaNodeLayout {
         double justified = LayoutProvider.snap(width);
         layout(justified);
         compress(justified);
+        calculateRootHeight();
         return buildControl();
     }
 
@@ -248,6 +249,8 @@ abstract public class SchemaNodeLayout {
                                      double justifiedWidth);
 
     abstract public double tableColumnWidth();
+
+    abstract protected void calculateRootHeight();
 
     protected void clear() {
         height = -1.0;
