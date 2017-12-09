@@ -16,26 +16,28 @@
 
 package com.chiralbehaviors.layout;
 
-import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
-import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
 /**
  * @author hhildebrand
  *
  */
-public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
+public class AutoLayout extends VerticalCell<AutoLayout> {
     private static final java.util.logging.Logger  log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
     private static final String                    STYLE_SHEET = "auto-layout.css";
 
@@ -46,7 +48,6 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     private StyleProvider.LayoutModel              model;
     private final SimpleObjectProperty<SchemaNode> root        = new SimpleObjectProperty<>();
     private StyleProvider                          style;
-    private final String                           stylesheet;
 
     public AutoLayout() {
         this(null);
@@ -58,9 +59,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     }
 
     public AutoLayout(Relation root, StyleProvider.LayoutModel model) {
-        URL url = getClass().getResource(STYLE_SHEET);
-        stylesheet = url == null ? null : url.toExternalForm();
-        getStyleClass().add("auto-layout");
+        super(STYLE_SHEET);
         this.model = model;
         style = new LayoutProvider(this.model);
         this.root.set(root);
@@ -93,11 +92,6 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     }
 
     @Override
-    public String getUserAgentStylesheet() {
-        return stylesheet;
-    }
-
-    @Override
     public boolean isReusable() {
         return true;
     }
@@ -123,11 +117,6 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         return root;
     }
 
-    @Override
-    public void setFocus(boolean focus) {
-        setFocused(focus);
-    }
-
     public void setRoot(SchemaNode rootNode) {
         root.set(rootNode);
     }
@@ -147,11 +136,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         LayoutCell<?> old = control;
         control = layout.autoLayout(width);
         Region node = control.getNode();
-        setTopAnchor(node, 0d);
-        setRightAnchor(node, 0d);
-        setBottomAnchor(node, 0d);
-        setLeftAnchor(node, 0d);
-
+        VBox.setVgrow(node, Priority.ALWAYS);
         getChildren().setAll(node);
         if (old != null) {
             old.dispose();
@@ -159,6 +144,9 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         node.setMinWidth(width);
         node.setPrefWidth(width);
         node.setMaxWidth(width);
+
+        setMinSize(width, layout.getHeight());
+        setPrefSize(width, layout.getHeight());
         control.updateItem(zeeData);
     }
 
@@ -179,19 +167,21 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             return;
         }
 
-        try {
-            autoLayout(zeeData, width);
-        } catch (Throwable e) {
-            log.log(Level.SEVERE,
-                    String.format("Unable to resize to %s", width), e);
-        }
+        Platform.runLater(() -> {
+            try {
+                autoLayout(zeeData, width);
+            } catch (Throwable e) {
+                log.log(Level.SEVERE,
+                        String.format("Unable to resize to %s", width), e);
+            }
+        });
     }
 
     private void setContent() {
         JsonNode datum = data.get();
         try {
             if (control == null) {
-                autoLayout(datum, getWidth());
+                Platform.runLater(() -> autoLayout(datum, getWidth()));
             } else {
                 control.updateItem(datum);
             }
