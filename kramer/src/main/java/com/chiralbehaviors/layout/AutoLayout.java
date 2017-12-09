@@ -167,14 +167,12 @@ public class AutoLayout extends VerticalCell<AutoLayout> {
             return;
         }
 
-        Platform.runLater(() -> {
-            try {
-                autoLayout(zeeData, width);
-            } catch (Throwable e) {
-                log.log(Level.SEVERE,
-                        String.format("Unable to resize to %s", width), e);
-            }
-        });
+        try {
+            autoLayout(zeeData, width);
+        } catch (Throwable e) {
+            log.log(Level.SEVERE,
+                    String.format("Unable to resize to %s", width), e);
+        }
     }
 
     private void setContent() {
