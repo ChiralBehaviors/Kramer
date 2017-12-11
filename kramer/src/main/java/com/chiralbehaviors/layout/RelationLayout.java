@@ -523,7 +523,7 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     protected int resolveCardinality(int cardinality) {
-        return Math.min(cardinality, maxCardinality);
+        return Math.max(1, Math.min(cardinality, maxCardinality));
     }
 
     private void calculateTableHeights() {
