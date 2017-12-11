@@ -290,4 +290,8 @@ abstract public class SchemaNodeLayout {
     protected Control label(double labelWidth, String label) {
         return layout.label(labelWidth, label, height);
     }
+ 
+    public double calculateLabelWidth() {
+        return labelWidth;
+    }
 }

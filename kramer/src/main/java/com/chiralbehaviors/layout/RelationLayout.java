@@ -353,11 +353,16 @@ public class RelationLayout extends SchemaNodeLayout {
                                                                                              / effectiveChildren)));
 
         labelWidth = children.stream()
-                             .mapToDouble(child -> child.getLabelWidth())
+                             .mapToDouble(child -> child.calculateLabelWidth())
                              .max()
                              .getAsDouble();
         columnWidth = snap(labelWidth + columnWidth);
         return columnWidth();
+    }
+
+    @Override
+    public double calculateLabelWidth() {
+        return labelWidth(getLabel());
     }
 
     @Override
