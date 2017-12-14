@@ -23,6 +23,7 @@ import java.util.List;
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
+import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
 import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -43,20 +44,11 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
 
     private final FocusTraversal       focus;
     private List<Cell<JsonNode, Span>> spans                 = new ArrayList<>();
-    
-    {
-        focus = new FocusTraversal() {
-
-            @Override
-            protected Node getNode() {
-                return OutlineCell.this;
-            }
-        };
-    }
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
-                       double cellHeight, RelationLayout layout) {
-        this(layout.getField());
+                       double cellHeight, RelationLayout layout,
+                       FocusTraversal parentTraversal) {
+        this(layout.getField(), parentTraversal);
         setMinSize(layout.getJustifiedColumnWidth(), cellHeight);
         setPrefSize(layout.getJustifiedColumnWidth(), cellHeight);
         setMaxSize(layout.getJustifiedColumnWidth(), cellHeight);
@@ -65,7 +57,7 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
                                                  cs.getWidth(), cs.getColumns(),
                                                  childCardinality,
                                                  cs.getCellHeight(),
-                                                 layout.getLabelWidth());
+                                                 layout.getLabelWidth(), focus);
             spans.add(span);
             VBox.setVgrow(span.getNode(), Priority.ALWAYS);
             getChildren().add(span.getNode());
@@ -73,9 +65,21 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
     }
 
     public OutlineCell(String field) {
+        this(field, null);
+    }
+
+    public OutlineCell(String field, FocusTraversal parent) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        focus = new FocusTraversal(parent, Bias.VERTICAL) {
+
+            @Override
+            protected Node getNode() {
+                return OutlineCell.this;
+            }
+        };
+
     }
 
     @Override

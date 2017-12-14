@@ -21,6 +21,7 @@ import static com.chiralbehaviors.layout.LayoutProvider.snap;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.StyleProvider.StyledInsets;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -154,19 +155,25 @@ abstract public class SchemaNodeLayout {
         this.height = LayoutProvider.snap(height + delta);
     }
 
-    public LayoutCell<? extends Region> autoLayout(double width) {
+    public LayoutCell<? extends Region> autoLayout(double width,
+                                                   FocusTraversal parentTraversal) {
         double justified = LayoutProvider.snap(width);
         layout(justified);
         compress(justified);
         calculateRootHeight();
-        return buildControl();
+        return buildControl(parentTraversal);
     }
 
-    abstract public LayoutCell<? extends Region> buildColumn(double rendered);
+    abstract public LayoutCell<? extends Region> buildColumn(double rendered,
+                                                             FocusTraversal parentTraversal);
 
-    abstract public LayoutCell<? extends Region> buildControl();
+    abstract public LayoutCell<? extends Region> buildControl(FocusTraversal parentTraversal);
 
     abstract public void calculateCellHeight();
+
+    public double calculateLabelWidth() {
+        return labelWidth;
+    }
 
     abstract public double calculateTableColumnWidth();
 
@@ -243,7 +250,8 @@ abstract public class SchemaNodeLayout {
     abstract public OutlineElement outlineElement(String parent,
                                                   int cardinality,
                                                   double labelWidth,
-                                                  double justified);
+                                                  double justified,
+                                                  FocusTraversal parentTraversal);
 
     abstract public double rowHeight(int averageCardinality,
                                      double justifiedWidth);
@@ -289,9 +297,5 @@ abstract public class SchemaNodeLayout {
 
     protected Control label(double labelWidth, String label) {
         return layout.label(labelWidth, label, height);
-    }
- 
-    public double calculateLabelWidth() {
-        return labelWidth;
     }
 }

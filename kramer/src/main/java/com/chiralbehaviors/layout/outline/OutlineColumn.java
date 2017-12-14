@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.Column;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
+import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
 import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -38,8 +39,32 @@ public class OutlineColumn extends VerticalCell<OutlineColumn> {
     private static final String            STYLE_SHEET           = "outline-column.css";
     private final List<Consumer<JsonNode>> fields                = new ArrayList<>();
     private final FocusTraversal           focus;
-    {
-        focus = new FocusTraversal() {
+
+    public OutlineColumn(String field) {
+        this(field, null);
+    }
+
+    public OutlineColumn(String field, Column c, int cardinality,
+                         double labelWidth, double cellHeight,
+                         FocusTraversal parentTraversa) {
+        this(field, parentTraversa);
+        setMinSize(c.getWidth(), cellHeight);
+        setMaxSize(c.getWidth(), cellHeight);
+        setPrefSize(c.getWidth(), cellHeight);
+        c.getFields()
+         .forEach(f -> {
+             OutlineElement cell = f.outlineElement(field, cardinality,
+                                                    labelWidth, c.getWidth(), null);
+             fields.add(item -> cell.updateItem(f.extractFrom(item)));
+             getChildren().add(cell.getNode());
+         });
+    }
+
+    public OutlineColumn(String field, FocusTraversal parentTraversal) {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        focus = new FocusTraversal(parentTraversal, Bias.VERTICAL) {
 
             @Override
             protected Node getNode() {
@@ -48,31 +73,10 @@ public class OutlineColumn extends VerticalCell<OutlineColumn> {
         };
     }
 
-    public OutlineColumn(String field) {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
-    }
-
-    public OutlineColumn(String field, Column c, int cardinality,
-                         double labelWidth, double cellHeight) {
-        this(field);
-        setMinSize(c.getWidth(), cellHeight);
-        setMaxSize(c.getWidth(), cellHeight);
-        setPrefSize(c.getWidth(), cellHeight);
-        c.getFields()
-         .forEach(f -> {
-             OutlineElement cell = f.outlineElement(field, cardinality,
-                                                    labelWidth, c.getWidth());
-             fields.add(item -> cell.updateItem(f.extractFrom(item)));
-             getChildren().add(cell.getNode());
-         });
-    }
-
     @Override
     public void dispose() {
         focus.unbind();
-    } 
+    }
 
     @Override
     public void updateItem(JsonNode item) {

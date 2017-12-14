@@ -17,6 +17,7 @@
 package com.chiralbehaviors.layout.primitives;
 
 import com.chiralbehaviors.layout.PrimitiveLayout;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -33,14 +34,15 @@ public class PrimitiveList extends VirtualFlow<JsonNode, LayoutCell<?>> {
     private static final String SCHEMA_CLASS_TEMPLATE = "%s-outline";
     private static final String STYLE_SHEET           = "outline.css";
 
-    public PrimitiveList(PrimitiveLayout layout) {
+    public PrimitiveList(PrimitiveLayout layout,
+                         FocusTraversal parentTraversal) {
         super(layout.getField(), layout.getJustifiedWidth(),
               layout.getCellHeight(), FXCollections.observableArrayList(),
               item -> {
                   LayoutCell<?> outlineCell = layout.buildCell();
                   outlineCell.updateItem(item);
                   return outlineCell;
-              });
+              }, parentTraversal);
         double width = layout.getJustifiedColumnWidth();
         double height = layout.getHeight();
         setMinSize(width, height);

@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
+import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -39,32 +40,35 @@ public class NestedCell extends HorizontalCell<NestedCell> {
     private static final String            STYLE_SHEET           = "nested-cell.css";
     private final List<Consumer<JsonNode>> consumers             = new ArrayList<>();
     private final FocusTraversal           focus;
-    {
-        focus = new FocusTraversal() {
 
-            @Override
-            protected Node getNode() {
-                return NestedCell.this;
-            }
-        };
-    }
-
-    public NestedCell(RelationLayout layout) {
-        this(layout.getField());
+    public NestedCell(RelationLayout layout, FocusTraversal parentTraversal) {
+        this(layout.getField(), parentTraversal);
         setMinSize(layout.getJustifiedWidth(), layout.getRowHeight());
         setPrefSize(layout.getJustifiedWidth(), layout.getRowHeight());
         setMaxSize(layout.getJustifiedWidth(), layout.getRowHeight());
         layout.forEach(child -> {
-            LayoutCell<? extends Region> cell = child.buildColumn(layout.baseRowCellHeight(layout.getRowHeight()));
+            LayoutCell<? extends Region> cell = child.buildColumn(layout.baseRowCellHeight(layout.getRowHeight()),
+                                                                  focus);
             consumers.add(item -> cell.updateItem(child.extractFrom(item)));
             getChildren().add(cell.getNode());
         });
     }
 
     public NestedCell(String field) {
+        this(field, null);
+    }
+
+    public NestedCell(String field, FocusTraversal parentTraversal) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        focus = new FocusTraversal(parentTraversal, Bias.HORIZONTAL) {
+
+            @Override
+            protected Node getNode() {
+                return NestedCell.this;
+            }
+        };
     }
 
     @Override

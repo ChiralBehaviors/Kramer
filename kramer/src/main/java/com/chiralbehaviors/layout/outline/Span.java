@@ -21,6 +21,7 @@ import java.util.List;
 
 import com.chiralbehaviors.layout.Column;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
+import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -38,25 +39,15 @@ public class Span extends HorizontalCell<Span> {
     private static final String                       STYLE_SHEET   = "span.css";
     private final List<Cell<JsonNode, OutlineColumn>> columns       = new ArrayList<>();
     private final FocusTraversal                      focus;
-    {
-        focus = new FocusTraversal() {
-
-            @Override
-            protected Node getNode() {
-                return Span.this;
-            }
-        };
-    }
 
     public Span(String field) {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(S_SPAN, field));
+        this(field, null);
     }
 
     public Span(String field, double justified, List<Column> columns,
-                int cardinality, double cellHeight, double labelWidth) {
-        this(field);
+                int cardinality, double cellHeight, double labelWidth,
+                FocusTraversal parentTraversal) {
+        this(field, parentTraversal);
         setMinSize(justified, cellHeight);
         setPrefSize(justified, cellHeight);
         setMaxSize(justified, cellHeight);
@@ -65,10 +56,24 @@ public class Span extends HorizontalCell<Span> {
             Cell<JsonNode, OutlineColumn> cell = new OutlineColumn(field, c,
                                                                    cardinality,
                                                                    labelWidth,
-                                                                   cellHeight);
+                                                                   cellHeight,
+                                                                   focus);
             this.columns.add(cell);
             getChildren().add(cell.getNode());
         });
+    }
+
+    public Span(String field, FocusTraversal parentTraversal) {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(S_SPAN, field));
+        focus = new FocusTraversal(parentTraversal, Bias.HORIZONTAL) {
+
+            @Override
+            protected Node getNode() {
+                return Span.this;
+            }
+        };
     }
 
     @Override

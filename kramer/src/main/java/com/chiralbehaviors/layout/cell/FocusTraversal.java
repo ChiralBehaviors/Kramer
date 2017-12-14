@@ -43,6 +43,11 @@ import javafx.scene.input.InputEvent;
  */
 abstract public class FocusTraversal {
 
+    public static enum Bias {
+        HORIZONTAL,
+        VERTICAL;
+    }
+
     private final static InputMapTemplate<FocusTraversal, InputEvent> TRAVERSAL_INPUT_MAP;
 
     static {
@@ -56,34 +61,40 @@ abstract public class FocusTraversal {
                                                        evt) -> traversal.traversePrevious()),
                                               consume(keyPressed(UP),
                                                       (traversal,
-                                                       evt) -> traversal.selectPrevious()),
+                                                       evt) -> traversal.up()),
                                               consume(keyPressed(KP_UP),
                                                       (traversal,
-                                                       evt) -> traversal.selectPrevious()),
+                                                       evt) -> traversal.up()),
                                               consume(keyPressed(DOWN),
                                                       (traversal,
-                                                       evt) -> traversal.selectNext()),
+                                                       evt) -> traversal.down()),
                                               consume(keyPressed(KP_DOWN),
                                                       (traversal,
-                                                       evt) -> traversal.selectNext()),
+                                                       evt) -> traversal.down()),
                                               consume(keyPressed(LEFT),
                                                       (traversal,
-                                                       evt) -> traversal.traverseLeft()),
+                                                       evt) -> traversal.left()),
                                               consume(keyPressed(KP_LEFT),
                                                       (traversal,
-                                                       evt) -> traversal.traverseLeft()),
+                                                       evt) -> traversal.left()),
                                               consume(keyPressed(RIGHT),
                                                       (traversal,
-                                                       evt) -> traversal.traverseRight()),
+                                                       evt) -> traversal.right()),
                                               consume(keyPressed(KP_RIGHT),
                                                       (traversal,
-                                                       evt) -> traversal.traverseRight()),
+                                                       evt) -> traversal.right()),
                                               consume(keyPressed(ENTER),
                                                       (traversal,
                                                        evt) -> traversal.activate())));
     }
 
-    public FocusTraversal() {
+    private final Bias           bias;
+    private final FocusTraversal parent;
+
+
+    public FocusTraversal(FocusTraversal parent, Bias bias) {
+        this.bias = bias;
+        this.parent = parent;
         bind();
     }
 
@@ -97,27 +108,24 @@ abstract public class FocusTraversal {
     }
 
     public void selectNext() {
-
     }
 
     public void selectPrevious() {
 
     }
 
-    public void traverseLeft() {
-
-    }
-
     public void traverseNext() {
-
+        if (parent == null) {
+            return;
+        }
+        parent.selectNext();
     }
 
     public void traversePrevious() {
-
-    }
-
-    public void traverseRight() {
-
+        if (parent == null) {
+            return;
+        }
+        parent.selectPrevious();
     }
 
     public void unbind() {
@@ -126,8 +134,60 @@ abstract public class FocusTraversal {
 
     abstract protected Node getNode();
 
+    private void down() {
+        switch (bias) {
+            case HORIZONTAL:
+                traverseNext();
+                break;
+            case VERTICAL:
+                selectNext();
+                break;
+            default:
+                break;
+        }
+    }
+
     private boolean isDisabled() {
-        return false;
+        return getNode().isDisabled();
+    }
+
+    private void left() {
+        switch (bias) {
+            case HORIZONTAL:
+                selectPrevious();
+                break;
+            case VERTICAL:
+                traversePrevious();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void right() {
+        switch (bias) {
+            case HORIZONTAL:
+                selectNext();
+                break;
+            case VERTICAL:
+                traverseNext();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void up() {
+        switch (bias) {
+            case HORIZONTAL:
+                traversePrevious();
+                break;
+            case VERTICAL:
+                selectPrevious();
+                break;
+            default:
+                break;
+        }
     }
 
 }

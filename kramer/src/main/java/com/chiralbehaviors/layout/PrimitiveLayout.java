@@ -22,6 +22,7 @@ import static com.chiralbehaviors.layout.schema.SchemaNode.asList;
 import java.util.List;
 import java.util.function.Function;
 
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.primitives.LabelCell;
@@ -73,8 +74,9 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public LayoutCell<? extends Region> buildColumn(double rendered) {
-        LayoutCell<? extends Region> control = buildControl();
+    public LayoutCell<? extends Region> buildColumn(double rendered,
+                                                    FocusTraversal parentTraversal) {
+        LayoutCell<? extends Region> control = buildControl(parentTraversal);
         control.getNode()
                .setMinSize(justifiedWidth, rendered);
         control.getNode()
@@ -85,8 +87,9 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public LayoutCell<? extends Region> buildControl() {
-        return averageCardinality > 1 ? new PrimitiveList(this) : buildCell();
+    public LayoutCell<? extends Region> buildControl(FocusTraversal parentTraversal) {
+        return averageCardinality > 1 ? new PrimitiveList(this, parentTraversal)
+                                      : buildCell();
     }
 
     @Override
@@ -231,9 +234,10 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public OutlineElement outlineElement(String parent, int cardinality,
-                                         double labelWidth, double justified) {
+                                         double labelWidth, double justified,
+                                         FocusTraversal parentTraversal) {
         return new OutlineElement(parent, this, cardinality, labelWidth,
-                                  justified);
+                                  justified, parentTraversal);
     }
 
     @Override

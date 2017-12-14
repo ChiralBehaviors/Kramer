@@ -18,6 +18,7 @@ import org.reactfx.value.Val;
 import org.reactfx.value.Var;
 
 import com.chiralbehaviors.layout.cell.FocusTraversal;
+import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
 import com.chiralbehaviors.layout.cell.MouseHandler;
 import com.chiralbehaviors.layout.cell.RegionCell;
 import com.chiralbehaviors.layout.cell.SelectionEvent;
@@ -730,32 +731,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>>
         }
     }
 
-    /**
-     * Creates a viewport that lays out content vertically from top to bottom
-     * 
-     * @param styleSheet
-     */
-    public static <T, C extends Cell<T, ?>> VirtualFlow<T, C> createVertical(double cellBreadth,
-                                                                             double cellLength,
-                                                                             ObservableList<T> items,
-                                                                             Function<? super T, ? extends C> cellFactory,
-                                                                             String styleSheet) {
-        return createVertical(styleSheet, cellBreadth, cellLength, items,
-                              cellFactory);
-    }
-
-    /**
-     * Creates a viewport that lays out content vertically from top to bottom
-     */
-    public static <T, C extends Cell<T, ?>> VirtualFlow<T, C> createVertical(String styleSheet,
-                                                                             double cellBreadth,
-                                                                             double cellLength,
-                                                                             ObservableList<T> items,
-                                                                             Function<? super T, ? extends C> cellFactory) {
-        return new VirtualFlow<>(styleSheet, cellBreadth, cellLength, items,
-                                 cellFactory);
-    }
-
     static <T> ListChangeListener.Change<T> buildClearAndSelectChange(ObservableList<T> list,
                                                                       List<T> removed,
                                                                       int retainedRow) {
@@ -858,26 +833,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>>
     private final SizeTracker               sizeTracker;
 
     {
-
-        focus = new FocusTraversal() {
-
-            @Override
-            public void activate() {
-                int focusedIndex = selectionModel.getFocusedIndex();
-                selectionModel.select(focusedIndex);
-                if (focusedIndex >= 0) {
-                    edit();
-                }
-            }
-
-            @Override
-            protected Node getNode() {
-                return VirtualFlow.this;
-            }
-
-            private void edit() {
-            }
-        };
         mouseHandler = new MouseHandler(new Duration(300)) {
 
             @Override
@@ -922,12 +877,14 @@ public class VirtualFlow<T, C extends Cell<T, ?>>
     }
 
     public VirtualFlow(String styleSheet) {
-        this(styleSheet, 0, 0, FXCollections.observableArrayList(), n -> null);
+        this(styleSheet, 0, 0, FXCollections.observableArrayList(), n -> null,
+             null);
     }
 
     public VirtualFlow(String styleSheet, double cellBreadth, double cellLength,
                        ObservableList<T> items,
-                       Function<? super T, ? extends C> cellFactory) {
+                       Function<? super T, ? extends C> cellFactory,
+                       FocusTraversal parentTraversal) {
         super(styleSheet);
         this.getStyleClass()
             .add("virtual-flow");
@@ -948,6 +905,44 @@ public class VirtualFlow<T, C extends Cell<T, ?>>
 
         lengthOffsetEstimate = sizeTracker.lengthOffsetEstimateProperty()
                                           .asVar(this::setLengthOffset);
+        focus = new FocusTraversal(parentTraversal, Bias.VERTICAL) {
+
+            @Override
+            public void activate() {
+                int focusedIndex = selectionModel.getFocusedIndex();
+                selectionModel.select(focusedIndex);
+                if (focusedIndex >= 0) {
+                    edit();
+                }
+            }
+
+            @Override
+            public void selectNext() {
+                if (selectionModel.getFocusedIndex() == -1) {
+                    selectionModel.focus(0);
+                } else if (selectionModel.getFocusedIndex() != selectionModel.getItemCount()
+                                                               - 1) {
+                    selectionModel.focus(selectionModel.getFocusedIndex() + 1);
+                }
+            }
+
+            @Override
+            public void selectPrevious() {
+                if (selectionModel.getFocusedIndex() == -1) {
+                    selectionModel.focus(0);
+                } else if (selectionModel.getFocusedIndex() > 0) {
+                    selectionModel.focus(selectionModel.getFocusedIndex() - 1);
+                }
+            }
+
+            @Override
+            protected Node getNode() {
+                return VirtualFlow.this;
+            }
+
+            private void edit() {
+            }
+        };
     }
 
     public Bounds cellToViewport(C cell, Bounds bounds) {
@@ -1004,6 +999,10 @@ public class VirtualFlow<T, C extends Cell<T, ?>>
     @Override
     public List<CssMetaData<? extends Styleable, ?>> getCssMetaData() {
         return getClassCssMetaData();
+    }
+
+    public FocusTraversal getFocusTraversal() {
+        return focus;
     }
 
     public ObservableList<T> getItems() {

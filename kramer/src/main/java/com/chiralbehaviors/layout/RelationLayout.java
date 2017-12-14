@@ -26,6 +26,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.chiralbehaviors.layout.StyleProvider.StyledInsets;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.outline.Outline;
@@ -118,8 +119,10 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public LayoutCell<? extends Region> buildColumn(double rendered) {
-        return new NestedRow(rendered, this, resolvedCardinality);
+    public LayoutCell<? extends Region> buildColumn(double rendered,
+                                                    FocusTraversal parentTraversal) {
+        return new NestedRow(rendered, this, resolvedCardinality,
+                             parentTraversal);
     }
 
     public TableHeader buildColumnHeader() {
@@ -129,17 +132,18 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public LayoutCell<?> buildControl() {
-        return useTable ? buildNestedTable() : buildOutline();
+    public LayoutCell<?> buildControl(FocusTraversal parentTraversal) {
+        return useTable ? buildNestedTable(parentTraversal)
+                        : buildOutline(parentTraversal);
     }
 
-    public LayoutCell<NestedTable> buildNestedTable() {
-        return new NestedTable(resolvedCardinality, this);
+    public LayoutCell<NestedTable> buildNestedTable(FocusTraversal parentTraversal) {
+        return new NestedTable(resolvedCardinality, this, parentTraversal);
     }
 
-    public Outline buildOutline() {
+    public Outline buildOutline(FocusTraversal parentTraversal) {
         Outline outline = new Outline(height, columnSets, resolvedCardinality,
-                                      this);
+                                      this, parentTraversal);
         outline.getNode()
                .setMinWidth(columnWidth());
         outline.getNode()
@@ -401,10 +405,11 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public OutlineElement outlineElement(String parent, int cardinality,
-                                         double labelWidth, double justified) {
+                                         double labelWidth, double justified,
+                                         FocusTraversal parentTraversal) {
 
         return new OutlineElement(parent, this, cardinality, labelWidth,
-                                  justified);
+                                  justified, parentTraversal);
     }
 
     @Override

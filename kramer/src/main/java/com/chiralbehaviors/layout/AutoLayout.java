@@ -145,9 +145,9 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             measure(zeeData);
         }
         LayoutCell<?> old = control;
-        control = layout.autoLayout(width);
+        control = layout.autoLayout(width, null);
         Region node = control.getNode();
-        
+
         setTopAnchor(node, 0d);
         setRightAnchor(node, 0d);
         setBottomAnchor(node, 0d);

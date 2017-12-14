@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -51,7 +52,8 @@ public class NestedTable extends VerticalCell<NestedTable> {
 
     private final VirtualFlow<JsonNode, NestedCell> rows;
 
-    public NestedTable(int childCardinality, RelationLayout layout) {
+    public NestedTable(int childCardinality, RelationLayout layout,
+                       FocusTraversal parentTraversal) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE,
@@ -61,7 +63,8 @@ public class NestedTable extends VerticalCell<NestedTable> {
         double height = snap(layout.getHeight()
                              - layout.getColumnHeaderHeight());
 
-        rows = buildRows(width, height, childCardinality, layout);
+        rows = buildRows(width, height, childCardinality, layout,
+                         parentTraversal);
 
         VBox.setVgrow(header, Priority.NEVER);
         VBox.setVgrow(rows, Priority.ALWAYS);
@@ -89,9 +92,10 @@ public class NestedTable extends VerticalCell<NestedTable> {
     protected VirtualFlow<JsonNode, NestedCell> buildRows(double width,
                                                           double height,
                                                           int childCardinality,
-                                                          RelationLayout layout) {
+                                                          RelationLayout layout,
+                                                          FocusTraversal parentTraversal) {
         Function<JsonNode, NestedCell> factory = item -> {
-            NestedCell cell = new NestedCell(layout);
+            NestedCell cell = new NestedCell(layout, rows.getFocusTraversal());
             cell.updateItem(item);
             return cell;
         };
@@ -99,7 +103,8 @@ public class NestedTable extends VerticalCell<NestedTable> {
                                                                                        layout.getJustifiedColumnWidth(),
                                                                                        layout.getRowHeight(),
                                                                                        FXCollections.observableArrayList(),
-                                                                                       factory);
+                                                                                       factory,
+                                                                                       parentTraversal);
         rows.setMinSize(width, height);
         rows.setPrefSize(width, height);
         rows.setMaxSize(width, height);

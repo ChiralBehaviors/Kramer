@@ -21,6 +21,7 @@ import java.util.List;
 
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -37,12 +38,13 @@ public class Outline extends VirtualFlow<JsonNode, OutlineCell> {
     private static final String STYLE_SHEET           = "outline.css";
 
     public Outline(double height, Collection<ColumnSet> columnSets,
-                   int averageCardinality, RelationLayout layout) {
+                   int averageCardinality, RelationLayout layout,
+                   FocusTraversal parentTraversal) {
         this(layout.getJustifiedWidth(),
              layout.outlineCellHeight(columnSets.stream()
                                                 .mapToDouble(cs -> cs.getCellHeight())
                                                 .sum()),
-             columnSets, averageCardinality, layout);
+             columnSets, averageCardinality, layout, parentTraversal);
     }
 
     public Outline(String field) {
@@ -53,16 +55,17 @@ public class Outline extends VirtualFlow<JsonNode, OutlineCell> {
 
     public Outline(double width, double cellHeight,
                    Collection<ColumnSet> columnSets, int averageCardinality,
-                   RelationLayout layout) {
+                   RelationLayout layout, FocusTraversal parentTraversal) {
         super(STYLE_SHEET, width, cellHeight,
               FXCollections.observableArrayList(), item -> {
                   OutlineCell outlineCell = new OutlineCell(columnSets,
                                                             averageCardinality,
                                                             layout.baseOutlineCellHeight(cellHeight),
-                                                            layout);
+                                                            layout,
+                                                            (FocusTraversal) null);
                   outlineCell.updateItem(item);
                   return outlineCell;
-              });
+              }, parentTraversal);
         layout.apply(this);
     }
 
