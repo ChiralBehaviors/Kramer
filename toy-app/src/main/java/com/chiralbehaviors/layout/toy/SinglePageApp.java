@@ -81,7 +81,7 @@ public class SinglePageApp extends Application
     private Button                   reloadButton;
 
     @Override
-    public <T extends LayoutCell<?>> void apply(VirtualFlow<JsonNode, T> list,
+    public <T extends LayoutCell<?>> void apply(VirtualFlow<T> list,
                                                 Relation relation) {
 
         Nodes.addInputMap(list, InputMap.consume(DOUBLE_SELECT, e -> {
