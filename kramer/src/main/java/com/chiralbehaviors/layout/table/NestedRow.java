@@ -27,13 +27,14 @@ import javafx.collections.FXCollections;
  * @author halhildebrand
  *
  */
-public class NestedRow extends VirtualFlow<JsonNode, NestedCell> {
+public class NestedRow extends VirtualFlow<NestedCell> {
     private static final String DEFAULT_STYLE         = "nested-row";
     private static final String SCHEMA_CLASS_TEMPLATE = "%s-nested-row";
     private static final String STYLE_SHEET           = "nested-row.css";
 
     public NestedRow(double rendered, RelationLayout layout,
-                     int childCardinality, FocusTraversal parentTraversal) {
+                     int childCardinality,
+                     FocusTraversal<NestedRow> parentTraversal) {
         super(layout.getField(), layout.getJustifiedColumnWidth(),
               layout.getHeight(), FXCollections.observableArrayList(),
               (item, pt) -> {
@@ -66,6 +67,6 @@ public class NestedRow extends VirtualFlow<JsonNode, NestedCell> {
     @Override
     public void updateItem(JsonNode item) {
         items.setAll(NestedTable.itemsAsArray(item));
-        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,  item != null);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 }

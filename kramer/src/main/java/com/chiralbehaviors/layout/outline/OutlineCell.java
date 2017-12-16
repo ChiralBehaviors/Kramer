@@ -24,7 +24,12 @@ import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
+import com.chiralbehaviors.layout.cell.Hit;
+import com.chiralbehaviors.layout.cell.LayoutContainer;
+import com.chiralbehaviors.layout.cell.MouseHandler;
+import com.chiralbehaviors.layout.cell.MultipleCellSelection;
 import com.chiralbehaviors.layout.cell.VerticalCell;
+import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
@@ -35,24 +40,23 @@ import javafx.scene.layout.VBox;
  * @author halhildebrand
  *
  */
-public class OutlineCell extends VerticalCell<OutlineCell> {
+public class OutlineCell extends VerticalCell<OutlineCell>
+        implements LayoutContainer<JsonNode, OutlineCell, Span> {
 
-    /**
-     * 
-     */
-    private static final String  OUTLINE_CELL_CLASS    = "outline-cell";
-    private static final String  DEFAULT_STYLE         = "a-cell";
-    private static final String  SCHEMA_CLASS_TEMPLATE = "%s-outline-cell";
-    private static final String  STYLE_SHEET           = "outline-cell.css";
+    private static final String                         DEFAULT_STYLE         = "a-cell";
+    private static final String                         OUTLINE_CELL_CLASS    = "outline-cell";
+    private static final String                         SCHEMA_CLASS_TEMPLATE = "%s-outline-cell";
+    private static final String                         STYLE_SHEET           = "outline-cell.css";
 
-    private final FocusTraversal focus;
-    private int                  selected              = -1;
-    private List<Span>           spans                 = new ArrayList<>();
+    private final FocusTraversal<Span>                  focus;
+    private final MouseHandler                          mouseHandler;
+    private final MultipleCellSelection<JsonNode, Span> selectionModel;
+    private List<Span>                                  spans                 = new ArrayList<>();
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
                        double cellHeight, RelationLayout layout,
-                       FocusTraversal parentTraversal) {
-        this(layout.getField(), parentTraversal);
+                       FocusTraversal<OutlineCell> pt) {
+        this(layout.getField(), pt);
         setMinSize(layout.getJustifiedColumnWidth(), cellHeight);
         setPrefSize(layout.getJustifiedColumnWidth(), cellHeight);
         setMaxSize(layout.getJustifiedColumnWidth(), cellHeight);
@@ -71,36 +75,16 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
         this(field, null);
     }
 
-    public OutlineCell(String field, FocusTraversal parent) {
+    public OutlineCell(String field, FocusTraversal<OutlineCell> parent) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().addAll(OUTLINE_CELL_CLASS,
                                String.format(SCHEMA_CLASS_TEMPLATE, field));
-        focus = new FocusTraversal(parent, Bias.VERTICAL) {
-
-            @Override
-            public void selectNext() {
-                selected = selected + 1;
-                if (selected == spans.size()) {
-                    selected = selected - 1;
-                    traverseNext();
-                } else {
-                    spans.get(selected)
-                         .setFocus();
-                }
-            }
-
-            @Override
-            public void selectPrevious() {
-                selected = selected - 1;
-                if (selected < 0) {
-                    selected = -1;
-                    traversePrevious();
-                } else {
-                    spans.get(selected)
-                         .setFocus();
-                }
-            }
+        selectionModel = buildSelectionModel(i -> null, () -> spans.size(),
+                                             i -> spans.get(i));
+        mouseHandler = bind();
+        focus = new FocusTraversal<Span>(parent, selectionModel,
+                                         Bias.VERTICAL) {
 
             @Override
             protected Node getNode() {
@@ -112,7 +96,15 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
 
     @Override
     public void dispose() {
+        super.dispose();
         focus.unbind();
+        mouseHandler.unbind();
+    }
+
+    @Override
+    public <H extends Cell<?, ?>> Hit<Cell<?, ?>> hit(double x, double y) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
     @Override

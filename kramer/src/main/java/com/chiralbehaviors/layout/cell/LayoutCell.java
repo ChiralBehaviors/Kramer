@@ -29,6 +29,8 @@ import javafx.scene.layout.Region;
  *
  */
 public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
+    String      LAYOUT_CELL_CLASS          = "layout-cell";
+    String      LAYOUT_CELL_STYLESHEET     = "layout-cell.css";
     PseudoClass EXTERNAL_PSEUDOCLASS_STATE = PseudoClass.getPseudoClass("external-focus");
     PseudoClass INTERNAL_PSEUDOCLASS_STATE = PseudoClass.getPseudoClass("internal-focus");
     PseudoClass PSEUDO_CLASS_EMPTY         = PseudoClass.getPseudoClass("empty");
@@ -57,7 +59,12 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         StyleableProperty<Boolean> styleableProperty = (StyleableProperty<Boolean>) node.focusTraversableProperty();
         styleableProperty.applyStyle(null, Boolean.TRUE);
         node.getStyleClass()
-            .addAll(defaultStyle);
+            .addAll(LAYOUT_CELL_CLASS, defaultStyle);
+
+        node.getStylesheets()
+            .add(LayoutCell.class.getResource(LAYOUT_CELL_STYLESHEET)
+                                 .toExternalForm());
+        
         /**
          * Indicates whether or not this cell has focus. For example, a ListView
          * defines zero or one cell as being the "focused" cell. This cell would
@@ -65,7 +72,10 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
          */
         node.focusedProperty()
             .addListener((InvalidationListener) property -> {
-                System.out.println(String.format("Setting focus: %s on %s", node.isFocused(), node.getClass().getSimpleName()));
+                System.out.println(String.format("Setting focus: %s on %s",
+                                                 node.isFocused(),
+                                                 node.getClass()
+                                                     .getSimpleName()));
                 node.pseudoClassStateChanged(PSEUDO_CLASS_FOCUSED,
                                              node.isFocused()); // TODO is this necessary??
 
@@ -100,7 +110,7 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
     }
 
     @Override
-    default void updateItem(JsonNode item) { 
-        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,  item != null);
+    default void updateItem(JsonNode item) {
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 }

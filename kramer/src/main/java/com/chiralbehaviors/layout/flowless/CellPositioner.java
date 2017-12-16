@@ -6,6 +6,8 @@ import java.util.OptionalInt;
 
 import org.reactfx.collection.MemoizationList;
 
+import com.chiralbehaviors.layout.cell.LayoutCell;
+
 import javafx.scene.Node;
 
 /**
@@ -14,11 +16,11 @@ import javafx.scene.Node;
  * {@link Cell}'s {@link javafx.scene.Node} as well as handling calls related to
  * whether a cell's node is visible (displayed in the viewport) or not.
  */
-final class CellPositioner<T, C extends Cell<T, ?>> {
-    private final CellListManager<T, C> cellManager;
-    private final SizeTracker           sizeTracker;
+final class CellPositioner<C extends LayoutCell<?>> {
+    private final CellListManager<C> cellManager;
+    private final SizeTracker        sizeTracker;
 
-    public CellPositioner(CellListManager<T, C> cellManager,
+    public CellPositioner(CellListManager<C> cellManager,
                           SizeTracker sizeTracker) {
         this.cellManager = cellManager;
         this.sizeTracker = sizeTracker;

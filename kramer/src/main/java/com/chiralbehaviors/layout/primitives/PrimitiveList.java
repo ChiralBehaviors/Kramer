@@ -29,13 +29,13 @@ import javafx.collections.FXCollections;
  * @author halhildebrand
  *
  */
-public class PrimitiveList extends VirtualFlow<JsonNode, LayoutCell<?>> {
+public class PrimitiveList extends VirtualFlow<LayoutCell<?>> {
     private static final String DEFAULT_STYLE         = "outline";
     private static final String SCHEMA_CLASS_TEMPLATE = "%s-outline";
     private static final String STYLE_SHEET           = "outline.css";
 
     public PrimitiveList(PrimitiveLayout layout,
-                         FocusTraversal parentTraversal) {
+                         FocusTraversal<?> parentTraversal) {
         super(layout.getField(), layout.getJustifiedWidth(),
               layout.getCellHeight(), FXCollections.observableArrayList(),
               (item, pt) -> {
@@ -68,6 +68,6 @@ public class PrimitiveList extends VirtualFlow<JsonNode, LayoutCell<?>> {
     @Override
     public void updateItem(JsonNode item) {
         items.setAll(SchemaNode.asList(item));
-        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,  item != null);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 }

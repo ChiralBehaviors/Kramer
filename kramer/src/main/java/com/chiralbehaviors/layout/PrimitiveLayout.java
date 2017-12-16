@@ -24,6 +24,7 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.outline.OutlineColumn;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.primitives.LabelCell;
 import com.chiralbehaviors.layout.primitives.PrimitiveList;
@@ -59,7 +60,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
               .apply(cell, getNode());
     }
 
-    public LayoutCell<?> buildCell(FocusTraversal pt) {
+    public LayoutCell<?> buildCell(FocusTraversal<?> pt) {
         LabelCell cell = new LabelCell(this);
         cell.getNode()
             .getStyleClass()
@@ -75,7 +76,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public LayoutCell<? extends Region> buildColumn(double rendered,
-                                                    FocusTraversal parentTraversal) {
+                                                    FocusTraversal<?> parentTraversal) {
         LayoutCell<? extends Region> control = buildControl(parentTraversal);
         control.getNode()
                .setMinSize(justifiedWidth, rendered);
@@ -87,7 +88,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public LayoutCell<? extends Region> buildControl(FocusTraversal parentTraversal) {
+    public LayoutCell<? extends Region> buildControl(FocusTraversal<?> parentTraversal) {
         return averageCardinality > 1 ? new PrimitiveList(this, parentTraversal)
                                       : buildCell(parentTraversal);
     }
@@ -214,7 +215,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
         columnWidth = Math.max(labelWidth,
                                DefaultStyleProvider.snap(Math.max(getNode().getDefaultWidth(),
-                                                            averageWidth)));
+                                                                  averageWidth)));
         if (maxWidth > averageWidth) {
             variableLength = true;
         }
@@ -235,7 +236,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public OutlineElement outlineElement(String parent, int cardinality,
                                          double labelWidth, double justified,
-                                         FocusTraversal parentTraversal) {
+                                         FocusTraversal<OutlineColumn> parentTraversal) {
         return new OutlineElement(parent, this, cardinality, labelWidth,
                                   justified, parentTraversal);
     }

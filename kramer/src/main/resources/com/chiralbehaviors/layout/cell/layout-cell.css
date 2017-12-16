@@ -1,0 +1,11 @@
+.layout-cell {
+    -fx-background-color: -fx-box-border, -fx-control-inner-background; 
+    -fx-background-insets: 0, 1;
+    -fx-padding : 1 ;
+}
+
+.layout-cell:focused {
+    -fx-background-color: -fx-faint-focus-color, -fx-focus-color, -fx-control-inner-background;
+    -fx-background-insets: -1.4, -0.3, 1;
+    -fx-background-radius: 2, 0, 0;
+}

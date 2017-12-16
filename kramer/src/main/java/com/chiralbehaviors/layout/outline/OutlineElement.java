@@ -37,21 +37,22 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     private static final String                    SCHEMA_CLASS_TEMPLATE = "%s-outline-element";
     private static final String                    STYLE_SHEET           = "outline-element.css";
 
-    private final Cell<JsonNode, ? extends Region> cell; 
+    private final Cell<JsonNode, ? extends Region> cell;
 
     public OutlineElement(String field) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
-        this.cell = null; 
+        this.cell = null;
     }
 
     public OutlineElement(SchemaNodeLayout layout, String field,
                           int cardinality, double labelWidth, double justified,
-                          double height, FocusTraversal parentTraversal) {
+                          double height,
+                          FocusTraversal<OutlineColumn> parentTraversal) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field)); 
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
         this.cell = layout.buildControl(parentTraversal);
 
         setMinSize(justified, height);
@@ -74,7 +75,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
 
     public OutlineElement(String field, SchemaNodeLayout layout,
                           int cardinality, double labelWidth, double justified,
-                          FocusTraversal parentTraversal) {
+                          FocusTraversal<OutlineColumn> parentTraversal) {
         this(layout, field, cardinality, labelWidth, justified,
              layout.getHeight(), parentTraversal);
     }
@@ -82,6 +83,6 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     @Override
     public void updateItem(JsonNode item) {
         cell.updateItem(item);
-        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,  item != null);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 }

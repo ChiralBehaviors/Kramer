@@ -23,7 +23,6 @@ import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
-import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.geometry.Insets;
 import javafx.util.Pair;
@@ -39,7 +38,7 @@ public interface StyleProvider {
         default <T extends LayoutCell<?>> void apply(T cell, Primitive p) {
         }
 
-        default <T extends LayoutCell<?>> void apply(VirtualFlow<JsonNode, T> list,
+        default <T extends LayoutCell<?>> void apply(VirtualFlow<T> list,
                                                      Relation relation) {
         }
     }

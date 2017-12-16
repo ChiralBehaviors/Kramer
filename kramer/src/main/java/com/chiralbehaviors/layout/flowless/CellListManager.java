@@ -9,6 +9,9 @@ import org.reactfx.collection.LiveList;
 import org.reactfx.collection.MemoizationList;
 import org.reactfx.collection.QuasiListModification;
 
+import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
 
@@ -16,17 +19,17 @@ import javafx.scene.Node;
  * Tracks all of the cells that the viewport can display ({@link #cells}) and
  * which cells the viewport is currently displaying ({@link #presentCells}).
  */
-final class CellListManager<T, C extends Cell<T, ? extends Node>> {
+final class CellListManager<C extends LayoutCell<?>> {
 
     private final LiveList<Node>     cellNodes;
-    private final CellPool<T, C>     cellPool;
+    private final CellPool<C>        cellPool;
     private final MemoizationList<C> cells;
     private final LiveList<C>        presentCells;
 
     private final Subscription       presentCellsSubscription;
 
-    public CellListManager(ObservableList<T> items,
-                           Function<? super T, ? extends C> cellFactory) {
+    public CellListManager(ObservableList<JsonNode> items,
+                           Function<? super JsonNode, ? extends C> cellFactory) {
         this.cellPool = new CellPool<>(cellFactory);
         this.cells = LiveList.map(items, this::cellForItem)
                              .memoize();
@@ -85,7 +88,7 @@ final class CellListManager<T, C extends Cell<T, ? extends Node>> {
         return cells.isMemoized(itemIndex);
     }
 
-    private C cellForItem(T item) {
+    private C cellForItem(JsonNode item) {
         C cell = cellPool.getCell(item);
 
         // apply CSS when the cell is first added to the scene

@@ -50,10 +50,10 @@ public class NestedTable extends VerticalCell<NestedTable> {
         return itemArray;
     }
 
-    private final VirtualFlow<JsonNode, NestedCell> rows;
+    private final VirtualFlow<NestedCell> rows;
 
     public NestedTable(int childCardinality, RelationLayout layout,
-                       FocusTraversal parentTraversal) {
+                       FocusTraversal<?> parentTraversal) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE,
@@ -92,26 +92,25 @@ public class NestedTable extends VerticalCell<NestedTable> {
     public void updateItem(JsonNode item) {
         rows.getItems()
             .setAll(SchemaNode.asList(item));
-        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,  item != null);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 
-    protected VirtualFlow<JsonNode, NestedCell> buildRows(double width,
-                                                          double height,
-                                                          int childCardinality,
-                                                          RelationLayout layout,
-                                                          FocusTraversal parentTraversal) {
-        BiFunction<JsonNode, FocusTraversal, NestedCell> factory = (item,
+    protected VirtualFlow<NestedCell> buildRows(double width, double height,
+                                                int childCardinality,
+                                                RelationLayout layout,
+                                                FocusTraversal<?> parentTraversal) {
+        BiFunction<JsonNode, FocusTraversal<NestedCell>, NestedCell> factory = (item,
                                                                     pt) -> {
             NestedCell cell = new NestedCell(layout, pt);
             cell.updateItem(item);
             return cell;
         };
-        VirtualFlow<JsonNode, NestedCell> rows = new VirtualFlow<JsonNode, NestedCell>(DEFAULT_STYLE,
-                                                                                       layout.getJustifiedColumnWidth(),
-                                                                                       layout.getRowHeight(),
-                                                                                       FXCollections.observableArrayList(),
-                                                                                       factory,
-                                                                                       parentTraversal);
+        VirtualFlow<NestedCell> rows = new VirtualFlow<NestedCell>(DEFAULT_STYLE,
+                                                                   layout.getJustifiedColumnWidth(),
+                                                                   layout.getRowHeight(),
+                                                                   FXCollections.observableArrayList(),
+                                                                   factory,
+                                                                   parentTraversal);
         rows.setMinSize(width, height);
         rows.setPrefSize(width, height);
         rows.setMaxSize(width, height);

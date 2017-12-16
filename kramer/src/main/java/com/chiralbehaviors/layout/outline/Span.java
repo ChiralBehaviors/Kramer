@@ -23,6 +23,7 @@ import com.chiralbehaviors.layout.Column;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
+import com.chiralbehaviors.layout.cell.MultipleCellSelection;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
@@ -33,12 +34,12 @@ import javafx.scene.Node;
  */
 public class Span extends HorizontalCell<Span> {
 
-    private static final String       DEFAULT_STYLE = "span";
-    private static final String       S_SPAN        = "%s-span";
-    private static final String       STYLE_SHEET   = "span.css";
-    private final List<OutlineColumn> columns       = new ArrayList<>();
-    private final FocusTraversal      focus;
-    private int                       selected;
+    private static final String                                  DEFAULT_STYLE = "span";
+    private static final String                                  S_SPAN        = "%s-span";
+    private static final String                                  STYLE_SHEET   = "span.css";
+    private final List<OutlineColumn>                            columns       = new ArrayList<>();
+    private final FocusTraversal<OutlineColumn>                  focus;
+    private final MultipleCellSelection<JsonNode, OutlineColumn> selectionModel;
 
     public Span(String field) {
         this(field, null);
@@ -46,7 +47,7 @@ public class Span extends HorizontalCell<Span> {
 
     public Span(String field, double justified, List<Column> columns,
                 int cardinality, double cellHeight, double labelWidth,
-                FocusTraversal parentTraversal) {
+                FocusTraversal<Span> parentTraversal) {
         this(field, parentTraversal);
         setMinSize(justified, cellHeight);
         setPrefSize(justified, cellHeight);
@@ -61,35 +62,29 @@ public class Span extends HorizontalCell<Span> {
         });
     }
 
-    public Span(String field, FocusTraversal parentTraversal) {
+    public Span(String field, FocusTraversal<Span> parentTraversal) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(S_SPAN, field));
-        focus = new FocusTraversal(parentTraversal, Bias.HORIZONTAL) {
-
+        selectionModel = new MultipleCellSelection<JsonNode, OutlineColumn>() {
             @Override
-            public void selectNext() {
-                selected = selected + 1;
-                if (selected == columns.size()) {
-                    selected = selected - 1;
-                    traverseNext();
-                } else {
-                    columns.get(selected)
-                           .setFocus();
-                }
+            public OutlineColumn getCell(int index) {
+                return columns.get(index);
             }
 
             @Override
-            public void selectPrevious() {
-                selected = selected - 1;
-                if (selected < 0) {
-                    selected = -1;
-                    traversePrevious();
-                } else {
-                    columns.get(selected)
-                           .setFocus();
-                }
+            public int getItemCount() {
+                return columns.size();
             }
+
+            @Override
+            public JsonNode getModelItem(int index) {
+                return null;
+            }
+        };
+        focus = new FocusTraversal<OutlineColumn>(parentTraversal,
+                                                  selectionModel,
+                                                  Bias.HORIZONTAL) {
 
             @Override
             protected Node getNode() {

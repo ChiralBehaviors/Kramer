@@ -30,6 +30,7 @@ import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.outline.Outline;
+import com.chiralbehaviors.layout.outline.OutlineColumn;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -105,7 +106,7 @@ public class RelationLayout extends SchemaNodeLayout {
         }
     }
 
-    public <T extends LayoutCell<?>> void apply(VirtualFlow<JsonNode, T> list) {
+    public <T extends LayoutCell<?>> void apply(VirtualFlow<T> list) {
         layout.getModel()
               .apply(list, getNode());
     }
@@ -118,11 +119,12 @@ public class RelationLayout extends SchemaNodeLayout {
         return snap(extended - tableInsets.getCellVerticalInset());
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public LayoutCell<? extends Region> buildColumn(double rendered,
-                                                    FocusTraversal parentTraversal) {
+                                                    FocusTraversal<?> parentTraversal) {
         return new NestedRow(rendered, this, resolvedCardinality,
-                             parentTraversal);
+                             (FocusTraversal<NestedRow>) parentTraversal);
     }
 
     public TableHeader buildColumnHeader() {
@@ -132,16 +134,16 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public LayoutCell<?> buildControl(FocusTraversal parentTraversal) {
+    public LayoutCell<?> buildControl(FocusTraversal<?> parentTraversal) {
         return useTable ? buildNestedTable(parentTraversal)
                         : buildOutline(parentTraversal);
     }
 
-    public LayoutCell<NestedTable> buildNestedTable(FocusTraversal parentTraversal) {
+    public LayoutCell<NestedTable> buildNestedTable(FocusTraversal<?> parentTraversal) {
         return new NestedTable(resolvedCardinality, this, parentTraversal);
     }
 
-    public Outline buildOutline(FocusTraversal parentTraversal) {
+    public Outline buildOutline(FocusTraversal<?> parentTraversal) {
         Outline outline = new Outline(height, columnSets, resolvedCardinality,
                                       this, parentTraversal);
         outline.getNode()
@@ -406,7 +408,7 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public OutlineElement outlineElement(String parent, int cardinality,
                                          double labelWidth, double justified,
-                                         FocusTraversal parentTraversal) {
+                                         FocusTraversal<OutlineColumn> parentTraversal) {
 
         return new OutlineElement(parent, this, cardinality, labelWidth,
                                   justified, parentTraversal);

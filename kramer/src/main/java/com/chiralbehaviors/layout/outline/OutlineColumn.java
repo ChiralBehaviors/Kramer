@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import com.chiralbehaviors.layout.Column;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
+import com.chiralbehaviors.layout.cell.MultipleCellSelection;
 import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -34,13 +35,13 @@ import javafx.scene.Node;
  */
 public class OutlineColumn extends VerticalCell<OutlineColumn> {
 
-    private static final String            DEFAULT_STYLE         = "span";
-    private static final String            SCHEMA_CLASS_TEMPLATE = "%s-outline-column";
-    private static final String            STYLE_SHEET           = "outline-column.css";
-    private final List<OutlineElement>     elements              = new ArrayList<>();
-    private final List<Consumer<JsonNode>> fields                = new ArrayList<>();
-    private final FocusTraversal           focus;
-    private int                            selected              = -1;
+    private static final String                                   DEFAULT_STYLE         = "span";
+    private static final String                                   SCHEMA_CLASS_TEMPLATE = "%s-outline-column";
+    private static final String                                   STYLE_SHEET           = "outline-column.css";
+    private final List<OutlineElement>                            elements              = new ArrayList<>();
+    private final List<Consumer<JsonNode>>                        fields                = new ArrayList<>();
+    private final FocusTraversal<OutlineElement>                  focus;
+    private final MultipleCellSelection<JsonNode, OutlineElement> selectionModel;
 
     public OutlineColumn(String field) {
         this(field, null);
@@ -48,8 +49,8 @@ public class OutlineColumn extends VerticalCell<OutlineColumn> {
 
     public OutlineColumn(String field, Column c, int cardinality,
                          double labelWidth, double cellHeight,
-                         FocusTraversal parentTraversa) {
-        this(field, parentTraversa);
+                         FocusTraversal<OutlineColumn> focus) {
+        this(field, focus);
         setMinSize(c.getWidth(), cellHeight);
         setMaxSize(c.getWidth(), cellHeight);
         setPrefSize(c.getWidth(), cellHeight);
@@ -64,35 +65,31 @@ public class OutlineColumn extends VerticalCell<OutlineColumn> {
          });
     }
 
-    public OutlineColumn(String field, FocusTraversal parentTraversal) {
+    public OutlineColumn(String field,
+                         FocusTraversal<OutlineColumn> parentTraversal) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
-        focus = new FocusTraversal(parentTraversal, Bias.VERTICAL) { 
+        selectionModel = new MultipleCellSelection<JsonNode, OutlineElement>() {
 
             @Override
-            public void selectNext() {
-                selected = selected + 1;
-                if (selected == elements.size()) {
-                    selected = selected - 1;
-                    traverseNext();
-                } else {
-                    elements.get(selected)
-                            .setFocus();
-                }
+            public OutlineElement getCell(int index) {
+                return elements.get(index);
             }
 
             @Override
-            public void selectPrevious() {
-                selected = selected - 1;
-                if (selected < 0) {
-                    selected = -1;
-                    traversePrevious();
-                } else {
-                    elements.get(selected)
-                            .setFocus();
-                }
+            public int getItemCount() {
+                return elements.size();
             }
+
+            @Override
+            public JsonNode getModelItem(int index) {
+                return null;
+            }
+        };
+        focus = new FocusTraversal<OutlineElement>(parentTraversal,
+                                                   selectionModel,
+                                                   Bias.VERTICAL) {
 
             @Override
             protected Node getNode() {

@@ -4,16 +4,19 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.function.Function;
 
+import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.fasterxml.jackson.databind.JsonNode;
+
 /**
  * Helper class that stores a pool of reusable cells that can be updated via
  * {@link Cell#updateItem(Object)} or creates new ones via its
  * {@link #cellFactory} if the pool is empty.
  */
-final class CellPool<T, C extends Cell<T, ?>> {
-    private final Function<? super T, ? extends C> cellFactory;
-    private final Queue<C>                         pool = new LinkedList<>();
+final class CellPool<C extends LayoutCell<?>> {
+    private final Function<? super JsonNode, ? extends C> cellFactory;
+    private final Queue<C>                                pool = new LinkedList<>();
 
-    public CellPool(Function<? super T, ? extends C> cellFactory) {
+    public CellPool(Function<? super JsonNode, ? extends C> cellFactory) {
         this.cellFactory = cellFactory;
     }
 
@@ -46,7 +49,7 @@ final class CellPool<T, C extends Cell<T, ?>> {
      * the pool has one, or returns a newly-created one via its
      * {@link #cellFactory}.
      */
-    public C getCell(T item) {
+    public C getCell(JsonNode item) {
         C cell = pool.poll();
         if (cell != null) {
             cell.updateItem(item);

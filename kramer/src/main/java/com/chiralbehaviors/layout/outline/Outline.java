@@ -32,14 +32,14 @@ import javafx.collections.FXCollections;
  * @author halhildebrand
  *
  */
-public class Outline extends VirtualFlow<JsonNode, OutlineCell> {
+public class Outline extends VirtualFlow<OutlineCell> {
     private static final String DEFAULT_STYLE         = "outline";
     private static final String SCHEMA_CLASS_TEMPLATE = "%s-outline";
     private static final String STYLE_SHEET           = "outline.css";
 
     public Outline(double height, Collection<ColumnSet> columnSets,
                    int averageCardinality, RelationLayout layout,
-                   FocusTraversal parentTraversal) {
+                   FocusTraversal<?> parentTraversal) {
         this(layout.getJustifiedWidth(),
              layout.outlineCellHeight(columnSets.stream()
                                                 .mapToDouble(cs -> cs.getCellHeight())
@@ -55,7 +55,7 @@ public class Outline extends VirtualFlow<JsonNode, OutlineCell> {
 
     public Outline(double width, double cellHeight,
                    Collection<ColumnSet> columnSets, int averageCardinality,
-                   RelationLayout layout, FocusTraversal parentTraversal) {
+                   RelationLayout layout, FocusTraversal<?> parentTraversal) {
         super(STYLE_SHEET, width, cellHeight,
               FXCollections.observableArrayList(), (item, pt) -> {
                   OutlineCell outlineCell = new OutlineCell(columnSets,
@@ -78,6 +78,6 @@ public class Outline extends VirtualFlow<JsonNode, OutlineCell> {
     public void updateItem(JsonNode item) {
         List<JsonNode> list = SchemaNode.asList(item);
         items.setAll(list);
-        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,  item != null);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 }

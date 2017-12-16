@@ -1,9 +1,5 @@
 package com.chiralbehaviors.layout.flowless;
 
-import static com.chiralbehaviors.layout.cell.SelectionEvent.DOUBLE_SELECT;
-import static com.chiralbehaviors.layout.cell.SelectionEvent.SINGLE_SELECT;
-import static com.chiralbehaviors.layout.cell.SelectionEvent.TRIPLE_SELECT;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -15,10 +11,12 @@ import org.reactfx.value.Var;
 
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
+import com.chiralbehaviors.layout.cell.Hit;
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.MouseHandler;
 import com.chiralbehaviors.layout.cell.MultipleCellSelection;
 import com.chiralbehaviors.layout.cell.RegionCell;
-import com.chiralbehaviors.layout.cell.SelectionEvent;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -28,9 +26,7 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.shape.Rectangle;
-import javafx.util.Duration;
 
 /**
  * A VirtualFlow is a memory-efficient viewport that only renders enough of its
@@ -47,85 +43,189 @@ import javafx.util.Duration;
  * accurate.
  * </p>
  *
- * @param <T>
+ * @param <JsonNode>
  *            the model content that the {@link Cell#getNode() cell's node}
  *            renders
  * @param <C>
  *            the {@link Cell} that can render the model with a
  *            {@link javafx.scene.Node}.
  */
-public class VirtualFlow<T, C extends Cell<T, ?>>
-        extends RegionCell<VirtualFlow<T, Cell<T, ?>>> {
+public class VirtualFlow<C extends LayoutCell<?>>
+        extends RegionCell<VirtualFlow<LayoutCell<?>>, C> {
+    private static class CellHit<C extends Cell<?, ?>> extends Hit<C> {
+        private final C       cell;
+        private final int     cellIdx;
+        private final Point2D cellOffset;
 
-    protected final FocusTraversal            focus;
-    protected final ObservableList<T>         items;
-    protected final MouseHandler              mouseHandler;
-    protected final ScrollHandler             scrollHandler = new ScrollHandler(this);
-    private final CellListManager<T, C>       cellListManager;
-    private final CellPositioner<T, C>        cellPositioner;
-    private final Var<Double>                 lengthOffsetEstimate;
-    private final Navigator<T, C>             navigator;
-    private final MultipleCellSelection<T, C> selectionModel;
-    private final SizeTracker                 sizeTracker;
+        CellHit(int cellIdx, C cell, Point2D cellOffset) {
+            super();
+            this.cellIdx = cellIdx;
+            this.cell = cell;
+            this.cellOffset = cellOffset;
+        }
+
+        @Override
+        public C getCell() {
+            return cell;
+        }
+
+        @Override
+        public int getCellIndex() {
+            return cellIdx;
+        }
+
+        @Override
+        public Point2D getCellOffset() {
+            return cellOffset;
+        }
+
+        @Override
+        public Point2D getOffsetAfterCells() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Point2D getOffsetBeforeCells() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isAfterCells() {
+            return false;
+        }
+
+        @Override
+        public boolean isBeforeCells() {
+            return false;
+        }
+
+        @Override
+        public boolean isCellHit() {
+            return true;
+        }
+    }
+
+    private static class HitAfterCells<C extends Cell<?, ?>> extends Hit<C> {
+        private final Point2D offset;
+
+        HitAfterCells(Point2D offset) {
+            this.offset = offset;
+        }
+
+        @Override
+        public C getCell() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getCellIndex() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Point2D getCellOffset() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Point2D getOffsetAfterCells() {
+            return offset;
+        }
+
+        @Override
+        public Point2D getOffsetBeforeCells() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isAfterCells() {
+            return true;
+        }
+
+        @Override
+        public boolean isBeforeCells() {
+            return false;
+        }
+
+        @Override
+        public boolean isCellHit() {
+            return false;
+        }
+    }
+
+    private static class HitBeforeCells<C extends Cell<?, ?>> extends Hit<C> {
+        private final Point2D offset;
+
+        HitBeforeCells(Point2D offset) {
+            this.offset = offset;
+        }
+
+        @Override
+        public C getCell() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public int getCellIndex() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Point2D getCellOffset() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Point2D getOffsetAfterCells() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Point2D getOffsetBeforeCells() {
+            return offset;
+        }
+
+        @Override
+        public boolean isAfterCells() {
+            return false;
+        }
+
+        @Override
+        public boolean isBeforeCells() {
+            return true;
+        }
+
+        @Override
+        public boolean isCellHit() {
+            return false;
+        }
+    }
+
+    static <C extends Cell<?, ?>> Hit<C> cellHit(int cellIndex, C cell,
+                                                 double x, double y) {
+        return new CellHit<>(cellIndex, cell, new Point2D(x, y));
+    }
+
+    static <C extends Cell<?, ?>> Hit<C> hitAfterCells(double x, double y) {
+        return new HitAfterCells<>(new Point2D(x, y));
+    }
+
+    static <C extends Cell<?, ?>> Hit<C> hitBeforeCells(double x, double y) {
+        return new HitBeforeCells<>(new Point2D(x, y));
+    }
+
+    protected final FocusTraversal<C>                focus;
+    protected final ObservableList<JsonNode>         items;
+    protected final MouseHandler                     mouseHandler;
+    protected final ScrollHandler                    scrollHandler = new ScrollHandler(this);
+    private final CellListManager<C>                 cellListManager;
+    private final CellPositioner<C>                  cellPositioner;
+    private final Var<Double>                        lengthOffsetEstimate;
+    private final Navigator<C>                       navigator;
+    private final MultipleCellSelection<JsonNode, C> selectionModel;
+    private final SizeTracker                        sizeTracker;
 
     {
-        selectionModel = new MultipleCellSelection<T, C>() {
-
-            @Override
-            public int getItemCount() {
-                return items.size();
-            }
-
-            @Override
-            public T getModelItem(int index) {
-                return items.get(index);
-            }
-
-            @Override
-            public C getCell(int index) {
-                return VirtualFlow.this.getCell(index);
-            }
-        };
-        mouseHandler = new MouseHandler(new Duration(300)) {
-
-            @Override
-            public void doubleClick(MouseEvent mouseEvent) {
-                VirtualFlowHit<C> hit = hit(mouseEvent.getX(),
-                                            mouseEvent.getY());
-                if (hit.isCellHit()) {
-                    selectionModel.select(hit.getCellIndex());
-                    VirtualFlow.this.fireEvent(new SelectionEvent(hit.getCell(),
-                                                                  DOUBLE_SELECT));
-                }
-            }
-
-            @Override
-            public Node getNode() {
-                return VirtualFlow.this;
-            }
-
-            @Override
-            public void singleClick(MouseEvent mouseEvent) {
-                VirtualFlowHit<C> hit = hit(mouseEvent.getX(),
-                                            mouseEvent.getY());
-                if (hit.isCellHit()) {
-                    selectionModel.select(hit.getCellIndex());
-                    VirtualFlow.this.fireEvent(new SelectionEvent(hit.getCell(),
-                                                                  SINGLE_SELECT));
-                }
-            }
-
-            @Override
-            public void tripleClick(MouseEvent mouseEvent) {
-                VirtualFlowHit<C> hit = hit(mouseEvent.getX(),
-                                            mouseEvent.getY());
-                if (hit.isCellHit()) {
-                    selectionModel.select(hit.getCellIndex());
-                    VirtualFlow.this.fireEvent(new SelectionEvent(hit.getCell(),
-                                                                  TRIPLE_SELECT));
-                }
-            }
-        };
 
     }
 
@@ -134,18 +234,30 @@ public class VirtualFlow<T, C extends Cell<T, ?>>
              (n, f) -> null, null);
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     public VirtualFlow(String styleSheet, double cellBreadth, double cellLength,
-                       ObservableList<T> items,
-                       BiFunction<? super T, FocusTraversal, ? extends C> cellFactory,
-                       FocusTraversal parentTraversal) {
+                       ObservableList<JsonNode> observableList,
+                       BiFunction<JsonNode, FocusTraversal<C>, C> factory,
+                       FocusTraversal<?> parentTraversal) {
         super(styleSheet);
         this.getStyleClass()
             .add("virtual-flow");
-        this.items = items;
-        focus = constructFocus(parentTraversal);
-        this.cellListManager = new CellListManager<T, C>(items,
-                                                         item -> cellFactory.apply(item,
-                                                                                   focus));
+        this.items = observableList;
+        selectionModel = buildSelectionModel(i -> observableList.get(i),
+                                             () -> observableList.size(),
+                                             i -> getCell(i));
+        focus = new FocusTraversal((FocusTraversal<?>) parentTraversal,
+                                   selectionModel, Bias.VERTICAL) {
+
+            @Override
+            protected Node getNode() {
+                return VirtualFlow.this;
+            }
+
+        };
+        this.cellListManager = new CellListManager<C>(observableList,
+                                                      item -> factory.apply(item,
+                                                                            focus));
         MemoizationList<C> cells = cellListManager.getLazyCellList();
         this.sizeTracker = new SizeTracker(cellBreadth, cellLength,
                                            layoutBoundsProperty(), cells);
@@ -161,6 +273,7 @@ public class VirtualFlow<T, C extends Cell<T, ?>>
 
         lengthOffsetEstimate = sizeTracker.lengthOffsetEstimateProperty()
                                           .asVar(this::setLengthOffset);
+        mouseHandler = bind();
     }
 
     public Bounds cellToViewport(C cell, Bounds bounds) {
@@ -221,15 +334,15 @@ public class VirtualFlow<T, C extends Cell<T, ?>>
         return getClassCssMetaData();
     }
 
-    public FocusTraversal getFocusTraversal() {
+    public FocusTraversal<?> getFocusTraversal() {
         return focus;
     }
 
-    public ObservableList<T> getItems() {
+    public ObservableList<JsonNode> getItems() {
         return items;
     }
 
-    public MultipleCellSelection<T, C> getSelectionModel() {
+    public MultipleCellSelection<JsonNode, C> getSelectionModel() {
         return selectionModel;
     }
 
@@ -250,11 +363,11 @@ public class VirtualFlow<T, C extends Cell<T, ?>>
      *         from the top right corner of the content of a horizontal flow or
      *         bottom left corner of the content of a vertical flow.
      */
-    public VirtualFlowHit<C> hit(double x, double y) {
+    public Hit<Cell<?, ?>> hit(double x, double y) {
         double lOff = y;
 
         if (items.isEmpty()) {
-            return VirtualFlowHit.hitAfterCells(0, lOff);
+            return hitAfterCells(0, lOff);
         }
 
         layout();
@@ -273,11 +386,10 @@ public class VirtualFlow<T, C extends Cell<T, ?>>
         if (lOff < node2.getLayoutY() + node2.getLayoutBounds()
                                              .getMinY()) {
             Node node = firstCell.getNode();
-            return VirtualFlowHit.hitBeforeCells(0,
-                                                 lOff
-                                                    - (node.getLayoutY()
-                                                       + node.getLayoutBounds()
-                                                             .getMinY()));
+            return hitBeforeCells(0,
+                                  lOff - (node.getLayoutY()
+                                          + node.getLayoutBounds()
+                                                .getMinY()));
         } else {
             Node node = lastCell.getNode();
             if (lOff >= node.getLayoutY() + node.getLayoutBounds()
@@ -285,13 +397,12 @@ public class VirtualFlow<T, C extends Cell<T, ?>>
                         + node.getLayoutBounds()
                               .getHeight()) {
                 Node node1 = lastCell.getNode();
-                return VirtualFlowHit.hitAfterCells(0,
-                                                    lOff
-                                                       - (node1.getLayoutY()
-                                                          + node1.getLayoutBounds()
-                                                                 .getMinY()
-                                                          + node1.getLayoutBounds()
-                                                                 .getHeight()));
+                return hitAfterCells(0,
+                                     lOff - (node1.getLayoutY()
+                                             + node1.getLayoutBounds()
+                                                    .getMinY()
+                                             + node1.getLayoutBounds()
+                                                    .getHeight()));
             } else {
                 for (int i = firstVisible; i <= lastVisible; ++i) {
                     C cell = cellPositioner.getVisibleCell(i);
@@ -301,10 +412,10 @@ public class VirtualFlow<T, C extends Cell<T, ?>>
                                + node1.getLayoutBounds()
                                       .getHeight()) {
                         Node node3 = cell.getNode();
-                        return VirtualFlowHit.cellHit(i, cell, 0,
-                                                      lOff - (node3.getLayoutY()
-                                                              + node3.getLayoutBounds()
-                                                                     .getMinY()));
+                        return cellHit(i, cell, 0,
+                                       lOff - (node3.getLayoutY()
+                                               + node3.getLayoutBounds()
+                                                      .getMinY()));
                     }
                 }
                 throw new AssertionError("unreachable code");
@@ -502,47 +613,6 @@ public class VirtualFlow<T, C extends Cell<T, ?>>
 
     private double computePrefLength(double breadth) {
         return sizeTracker.getCellLength();
-    }
-
-    private FocusTraversal constructFocus(FocusTraversal parentTraversal) {
-        return new FocusTraversal(parentTraversal, Bias.VERTICAL) {
-
-            @Override
-            public void activate() {
-                int focusedIndex = selectionModel.getFocusedIndex();
-                selectionModel.select(focusedIndex);
-                if (focusedIndex >= 0) {
-                    edit();
-                }
-            }
-
-            @Override
-            public void selectNext() {
-                if (selectionModel.getFocusedIndex() == -1) {
-                    selectionModel.focus(0);
-                } else if (selectionModel.getFocusedIndex() != selectionModel.getItemCount()
-                                                               - 1) {
-                    selectionModel.focus(selectionModel.getFocusedIndex() + 1);
-                }
-            }
-
-            @Override
-            public void selectPrevious() {
-                if (selectionModel.getFocusedIndex() == -1) {
-                    selectionModel.focus(0);
-                } else if (selectionModel.getFocusedIndex() > 0) {
-                    selectionModel.focus(selectionModel.getFocusedIndex() - 1);
-                }
-            }
-
-            @Override
-            protected Node getNode() {
-                return VirtualFlow.this;
-            }
-
-            private void edit() {
-            }
-        };
     }
 
     private void jumpToAbsolutePosition(double pixels) {

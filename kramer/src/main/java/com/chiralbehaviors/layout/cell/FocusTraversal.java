@@ -34,21 +34,25 @@ import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.unless;
 
 import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
 
+import com.chiralbehaviors.layout.flowless.Cell;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import javafx.scene.Node;
 import javafx.scene.input.InputEvent;
 
 /**
  * @author halhildebrand
+ * @param <C>
  *
  */
-abstract public class FocusTraversal {
+abstract public class FocusTraversal<C extends Cell<?, ?>> {
 
     public static enum Bias {
         HORIZONTAL,
         VERTICAL;
     }
 
-    private final static InputMapTemplate<FocusTraversal, InputEvent> TRAVERSAL_INPUT_MAP;
+    private final static InputMapTemplate<FocusTraversal<?>, InputEvent> TRAVERSAL_INPUT_MAP;
 
     static {
         TRAVERSAL_INPUT_MAP = unless(c -> c.isDisabled(),
@@ -88,17 +92,25 @@ abstract public class FocusTraversal {
                                                        evt) -> traversal.activate())));
     }
 
-    private final Bias           bias;
-    private final FocusTraversal parent;
+    private final Bias                         bias;
+    private final FocusTraversal<?>            parent;
+    private MultipleCellSelection<JsonNode, C> selectionModel;
 
-    public FocusTraversal(FocusTraversal parent, Bias bias) {
+    public FocusTraversal(FocusTraversal<?> parent,
+                          MultipleCellSelection<JsonNode, C> selectionModel,
+                          Bias bias) {
         this.bias = bias;
         this.parent = parent;
+        this.selectionModel = selectionModel;
         bind();
     }
 
     public void activate() {
-
+        int focusedIndex = selectionModel.getFocusedIndex();
+        selectionModel.select(focusedIndex);
+        if (focusedIndex >= 0) {
+            edit();
+        }
     }
 
     public void bind() {
@@ -106,11 +118,25 @@ abstract public class FocusTraversal {
                                          c -> getNode());
     }
 
+    public void edit() {
+        // default nothing
+    }
+
     public void selectNext() {
+        if (selectionModel.getFocusedIndex() == -1) {
+            selectionModel.focus(0);
+        } else if (selectionModel.getFocusedIndex() != selectionModel.getItemCount()
+                                                       - 1) {
+            selectionModel.focus(selectionModel.getFocusedIndex() + 1);
+        }
     }
 
     public void selectPrevious() {
-
+        if (selectionModel.getFocusedIndex() == -1) {
+            selectionModel.focus(0);
+        } else if (selectionModel.getFocusedIndex() > 0) {
+            selectionModel.focus(selectionModel.getFocusedIndex() - 1);
+        }
     }
 
     public final void traverseNext() {

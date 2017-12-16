@@ -47,15 +47,15 @@ public class ScrollHandler {
                                                      evt) -> handler.scrollDown())));
     }
 
-    private VirtualFlow<?, ?> flow;
+    private VirtualFlow<?> flow;
 
-    public ScrollHandler(VirtualFlow<?, ?> flow) {
+    public ScrollHandler(VirtualFlow<?> flow) {
         assert flow != null;
         this.flow = flow;
         bind();
     }
 
-    public void scroll(ScrollEvent se) { 
+    public void scroll(ScrollEvent se) {
         flow.scrollYBy(-se.getDeltaY());
     }
 

@@ -23,6 +23,7 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.StyleProvider.StyledInsets;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.outline.OutlineColumn;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.table.ColumnHeader;
@@ -138,13 +139,13 @@ abstract public class SchemaNodeLayout {
         };
     }
 
-    protected double               columnHeaderIndentation = 0.0;
-    protected double               columnWidth;
-    protected double               height                  = -1.0;
-    protected double               justifiedWidth          = -1.0;
-    protected double               labelWidth;
+    protected double                     columnHeaderIndentation = 0.0;
+    protected double                     columnWidth;
+    protected double                     height                  = -1.0;
+    protected double                     justifiedWidth          = -1.0;
+    protected double                     labelWidth;
     protected final DefaultStyleProvider layout;
-    protected final SchemaNode     node;
+    protected final SchemaNode           node;
 
     public SchemaNodeLayout(DefaultStyleProvider layout, SchemaNode node) {
         this.layout = layout;
@@ -156,7 +157,7 @@ abstract public class SchemaNodeLayout {
     }
 
     public LayoutCell<? extends Region> autoLayout(double width,
-                                                   FocusTraversal parentTraversal) {
+                                                   FocusTraversal<?> parentTraversal) {
         double justified = DefaultStyleProvider.snap(width);
         layout(justified);
         compress(justified);
@@ -165,9 +166,9 @@ abstract public class SchemaNodeLayout {
     }
 
     abstract public LayoutCell<? extends Region> buildColumn(double rendered,
-                                                             FocusTraversal parentTraversal);
+                                                             FocusTraversal<?> focus);
 
-    abstract public LayoutCell<? extends Region> buildControl(FocusTraversal parentTraversal);
+    abstract public LayoutCell<? extends Region> buildControl(FocusTraversal<?> parentTraversal);
 
     abstract public void calculateCellHeight();
 
@@ -251,7 +252,7 @@ abstract public class SchemaNodeLayout {
                                                   int cardinality,
                                                   double labelWidth,
                                                   double justified,
-                                                  FocusTraversal parentTraversal);
+                                                  FocusTraversal<OutlineColumn> parentTraversal);
 
     abstract public double rowHeight(int averageCardinality,
                                      double justifiedWidth);

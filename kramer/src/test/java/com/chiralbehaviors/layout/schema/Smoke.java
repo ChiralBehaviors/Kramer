@@ -47,7 +47,7 @@ public class Smoke extends Application {
     public void start(Stage primaryStage) throws Exception {
         LayoutModel model = new LayoutModel() {
             @Override
-            public <T extends LayoutCell<?>> void apply(VirtualFlow<JsonNode, T> list,
+            public <T extends LayoutCell<?>> void apply(VirtualFlow<T> list,
                                                         Relation relation) {
                 Nodes.addInputMap(list,
                                   InputMap.consume(DOUBLE_SELECT,
