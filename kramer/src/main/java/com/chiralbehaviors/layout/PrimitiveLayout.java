@@ -16,7 +16,7 @@
 
 package com.chiralbehaviors.layout;
 
-import static com.chiralbehaviors.layout.LayoutProvider.snap;
+import static com.chiralbehaviors.layout.DefaultStyleProvider.snap;
 import static com.chiralbehaviors.layout.schema.SchemaNode.asList;
 
 import java.util.List;
@@ -49,7 +49,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @SuppressWarnings("unused")
     private boolean        variableLength;
 
-    public PrimitiveLayout(LayoutProvider layout, Primitive p) {
+    public PrimitiveLayout(DefaultStyleProvider layout, Primitive p) {
         super(layout, p);
         this.listInsets = layout.listInsets(this);
     }
@@ -213,7 +213,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         }
 
         columnWidth = Math.max(labelWidth,
-                               LayoutProvider.snap(Math.max(getNode().getDefaultWidth(),
+                               DefaultStyleProvider.snap(Math.max(getNode().getDefaultWidth(),
                                                             averageWidth)));
         if (maxWidth > averageWidth) {
             variableLength = true;
@@ -278,6 +278,6 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     protected double width(JsonNode row) {
-        return layout.totalTextWidth(layout.textWidth(LayoutProvider.toString(row)));
+        return layout.totalTextWidth(layout.textWidth(DefaultStyleProvider.toString(row)));
     }
 }

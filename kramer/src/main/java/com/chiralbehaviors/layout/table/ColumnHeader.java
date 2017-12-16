@@ -16,7 +16,7 @@
 
 package com.chiralbehaviors.layout.table;
 
-import static com.chiralbehaviors.layout.LayoutProvider.snap;
+import static com.chiralbehaviors.layout.DefaultStyleProvider.snap;
 
 import java.util.List;
 import java.util.function.Function;

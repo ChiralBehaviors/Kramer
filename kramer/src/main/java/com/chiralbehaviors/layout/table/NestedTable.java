@@ -16,7 +16,7 @@
 
 package com.chiralbehaviors.layout.table;
 
-import static com.chiralbehaviors.layout.LayoutProvider.snap;
+import static com.chiralbehaviors.layout.DefaultStyleProvider.snap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,6 +81,11 @@ public class NestedTable extends VerticalCell<NestedTable> {
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
         this.rows = null;
+    }
+
+    @Override
+    public void setFocus() {
+        rows.setFocus();
     }
 
     @Override

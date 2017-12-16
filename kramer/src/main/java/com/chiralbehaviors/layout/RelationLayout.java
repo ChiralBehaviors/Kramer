@@ -16,8 +16,8 @@
 
 package com.chiralbehaviors.layout;
 
-import static com.chiralbehaviors.layout.LayoutProvider.relax;
-import static com.chiralbehaviors.layout.LayoutProvider.snap;
+import static com.chiralbehaviors.layout.DefaultStyleProvider.relax;
+import static com.chiralbehaviors.layout.DefaultStyleProvider.snap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -78,7 +78,7 @@ public class RelationLayout extends SchemaNodeLayout {
     protected final StyledInsets           tableInsets;
     protected boolean                      useTable         = false;
 
-    public RelationLayout(LayoutProvider layout, Relation r) {
+    public RelationLayout(DefaultStyleProvider layout, Relation r) {
         super(layout, r);
         assert r != null && layout != null;
         Pair<StyledInsets, StyledInsets> insets = layout.insets(this);

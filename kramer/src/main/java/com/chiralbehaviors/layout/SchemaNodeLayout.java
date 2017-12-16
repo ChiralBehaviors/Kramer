@@ -16,7 +16,7 @@
 
 package com.chiralbehaviors.layout;
 
-import static com.chiralbehaviors.layout.LayoutProvider.snap;
+import static com.chiralbehaviors.layout.DefaultStyleProvider.snap;
 
 import java.util.function.Function;
 
@@ -143,21 +143,21 @@ abstract public class SchemaNodeLayout {
     protected double               height                  = -1.0;
     protected double               justifiedWidth          = -1.0;
     protected double               labelWidth;
-    protected final LayoutProvider layout;
+    protected final DefaultStyleProvider layout;
     protected final SchemaNode     node;
 
-    public SchemaNodeLayout(LayoutProvider layout, SchemaNode node) {
+    public SchemaNodeLayout(DefaultStyleProvider layout, SchemaNode node) {
         this.layout = layout;
         this.node = node;
     }
 
     public void adjustHeight(double delta) {
-        this.height = LayoutProvider.snap(height + delta);
+        this.height = DefaultStyleProvider.snap(height + delta);
     }
 
     public LayoutCell<? extends Region> autoLayout(double width,
                                                    FocusTraversal parentTraversal) {
-        double justified = LayoutProvider.snap(width);
+        double justified = DefaultStyleProvider.snap(width);
         layout(justified);
         compress(justified);
         calculateRootHeight();

@@ -31,6 +31,7 @@ import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.table.NestedCell;
+import com.chiralbehaviors.layout.table.NestedRow;
 import com.chiralbehaviors.layout.table.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -51,7 +52,7 @@ import javafx.scene.text.TextBoundsType;
 import javafx.util.Pair;
 
 @SuppressWarnings("restriction")
-public class LayoutProvider implements StyleProvider {
+public class DefaultStyleProvider implements StyleProvider {
 
     private static final FontLoader FONT_LOADER = Toolkit.getToolkit()
                                                          .getFontLoader();
@@ -117,7 +118,7 @@ public class LayoutProvider implements StyleProvider {
 
     private Insets                                cellInsets     = ZERO_INSETS;
     private Insets                                insets         = ZERO_INSETS;
-    private final StyleProvider.LayoutModel                     model;
+    private final StyleProvider.LayoutModel       model;
     private final Map<Primitive, PrimitiveLayout> primitives     = new HashMap<>();
     private final Map<Relation, RelationLayout>   relations      = new HashMap<>();
     private List<String>                          styleSheets;
@@ -125,20 +126,23 @@ public class LayoutProvider implements StyleProvider {
     private Insets                                textInsets     = ZERO_INSETS;
     private double                                textLineHeight = 0;
 
-    public LayoutProvider(StyleProvider.LayoutModel model) {
+    public DefaultStyleProvider(StyleProvider.LayoutModel model) {
         this(Collections.emptyList(), model, true);
     }
 
-    public LayoutProvider(StyleProvider.LayoutModel model, boolean initialize) {
+    public DefaultStyleProvider(StyleProvider.LayoutModel model,
+                                boolean initialize) {
         this(Collections.emptyList(), model, initialize);
     }
 
-    public LayoutProvider(List<String> styleSheets, StyleProvider.LayoutModel model) {
+    public DefaultStyleProvider(List<String> styleSheets,
+                                StyleProvider.LayoutModel model) {
         this(styleSheets, model, true);
     }
 
-    public LayoutProvider(List<String> styleSheets, StyleProvider.LayoutModel model,
-                          boolean initialize) {
+    public DefaultStyleProvider(List<String> styleSheets,
+                                StyleProvider.LayoutModel model,
+                                boolean initialize) {
         this.model = model;
         if (initialize) {
             initialize(styleSheets);
@@ -197,17 +201,18 @@ public class LayoutProvider implements StyleProvider {
         VBox root = new VBox();
 
         NestedTable nestedTable = new NestedTable(layout.getField());
+        NestedRow nestedRow = new NestedRow(layout.getField());
         NestedCell nestedCell = new NestedCell(layout.getField());
 
         Outline outline = new Outline(layout.getField());
         OutlineCell outlineCell = new OutlineCell(layout.getField());
-        OutlineColumn outlineColumn = new OutlineColumn(layout.getField());
+        OutlineColumn column = new OutlineColumn(layout.getField());
         OutlineElement element = new OutlineElement(layout.getField());
         Span span = new Span(layout.getField());
 
         root.getChildren()
-            .addAll(nestedTable, nestedCell, outline, outlineCell,
-                    outlineColumn, element, span);
+            .addAll(nestedTable, nestedRow, nestedCell, outline, outlineCell,
+                    column, element, span);
         Scene scene = new Scene(root, 800, 600);
         if (styleSheets != null) {
             scene.getStylesheets()
@@ -215,6 +220,9 @@ public class LayoutProvider implements StyleProvider {
         }
         nestedTable.applyCss();
         nestedTable.layout();
+
+        nestedRow.applyCss();
+        nestedRow.layout();
 
         nestedCell.applyCss();
         nestedCell.layout();
@@ -225,8 +233,8 @@ public class LayoutProvider implements StyleProvider {
         outlineCell.applyCss();
         outlineCell.layout();
 
-        outlineColumn.applyCss();
-        outlineColumn.layout();
+        column.applyCss();
+        column.layout();
 
         element.applyCss();
         element.layout();
@@ -234,10 +242,13 @@ public class LayoutProvider implements StyleProvider {
         span.applyCss();
         span.layout();
 
-        return new Pair<>(new StyledInsets(nestedTable.getInsets(),
-                                           nestedCell.getInsets()),
-                          new StyledInsets(outline.getInsets(),
-                                           outlineCell.getInsets()));
+        return new Pair<StyledInsets, StyledInsets>(new StyledInsets(nestedTable.getInsets(),
+                                                                     nestedCell.getInsets()),
+                                                    new StyledInsets(outline.getInsets(),
+                                                                     add(add(add(outlineCell.getInsets(),
+                                                                                 span.getInsets()),
+                                                                             column.getInsets()),
+                                                                         element.getInsets())));
     }
 
     public PrimitiveLayout layout(Primitive primitive) {
@@ -325,6 +336,7 @@ public class LayoutProvider implements StyleProvider {
     }
 
     double totalTextWidth(double justifiedWidth) {
-        return LayoutProvider.snap(justifiedWidth + getTextHorizontalInset());
+        return DefaultStyleProvider.snap(justifiedWidth
+                                         + getTextHorizontalInset());
     }
 }

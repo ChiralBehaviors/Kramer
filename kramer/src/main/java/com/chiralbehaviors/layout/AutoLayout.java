@@ -63,10 +63,10 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         stylesheet = url == null ? null : url.toExternalForm();
         getStyleClass().add("auto-layout");
         this.model = model;
-        style = new LayoutProvider(this.model);
+        style = new DefaultStyleProvider(this.model);
         this.root.set(root);
         data.addListener((o, p, c) -> setContent());
-        getStylesheets().addListener((ListChangeListener<String>) c -> style = new LayoutProvider(getStylesheets(),
+        getStylesheets().addListener((ListChangeListener<String>) c -> style = new DefaultStyleProvider(getStylesheets(),
                                                                                                   AutoLayout.this.model));
     }
 

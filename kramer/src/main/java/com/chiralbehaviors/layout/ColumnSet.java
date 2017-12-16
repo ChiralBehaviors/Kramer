@@ -16,7 +16,7 @@
 
 package com.chiralbehaviors.layout;
 
-import static com.chiralbehaviors.layout.LayoutProvider.relax;
+import static com.chiralbehaviors.layout.DefaultStyleProvider.relax;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
@@ -44,7 +44,7 @@ public class ColumnSet {
     }
 
     public void adjustHeight(double delta) {
-        cellHeight = LayoutProvider.snap(cellHeight + delta);
+        cellHeight = DefaultStyleProvider.snap(cellHeight + delta);
         columns.forEach(c -> c.adjustHeight(delta));
     }
 

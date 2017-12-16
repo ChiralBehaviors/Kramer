@@ -16,7 +16,7 @@
 
 package com.chiralbehaviors.layout;
 
-import static com.chiralbehaviors.layout.LayoutProvider.snap;
+import static com.chiralbehaviors.layout.DefaultStyleProvider.snap;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
