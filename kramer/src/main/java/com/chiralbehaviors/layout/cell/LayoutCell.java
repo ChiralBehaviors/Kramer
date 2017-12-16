@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import javafx.beans.InvalidationListener;
 import javafx.css.PseudoClass;
 import javafx.css.StyleableProperty;
-import javafx.scene.Node;
 import javafx.scene.layout.Region;
 
 /**
@@ -66,21 +65,13 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
          */
         node.focusedProperty()
             .addListener((InvalidationListener) property -> {
+                System.out.println(String.format("Setting focus: %s on %s", node.isFocused(), node.getClass().getSimpleName()));
                 node.pseudoClassStateChanged(PSEUDO_CLASS_FOCUSED,
                                              node.isFocused()); // TODO is this necessary??
 
                 // The user has shifted focus, so we should cancel the editing on this cell
                 if (!node.isFocused() && isEditing()) {
                     cancelEdit();
-                }
-            });
-
-        node.focusedProperty()
-            .addListener((observable, oldVal, newVal) -> {
-                if (newVal) {
-                    setExternalFocus(false);
-                } else {
-                    setExternalFocus(true);
                 }
             });
 
@@ -104,7 +95,12 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         node.pseudoClassStateChanged(EXTERNAL_PSEUDOCLASS_STATE, externalFocus);
     }
 
-    default void updateSelection(Node node, boolean selected) {
-        node.pseudoClassStateChanged(PSEUDO_CLASS_SELECTED, selected);
+    default void updateSelection(boolean selected) {
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_SELECTED, selected);
+    }
+
+    @Override
+    default void updateItem(JsonNode item) { 
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,  item != null);
     }
 }

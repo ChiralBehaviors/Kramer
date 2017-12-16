@@ -57,12 +57,11 @@ public class Outline extends VirtualFlow<JsonNode, OutlineCell> {
                    Collection<ColumnSet> columnSets, int averageCardinality,
                    RelationLayout layout, FocusTraversal parentTraversal) {
         super(STYLE_SHEET, width, cellHeight,
-              FXCollections.observableArrayList(), item -> {
+              FXCollections.observableArrayList(), (item, pt) -> {
                   OutlineCell outlineCell = new OutlineCell(columnSets,
                                                             averageCardinality,
                                                             layout.baseOutlineCellHeight(cellHeight),
-                                                            layout,
-                                                            (FocusTraversal) null);
+                                                            layout, pt);
                   outlineCell.updateItem(item);
                   return outlineCell;
               }, parentTraversal);
@@ -71,16 +70,14 @@ public class Outline extends VirtualFlow<JsonNode, OutlineCell> {
 
     @Override
     public void dispose() {
-        focus.unbind();
+        super.dispose();
         mouseHandler.unbind();
-        if (scrollHandler != null) {
-            scrollHandler.unbind();
-        }
     }
 
     @Override
     public void updateItem(JsonNode item) {
         List<JsonNode> list = SchemaNode.asList(item);
         items.setAll(list);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,  item != null);
     }
 }

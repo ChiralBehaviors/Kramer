@@ -60,6 +60,7 @@ public class LabelCell extends HorizontalCell<Region> {
     @Override
     public void updateItem(JsonNode item) {
         label.setText(SchemaNode.asText(item));
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,  item != null);
     }
 
 }

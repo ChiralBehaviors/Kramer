@@ -18,12 +18,10 @@ package com.chiralbehaviors.layout.outline;
 
 import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
-import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.scene.Node;
 import javafx.scene.control.Control;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -39,15 +37,13 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     private static final String                    SCHEMA_CLASS_TEMPLATE = "%s-outline-element";
     private static final String                    STYLE_SHEET           = "outline-element.css";
 
-    private final Cell<JsonNode, ? extends Region> cell;
-    private final FocusTraversal                   focus;
+    private final Cell<JsonNode, ? extends Region> cell; 
 
     public OutlineElement(String field) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
-        this.cell = null;
-        focus = null;
+        this.cell = null; 
     }
 
     public OutlineElement(SchemaNodeLayout layout, String field,
@@ -55,15 +51,8 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
                           double height, FocusTraversal parentTraversal) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
-        focus = new FocusTraversal(parentTraversal, Bias.HORIZONTAL) {
-
-            @Override
-            protected Node getNode() {
-                return OutlineElement.this;
-            }
-        };
-        this.cell = layout.buildControl(focus);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field)); 
+        this.cell = layout.buildControl(parentTraversal);
 
         setMinSize(justified, height);
         setPrefSize(justified, height);
@@ -91,12 +80,8 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     }
 
     @Override
-    public void dispose() {
-        focus.unbind();
-    }
-
-    @Override
     public void updateItem(JsonNode item) {
         cell.updateItem(item);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,  item != null);
     }
 }

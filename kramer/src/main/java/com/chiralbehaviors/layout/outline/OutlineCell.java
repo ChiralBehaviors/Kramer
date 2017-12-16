@@ -25,7 +25,6 @@ import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
 import com.chiralbehaviors.layout.cell.VerticalCell;
-import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
@@ -38,12 +37,13 @@ import javafx.scene.layout.VBox;
  */
 public class OutlineCell extends VerticalCell<OutlineCell> {
 
-    private static final String        DEFAULT_STYLE         = "outline-cell";
-    private static final String        SCHEMA_CLASS_TEMPLATE = "%s-outline-cell";
-    private static final String        STYLE_SHEET           = "outline-cell.css";
+    private static final String  DEFAULT_STYLE         = "outline-cell";
+    private static final String  SCHEMA_CLASS_TEMPLATE = "%s-outline-cell";
+    private static final String  STYLE_SHEET           = "outline-cell.css";
 
-    private final FocusTraversal       focus;
-    private List<Cell<JsonNode, Span>> spans                 = new ArrayList<>();
+    private final FocusTraversal focus;
+    private int                  selected              = -1;
+    private List<Span>           spans                 = new ArrayList<>();
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
                        double cellHeight, RelationLayout layout,
@@ -53,11 +53,10 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
         setPrefSize(layout.getJustifiedColumnWidth(), cellHeight);
         setMaxSize(layout.getJustifiedColumnWidth(), cellHeight);
         columnSets.forEach(cs -> {
-            Cell<JsonNode, Span> span = new Span(layout.getField(),
-                                                 cs.getWidth(), cs.getColumns(),
-                                                 childCardinality,
-                                                 cs.getCellHeight(),
-                                                 layout.getLabelWidth(), focus);
+            Span span = new Span(layout.getField(), cs.getWidth(),
+                                 cs.getColumns(), childCardinality,
+                                 cs.getCellHeight(), layout.getLabelWidth(),
+                                 focus);
             spans.add(span);
             VBox.setVgrow(span.getNode(), Priority.ALWAYS);
             getChildren().add(span.getNode());
@@ -73,6 +72,30 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
         focus = new FocusTraversal(parent, Bias.VERTICAL) {
+
+            @Override
+            public void selectNext() {
+                selected = selected + 1;
+                if (selected == spans.size()) {
+                    selected = selected - 1;
+                    traverseNext();
+                } else {
+                    spans.get(selected)
+                         .setFocus();
+                }
+            }
+
+            @Override
+            public void selectPrevious() {
+                selected = selected - 1;
+                if (selected < 0) {
+                    selected = -1;
+                    traversePrevious();
+                } else {
+                    spans.get(selected)
+                         .setFocus();
+                }
+            }
 
             @Override
             protected Node getNode() {
@@ -97,5 +120,6 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
     @Override
     public void updateItem(JsonNode item) {
         spans.forEach(s -> s.updateItem(item));
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 }

@@ -35,11 +35,13 @@ import javafx.scene.layout.Region;
  *
  */
 public class NestedCell extends HorizontalCell<NestedCell> {
-    private static final String            DEFAULT_STYLE         = "nested-cell";
-    private static final String            SCHEMA_CLASS_TEMPLATE = "%s-nested-cell";
-    private static final String            STYLE_SHEET           = "nested-cell.css";
-    private final List<Consumer<JsonNode>> consumers             = new ArrayList<>();
-    private final FocusTraversal           focus;
+    private static final String                DEFAULT_STYLE         = "nested-cell";
+    private static final String                SCHEMA_CLASS_TEMPLATE = "%s-nested-cell";
+    private static final String                STYLE_SHEET           = "nested-cell.css";
+    private List<LayoutCell<? extends Region>> cells                 = new ArrayList<>();
+    private final List<Consumer<JsonNode>>     consumers             = new ArrayList<>();
+    private final FocusTraversal               focus;
+    private int                                selected              = -1;
 
     public NestedCell(RelationLayout layout, FocusTraversal parentTraversal) {
         this(layout.getField(), parentTraversal);
@@ -49,6 +51,7 @@ public class NestedCell extends HorizontalCell<NestedCell> {
         layout.forEach(child -> {
             LayoutCell<? extends Region> cell = child.buildColumn(layout.baseRowCellHeight(layout.getRowHeight()),
                                                                   focus);
+            cells.add(cell);
             consumers.add(item -> cell.updateItem(child.extractFrom(item)));
             getChildren().add(cell.getNode());
         });
@@ -63,6 +66,30 @@ public class NestedCell extends HorizontalCell<NestedCell> {
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
         focus = new FocusTraversal(parentTraversal, Bias.HORIZONTAL) {
+
+            @Override
+            public void selectNext() {
+                selected = selected + 1;
+                if (selected == cells.size()) {
+                    selected = selected - 1;
+                    traverseNext();
+                } else {
+                    cells.get(selected)
+                         .setFocus();
+                }
+            }
+
+            @Override
+            public void selectPrevious() {
+                selected = selected - 1;
+                if (selected < 0) {
+                    selected = -1;
+                    traversePrevious();
+                } else {
+                    cells.get(selected)
+                         .setFocus();
+                }
+            }
 
             @Override
             protected Node getNode() {
@@ -86,5 +113,6 @@ public class NestedCell extends HorizontalCell<NestedCell> {
     @Override
     public void updateItem(JsonNode item) {
         consumers.forEach(c -> c.accept(item));
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 }

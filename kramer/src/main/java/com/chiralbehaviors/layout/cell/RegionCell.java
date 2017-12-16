@@ -56,9 +56,4 @@ abstract public class RegionCell<T extends Region> extends Region
     public String getUserAgentStylesheet() {
         return stylesheet;
     }
-
-    @Override
-    public void setFocus(boolean focus) {
-        setFocused(focus);
-    }
 }

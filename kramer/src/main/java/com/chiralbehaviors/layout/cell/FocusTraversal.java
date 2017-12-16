@@ -91,7 +91,6 @@ abstract public class FocusTraversal {
     private final Bias           bias;
     private final FocusTraversal parent;
 
-
     public FocusTraversal(FocusTraversal parent, Bias bias) {
         this.bias = bias;
         this.parent = parent;
@@ -114,17 +113,39 @@ abstract public class FocusTraversal {
 
     }
 
-    public void traverseNext() {
+    public final void traverseNext() {
         if (parent == null) {
+            System.out.println(String.format("traverse next: %s, null parent",
+                                             this.getNode()
+                                                 .getClass()
+                                                 .getSimpleName()));
             return;
         }
+        System.out.println(String.format("traverse next: %s, parent: %s",
+                                         this.getNode()
+                                             .getClass()
+                                             .getSimpleName(),
+                                         parent.getNode()
+                                               .getClass()
+                                               .getSimpleName()));
         parent.selectNext();
     }
 
-    public void traversePrevious() {
+    public final void traversePrevious() {
         if (parent == null) {
+            System.out.println(String.format("traverse previous: %s, null parent",
+                                             this.getNode()
+                                                 .getClass()
+                                                 .getSimpleName()));
             return;
         }
+        System.out.println(String.format("traverse previous: %s, parent: %s",
+                                         this.getNode()
+                                             .getClass()
+                                             .getSimpleName(),
+                                         parent.getNode()
+                                               .getClass()
+                                               .getSimpleName()));
         parent.selectPrevious();
     }
 

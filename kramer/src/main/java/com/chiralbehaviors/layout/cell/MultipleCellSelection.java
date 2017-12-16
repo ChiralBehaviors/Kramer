@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.flowless;
+package com.chiralbehaviors.layout.cell;
 
 import static javafx.scene.control.SelectionMode.SINGLE;
 
@@ -23,6 +23,7 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 
+import com.chiralbehaviors.layout.flowless.Cell;
 import com.sun.javafx.collections.MappingChange;
 import com.sun.javafx.collections.NonIterableChange;
 import com.sun.javafx.scene.control.ReadOnlyUnbackedObservableList;
@@ -32,39 +33,14 @@ import javafx.collections.ListChangeListener.Change;
 import javafx.collections.ObservableList;
 import javafx.scene.control.MultipleSelectionModel;
 import javafx.scene.control.SelectionMode;
-import javafx.util.Callback;
 
 /**
  * @author halhildebrand
  *
  */
 @SuppressWarnings("restriction")
-abstract class MultipleSelectionModelBase<T> extends MultipleSelectionModel<T> {
-
-    static class ShiftParams {
-        private final int     clearIndex;
-        private final boolean selected;
-        private final int     setIndex;
-
-        ShiftParams(int clearIndex, int setIndex, boolean selected) {
-            this.clearIndex = clearIndex;
-            this.setIndex = setIndex;
-            this.selected = selected;
-        }
-
-        public final int getClearIndex() {
-            return clearIndex;
-        }
-
-        public final int getSetIndex() {
-            return setIndex;
-        }
-
-        public final boolean isSelected() {
-            return selected;
-        }
-    }
-
+abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
+        extends MultipleSelectionModel<T> {
     static <T> ListChangeListener.Change<T> buildClearAndSelectChange(ObservableList<T> list,
                                                                       List<T> removed,
                                                                       int retainedRow) {
@@ -155,149 +131,15 @@ abstract class MultipleSelectionModelBase<T> extends MultipleSelectionModel<T> {
         };
     }
 
-    static Change<Integer> createRangeChange(final ObservableList<Integer> list,
-                                             final List<Integer> addedItems,
-                                             boolean splitChanges) {
-        Change<Integer> change = new Change<Integer>(list) {
-            private final int   addedSize  = addedItems.size();
-            private final int[] EMPTY_PERM = new int[0];
-            private int         from;
-            private boolean     invalid    = true;
-            private int         pos        = 0;
-            private int         to         = pos;
-
-            {
-                from = pos;
-            }
-
-            @Override
-            public int getAddedSize() {
-                return to - from;
-            }
-
-            @Override
-            public int getFrom() {
-                checkState();
-                return from;
-            }
-
-            @Override
-            public List<Integer> getRemoved() {
-                checkState();
-                return Collections.<Integer> emptyList();
-            }
-
-            @Override
-            public int getTo() {
-                checkState();
-                return to;
-            }
-
-            @Override
-            public boolean next() {
-                if (pos >= addedSize) {
-                    return false;
-                }
-
-                // starting from pos, we keep going until the value is
-                // not the next value
-                int startValue = addedItems.get(pos++);
-                from = list.indexOf(startValue);
-                to = from + 1;
-                int endValue = startValue;
-                while (pos < addedSize) {
-                    int previousEndValue = endValue;
-                    endValue = addedItems.get(pos++);
-                    ++to;
-                    if (splitChanges && previousEndValue != (endValue - 1)) {
-                        break;
-                    }
-                }
-
-                if (invalid) {
-                    invalid = false;
-                    return true;
-                }
-
-                // we keep going until we've represented all changes!
-                return splitChanges && pos < addedSize;
-            }
-
-            @Override
-            public void reset() {
-                invalid = true;
-                pos = 0;
-                to = 0;
-                from = 0;
-            }
-
-            @Override
-            protected int[] getPermutation() {
-                checkState();
-                return EMPTY_PERM;
-            }
-
-            private void checkState() {
-                if (invalid) {
-                    throw new IllegalStateException("Invalid Change state: next() must be called before inspecting the Change.");
-                }
-            }
-
-        };
-        return change;
-    }
-
-    /***********************************************************************
-     * * Observable properties * *
-     **********************************************************************/
-
-    /*
-     * We only maintain the values of the selectedIndex and selectedIndices
-     * properties. The value of the selectedItem and selectedItems properties
-     * is determined on-demand. We fire the SELECTED_ITEM and SELECTED_ITEMS
-     * property change events whenever the related SELECTED_INDEX or
-     * SELECTED_INDICES properties change.
-     *
-     * This means that the cost of the ListViewSelectionModel is cheap in most
-     * cases, assuming that the end-consumer isn't calling getSelectedItems
-     * too aggressively. Of course, this is only an issue when the ListViewModel
-     * is being populated by some remote, expensive to query data source.
-     *
-     * In addition, we do not provide ObservableLists for the selected indices or the
-     * selected items properties, as this would allow the API consumer to add
-     * observers to these ObservableLists. This would make life tougher as we would
-     * then be forced to keep these ObservableLists in-sync at all times, which for
-     * the selectedItems ObservableList, would require potentially a lot of work and
-     * memory. Instead, we return a List, and allow for changes to these Lists
-     * to be observed through the SELECTED_INDICES and SELECTED_ITEMS
-     * properties.
-     */
-
     final BitSet                                    selectedIndices;
-
     final ReadOnlyUnbackedObservableList<Integer>   selectedIndicesSeq;
-
-    /***********************************************************************
-     * * Internal field * *
-     **********************************************************************/
-
     ListChangeListener.Change<T>                    selectedItemChange;
-
-    // Fix for RT-20945 (and numerous other issues!)
     private int                                     atomicityCount = 0;
-
+    private int                                     focusedIndex   = -1;
     private final ReadOnlyUnbackedObservableList<T> selectedItemsSeq;
 
-    /***********************************************************************
-     * * Constructors * *
-     **********************************************************************/
-
-    public MultipleSelectionModelBase() {
+    public MultipleCellSelection() {
         selectedIndexProperty().addListener(valueModel -> {
-            // we used to lazily retrieve the selected item, but now we just
-            // do it when the selection changes. This is hardly likely to be
-            // expensive, and we still lazily handle the multiple selection
-            // cases over in MultipleSelectionModel.
             setSelectedItem(getModelItem(getSelectedIndex()));
         });
 
@@ -418,6 +260,8 @@ abstract class MultipleSelectionModelBase<T> extends MultipleSelectionModel<T> {
     public void clearSelection() {
         List<Integer> removed = createListFromBitSet((BitSet) selectedIndices.clone());
 
+        removed.forEach(i -> getCell(i).updateSelection(false));
+
         quietClearSelection();
 
         if (!isAtomic()) {
@@ -430,10 +274,6 @@ abstract class MultipleSelectionModelBase<T> extends MultipleSelectionModel<T> {
         }
     }
 
-    /***********************************************************************
-     * * Public selection API * *
-     **********************************************************************/
-
     @Override
     public void clearSelection(int index) {
         if (index < 0) {
@@ -444,6 +284,8 @@ abstract class MultipleSelectionModelBase<T> extends MultipleSelectionModel<T> {
         // TODO might need to update focus and / or selected index/item
         boolean wasEmpty = selectedIndices.isEmpty();
         selectedIndices.clear(index);
+
+        getCell(index).updateSelection(false);
 
         if (!wasEmpty && selectedIndices.isEmpty()) {
             clearSelection();
@@ -459,6 +301,39 @@ abstract class MultipleSelectionModelBase<T> extends MultipleSelectionModel<T> {
         }
     }
 
+    public void focus(int index) {
+        C cell = getCell(index);
+        cell.setFocus();
+        focusedIndex = index;
+
+    }
+
+    abstract public C getCell(int index);
+
+    public int getFocusedIndex() {
+        return focusedIndex;
+    }
+
+    /**
+     * Returns the number of items in the data model that underpins the control.
+     * An example would be that a ListView selection model would likely return
+     * <code>listView.getItems().size()</code>. The valid range of selectable
+     * indices is between 0 and whatever is returned by this method.
+     */
+    public abstract int getItemCount();
+
+    /**
+     * Returns the item at the given index. An example using ListView would be
+     * <code>listView.getItems().get(index)</code>.
+     *
+     * @param index
+     *            The index of the item that is requested from the underlying
+     *            data model.
+     * @return Returns null if the index is out of bounds, or an element of type
+     *         T that is related to the given index.
+     */
+    abstract public T getModelItem(int index);
+
     @Override
     public ObservableList<Integer> getSelectedIndices() {
         return selectedIndicesSeq;
@@ -468,6 +343,10 @@ abstract class MultipleSelectionModelBase<T> extends MultipleSelectionModel<T> {
     public ObservableList<T> getSelectedItems() {
         return selectedItemsSeq;
     }
+
+    /***********************************************************************
+     * * Public selection API * *
+     **********************************************************************/
 
     @Override
     public boolean isEmpty() {
@@ -482,7 +361,7 @@ abstract class MultipleSelectionModelBase<T> extends MultipleSelectionModel<T> {
         // to resolve issues such as RT-26721, where isSelected(int) was being
         // called for indices that exceeded the item count, as a TreeItem (e.g.
         // the root) was being collapsed.
-        //        if (index >= 0 && index < getItemCount()) {
+        //            if (index >= 0 && index < getItemCount()) {
         if (index >= 0 && index < selectedIndices.length()) {
             return selectedIndices.get(index);
         }
@@ -509,6 +388,9 @@ abstract class MultipleSelectionModelBase<T> extends MultipleSelectionModel<T> {
         startAtomic();
         if (!selectedIndices.get(row)) {
             if (getSelectionMode() == SINGLE) {
+                if (getSelectedIndex() > 0) {
+                    getCell(getSelectedIndex()).updateSelection(false);
+                }
                 quietClearSelection();
             }
             selectedIndices.set(row);
@@ -518,6 +400,7 @@ abstract class MultipleSelectionModelBase<T> extends MultipleSelectionModel<T> {
         focus(row);
 
         stopAtomic();
+        getCell(row).updateSelection(true);
 
         if (!isAtomic()) {
             int changeIndex = Math.max(0, selectedIndicesSeq.indexOf(row));
@@ -533,7 +416,7 @@ abstract class MultipleSelectionModelBase<T> extends MultipleSelectionModel<T> {
 
     @Override
     public void select(T obj) {
-        //        if (getItemCount() <= 0) return;
+        //            if (getItemCount() <= 0) return;
 
         if (obj == null && getSelectionMode() == SelectionMode.SINGLE) {
             clearSelection();
@@ -737,130 +620,101 @@ abstract class MultipleSelectionModelBase<T> extends MultipleSelectionModel<T> {
         }
     }
 
-    protected abstract void focus(int index);
+    Change<Integer> createRangeChange(final ObservableList<Integer> list,
+                                      final List<Integer> addedItems,
+                                      boolean splitChanges) {
+        Change<Integer> change = new Change<Integer>(list) {
+            private final int   addedSize  = addedItems.size();
+            private final int[] EMPTY_PERM = new int[0];
 
-    protected abstract int getFocusedIndex();
+            private int         from;
+            private boolean     invalid    = true;
+            private int         pos        = 0;
+            private int         to         = pos;
 
-    /**
-     * Returns the number of items in the data model that underpins the control.
-     * An example would be that a ListView selection model would likely return
-     * <code>listView.getItems().size()</code>. The valid range of selectable
-     * indices is between 0 and whatever is returned by this method.
-     */
-    protected abstract int getItemCount();
+            {
+                from = pos;
+            }
 
-    /**
-     * Returns the item at the given index. An example using ListView would be
-     * <code>listView.getItems().get(index)</code>.
-     *
-     * @param index
-     *            The index of the item that is requested from the underlying
-     *            data model.
-     * @return Returns null if the index is out of bounds, or an element of type
-     *         T that is related to the given index.
-     */
-    protected abstract T getModelItem(int index);
+            @Override
+            public int getAddedSize() {
+                return to - from;
+            }
+
+            @Override
+            public int getFrom() {
+                checkState();
+                return from;
+            }
+
+            @Override
+            public List<Integer> getRemoved() {
+                checkState();
+                return Collections.<Integer> emptyList();
+            }
+
+            @Override
+            public int getTo() {
+                checkState();
+                return to;
+            }
+
+            @Override
+            public boolean next() {
+                if (pos >= addedSize) {
+                    return false;
+                }
+
+                // starting from pos, we keep going until the value is
+                // not the next value
+                int startValue = addedItems.get(pos++);
+                from = list.indexOf(startValue);
+                to = from + 1;
+                int endValue = startValue;
+                while (pos < addedSize) {
+                    int previousEndValue = endValue;
+                    endValue = addedItems.get(pos++);
+                    ++to;
+                    if (splitChanges && previousEndValue != (endValue - 1)) {
+                        break;
+                    }
+                }
+
+                if (invalid) {
+                    invalid = false;
+                    return true;
+                }
+
+                // we keep going until we've represented all changes!
+                return splitChanges && pos < addedSize;
+            }
+
+            @Override
+            public void reset() {
+                invalid = true;
+                pos = 0;
+                to = 0;
+                from = 0;
+            }
+
+            @Override
+            protected int[] getPermutation() {
+                checkState();
+                return EMPTY_PERM;
+            }
+
+            private void checkState() {
+                if (invalid) {
+                    throw new IllegalStateException("Invalid Change state: next() must be called before inspecting the Change.");
+                }
+            }
+
+        };
+        return change;
+    }
 
     boolean isAtomic() {
         return atomicityCount > 0;
-    }
-
-    // package only
-    void shiftSelection(int position, int shift,
-                        final Callback<ShiftParams, Void> callback) {
-        // with no check here, we get RT-15024
-        if (position < 0) {
-            return;
-        }
-        if (shift == 0) {
-            return;
-        }
-
-        int selectedIndicesCardinality = selectedIndices.cardinality(); // number of true bits
-        if (selectedIndicesCardinality == 0) {
-            return;
-        }
-
-        int selectedIndicesSize = selectedIndices.size(); // number of bits reserved
-
-        int[] perm = new int[selectedIndicesSize];
-        int idx = 0;
-        boolean hasPermutated = false;
-
-        if (shift > 0) {
-            for (int i = selectedIndicesSize - 1; i >= position
-                                                  && i >= 0; i--) {
-                boolean selected = selectedIndices.get(i);
-
-                if (callback == null) {
-                    selectedIndices.clear(i);
-                    selectedIndices.set(i + shift, selected);
-                } else {
-                    callback.call(new ShiftParams(i, i + shift, selected));
-                }
-
-                if (selected) {
-                    perm[idx++] = i + 1;
-                    hasPermutated = true;
-                }
-            }
-            selectedIndices.clear(position);
-        } else if (shift < 0) {
-            for (int i = position; i < selectedIndicesSize; i++) {
-                if ((i + shift) < 0) {
-                    continue;
-                }
-                if ((i + 1 + shift) < position) {
-                    continue;
-                }
-                boolean selected = selectedIndices.get(i + 1);
-
-                if (callback == null) {
-                    selectedIndices.clear(i + 1);
-                    selectedIndices.set(i + 1 + shift, selected);
-                } else {
-                    callback.call(new ShiftParams(i + 1, i + 1 + shift,
-                                                  selected));
-                }
-
-                if (selected) {
-                    perm[idx++] = i;
-                    hasPermutated = true;
-                }
-            }
-        }
-
-        // This ensure that the selection remains accurate when a shift occurs.
-        final int selectedIndex = getSelectedIndex();
-        if (selectedIndex >= position && selectedIndex > -1) {
-            // Fix for RT-38787: we used to not enter this block if
-            // selectedIndex + shift resulted in a value less than zero, whereas
-            // now we just set the newSelectionLead to zero in that instance.
-            // There exists unit tests that cover this.
-            final int newSelectionLead = Math.max(0, selectedIndex + shift);
-
-            setSelectedIndex(newSelectionLead);
-
-            // added the selectedIndices call for RT-30356.
-            // changed to check if hasPermutated, and to call select(..) for RT-40010.
-            // This forces the selection event to go through the system and fire
-            // the necessary events.
-            if (hasPermutated) {
-                selectedIndices.set(newSelectionLead, true);
-            } else {
-                select(newSelectionLead);
-            }
-
-            // removed due to RT-27185
-            //            focus(newSelectionLead);
-        }
-
-        if (hasPermutated) {
-            selectedIndicesSeq.callObservers(new NonIterableChange.SimplePermutationChange<Integer>(0,
-                                                                                                    selectedIndicesCardinality,
-                                                                                                    perm,
-                                                                                                    selectedIndicesSeq));
-        }
     }
 
     void startAtomic() {

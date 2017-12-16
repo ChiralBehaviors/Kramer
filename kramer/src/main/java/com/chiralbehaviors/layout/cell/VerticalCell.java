@@ -57,9 +57,4 @@ abstract public class VerticalCell<T extends Region> extends VBox
     public String getUserAgentStylesheet() {
         return stylesheet;
     }
-
-    @Override
-    public void setFocus(boolean focus) {
-        setFocused(focus);
-    }
 }

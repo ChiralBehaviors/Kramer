@@ -61,9 +61,4 @@ abstract public class HorizontalCell<T extends Region> extends HBox
     public String getUserAgentStylesheet() {
         return stylesheet;
     }
-
-    @Override
-    public void setFocus(boolean focus) {
-        setFocused(focus);
-    }
 }

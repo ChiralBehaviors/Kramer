@@ -37,8 +37,10 @@ public class OutlineColumn extends VerticalCell<OutlineColumn> {
     private static final String            DEFAULT_STYLE         = "span";
     private static final String            SCHEMA_CLASS_TEMPLATE = "%s-outline-column";
     private static final String            STYLE_SHEET           = "outline-column.css";
+    private final List<OutlineElement>     elements              = new ArrayList<>();
     private final List<Consumer<JsonNode>> fields                = new ArrayList<>();
     private final FocusTraversal           focus;
+    private int                            selected              = -1;
 
     public OutlineColumn(String field) {
         this(field, null);
@@ -54,7 +56,9 @@ public class OutlineColumn extends VerticalCell<OutlineColumn> {
         c.getFields()
          .forEach(f -> {
              OutlineElement cell = f.outlineElement(field, cardinality,
-                                                    labelWidth, c.getWidth(), null);
+                                                    labelWidth, c.getWidth(),
+                                                    null);
+             elements.add(cell);
              fields.add(item -> cell.updateItem(f.extractFrom(item)));
              getChildren().add(cell.getNode());
          });
@@ -64,7 +68,31 @@ public class OutlineColumn extends VerticalCell<OutlineColumn> {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
-        focus = new FocusTraversal(parentTraversal, Bias.VERTICAL) {
+        focus = new FocusTraversal(parentTraversal, Bias.VERTICAL) { 
+
+            @Override
+            public void selectNext() {
+                selected = selected + 1;
+                if (selected == elements.size()) {
+                    selected = selected - 1;
+                    traverseNext();
+                } else {
+                    elements.get(selected)
+                            .setFocus();
+                }
+            }
+
+            @Override
+            public void selectPrevious() {
+                selected = selected - 1;
+                if (selected < 0) {
+                    selected = -1;
+                    traversePrevious();
+                } else {
+                    elements.get(selected)
+                            .setFocus();
+                }
+            }
 
             @Override
             protected Node getNode() {

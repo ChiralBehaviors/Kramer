@@ -23,7 +23,6 @@ import com.chiralbehaviors.layout.Column;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
-import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
@@ -34,11 +33,12 @@ import javafx.scene.Node;
  */
 public class Span extends HorizontalCell<Span> {
 
-    private static final String                       DEFAULT_STYLE = "span";
-    private static final String                       S_SPAN        = "%s-span";
-    private static final String                       STYLE_SHEET   = "span.css";
-    private final List<Cell<JsonNode, OutlineColumn>> columns       = new ArrayList<>();
-    private final FocusTraversal                      focus;
+    private static final String       DEFAULT_STYLE = "span";
+    private static final String       S_SPAN        = "%s-span";
+    private static final String       STYLE_SHEET   = "span.css";
+    private final List<OutlineColumn> columns       = new ArrayList<>();
+    private final FocusTraversal      focus;
+    private int                       selected;
 
     public Span(String field) {
         this(field, null);
@@ -53,11 +53,9 @@ public class Span extends HorizontalCell<Span> {
         setMaxSize(justified, cellHeight);
 
         columns.forEach(c -> {
-            Cell<JsonNode, OutlineColumn> cell = new OutlineColumn(field, c,
-                                                                   cardinality,
-                                                                   labelWidth,
-                                                                   cellHeight,
-                                                                   focus);
+            OutlineColumn cell = new OutlineColumn(field, c, cardinality,
+                                                   labelWidth, cellHeight,
+                                                   focus);
             this.columns.add(cell);
             getChildren().add(cell.getNode());
         });
@@ -68,6 +66,30 @@ public class Span extends HorizontalCell<Span> {
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(S_SPAN, field));
         focus = new FocusTraversal(parentTraversal, Bias.HORIZONTAL) {
+
+            @Override
+            public void selectNext() {
+                selected = selected + 1;
+                if (selected == columns.size()) {
+                    selected = selected - 1;
+                    traverseNext();
+                } else {
+                    columns.get(selected)
+                           .setFocus();
+                }
+            }
+
+            @Override
+            public void selectPrevious() {
+                selected = selected - 1;
+                if (selected < 0) {
+                    selected = -1;
+                    traversePrevious();
+                } else {
+                    columns.get(selected)
+                           .setFocus();
+                }
+            }
 
             @Override
             protected Node getNode() {
@@ -84,5 +106,6 @@ public class Span extends HorizontalCell<Span> {
     @Override
     public void updateItem(JsonNode item) {
         columns.forEach(c -> c.updateItem(item));
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 }

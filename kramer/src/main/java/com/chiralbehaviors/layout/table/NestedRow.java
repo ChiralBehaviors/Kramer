@@ -35,8 +35,9 @@ public class NestedRow extends VirtualFlow<JsonNode, NestedCell> {
     public NestedRow(double rendered, RelationLayout layout,
                      int childCardinality, FocusTraversal parentTraversal) {
         super(layout.getField(), layout.getJustifiedColumnWidth(),
-              layout.getHeight(), FXCollections.observableArrayList(), item -> {
-                  NestedCell cell = new NestedCell(layout, parentTraversal);
+              layout.getHeight(), FXCollections.observableArrayList(),
+              (item, pt) -> {
+                  NestedCell cell = new NestedCell(layout, pt);
                   cell.updateItem(item);
                   return cell;
               }, parentTraversal);
@@ -55,7 +56,7 @@ public class NestedRow extends VirtualFlow<JsonNode, NestedCell> {
 
     @Override
     public void dispose() {
-        focus.unbind();
+        super.dispose();
         mouseHandler.unbind();
         if (scrollHandler != null) {
             scrollHandler.unbind();
@@ -65,5 +66,6 @@ public class NestedRow extends VirtualFlow<JsonNode, NestedCell> {
     @Override
     public void updateItem(JsonNode item) {
         items.setAll(NestedTable.itemsAsArray(item));
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,  item != null);
     }
 }

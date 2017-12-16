@@ -2,17 +2,33 @@
     -fx-background: -fx-control-inner-background-alt; 
 }
 
-.outline-cell { 
+.outline-cell {
+    -fx-background: -fx-control-inner-background;
+    -fx-background-color: -fx-background;
+    -fx-text-fill: -fx-text-background-color;
+}
+
+.outline-cell {  
     -fx-background-color: -fx-box-border, -fx-control-inner-background;
-    -fx-padding:  0.25em 0 0.25em 0.583em; /* 3 7 3 7 */
+    -fx-padding:  0.25em 0.583em 0.25em 0.583em; /* 3 7 3 7 */
     -fx-background-insets: 0, 1
 }
 
-.outline-cell:focused {
-    -fx-background-color: -fx-shadow-highlight-color, -fx-outer-border, -fx-inner-border, -fx-body-color;
-    -fx-background-insets: 0 0 -1 0, 0, 1, 2;
+.virtual-flow:focused > .outline-cell:filled:selected {
+    -fx-background: -fx-selection-bar;
+    -fx-table-cell-border-color: derive(-fx-selection-bar, 20%);
 }
 
+.outline-cell:filled:selected {
+    -fx-background: -fx-selection-bar;
+    -fx-table-cell-border-color: derive(-fx-selection-bar, 20%);
+} 
+
+.outline-cell:focused {
+    -fx-background-color: -fx-faint-focus-color, -fx-focus-color, -fx-control-inner-background;
+    -fx-background-insets: -1.4, -0.3, 1;
+    -fx-background-radius: 2, 0, 0;
+}
 
 .outline-cell:filled:selected:focused:disabled,
 .outline-cell:filled:selected:disabled {

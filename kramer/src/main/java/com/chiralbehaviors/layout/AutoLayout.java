@@ -123,18 +123,14 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         return root;
     }
 
-    @Override
-    public void setFocus(boolean focus) {
-        setFocused(focus);
-    }
-
     public void setRoot(SchemaNode rootNode) {
         root.set(rootNode);
     }
 
     @Override
-    public void updateItem(JsonNode item) {
+    public void updateItem(JsonNode item) { 
         data.set(item);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,  item != null);
     }
 
     private void autoLayout(JsonNode zeeData, double width) {

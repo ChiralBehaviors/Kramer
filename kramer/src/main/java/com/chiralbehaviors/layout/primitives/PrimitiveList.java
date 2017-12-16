@@ -38,8 +38,8 @@ public class PrimitiveList extends VirtualFlow<JsonNode, LayoutCell<?>> {
                          FocusTraversal parentTraversal) {
         super(layout.getField(), layout.getJustifiedWidth(),
               layout.getCellHeight(), FXCollections.observableArrayList(),
-              item -> {
-                  LayoutCell<?> outlineCell = layout.buildCell();
+              (item, pt) -> {
+                  LayoutCell<?> outlineCell = layout.buildCell(pt);
                   outlineCell.updateItem(item);
                   return outlineCell;
               }, parentTraversal);
@@ -68,5 +68,6 @@ public class PrimitiveList extends VirtualFlow<JsonNode, LayoutCell<?>> {
     @Override
     public void updateItem(JsonNode item) {
         items.setAll(SchemaNode.asList(item));
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,  item != null);
     }
 }

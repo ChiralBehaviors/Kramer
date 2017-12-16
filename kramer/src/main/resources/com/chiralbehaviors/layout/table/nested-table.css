@@ -4,11 +4,12 @@
     -fx-padding : 1 ;
 }
 .nested-table:focused {
-    -fx-background-color: -fx-shadow-highlight-color, -fx-outer-border, -fx-inner-border, -fx-body-color;
-    -fx-background-insets: 0 0 -1 0, 0, 1, 2;
+    -fx-background-color: -fx-faint-focus-color, -fx-focus-color, -fx-control-inner-background;
+    -fx-background-insets: -1.4, -0.3, 1;
+    -fx-background-radius: 2, 0, 0;
 }
 
-.nested-table:focused > .nested-cell:filled:selected{
+.nested-table:focused > .nested-cell:filled:selected {
     -fx-background: -fx-selection-bar;
     -fx-table-cell-border-color: derive(-fx-selection-bar, 20%);
 }

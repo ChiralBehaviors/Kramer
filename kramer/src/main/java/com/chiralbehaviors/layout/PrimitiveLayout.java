@@ -59,7 +59,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
               .apply(cell, getNode());
     }
 
-    public LayoutCell<?> buildCell() {
+    public LayoutCell<?> buildCell(FocusTraversal pt) {
         LabelCell cell = new LabelCell(this);
         cell.getNode()
             .getStyleClass()
@@ -89,7 +89,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public LayoutCell<? extends Region> buildControl(FocusTraversal parentTraversal) {
         return averageCardinality > 1 ? new PrimitiveList(this, parentTraversal)
-                                      : buildCell();
+                                      : buildCell(parentTraversal);
     }
 
     @Override
