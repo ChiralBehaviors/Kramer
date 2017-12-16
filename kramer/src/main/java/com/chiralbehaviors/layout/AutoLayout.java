@@ -37,15 +37,16 @@ import javafx.scene.layout.Region;
  *
  */
 public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
-    private static final java.util.logging.Logger  log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
-    private static final String                    STYLE_SHEET = "auto-layout.css";
+    private static final java.util.logging.Logger  log                = Logger.getLogger(AutoLayout.class.getCanonicalName());
+    private static final String                    STYLE_SHEET        = "auto-layout.css";
+    private static final String                    A_CELL_STYLE_SHEET = "a-cell.css";
 
     private LayoutCell<? extends Region>           control;
-    private SimpleObjectProperty<JsonNode>         data        = new SimpleObjectProperty<>();
+    private SimpleObjectProperty<JsonNode>         data               = new SimpleObjectProperty<>();
     private SchemaNodeLayout                       layout;
-    private double                                 layoutWidth = 0.0;
+    private double                                 layoutWidth        = 0.0;
     private StyleProvider.LayoutModel              model;
-    private final SimpleObjectProperty<SchemaNode> root        = new SimpleObjectProperty<>();
+    private final SimpleObjectProperty<SchemaNode> root               = new SimpleObjectProperty<>();
     private StyleProvider                          style;
     private final String                           stylesheet;
 
@@ -59,6 +60,8 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     }
 
     public AutoLayout(Relation root, StyleProvider.LayoutModel model) {
+        getStylesheets().add(getClass().getResource(A_CELL_STYLE_SHEET)
+                                       .toExternalForm());
         URL url = getClass().getResource(STYLE_SHEET);
         stylesheet = url == null ? null : url.toExternalForm();
         getStyleClass().add("auto-layout");
@@ -67,7 +70,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         this.root.set(root);
         data.addListener((o, p, c) -> setContent());
         getStylesheets().addListener((ListChangeListener<String>) c -> style = new DefaultStyleProvider(getStylesheets(),
-                                                                                                  AutoLayout.this.model));
+                                                                                                        AutoLayout.this.model));
     }
 
     public void autoLayout() {
@@ -128,9 +131,9 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     }
 
     @Override
-    public void updateItem(JsonNode item) { 
+    public void updateItem(JsonNode item) {
         data.set(item);
-        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,  item != null);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 
     private void autoLayout(JsonNode zeeData, double width) {
