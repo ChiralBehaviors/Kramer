@@ -37,7 +37,11 @@ import javafx.scene.layout.VBox;
  */
 public class OutlineCell extends VerticalCell<OutlineCell> {
 
-    private static final String  DEFAULT_STYLE         = "outline-cell";
+    /**
+     * 
+     */
+    private static final String  OUTLINE_CELL_CLASS    = "outline-cell";
+    private static final String  DEFAULT_STYLE         = "a-cell";
     private static final String  SCHEMA_CLASS_TEMPLATE = "%s-outline-cell";
     private static final String  STYLE_SHEET           = "outline-cell.css";
 
@@ -70,7 +74,8 @@ public class OutlineCell extends VerticalCell<OutlineCell> {
     public OutlineCell(String field, FocusTraversal parent) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        getStyleClass().addAll(OUTLINE_CELL_CLASS,
+                               String.format(SCHEMA_CLASS_TEMPLATE, field));
         focus = new FocusTraversal(parent, Bias.VERTICAL) {
 
             @Override

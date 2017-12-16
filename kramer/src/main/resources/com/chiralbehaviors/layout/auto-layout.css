@@ -2,12 +2,39 @@
     -fx-focus-traversable: true;
 }
 
-.horizontal-cell:focused {
-    -fx-background-color: -fx-faint-focus-color, -fx-focus-color, -fx-control-inner-background;
-    -fx-background-insets: -1.4, -0.3, 1;
-    -fx-background-radius: 2, 0, 0;
-}
-
 .vertical-cell {
     -fx-focus-traversable: true;
+}
+
+.a-cell:odd {
+    -fx-background: -fx-control-inner-background-alt; 
+}
+
+.a-cell {
+    -fx-background: -fx-control-inner-background; 
+    -fx-text-fill: -fx-text-background-color;
+    -fx-background-color: -fx-box-border, -fx-control-inner-background;
+    -fx-padding:  0.25em 0.583em 0.25em 0.583em; /* 3 7 3 7 */
+    -fx-background-insets: 0.0, 1.0
+}
+
+.virtual-flow:focused > .a-cell:filled:selected {
+    -fx-background: -fx-selection-bar;
+    -fx-table-cell-border-color: derive(-fx-selection-bar, 20.0%);
+}
+
+.a-cell:filled:selected {
+    -fx-background: -fx-selection-bar;
+    -fx-table-cell-border-color: derive(-fx-selection-bar, 20.0%);
+} 
+
+.a-cell:focused {
+    -fx-background-color: -fx-faint-focus-color, -fx-focus-color, -fx-control-inner-background;
+    -fx-background-insets: -1.4, -0.3, 1.0;
+    -fx-background-radius: 2.0, 0.0, 0.0;
+}
+
+.a-cell:filled:selected:focused:disabled,
+.a-cell:filled:selected:disabled {
+    -fx-opacity: 0.4;
 }

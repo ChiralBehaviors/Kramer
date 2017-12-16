@@ -35,7 +35,11 @@ import javafx.scene.layout.Region;
  *
  */
 public class NestedCell extends HorizontalCell<NestedCell> {
-    private static final String                DEFAULT_STYLE         = "nested-cell";
+    /**
+     * 
+     */
+    private static final String                NESTED_CELL_CLASS     = "nested-cell";
+    private static final String                DEFAULT_STYLE         = "a-cell";
     private static final String                SCHEMA_CLASS_TEMPLATE = "%s-nested-cell";
     private static final String                STYLE_SHEET           = "nested-cell.css";
     private List<LayoutCell<? extends Region>> cells                 = new ArrayList<>();
@@ -64,7 +68,8 @@ public class NestedCell extends HorizontalCell<NestedCell> {
     public NestedCell(String field, FocusTraversal parentTraversal) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        getStyleClass().addAll(NESTED_CELL_CLASS,
+                               String.format(SCHEMA_CLASS_TEMPLATE, field));
         focus = new FocusTraversal(parentTraversal, Bias.HORIZONTAL) {
 
             @Override
