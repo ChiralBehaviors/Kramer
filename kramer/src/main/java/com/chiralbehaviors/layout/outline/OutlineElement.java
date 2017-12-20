@@ -17,8 +17,8 @@
 package com.chiralbehaviors.layout.outline;
 
 import com.chiralbehaviors.layout.SchemaNodeLayout;
-import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 

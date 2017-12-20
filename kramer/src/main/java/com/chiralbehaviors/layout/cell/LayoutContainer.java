@@ -16,14 +16,17 @@
 
 package com.chiralbehaviors.layout.cell;
 
-import static com.chiralbehaviors.layout.cell.SelectionEvent.DOUBLE_SELECT;
-import static com.chiralbehaviors.layout.cell.SelectionEvent.SINGLE_SELECT;
-import static com.chiralbehaviors.layout.cell.SelectionEvent.TRIPLE_SELECT;
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.DOUBLE_SELECT;
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.SINGLE_SELECT;
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.TRIPLE_SELECT;
 
 import java.util.Collection;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import com.chiralbehaviors.layout.cell.control.MouseHandler;
+import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
+import com.chiralbehaviors.layout.cell.control.SelectionEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.geometry.Point2D;

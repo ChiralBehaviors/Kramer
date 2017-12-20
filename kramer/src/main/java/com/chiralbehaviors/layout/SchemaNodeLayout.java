@@ -21,8 +21,8 @@ import static com.chiralbehaviors.layout.DefaultStyleProvider.snap;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.StyleProvider.StyledInsets;
-import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.table.ColumnHeader;

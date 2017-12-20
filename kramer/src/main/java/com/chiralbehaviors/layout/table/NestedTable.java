@@ -23,8 +23,9 @@ import java.util.List;
 import java.util.function.BiFunction;
 
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.VerticalCell;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -99,7 +100,7 @@ public class NestedTable extends VerticalCell<NestedTable> {
                                                 int childCardinality,
                                                 RelationLayout layout,
                                                 FocusTraversal<?> parentTraversal) {
-        BiFunction<JsonNode, FocusTraversal<NestedCell>, NestedCell> factory = (item,
+        BiFunction<JsonNode, FocusTraversalNode<NestedCell>, NestedCell> factory = (item,
                                                                     pt) -> {
             NestedCell cell = new NestedCell(layout, pt);
             cell.updateItem(item);

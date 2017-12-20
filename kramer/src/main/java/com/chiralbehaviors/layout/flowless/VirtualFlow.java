@@ -9,13 +9,14 @@ import org.reactfx.util.Lists;
 import org.reactfx.value.Val;
 import org.reactfx.value.Var;
 
-import com.chiralbehaviors.layout.cell.FocusTraversal;
-import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.LayoutCell;
-import com.chiralbehaviors.layout.cell.MouseHandler;
-import com.chiralbehaviors.layout.cell.MultipleCellSelection;
 import com.chiralbehaviors.layout.cell.RegionCell;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
+import com.chiralbehaviors.layout.cell.control.MouseHandler;
+import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
@@ -52,7 +53,7 @@ import javafx.scene.shape.Rectangle;
  */
 public class VirtualFlow<C extends LayoutCell<?>>
         extends RegionCell<VirtualFlow<LayoutCell<?>>, C> {
-    private static class CellHit<C extends Cell<?, ?>> extends Hit<C> {
+    private static class CellHit<C extends LayoutCell<?>> extends Hit<C> {
         private final C       cell;
         private final int     cellIdx;
         private final Point2D cellOffset;
@@ -105,7 +106,7 @@ public class VirtualFlow<C extends LayoutCell<?>>
         }
     }
 
-    private static class HitAfterCells<C extends Cell<?, ?>> extends Hit<C> {
+    private static class HitAfterCells<C extends LayoutCell<?>> extends Hit<C> {
         private final Point2D offset;
 
         HitAfterCells(Point2D offset) {
@@ -153,7 +154,8 @@ public class VirtualFlow<C extends LayoutCell<?>>
         }
     }
 
-    private static class HitBeforeCells<C extends Cell<?, ?>> extends Hit<C> {
+    private static class HitBeforeCells<C extends LayoutCell<?>>
+            extends Hit<C> {
         private final Point2D offset;
 
         HitBeforeCells(Point2D offset) {
@@ -213,7 +215,7 @@ public class VirtualFlow<C extends LayoutCell<?>>
         return new HitBeforeCells<>(new Point2D(x, y));
     }
 
-    protected final FocusTraversal<C>                focus;
+    protected final FocusTraversalNode<C>                focus;
     protected final ObservableList<JsonNode>         items;
     protected final MouseHandler                     mouseHandler;
     protected final ScrollHandler                    scrollHandler = new ScrollHandler(this);
@@ -236,7 +238,7 @@ public class VirtualFlow<C extends LayoutCell<?>>
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public VirtualFlow(String styleSheet, double cellBreadth, double cellLength,
                        ObservableList<JsonNode> observableList,
-                       BiFunction<JsonNode, FocusTraversal<C>, C> factory,
+                       BiFunction<JsonNode, FocusTraversalNode<C>, C> factory,
                        FocusTraversal<?> parentTraversal) {
         super(styleSheet);
         this.getStyleClass()
@@ -245,7 +247,7 @@ public class VirtualFlow<C extends LayoutCell<?>>
         selectionModel = buildSelectionModel(i -> observableList.get(i),
                                              () -> observableList.size(),
                                              i -> getCell(i));
-        focus = new FocusTraversal((FocusTraversal<?>) parentTraversal,
+        focus = new FocusTraversalNode((FocusTraversal<?>) parentTraversal,
                                    selectionModel, Bias.VERTICAL) {
 
             @Override
@@ -291,7 +293,6 @@ public class VirtualFlow<C extends LayoutCell<?>>
     }
 
     public void dispose() {
-        focus.unbind();
         navigator.dispose();
         sizeTracker.dispose();
         cellListManager.dispose();

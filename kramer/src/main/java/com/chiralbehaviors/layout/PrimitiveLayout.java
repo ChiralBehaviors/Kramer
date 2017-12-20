@@ -22,8 +22,8 @@ import static com.chiralbehaviors.layout.schema.SchemaNode.asList;
 import java.util.List;
 import java.util.function.Function;
 
-import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.primitives.LabelCell;
 import com.chiralbehaviors.layout.primitives.PrimitiveList;

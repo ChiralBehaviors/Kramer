@@ -17,7 +17,7 @@
 package com.chiralbehaviors.layout.table;
 
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.cell.FocusTraversal;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.fasterxml.jackson.databind.JsonNode;
 

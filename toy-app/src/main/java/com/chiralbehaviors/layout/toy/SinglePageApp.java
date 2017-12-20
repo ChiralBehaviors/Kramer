@@ -16,7 +16,7 @@
 
 package com.chiralbehaviors.layout.toy;
 
-import static com.chiralbehaviors.layout.cell.SelectionEvent.DOUBLE_SELECT;
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.DOUBLE_SELECT;
 
 import java.io.IOException;
 import java.net.URISyntaxException;

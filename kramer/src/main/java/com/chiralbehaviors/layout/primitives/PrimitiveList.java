@@ -17,8 +17,8 @@
 package com.chiralbehaviors.layout.primitives;
 
 import com.chiralbehaviors.layout.PrimitiveLayout;
-import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -58,7 +58,6 @@ public class PrimitiveList extends VirtualFlow<LayoutCell<?>> {
 
     @Override
     public void dispose() {
-        focus.unbind();
         mouseHandler.unbind();
         if (scrollHandler != null) {
             scrollHandler.unbind();

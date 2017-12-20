@@ -1,6 +1,5 @@
 package com.chiralbehaviors.layout.cell;
 
-import com.chiralbehaviors.layout.flowless.Cell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 
 import javafx.geometry.Point2D;
@@ -26,7 +25,7 @@ import javafx.geometry.Point2D;
  * </ul>
  *
  */
-public abstract class Hit<C extends Cell<?, ?>> {
+public abstract class Hit<C extends LayoutCell<?>> {
 
     public Hit() {
     }

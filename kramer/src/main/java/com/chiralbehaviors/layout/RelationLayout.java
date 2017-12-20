@@ -26,8 +26,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.chiralbehaviors.layout.StyleProvider.StyledInsets;
-import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.outline.Outline;
 import com.chiralbehaviors.layout.outline.OutlineElement;

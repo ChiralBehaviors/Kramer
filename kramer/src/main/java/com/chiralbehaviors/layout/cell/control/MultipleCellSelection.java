@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.cell;
+package com.chiralbehaviors.layout.cell.control;
 
 import static javafx.scene.control.SelectionMode.SINGLE;
 

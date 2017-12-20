@@ -16,7 +16,7 @@
 
 package com.chiralbehaviors.layout.schema;
 
-import static com.chiralbehaviors.layout.cell.SelectionEvent.DOUBLE_SELECT;
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.DOUBLE_SELECT;
 
 import java.net.URL;
 

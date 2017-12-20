@@ -21,14 +21,15 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.cell.FocusTraversal;
-import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
-import com.chiralbehaviors.layout.cell.MouseHandler;
-import com.chiralbehaviors.layout.cell.MultipleCellSelection;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
+import com.chiralbehaviors.layout.cell.control.MouseHandler;
+import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
@@ -80,7 +81,7 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
                                String.format(SCHEMA_CLASS_TEMPLATE, field));
         selectionModel = buildSelectionModel(i -> null, () -> cells.size(),
                                              i -> cells.get(i));
-        focus = new FocusTraversal<LayoutCell<? extends Region>>(parentTraversal,
+        focus = new FocusTraversalNode<LayoutCell<? extends Region>>(parentTraversal,
                                                                  selectionModel,
                                                                  Bias.HORIZONTAL) {
 
@@ -95,7 +96,6 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
     @Override
     public void dispose() {
         super.dispose();
-        focus.unbind();
         mouseModel.unbind();
     }
 

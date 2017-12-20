@@ -21,7 +21,7 @@ import java.util.List;
 
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.cell.FocusTraversal;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;

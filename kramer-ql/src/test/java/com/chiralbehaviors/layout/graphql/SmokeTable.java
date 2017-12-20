@@ -16,7 +16,7 @@
 
 package com.chiralbehaviors.layout.graphql;
 
-import static com.chiralbehaviors.layout.cell.SelectionEvent.DOUBLE_SELECT;
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.DOUBLE_SELECT;
 
 import org.fxmisc.wellbehaved.event.InputMap;
 import org.fxmisc.wellbehaved.event.Nodes;

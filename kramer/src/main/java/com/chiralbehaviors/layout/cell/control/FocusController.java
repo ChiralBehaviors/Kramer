@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.cell;
+package com.chiralbehaviors.layout.cell.control;
 
 import static javafx.scene.input.KeyCode.DOWN;
 import static javafx.scene.input.KeyCode.ENTER;
@@ -34,35 +34,28 @@ import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.unless;
 
 import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
 
-import com.chiralbehaviors.layout.flowless.Cell;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.chiralbehaviors.layout.cell.LayoutCell;
 
 import javafx.scene.Node;
 import javafx.scene.input.InputEvent;
 
 /**
  * @author halhildebrand
- * @param <C>
  *
  */
-abstract public class FocusTraversal<C extends Cell<?, ?>> {
-
-    public static enum Bias {
-        HORIZONTAL,
-        VERTICAL;
-    }
-
-    private final static InputMapTemplate<FocusTraversal<?>, InputEvent> TRAVERSAL_INPUT_MAP;
+public class FocusController<C extends LayoutCell<?>>
+        implements FocusTraversal<C> {
+    private final static InputMapTemplate<FocusController<?>, InputEvent> TRAVERSAL_INPUT_MAP;
 
     static {
         TRAVERSAL_INPUT_MAP = unless(c -> c.isDisabled(),
                                      sequence(consume(keyPressed(TAB),
                                                       (traversal,
-                                                       evt) -> traversal.traverseNext()),
+                                                       evt) -> traversal.traverseCurrentNext()),
                                               consume(keyPressed(TAB,
                                                                  SHIFT_DOWN),
                                                       (traversal,
-                                                       evt) -> traversal.traversePrevious()),
+                                                       evt) -> traversal.traverseCurrentPrevious()),
                                               consume(keyPressed(UP),
                                                       (traversal,
                                                        evt) -> traversal.up()),
@@ -92,123 +85,71 @@ abstract public class FocusTraversal<C extends Cell<?, ?>> {
                                                        evt) -> traversal.activate())));
     }
 
-    private final Bias                         bias;
-    private final FocusTraversal<?>            parent;
-    private MultipleCellSelection<JsonNode, C> selectionModel;
+    private volatile FocusTraversalNode<?> current;
 
-    public FocusTraversal(FocusTraversal<?> parent,
-                          MultipleCellSelection<JsonNode, C> selectionModel,
-                          Bias bias) {
-        this.bias = bias;
-        this.parent = parent;
-        this.selectionModel = selectionModel;
-        bind();
+    private final Node                     node;
+
+    public FocusController(Node node) {
+        this.node = node;
+        InputMapTemplate.installFallback(TRAVERSAL_INPUT_MAP, this, c -> node);
     }
 
+    @Override
     public void activate() {
-        int focusedIndex = selectionModel.getFocusedIndex();
-        selectionModel.select(focusedIndex);
-        if (focusedIndex >= 0) {
-            edit();
-        }
     }
 
-    public void bind() {
-        InputMapTemplate.installFallback(TRAVERSAL_INPUT_MAP, this,
-                                         c -> getNode());
-    }
-
+    @Override
     public void edit() {
-        // default nothing
     }
 
+    @Override
     public void selectNext() {
-        if (selectionModel.getFocusedIndex() == -1) {
-            selectionModel.focus(0);
-        } else if (selectionModel.getFocusedIndex() != selectionModel.getItemCount()
-                                                       - 1) {
-            selectionModel.focus(selectionModel.getFocusedIndex() + 1);
-        } else {
-            traverseNext();
-        }
     }
 
+    @Override
     public void selectPrevious() {
-        if (selectionModel.getFocusedIndex() == -1) {
-            selectionModel.focus(0);
-        } else if (selectionModel.getFocusedIndex() > 0) {
-            selectionModel.focus(selectionModel.getFocusedIndex() - 1);
-        } else {
-            traversePrevious();
-        }
     }
 
-    public final void traverseNext() {
-        if (parent == null) {
-            System.out.println(String.format("traverse next: %s, null parent",
-                                             this.getNode()
-                                                 .getClass()
-                                                 .getSimpleName()));
-            return;
-        }
-        System.out.println(String.format("traverse next: %s, parent: %s",
-                                         this.getNode()
-                                             .getClass()
-                                             .getSimpleName(),
-                                         parent.getNode()
-                                               .getClass()
-                                               .getSimpleName()));
-        parent.selectNext();
+    public void setCurrent(FocusTraversalNode<?> focused) {
+        current = focused;
     }
 
-    public final void traversePrevious() {
-        if (parent == null) {
-            System.out.println(String.format("traverse previous: %s, null parent",
-                                             this.getNode()
-                                                 .getClass()
-                                                 .getSimpleName()));
-            return;
-        }
-        System.out.println(String.format("traverse previous: %s, parent: %s",
-                                         this.getNode()
-                                             .getClass()
-                                             .getSimpleName(),
-                                         parent.getNode()
-                                               .getClass()
-                                               .getSimpleName()));
-        parent.selectPrevious();
+    @Override
+    public void traverseNext() {
+    }
+
+    @Override
+    public void traversePrevious() {
     }
 
     public void unbind() {
-        InputMapTemplate.uninstall(TRAVERSAL_INPUT_MAP, this, c -> getNode());
+        InputMapTemplate.uninstall(TRAVERSAL_INPUT_MAP, this, c -> node);
     }
 
-    abstract protected Node getNode();
+    protected boolean isDisabled() {
+        return node.isDisabled();
+    }
 
     private void down() {
-        switch (bias) {
+        switch (current.bias) {
             case HORIZONTAL:
-                traverseNext();
+                current.traverseNext();
                 break;
             case VERTICAL:
-                selectNext();
+                current.selectNext();
                 break;
             default:
                 break;
         }
     }
 
-    private boolean isDisabled() {
-        return getNode().isDisabled();
-    }
-
     private void left() {
-        switch (bias) {
+        switch (current.bias) {
             case HORIZONTAL:
-                selectPrevious();
+                current.selectPrevious();
                 break;
             case VERTICAL:
-                traversePrevious();
+                current.traversePrevious();
                 break;
             default:
                 break;
@@ -216,29 +157,36 @@ abstract public class FocusTraversal<C extends Cell<?, ?>> {
     }
 
     private void right() {
-        switch (bias) {
+        switch (current.bias) {
             case HORIZONTAL:
-                selectNext();
+                current.selectNext();
                 break;
             case VERTICAL:
-                traverseNext();
+                current.traverseNext();
                 break;
             default:
                 break;
         }
+    }
+
+    private void traverseCurrentNext() {
+        current.traverseNext();
+    }
+
+    private void traverseCurrentPrevious() {
+        current.traversePrevious();
     }
 
     private void up() {
-        switch (bias) {
+        switch (current.bias) {
             case HORIZONTAL:
-                traversePrevious();
+                current.traversePrevious();
                 break;
             case VERTICAL:
-                selectPrevious();
+                current.selectPrevious();
                 break;
             default:
                 break;
         }
     }
-
 }

@@ -21,13 +21,14 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.Column;
-import com.chiralbehaviors.layout.cell.FocusTraversal;
-import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
-import com.chiralbehaviors.layout.cell.MouseHandler;
-import com.chiralbehaviors.layout.cell.MultipleCellSelection;
 import com.chiralbehaviors.layout.cell.VerticalCell;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
+import com.chiralbehaviors.layout.cell.control.MouseHandler;
+import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
@@ -54,8 +55,8 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
 
     public OutlineColumn(String field, Column c, int cardinality,
                          double labelWidth, double cellHeight,
-                         FocusTraversal<OutlineColumn> focus) {
-        this(field, focus);
+                         FocusTraversal<OutlineColumn> parentTraversal) {
+        this(field, parentTraversal);
         setMinSize(c.getWidth(), cellHeight);
         setMaxSize(c.getWidth(), cellHeight);
         setPrefSize(c.getWidth(), cellHeight);
@@ -63,7 +64,7 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
          .forEach(f -> {
              OutlineElement cell = f.outlineElement(field, cardinality,
                                                     labelWidth, c.getWidth(),
-                                                    null);
+                                                    focus);
              elements.add(cell);
              fields.add(item -> cell.updateItem(f.extractFrom(item)));
              getChildren().add(cell.getNode());
@@ -78,7 +79,7 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
         selectionModel = buildSelectionModel(i -> null, () -> elements.size(),
                                              i -> elements.get(i));
         mouseHandler = bind(selectionModel);
-        focus = new FocusTraversal<OutlineElement>(parentTraversal,
+        focus = new FocusTraversalNode<OutlineElement>(parentTraversal,
                                                    selectionModel,
                                                    Bias.VERTICAL) {
 
@@ -92,7 +93,6 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
     @Override
     public void dispose() {
         super.dispose();
-        focus.unbind();
         mouseHandler.unbind();
     }
 

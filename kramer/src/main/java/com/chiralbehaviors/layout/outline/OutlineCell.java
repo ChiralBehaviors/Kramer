@@ -22,13 +22,14 @@ import java.util.List;
 
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.cell.FocusTraversal;
-import com.chiralbehaviors.layout.cell.FocusTraversal.Bias;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
-import com.chiralbehaviors.layout.cell.MouseHandler;
-import com.chiralbehaviors.layout.cell.MultipleCellSelection;
 import com.chiralbehaviors.layout.cell.VerticalCell;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
+import com.chiralbehaviors.layout.cell.control.MouseHandler;
+import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
@@ -82,7 +83,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
         selectionModel = buildSelectionModel(i -> null, () -> spans.size(),
                                              i -> spans.get(i));
         mouseHandler = bind(selectionModel);
-        focus = new FocusTraversal<Span>(parent, selectionModel,
+        focus = new FocusTraversalNode<Span>(parent, selectionModel,
                                          Bias.VERTICAL) {
 
             @Override
@@ -96,7 +97,6 @@ public class OutlineCell extends VerticalCell<OutlineCell>
     @Override
     public void dispose() {
         super.dispose();
-        focus.unbind();
         mouseHandler.unbind();
     }
 
