@@ -29,7 +29,6 @@ import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
 import com.chiralbehaviors.layout.cell.MouseHandler;
 import com.chiralbehaviors.layout.cell.MultipleCellSelection;
-import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
@@ -90,7 +89,7 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
                 return NestedCell.this;
             }
         };
-        mouseModel = bind();
+        mouseModel = bind(selectionModel);
     }
 
     @Override
@@ -113,12 +112,8 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 
-    /* (non-Javadoc)
-     * @see com.chiralbehaviors.layout.cell.LayoutContainer#hit(double, double)
-     */
     @Override
-    public <H extends Cell<?, ?>> Hit<Cell<?, ?>> hit(double x, double y) {
-        // TODO Auto-generated method stub
-        return null;
+    public Hit<LayoutCell<? extends Region>> hit(double x, double y) {
+        return hit(x, y, cells);
     }
 }

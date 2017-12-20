@@ -201,16 +201,15 @@ public class VirtualFlow<C extends LayoutCell<?>>
         }
     }
 
-    static <C extends Cell<?, ?>> Hit<C> cellHit(int cellIndex, C cell,
-                                                 double x, double y) {
+    public Hit<C> cellHit(int cellIndex, C cell, double x, double y) {
         return new CellHit<>(cellIndex, cell, new Point2D(x, y));
     }
 
-    static <C extends Cell<?, ?>> Hit<C> hitAfterCells(double x, double y) {
+    public Hit<C> hitAfterCells(double x, double y) {
         return new HitAfterCells<>(new Point2D(x, y));
     }
 
-    static <C extends Cell<?, ?>> Hit<C> hitBeforeCells(double x, double y) {
+    public Hit<C> hitBeforeCells(double x, double y) {
         return new HitBeforeCells<>(new Point2D(x, y));
     }
 
@@ -273,7 +272,7 @@ public class VirtualFlow<C extends LayoutCell<?>>
 
         lengthOffsetEstimate = sizeTracker.lengthOffsetEstimateProperty()
                                           .asVar(this::setLengthOffset);
-        mouseHandler = bind();
+        mouseHandler = bind(selectionModel);
     }
 
     public Bounds cellToViewport(C cell, Bounds bounds) {
@@ -363,7 +362,8 @@ public class VirtualFlow<C extends LayoutCell<?>>
      *         from the top right corner of the content of a horizontal flow or
      *         bottom left corner of the content of a vertical flow.
      */
-    public Hit<Cell<?, ?>> hit(double x, double y) {
+    @Override
+    public Hit<C> hit(double x, double y) {
         double lOff = y;
 
         if (items.isEmpty()) {

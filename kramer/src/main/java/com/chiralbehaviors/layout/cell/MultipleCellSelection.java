@@ -388,8 +388,8 @@ abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
         startAtomic();
         if (!selectedIndices.get(row)) {
             if (getSelectionMode() == SINGLE) {
-                if (getSelectedIndex() > 0) {
-                    getCell(getSelectedIndex()).updateSelection(false);
+                if (getSelectedIndex() >= 0) {
+                    getCell(getSelectedIndex()).updateSelection(true);
                 }
                 quietClearSelection();
             }
@@ -416,8 +416,6 @@ abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
 
     @Override
     public void select(T obj) {
-        //            if (getItemCount() <= 0) return;
-
         if (obj == null && getSelectionMode() == SelectionMode.SINGLE) {
             clearSelection();
             return;

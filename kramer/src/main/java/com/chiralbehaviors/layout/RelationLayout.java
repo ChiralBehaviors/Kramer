@@ -30,7 +30,6 @@ import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.outline.Outline;
-import com.chiralbehaviors.layout.outline.OutlineColumn;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -408,7 +407,7 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public OutlineElement outlineElement(String parent, int cardinality,
                                          double labelWidth, double justified,
-                                         FocusTraversal<OutlineColumn> parentTraversal) {
+                                         FocusTraversal<OutlineElement> parentTraversal) {
 
         return new OutlineElement(parent, this, cardinality, labelWidth,
                                   justified, parentTraversal);

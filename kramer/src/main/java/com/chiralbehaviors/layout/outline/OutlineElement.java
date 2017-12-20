@@ -49,7 +49,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     public OutlineElement(SchemaNodeLayout layout, String field,
                           int cardinality, double labelWidth, double justified,
                           double height,
-                          FocusTraversal<OutlineColumn> parentTraversal) {
+                          FocusTraversal<OutlineElement> parentTraversal) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
@@ -75,7 +75,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
 
     public OutlineElement(String field, SchemaNodeLayout layout,
                           int cardinality, double labelWidth, double justified,
-                          FocusTraversal<OutlineColumn> parentTraversal) {
+                          FocusTraversal<OutlineElement> parentTraversal) {
         this(layout, field, cardinality, labelWidth, justified,
              layout.getHeight(), parentTraversal);
     }

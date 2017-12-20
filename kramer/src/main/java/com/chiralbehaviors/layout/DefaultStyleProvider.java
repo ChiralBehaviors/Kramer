@@ -242,13 +242,22 @@ public class DefaultStyleProvider implements StyleProvider {
         span.applyCss();
         span.layout();
 
+        Insets widthCalculated = add(add(add(outlineCell.getInsets(),
+                                             span.getInsets()),
+                                         column.getInsets()),
+                                     element.getInsets());
         return new Pair<StyledInsets, StyledInsets>(new StyledInsets(nestedTable.getInsets(),
                                                                      nestedCell.getInsets()),
                                                     new StyledInsets(outline.getInsets(),
-                                                                     add(add(add(outlineCell.getInsets(),
-                                                                                 span.getInsets()),
-                                                                             column.getInsets()),
-                                                                         element.getInsets())));
+                                                                     new Insets(outlineCell.getInsets()
+                                                                                           .getTop()
+                                                                                + element.getInsets()
+                                                                                         .getTop(),
+                                                                                widthCalculated.getRight(),
+                                                                                outlineCell.getInsets()
+                                                                                           .getBottom() + element.getInsets()
+                                                                                                                 .getBottom(),
+                                                                                widthCalculated.getLeft())));
     }
 
     public PrimitiveLayout layout(Primitive primitive) {

@@ -9,3 +9,7 @@
     -fx-background-insets: -1.4, -0.3, 1;
     -fx-background-radius: 2, 0, 0;
 }
+
+.label:focused {
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.8), 5, 0, 0, 5);
+}

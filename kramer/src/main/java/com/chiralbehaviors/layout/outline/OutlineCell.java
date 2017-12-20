@@ -29,7 +29,6 @@ import com.chiralbehaviors.layout.cell.LayoutContainer;
 import com.chiralbehaviors.layout.cell.MouseHandler;
 import com.chiralbehaviors.layout.cell.MultipleCellSelection;
 import com.chiralbehaviors.layout.cell.VerticalCell;
-import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
@@ -82,7 +81,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
                                String.format(SCHEMA_CLASS_TEMPLATE, field));
         selectionModel = buildSelectionModel(i -> null, () -> spans.size(),
                                              i -> spans.get(i));
-        mouseHandler = bind();
+        mouseHandler = bind(selectionModel);
         focus = new FocusTraversal<Span>(parent, selectionModel,
                                          Bias.VERTICAL) {
 
@@ -102,9 +101,8 @@ public class OutlineCell extends VerticalCell<OutlineCell>
     }
 
     @Override
-    public <H extends Cell<?, ?>> Hit<Cell<?, ?>> hit(double x, double y) {
-        // TODO Auto-generated method stub
-        return null;
+    public Hit<Span> hit(double x, double y) {
+        return hit(x, y, spans);
     }
 
     @Override

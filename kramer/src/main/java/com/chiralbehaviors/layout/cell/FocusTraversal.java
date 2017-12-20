@@ -128,6 +128,8 @@ abstract public class FocusTraversal<C extends Cell<?, ?>> {
         } else if (selectionModel.getFocusedIndex() != selectionModel.getItemCount()
                                                        - 1) {
             selectionModel.focus(selectionModel.getFocusedIndex() + 1);
+        } else {
+            traverseNext();
         }
     }
 
@@ -136,6 +138,8 @@ abstract public class FocusTraversal<C extends Cell<?, ?>> {
             selectionModel.focus(0);
         } else if (selectionModel.getFocusedIndex() > 0) {
             selectionModel.focus(selectionModel.getFocusedIndex() - 1);
+        } else {
+            traversePrevious();
         }
     }
 

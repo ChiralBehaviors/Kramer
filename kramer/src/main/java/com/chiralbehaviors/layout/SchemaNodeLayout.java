@@ -23,7 +23,6 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.StyleProvider.StyledInsets;
 import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.LayoutCell;
-import com.chiralbehaviors.layout.outline.OutlineColumn;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.table.ColumnHeader;
@@ -252,7 +251,7 @@ abstract public class SchemaNodeLayout {
                                                   int cardinality,
                                                   double labelWidth,
                                                   double justified,
-                                                  FocusTraversal<OutlineColumn> parentTraversal);
+                                                  FocusTraversal<OutlineElement> parentTraversal);
 
     abstract public double rowHeight(int averageCardinality,
                                      double justifiedWidth);
