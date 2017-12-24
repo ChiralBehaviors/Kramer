@@ -82,7 +82,7 @@ public class FocusController<C extends LayoutCell<?>>
                                                        evt) -> traversal.right()),
                                               consume(keyPressed(ENTER),
                                                       (traversal,
-                                                       evt) -> traversal.activate())));
+                                                       evt) -> traversal.currentActivate())));
     }
 
     private volatile FocusTraversalNode<?> current;
@@ -110,7 +110,16 @@ public class FocusController<C extends LayoutCell<?>>
     public void selectPrevious() {
     }
 
+    @Override
+    public void setCurrent() {
+    }
+
+    @Override
     public void setCurrent(FocusTraversalNode<?> focused) {
+        System.out.println(String.format("Setting current: %s",
+                                         focused.getNode()
+                                                .getClass()
+                                                .getSimpleName()));
         current = focused;
     }
 
@@ -128,6 +137,10 @@ public class FocusController<C extends LayoutCell<?>>
 
     protected boolean isDisabled() {
         return node.isDisabled();
+    }
+
+    private void currentActivate() {
+        current.activate();
     }
 
     private void down() {

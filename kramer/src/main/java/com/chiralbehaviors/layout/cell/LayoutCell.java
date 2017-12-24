@@ -49,8 +49,9 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         Point2D p = node.sceneToLocal(sceneX, sceneY, true /* rootScene */);
 
         // check if the given node has the point inside it, or else we drop out
-        if (!node.contains(p))
+        if (!node.contains(p)) {
             return null;
+        }
 
         // at this point we know that _at least_ the given node is a valid
         // answer to the given point, so we will return that if we don't find
@@ -78,6 +79,9 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         }
 
         return node;
+    }
+
+    default void activate() {
     }
 
     default void cancelEdit() {
@@ -150,6 +154,7 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 
+    @Override
     default void updateSelection(boolean selected) {
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_SELECTED, selected);
     }

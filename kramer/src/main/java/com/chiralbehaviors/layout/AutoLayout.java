@@ -121,6 +121,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         }
     }
 
+    @Override
     public void resize(double width, double height) {
         super.resize(width, height);
         if (layoutWidth == width || width < 10.0 || height < 10.0) {

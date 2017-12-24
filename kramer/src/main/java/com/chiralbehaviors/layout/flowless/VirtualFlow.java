@@ -14,9 +14,9 @@ import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.RegionCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
-import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
@@ -203,21 +203,12 @@ public class VirtualFlow<C extends LayoutCell<?>>
         }
     }
 
-    public Hit<C> cellHit(int cellIndex, C cell, double x, double y) {
-        return new CellHit<>(cellIndex, cell, new Point2D(x, y));
-    }
+    protected final FocusTraversalNode<C>            focus;
 
-    public Hit<C> hitAfterCells(double x, double y) {
-        return new HitAfterCells<>(new Point2D(x, y));
-    }
-
-    public Hit<C> hitBeforeCells(double x, double y) {
-        return new HitBeforeCells<>(new Point2D(x, y));
-    }
-
-    protected final FocusTraversalNode<C>                focus;
     protected final ObservableList<JsonNode>         items;
+
     protected final MouseHandler                     mouseHandler;
+
     protected final ScrollHandler                    scrollHandler = new ScrollHandler(this);
     private final CellListManager<C>                 cellListManager;
     private final CellPositioner<C>                  cellPositioner;
@@ -225,7 +216,6 @@ public class VirtualFlow<C extends LayoutCell<?>>
     private final Navigator<C>                       navigator;
     private final MultipleCellSelection<JsonNode, C> selectionModel;
     private final SizeTracker                        sizeTracker;
-
     {
 
     }
@@ -247,8 +237,8 @@ public class VirtualFlow<C extends LayoutCell<?>>
         selectionModel = buildSelectionModel(i -> observableList.get(i),
                                              () -> observableList.size(),
                                              i -> getCell(i));
-        focus = new FocusTraversalNode((FocusTraversal<?>) parentTraversal,
-                                   selectionModel, Bias.VERTICAL) {
+        focus = new FocusTraversalNode(parentTraversal, selectionModel,
+                                       Bias.VERTICAL) {
 
             @Override
             protected Node getNode() {
@@ -277,6 +267,15 @@ public class VirtualFlow<C extends LayoutCell<?>>
         mouseHandler = bind(selectionModel);
     }
 
+    @Override
+    public void activate() {
+        focus.setCurrent();
+    }
+
+    public Hit<C> cellHit(int cellIndex, C cell, double x, double y) {
+        return new CellHit<>(cellIndex, cell, new Point2D(x, y));
+    }
+
     public Bounds cellToViewport(C cell, Bounds bounds) {
         return cell.getNode()
                    .localToParent(bounds);
@@ -292,6 +291,7 @@ public class VirtualFlow<C extends LayoutCell<?>>
                    .localToParent(point);
     }
 
+    @Override
     public void dispose() {
         navigator.dispose();
         sizeTracker.dispose();
@@ -422,6 +422,14 @@ public class VirtualFlow<C extends LayoutCell<?>>
                 throw new AssertionError("unreachable code");
             }
         }
+    }
+
+    public Hit<C> hitAfterCells(double x, double y) {
+        return new HitAfterCells<>(new Point2D(x, y));
+    }
+
+    public Hit<C> hitBeforeCells(double x, double y) {
+        return new HitBeforeCells<>(new Point2D(x, y));
     }
 
     public Var<Double> lengthOffsetEstimateProperty() {

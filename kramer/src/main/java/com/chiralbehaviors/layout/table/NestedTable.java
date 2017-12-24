@@ -85,6 +85,11 @@ public class NestedTable extends VerticalCell<NestedTable> {
     }
 
     @Override
+    public void activate() {
+        rows.activate();
+    }
+
+    @Override
     public void setFocus() {
         rows.setFocus();
     }
@@ -101,7 +106,7 @@ public class NestedTable extends VerticalCell<NestedTable> {
                                                 RelationLayout layout,
                                                 FocusTraversal<?> parentTraversal) {
         BiFunction<JsonNode, FocusTraversalNode<NestedCell>, NestedCell> factory = (item,
-                                                                    pt) -> {
+                                                                                    pt) -> {
             NestedCell cell = new NestedCell(layout, pt);
             cell.updateItem(item);
             return cell;

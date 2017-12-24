@@ -18,10 +18,11 @@ package com.chiralbehaviors.layout.outline;
 
 import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
-import com.chiralbehaviors.layout.flowless.Cell;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.beans.InvalidationListener;
 import javafx.scene.control.Control;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -33,17 +34,19 @@ import javafx.scene.layout.VBox;
  */
 public class OutlineElement extends HorizontalCell<OutlineElement> {
 
-    private static final String                    DEFAULT_STYLE         = "outline-element";
-    private static final String                    SCHEMA_CLASS_TEMPLATE = "%s-outline-element";
-    private static final String                    STYLE_SHEET           = "outline-element.css";
+    private static final String                  DEFAULT_STYLE         = "outline-element";
+    private static final String                  SCHEMA_CLASS_TEMPLATE = "%s-outline-element";
+    private static final String                  STYLE_SHEET           = "outline-element.css";
 
-    private final Cell<JsonNode, ? extends Region> cell;
+    private final LayoutCell<?>                  cell;
+    private final FocusTraversal<OutlineElement> parentTraversal;
 
     public OutlineElement(String field) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
         this.cell = null;
+        this.parentTraversal = null;
     }
 
     public OutlineElement(SchemaNodeLayout layout, String field,
@@ -54,6 +57,14 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
         this.cell = layout.buildControl(parentTraversal);
+        this.parentTraversal = parentTraversal;
+        OutlineElement node = getNode();
+        node.focusedProperty()
+        .addListener((InvalidationListener) property -> {
+            if (node.isFocused()) {
+                parentTraversal.setCurrent();
+            }
+        });
 
         setMinSize(justified, height);
         setPrefSize(justified, height);
@@ -71,6 +82,11 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
             .setMaxSize(available, height);
         getChildren().addAll(label, cell.getNode());
 
+    }
+
+    @Override
+    public void activate() {
+        parentTraversal.setCurrent();
     }
 
     public OutlineElement(String field, SchemaNodeLayout layout,

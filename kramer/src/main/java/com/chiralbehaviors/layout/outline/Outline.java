@@ -47,12 +47,6 @@ public class Outline extends VirtualFlow<OutlineCell> {
              columnSets, averageCardinality, layout, parentTraversal);
     }
 
-    public Outline(String field) {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
-    }
-
     public Outline(double width, double cellHeight,
                    Collection<ColumnSet> columnSets, int averageCardinality,
                    RelationLayout layout, FocusTraversal<?> parentTraversal) {
@@ -66,6 +60,12 @@ public class Outline extends VirtualFlow<OutlineCell> {
                   return outlineCell;
               }, parentTraversal);
         layout.apply(this);
+    }
+
+    public Outline(String field) {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
     }
 
     @Override

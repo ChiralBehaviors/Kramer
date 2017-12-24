@@ -167,6 +167,11 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
+    public double calculateLabelWidth() {
+        return labelWidth(getLabel());
+    }
+
+    @Override
     public double calculateTableColumnWidth() {
         return children.stream()
                        .mapToDouble(c -> c.calculateTableColumnWidth())
@@ -366,11 +371,6 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double calculateLabelWidth() {
-        return labelWidth(getLabel());
-    }
-
-    @Override
     public double nestTableColumn(Indent indent, double indentation) {
         columnHeaderIndentation = snap(indentation
                                        + tableInsets.getCellHorizontalInset());
@@ -393,7 +393,7 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public void normalizeRowHeight(double normalized) {
         double deficit = normalized - height;
-        double childDeficit = deficit / (double) resolvedCardinality;
+        double childDeficit = deficit / resolvedCardinality;
         rowHeight = snap(rowHeight + childDeficit);
         height = normalized;
 

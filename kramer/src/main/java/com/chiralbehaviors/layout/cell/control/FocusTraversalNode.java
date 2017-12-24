@@ -49,48 +49,70 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
         node.focusedProperty()
             .addListener((InvalidationListener) property -> {
                 if (node.isFocused()) {
-                    setCurrent();
+                    if (parent != null) {
+                        parent.setCurrent();
+                    }
                 }
             });
     }
 
     @Override
     public void activate() {
+        System.out.println(String.format("Activate: %s", getNode().getClass()
+                                                                  .getSimpleName()));
         int focusedIndex = selectionModel.getFocusedIndex();
-        selectionModel.select(focusedIndex);
-        if (focusedIndex >= 0) {
-            edit();
+        if (focusedIndex < 0) {
+            return;
         }
+        selectionModel.select(focusedIndex);
+        selectionModel.getCell(focusedIndex)
+                      .activate();
     }
 
     @Override
     public void edit() {
-        // default nothing
+        setCurrent();
     }
 
     @Override
     public void selectNext() {
-        if (selectionModel.getFocusedIndex() == -1) {
-            selectionModel.focus(0);
-        } else if (selectionModel.getFocusedIndex() != selectionModel.getItemCount()
-                                                       - 1) {
-            selectionModel.focus(selectionModel.getFocusedIndex() + 1);
+        System.out.println(String.format("Selecting next: %s",
+                                         getNode().getClass()
+                                                  .getSimpleName()));
+        if (selectionModel.getItemCount() > 0) {
+            int focusedIndex = selectionModel.getFocusedIndex();
+            if (focusedIndex == -1) {
+                selectionModel.focus(0);
+            } else if (focusedIndex == selectionModel.getItemCount() - 1) {
+                //                selectionModel.focus(0);
+                traverseNext();
+            } else {
+                selectionModel.focus(focusedIndex + 1);
+            }
         } else {
-            traverseNext();
+            getNode().requestFocus();
         }
     }
 
     @Override
     public void selectPrevious() {
-        if (selectionModel.getFocusedIndex() == -1) {
-            selectionModel.focus(0);
-        } else if (selectionModel.getFocusedIndex() > 0) {
-            selectionModel.focus(selectionModel.getFocusedIndex() - 1);
+        System.out.println(String.format("Selecting previous: %s",
+                                         getNode().getClass()
+                                                  .getSimpleName()));
+        if (selectionModel.getItemCount() > 0) {
+            int focusedIndex = selectionModel.getFocusedIndex();
+            if (focusedIndex > 0) {
+                selectionModel.focus(focusedIndex - 1);
+            } else {
+                traversePrevious();
+                //                selectionModel.focus(selectionModel.getItemCount() - 1);
+            }
         } else {
-            traversePrevious();
+            getNode().requestFocus();
         }
     }
 
+    @Override
     public void setCurrent() {
         if (parent != null) {
             parent.setCurrent(this);
@@ -106,6 +128,9 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
 
     @Override
     public final void traverseNext() {
+        System.out.println(String.format("Traverse next: %s",
+                                         getNode().getClass()
+                                                  .getSimpleName()));
         if (parent == null) {
             return;
         }
@@ -114,6 +139,9 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
 
     @Override
     public final void traversePrevious() {
+        System.out.println(String.format("Traverse previous: %s",
+                                         getNode().getClass()
+                                                  .getSimpleName()));
         if (parent == null) {
             return;
         }

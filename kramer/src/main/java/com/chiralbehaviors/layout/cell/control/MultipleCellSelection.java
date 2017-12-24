@@ -302,6 +302,9 @@ abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
     }
 
     public void focus(int index) {
+        if (index < 0 || index >= getItemCount()) {
+            return;
+        }
         C cell = getCell(index);
         cell.setFocus();
         focusedIndex = index;

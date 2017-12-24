@@ -102,7 +102,7 @@ public interface LayoutContainer<T, R extends Region, C extends LayoutCell<?>>
 
             @Override
             public T getModelItem(int index) {
-                return (T) itemProvider.apply(index);
+                return itemProvider.apply(index);
             }
         };
     }

@@ -25,9 +25,9 @@ import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
-import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
@@ -44,8 +44,8 @@ public class Span extends HorizontalCell<Span>
     private static final String                                  STYLE_SHEET   = "span.css";
     private final List<OutlineColumn>                            columns       = new ArrayList<>();
     private final FocusTraversal<OutlineColumn>                  focus;
-    private final MultipleCellSelection<JsonNode, OutlineColumn> selectionModel;
     private final MouseHandler                                   mouseModel;
+    private final MultipleCellSelection<JsonNode, OutlineColumn> selectionModel;
 
     public Span(String field) {
         this(field, null);
@@ -75,8 +75,8 @@ public class Span extends HorizontalCell<Span>
         selectionModel = buildSelectionModel(i -> null, () -> columns.size(),
                                              i -> columns.get(i));
         focus = new FocusTraversalNode<OutlineColumn>(parentTraversal,
-                                                  selectionModel,
-                                                  Bias.HORIZONTAL) {
+                                                      selectionModel,
+                                                      Bias.HORIZONTAL) {
             @Override
             protected Node getNode() {
                 return Span.this;
@@ -86,19 +86,24 @@ public class Span extends HorizontalCell<Span>
     }
 
     @Override
+    public void activate() {
+        focus.setCurrent();
+    }
+
+    @Override
     public void dispose() {
         super.dispose();
         mouseModel.unbind();
     }
 
     @Override
-    public void updateItem(JsonNode item) {
-        columns.forEach(c -> c.updateItem(item));
-        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
+    public Hit<OutlineColumn> hit(double x, double y) {
+        return hit(x, y, columns);
     }
 
     @Override
-    public Hit<OutlineColumn> hit(double x, double y) {
-        return hit(x, y, columns);
+    public void updateItem(JsonNode item) {
+        columns.forEach(c -> c.updateItem(item));
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 }

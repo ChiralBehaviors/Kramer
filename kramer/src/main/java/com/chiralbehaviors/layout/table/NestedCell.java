@@ -27,9 +27,9 @@ import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
-import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
@@ -41,18 +41,18 @@ import javafx.scene.layout.Region;
  */
 public class NestedCell extends HorizontalCell<NestedCell> implements
         LayoutContainer<JsonNode, NestedCell, LayoutCell<? extends Region>> {
+    private static final String                                                 DEFAULT_STYLE         = "a-cell";
     /**
-     * 
+     *
      */
     private static final String                                                 NESTED_CELL_CLASS     = "nested-cell";
-    private static final String                                                 DEFAULT_STYLE         = "a-cell";
     private static final String                                                 SCHEMA_CLASS_TEMPLATE = "%s-nested-cell";
     private static final String                                                 STYLE_SHEET           = "nested-cell.css";
     private List<LayoutCell<? extends Region>>                                  cells                 = new ArrayList<>();
     private final List<Consumer<JsonNode>>                                      consumers             = new ArrayList<>();
     private final FocusTraversal<?>                                             focus;
-    private final MultipleCellSelection<JsonNode, LayoutCell<? extends Region>> selectionModel;
     private final MouseHandler                                                  mouseModel;
+    private final MultipleCellSelection<JsonNode, LayoutCell<? extends Region>> selectionModel;
 
     public NestedCell(RelationLayout layout,
                       FocusTraversal<NestedCell> parentTraversal) {
@@ -82,8 +82,8 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
         selectionModel = buildSelectionModel(i -> null, () -> cells.size(),
                                              i -> cells.get(i));
         focus = new FocusTraversalNode<LayoutCell<? extends Region>>(parentTraversal,
-                                                                 selectionModel,
-                                                                 Bias.HORIZONTAL) {
+                                                                     selectionModel,
+                                                                     Bias.HORIZONTAL) {
 
             @Override
             protected Node getNode() {
@@ -94,9 +94,19 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
     }
 
     @Override
+    public void activate() {
+        focus.setCurrent();
+    }
+
+    @Override
     public void dispose() {
         super.dispose();
         mouseModel.unbind();
+    }
+
+    @Override
+    public Hit<LayoutCell<? extends Region>> hit(double x, double y) {
+        return hit(x, y, cells);
     }
 
     @Override
@@ -110,10 +120,5 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
     public void updateItem(JsonNode item) {
         consumers.forEach(c -> c.accept(item));
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
-    }
-
-    @Override
-    public Hit<LayoutCell<? extends Region>> hit(double x, double y) {
-        return hit(x, y, cells);
     }
 }

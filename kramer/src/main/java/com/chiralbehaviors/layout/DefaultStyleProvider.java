@@ -126,15 +126,6 @@ public class DefaultStyleProvider implements StyleProvider {
     private Insets                                textInsets     = ZERO_INSETS;
     private double                                textLineHeight = 0;
 
-    public DefaultStyleProvider(StyleProvider.LayoutModel model) {
-        this(Collections.emptyList(), model, true);
-    }
-
-    public DefaultStyleProvider(StyleProvider.LayoutModel model,
-                                boolean initialize) {
-        this(Collections.emptyList(), model, initialize);
-    }
-
     public DefaultStyleProvider(List<String> styleSheets,
                                 StyleProvider.LayoutModel model) {
         this(styleSheets, model, true);
@@ -147,6 +138,15 @@ public class DefaultStyleProvider implements StyleProvider {
         if (initialize) {
             initialize(styleSheets);
         }
+    }
+
+    public DefaultStyleProvider(StyleProvider.LayoutModel model) {
+        this(Collections.emptyList(), model, true);
+    }
+
+    public DefaultStyleProvider(StyleProvider.LayoutModel model,
+                                boolean initialize) {
+        this(Collections.emptyList(), model, initialize);
     }
 
     @Override

@@ -55,16 +55,16 @@ public class ScrollHandler {
         bind();
     }
 
-    public void scroll(ScrollEvent se) {
-        flow.scrollYBy(-se.getDeltaY());
-    }
-
     public void bind() {
         InputMapTemplate.installOverride(DEFAULT_INPUT_MAP, this, c -> flow);
     }
 
     public boolean isDisabled() {
         return flow.isDisabled();
+    }
+
+    public void scroll(ScrollEvent se) {
+        flow.scrollYBy(-se.getDeltaY());
     }
 
     public void scrollDown() {

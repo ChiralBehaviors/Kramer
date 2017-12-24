@@ -46,8 +46,8 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
     private final List<OutlineElement>                            elements              = new ArrayList<>();
     private final List<Consumer<JsonNode>>                        fields                = new ArrayList<>();
     private final FocusTraversal<OutlineElement>                  focus;
-    private final MultipleCellSelection<JsonNode, OutlineElement> selectionModel;
     private final MouseHandler                                    mouseHandler;
+    private final MultipleCellSelection<JsonNode, OutlineElement> selectionModel;
 
     public OutlineColumn(String field) {
         this(field, null);
@@ -80,8 +80,8 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
                                              i -> elements.get(i));
         mouseHandler = bind(selectionModel);
         focus = new FocusTraversalNode<OutlineElement>(parentTraversal,
-                                                   selectionModel,
-                                                   Bias.VERTICAL) {
+                                                       selectionModel,
+                                                       Bias.VERTICAL) {
 
             @Override
             protected Node getNode() {
@@ -91,18 +91,23 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
     }
 
     @Override
+    public void activate() {
+        focus.setCurrent();
+    }
+
+    @Override
     public void dispose() {
         super.dispose();
         mouseHandler.unbind();
     }
 
     @Override
-    public void updateItem(JsonNode item) {
-        fields.forEach(m -> m.accept(item));
+    public Hit<OutlineElement> hit(double x, double y) {
+        return hit(x, y, elements);
     }
 
     @Override
-    public Hit<OutlineElement> hit(double x, double y) {
-        return hit(x, y, elements);
+    public void updateItem(JsonNode item) {
+        fields.forEach(m -> m.accept(item));
     }
 }

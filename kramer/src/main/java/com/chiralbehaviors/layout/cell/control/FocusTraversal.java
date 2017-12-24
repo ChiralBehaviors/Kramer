@@ -33,10 +33,12 @@ public interface FocusTraversal<C extends LayoutCell<?>> {
 
     void selectPrevious();
 
+    void setCurrent();
+
+    void setCurrent(FocusTraversalNode<?> focused);
+
     void traverseNext();
 
     void traversePrevious();
-
-    void setCurrent(FocusTraversalNode<?> focused);
 
 }
