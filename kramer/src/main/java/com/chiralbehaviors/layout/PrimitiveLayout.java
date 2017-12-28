@@ -23,9 +23,9 @@ import java.util.List;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.PrimitiveList;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.outline.OutlineElement;
-import com.chiralbehaviors.layout.primitives.PrimitiveList;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.style.LayoutModel;
 import com.chiralbehaviors.layout.style.PrimitiveStyle;

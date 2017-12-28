@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.primitives;
+package com.chiralbehaviors.layout.cell;
 
 import com.chiralbehaviors.layout.PrimitiveLayout;
-import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;

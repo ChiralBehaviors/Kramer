@@ -19,10 +19,11 @@ package com.chiralbehaviors.layout.style;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
-import com.chiralbehaviors.layout.primitives.LabelCell;
+import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.geometry.Insets;
+import javafx.scene.control.Label;
 
 /**
  * @author halhildebrand
@@ -37,32 +38,50 @@ abstract public class PrimitiveStyle extends NodeStyle {
             super(labelStyle, listInsets);
         }
 
-        @Override
         public double width(JsonNode row) {
             return labelStyle.width(LayoutModel.toString(row))
                    + labelStyle.getHorizontalInset();
         }
 
-        @Override
         public double getHeight(double maxWidth, double justified) {
             double rows = Math.ceil((maxWidth / justified) + 0.5);
             return (labelStyle.getLineHeight() * rows)
                    + labelStyle.getVerticalInset();
         }
 
-        @Override
         public LayoutCell<?> build(FocusTraversal<?> pt, PrimitiveLayout p) {
-            LabelCell cell = new LabelCell(p);
-            cell.getNode()
-                .getStyleClass()
-                .add(p.getField());
-            cell.getNode()
-                .setMinSize(p.getJustifiedWidth(), p.getCellHeight());
-            cell.getNode()
-                .setPrefSize(p.getJustifiedWidth(), p.getCellHeight());
-            cell.getNode()
-                .setMaxSize(p.getJustifiedWidth(), p.getCellHeight());
-            return cell;
+            String DEFAULT_STYLE = "primitive";
+            Label label = new Label();
+            label.getStyleClass()
+                 .add(p.getField());
+            label.setMinSize(p.getJustifiedWidth(), p.getCellHeight());
+            label.setPrefSize(p.getJustifiedWidth(), p.getCellHeight());
+            label.setMaxSize(p.getJustifiedWidth(), p.getCellHeight());
+            return new LayoutCell<Label>() {
+                {
+                    initialize(p.getField());
+                    label.setWrapText(true);
+                    initialize(DEFAULT_STYLE);
+                }
+
+                @Override
+                public Label getNode() {
+                    return label;
+                }
+
+                @Override
+                public boolean isReusable() {
+                    return true;
+                }
+
+                @Override
+                public void updateItem(JsonNode item) {
+                    label.setText(SchemaNode.asText(item));
+                    getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,
+                                                      item != null);
+                }
+            };
+
         }
 
     }
