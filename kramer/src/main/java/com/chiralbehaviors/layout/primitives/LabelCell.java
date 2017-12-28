@@ -17,38 +17,29 @@
 package com.chiralbehaviors.layout.primitives;
 
 import com.chiralbehaviors.layout.PrimitiveLayout;
-import com.chiralbehaviors.layout.cell.HorizontalCell;
+import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.control.Label;
-import javafx.scene.layout.Region;
 
 /**
  * @author halhildebrand
  *
  */
-public class LabelCell extends HorizontalCell<Region> {
+public class LabelCell implements LayoutCell<Label> {
     private static final String DEFAULT_STYLE = "primitive";
     private final Label         label;
 
     public LabelCell(PrimitiveLayout layout) {
-        super(layout.getField());
         label = new Label();
+        initialize(layout.getField());
         label.setWrapText(true);
-        label.setStyle("-fx-background-color: " + "         rgba(0,0,0,0.08),"
-                       + "        linear-gradient(#9a9a9a, #909090),"
-                       + "        white 0%;"
-                       + "    -fx-background-insets: 0 0 -1 0,0,1;"
-                       + "    -fx-background-radius: 5,5,4;"
-                       + "    -fx-padding: 3 30 3 30;"
-                       + "    -fx-text-fill: #242d35;"
-                       + "    -fx-font-size: 14px;");
         initialize(DEFAULT_STYLE);
     }
 
     @Override
-    public Region getNode() {
+    public Label getNode() {
         return label;
     }
 

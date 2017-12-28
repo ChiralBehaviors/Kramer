@@ -16,6 +16,10 @@
 
 package com.chiralbehaviors.layout.style;
 
+import com.chiralbehaviors.layout.PrimitiveLayout;
+import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
+import com.chiralbehaviors.layout.primitives.LabelCell;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.geometry.Insets;
@@ -37,6 +41,27 @@ public class PrimitiveStyle extends NodeStyle {
     }
 
     public double width(JsonNode row) {
-        return labelStyle.width(LayoutModel.toString(row)) + labelStyle.getHorizontalInset();
+        return labelStyle.width(LayoutModel.toString(row))
+               + labelStyle.getHorizontalInset();
+    }
+
+    public double getHeight(double maxWidth, double justified) {
+        double rows = Math.ceil((maxWidth / justified) + 0.5);
+        return (labelStyle.getLineHeight() * rows)
+               + labelStyle.getVerticalInset();
+    }
+
+    public LayoutCell<?> build(FocusTraversal<?> pt, PrimitiveLayout p) {
+        LabelCell cell = new LabelCell(p);
+        cell.getNode()
+            .getStyleClass()
+            .add(p.getField());
+        cell.getNode()
+            .setMinSize(p.getJustifiedWidth(), p.getCellHeight());
+        cell.getNode()
+            .setPrefSize(p.getJustifiedWidth(), p.getCellHeight());
+        cell.getNode()
+            .setMaxSize(p.getJustifiedWidth(), p.getCellHeight());
+        return cell;
     }
 }
