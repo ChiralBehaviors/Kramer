@@ -16,12 +16,12 @@
 
 package com.chiralbehaviors.layout;
 
-import static com.chiralbehaviors.layout.DefaultStyleProvider.snap;
-
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import com.chiralbehaviors.layout.style.LayoutModel;
 
 /**
  *
@@ -105,7 +105,7 @@ public class Column {
                                   .mapToDouble(f -> f.getHeight())
                                   .sum();
         if (calculated < finalHeight) {
-            double delta = snap((finalHeight - calculated) / fields.size());
+            double delta = LayoutModel.snap((finalHeight - calculated) / fields.size());
             if (delta >= 1.0) {
                 fields.forEach(f -> f.adjustHeight(delta));
             }
@@ -115,7 +115,7 @@ public class Column {
     private double cellHeight(int cardinality,
                               ArrayDeque<SchemaNodeLayout> elements,
                               double labelWidth) {
-        double available = snap(width - labelWidth);
+        double available = LayoutModel.snap(width - labelWidth);
         return elements.stream()
                        .mapToDouble(field -> field.cellHeight(cardinality,
                                                               available))

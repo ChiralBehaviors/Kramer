@@ -24,9 +24,9 @@ import org.fxmisc.wellbehaved.event.InputMap;
 import org.fxmisc.wellbehaved.event.Nodes;
 
 import com.chiralbehaviors.layout.AutoLayout;
-import com.chiralbehaviors.layout.StyleProvider.LayoutModel;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
+import com.chiralbehaviors.layout.style.LayoutModel;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.application.Application;
@@ -57,7 +57,7 @@ public class Smoke extends Application {
             }
         };
         AutoLayout layout = new AutoLayout(Util.build(), model);
-        URL url = getClass().getResource("/smoke.css");
+        URL url = getClass().getResource("/bootstrap3.css");
         if (url != null) {
             layout.getStylesheets()
                   .add(url.toExternalForm());

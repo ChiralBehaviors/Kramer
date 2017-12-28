@@ -20,12 +20,12 @@ import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
+import com.chiralbehaviors.layout.style.LayoutModel;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.beans.InvalidationListener;
 import javafx.scene.control.Control;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 /**
@@ -52,19 +52,20 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     public OutlineElement(SchemaNodeLayout layout, String field,
                           int cardinality, double labelWidth, double justified,
                           double height,
-                          FocusTraversal<OutlineElement> parentTraversal) {
+                          FocusTraversal<OutlineElement> parentTraversal,
+                          LayoutModel model) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
-        this.cell = layout.buildControl(parentTraversal);
+        this.cell = layout.buildControl(parentTraversal, model);
         this.parentTraversal = parentTraversal;
         OutlineElement node = getNode();
         node.focusedProperty()
-        .addListener((InvalidationListener) property -> {
-            if (node.isFocused()) {
-                parentTraversal.setCurrent();
-            }
-        });
+            .addListener((InvalidationListener) property -> {
+                if (node.isFocused()) {
+                    parentTraversal.setCurrent();
+                }
+            });
 
         setMinSize(justified, height);
         setPrefSize(justified, height);
@@ -91,9 +92,10 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
 
     public OutlineElement(String field, SchemaNodeLayout layout,
                           int cardinality, double labelWidth, double justified,
-                          FocusTraversal<OutlineElement> parentTraversal) {
+                          FocusTraversal<OutlineElement> parentTraversal,
+                          LayoutModel model) {
         this(layout, field, cardinality, labelWidth, justified,
-             layout.getHeight(), parentTraversal);
+             layout.getHeight(), parentTraversal, model);
     }
 
     @Override

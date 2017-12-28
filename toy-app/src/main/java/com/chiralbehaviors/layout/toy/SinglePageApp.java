@@ -35,11 +35,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.chiralbehaviors.layout.AutoLayout;
-import com.chiralbehaviors.layout.StyleProvider;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil.QueryException;
 import com.chiralbehaviors.layout.schema.Relation;
+import com.chiralbehaviors.layout.style.LayoutModel;
 import com.chiralbehaviors.layout.toy.Page.Route;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,7 +62,7 @@ import javafx.stage.Stage;
  *
  */
 public class SinglePageApp extends Application
-        implements StyleProvider.LayoutModel {
+        implements LayoutModel {
     private static final Logger log = LoggerFactory.getLogger(SinglePageApp.class);
 
     public static void main(String[] args) {

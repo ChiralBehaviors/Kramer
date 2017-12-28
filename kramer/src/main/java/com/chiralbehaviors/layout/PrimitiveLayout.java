@@ -16,7 +16,6 @@
 
 package com.chiralbehaviors.layout;
 
-import static com.chiralbehaviors.layout.DefaultStyleProvider.snap;
 import static com.chiralbehaviors.layout.schema.SchemaNode.asList;
 
 import java.util.List;
@@ -28,12 +27,13 @@ import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.primitives.LabelCell;
 import com.chiralbehaviors.layout.primitives.PrimitiveList;
 import com.chiralbehaviors.layout.schema.Primitive;
+import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.PrimitiveStyle;
 import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
-import javafx.geometry.Insets;
 import javafx.scene.layout.Region;
 
 /**
@@ -42,21 +42,16 @@ import javafx.scene.layout.Region;
  *
  */
 public class PrimitiveLayout extends SchemaNodeLayout {
-    protected int          averageCardinality;
-    protected final Insets listInsets;
-    protected double       maxWidth;
-    private double         cellHeight;
+    protected int                  averageCardinality;
+    protected final PrimitiveStyle style;
+    protected double               maxWidth;
+    private double                 cellHeight;
     @SuppressWarnings("unused")
-    private boolean        variableLength;
+    private boolean                variableLength;
 
-    public PrimitiveLayout(DefaultStyleProvider layout, Primitive p) {
-        super(layout, p);
-        this.listInsets = layout.listInsets(this);
-    }
-
-    public void apply(LayoutCell<?> cell) {
-        layout.getModel()
-              .apply(cell, getNode());
+    public PrimitiveLayout(Primitive p, PrimitiveStyle style) {
+        super(p, style.getLabelStyle());
+        this.style = style;
     }
 
     public LayoutCell<?> buildCell(FocusTraversal<?> pt) {
@@ -75,8 +70,10 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public LayoutCell<? extends Region> buildColumn(double rendered,
-                                                    FocusTraversal<?> parentTraversal) {
-        LayoutCell<? extends Region> control = buildControl(parentTraversal);
+                                                    FocusTraversal<?> parentTraversal,
+                                                    LayoutModel model) {
+        LayoutCell<? extends Region> control = buildControl(parentTraversal,
+                                                            model);
         control.getNode()
                .setMinSize(justifiedWidth, rendered);
         control.getNode()
@@ -87,7 +84,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public LayoutCell<? extends Region> buildControl(FocusTraversal<?> parentTraversal) {
+    public LayoutCell<? extends Region> buildControl(FocusTraversal<?> parentTraversal,
+                                                     LayoutModel model) {
         return averageCardinality > 1 ? new PrimitiveList(this, parentTraversal)
                                       : buildCell(parentTraversal);
     }
@@ -110,11 +108,11 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         int resolvedCardinality = Math.min(cardinality, averageCardinality);
         double rows = Math.ceil((maxWidth / justified) + 0.5);
         boolean list = resolvedCardinality > 1;
-        cellHeight = snap((layout.getTextLineHeight() * rows)
-                          + layout.getTextVerticalInset());
+        cellHeight = LayoutModel.snap((labelStyle.getLineHeight() * rows)
+                          + labelStyle.getVerticalInset());
         if (list) {
-            height = (cellHeight * resolvedCardinality) + listInsets.getTop()
-                     + listInsets.getBottom();
+            height = (cellHeight * resolvedCardinality)
+                     + style.getListVerticalInset();
         } else {
             height = cellHeight;
         }
@@ -123,7 +121,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public Function<Double, ColumnHeader> columnHeader() {
-        return rendered -> new ColumnHeader(snap(justifiedWidth
+        return rendered -> new ColumnHeader(LayoutModel.snap(justifiedWidth
                                                  + columnHeaderIndentation),
                                             rendered, this);
     }
@@ -135,7 +133,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public void compress(double available) {
-        justifiedWidth = snap(available);
+        justifiedWidth = LayoutModel.snap(available);
     }
 
     @Override
@@ -149,12 +147,12 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double getJustifiedColumnWidth() {
-        return snap(justifiedWidth);
+        return LayoutModel.snap(justifiedWidth);
     }
 
     @Override
     public double justify(double justified) {
-        justifiedWidth = snap(justified);
+        justifiedWidth = LayoutModel.snap(justified);
         return justifiedWidth;
     }
 
@@ -170,16 +168,16 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public SchemaNodeLayout measure(JsonNode datum) {
+    public SchemaNodeLayout measure(JsonNode datum, LayoutModel layout) {
         ArrayNode setOf = JsonNodeFactory.instance.arrayNode();
         setOf.add(datum);
-        measure(setOf, n -> n);
+        measure(setOf, n -> n, layout);
         return this;
     }
 
     @Override
-    public double measure(JsonNode data,
-                          Function<JsonNode, JsonNode> extractor) {
+    public double measure(JsonNode data, Function<JsonNode, JsonNode> extractor,
+                          LayoutModel model) {
         clear();
         labelWidth = labelWidth(node.getLabel());
         double summedDataWidth = 0;
@@ -213,7 +211,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         }
 
         columnWidth = Math.max(labelWidth,
-                               DefaultStyleProvider.snap(Math.max(getNode().getDefaultWidth(),
+                               LayoutModel.snap(Math.max(getNode().getDefaultWidth(),
                                                                   averageWidth)));
         if (maxWidth > averageWidth) {
             variableLength = true;
@@ -235,9 +233,10 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public OutlineElement outlineElement(String parent, int cardinality,
                                          double labelWidth, double justified,
-                                         FocusTraversal<OutlineElement> parentTraversal) {
+                                         FocusTraversal<OutlineElement> parentTraversal,
+                                         LayoutModel model) {
         return new OutlineElement(parent, this, cardinality, labelWidth,
-                                  justified, parentTraversal);
+                                  justified, parentTraversal, model);
     }
 
     @Override
@@ -269,15 +268,15 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     protected double getColumnHeaderWidth() {
-        return snap(justifiedWidth + columnHeaderIndentation);
+        return LayoutModel.snap(justifiedWidth + columnHeaderIndentation);
     }
 
     @Override
-    protected Primitive getNode() {
+    public Primitive getNode() {
         return (Primitive) node;
     }
 
     protected double width(JsonNode row) {
-        return layout.totalTextWidth(layout.textWidth(DefaultStyleProvider.toString(row)));
+        return style.width(row);
     }
 }

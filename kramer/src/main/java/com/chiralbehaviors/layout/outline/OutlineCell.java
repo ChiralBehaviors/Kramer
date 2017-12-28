@@ -30,6 +30,7 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
+import com.chiralbehaviors.layout.style.LayoutModel;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
@@ -55,7 +56,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
                        double cellHeight, RelationLayout layout,
-                       FocusTraversal<OutlineCell> pt) {
+                       FocusTraversal<OutlineCell> pt, LayoutModel model) {
         this(layout.getField(), pt);
         setMinSize(layout.getJustifiedColumnWidth(), cellHeight);
         setPrefSize(layout.getJustifiedColumnWidth(), cellHeight);
@@ -64,7 +65,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
             Span span = new Span(layout.getField(), cs.getWidth(),
                                  cs.getColumns(), childCardinality,
                                  cs.getCellHeight(), layout.getLabelWidth(),
-                                 focus);
+                                 focus, model);
             spans.add(span);
             VBox.setVgrow(span.getNode(), Priority.ALWAYS);
             getChildren().add(span.getNode());

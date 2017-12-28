@@ -19,6 +19,7 @@ package com.chiralbehaviors.layout.table;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
+import com.chiralbehaviors.layout.style.LayoutModel;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
@@ -34,11 +35,11 @@ public class NestedRow extends VirtualFlow<NestedCell> {
 
     public NestedRow(double rendered, RelationLayout layout,
                      int childCardinality,
-                     FocusTraversal<NestedRow> parentTraversal) {
+                     FocusTraversal<NestedRow> parentTraversal, LayoutModel model) {
         super(layout.getField(), layout.getJustifiedColumnWidth(),
               layout.getHeight(), FXCollections.observableArrayList(),
               (item, pt) -> {
-                  NestedCell cell = new NestedCell(layout, pt);
+                  NestedCell cell = new NestedCell(layout, pt, model);
                   cell.updateItem(item);
                   return cell;
               }, parentTraversal);
@@ -46,7 +47,7 @@ public class NestedRow extends VirtualFlow<NestedCell> {
         setMinSize(width, rendered);
         setPrefSize(width, rendered);
         setMaxSize(width, rendered);
-        layout.apply(this);
+        model.apply(this, layout.getNode());
     }
 
     public NestedRow(String field) {

@@ -29,6 +29,7 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
+import com.chiralbehaviors.layout.style.LayoutModel;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
@@ -55,7 +56,8 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
 
     public OutlineColumn(String field, Column c, int cardinality,
                          double labelWidth, double cellHeight,
-                         FocusTraversal<OutlineColumn> parentTraversal) {
+                         FocusTraversal<OutlineColumn> parentTraversal,
+                         LayoutModel model) {
         this(field, parentTraversal);
         setMinSize(c.getWidth(), cellHeight);
         setMaxSize(c.getWidth(), cellHeight);
@@ -64,7 +66,7 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
          .forEach(f -> {
              OutlineElement cell = f.outlineElement(field, cardinality,
                                                     labelWidth, c.getWidth(),
-                                                    focus);
+                                                    focus, model);
              elements.add(cell);
              fields.add(item -> cell.updateItem(f.extractFrom(item)));
              getChildren().add(cell.getNode());

@@ -24,6 +24,7 @@ import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.style.LayoutModel;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
@@ -39,27 +40,28 @@ public class Outline extends VirtualFlow<OutlineCell> {
 
     public Outline(double height, Collection<ColumnSet> columnSets,
                    int averageCardinality, RelationLayout layout,
-                   FocusTraversal<?> parentTraversal) {
+                   FocusTraversal<?> parentTraversal, LayoutModel model) {
         this(layout.getJustifiedWidth(),
              layout.outlineCellHeight(columnSets.stream()
                                                 .mapToDouble(cs -> cs.getCellHeight())
                                                 .sum()),
-             columnSets, averageCardinality, layout, parentTraversal);
+             columnSets, averageCardinality, layout, parentTraversal, model);
     }
 
     public Outline(double width, double cellHeight,
                    Collection<ColumnSet> columnSets, int averageCardinality,
-                   RelationLayout layout, FocusTraversal<?> parentTraversal) {
+                   RelationLayout layout, FocusTraversal<?> parentTraversal,
+                   LayoutModel model) {
         super(STYLE_SHEET, width, cellHeight,
               FXCollections.observableArrayList(), (item, pt) -> {
                   OutlineCell outlineCell = new OutlineCell(columnSets,
                                                             averageCardinality,
                                                             layout.baseOutlineCellHeight(cellHeight),
-                                                            layout, pt);
+                                                            layout, pt, model);
                   outlineCell.updateItem(item);
                   return outlineCell;
               }, parentTraversal);
-        layout.apply(this);
+        model.apply(this, layout.getNode());
     }
 
     public Outline(String field) {

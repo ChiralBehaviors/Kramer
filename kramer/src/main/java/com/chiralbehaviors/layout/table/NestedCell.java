@@ -30,6 +30,7 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
+import com.chiralbehaviors.layout.style.LayoutModel;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.scene.Node;
@@ -55,14 +56,15 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
     private final MultipleCellSelection<JsonNode, LayoutCell<? extends Region>> selectionModel;
 
     public NestedCell(RelationLayout layout,
-                      FocusTraversal<NestedCell> parentTraversal) {
+                      FocusTraversal<NestedCell> parentTraversal,
+                      LayoutModel model) {
         this(layout.getField(), parentTraversal);
         setMinSize(layout.getJustifiedWidth(), layout.getRowHeight());
         setPrefSize(layout.getJustifiedWidth(), layout.getRowHeight());
         setMaxSize(layout.getJustifiedWidth(), layout.getRowHeight());
         layout.forEach(child -> {
             LayoutCell<? extends Region> cell = child.buildColumn(layout.baseRowCellHeight(layout.getRowHeight()),
-                                                                  focus);
+                                                                  focus, model);
             cells.add(cell);
             consumers.add(item -> cell.updateItem(child.extractFrom(item)));
             getChildren().add(cell.getNode());

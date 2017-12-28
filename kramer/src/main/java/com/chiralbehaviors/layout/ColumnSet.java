@@ -16,13 +16,14 @@
 
 package com.chiralbehaviors.layout;
 
-import static com.chiralbehaviors.layout.DefaultStyleProvider.relax;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
+
+import com.chiralbehaviors.layout.style.LayoutModel;
 
 /**
  *
@@ -44,7 +45,7 @@ public class ColumnSet {
     }
 
     public void adjustHeight(double delta) {
-        cellHeight = DefaultStyleProvider.snap(cellHeight + delta);
+        cellHeight = LayoutModel.snap(cellHeight + delta);
         columns.forEach(c -> c.adjustHeight(delta));
     }
 
@@ -66,9 +67,9 @@ public class ColumnSet {
         }
 
         // compression
-        double columnWidth = relax(justified / count);
+        double columnWidth = LayoutModel.relax(justified / count);
         firstColumn.setWidth(columnWidth);
-        double compressed = relax(columnWidth - labelWidth);
+        double compressed = LayoutModel.relax(columnWidth - labelWidth);
         firstColumn.getFields()
                    .forEach(f -> {
                        f.compress(compressed);

@@ -24,12 +24,12 @@ import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusController;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.style.LayoutModel;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.collections.ListChangeListener;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 
@@ -47,9 +47,8 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     private SimpleObjectProperty<JsonNode>         data               = new SimpleObjectProperty<>();
     private SchemaNodeLayout                       layout;
     private double                                 layoutWidth        = 0.0;
-    private StyleProvider.LayoutModel              model;
+    private LayoutModel                            model;
     private final SimpleObjectProperty<SchemaNode> root               = new SimpleObjectProperty<>();
-    private StyleProvider                          style;
     private final String                           stylesheet;
 
     public AutoLayout() {
@@ -57,22 +56,19 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     }
 
     public AutoLayout(Relation root) {
-        this(root, new StyleProvider.LayoutModel() {
+        this(root, new LayoutModel() {
         });
     }
 
-    public AutoLayout(Relation root, StyleProvider.LayoutModel model) {
+    public AutoLayout(Relation root, LayoutModel model) {
         getStylesheets().add(getClass().getResource(A_CELL_STYLE_SHEET)
                                        .toExternalForm());
         URL url = getClass().getResource(STYLE_SHEET);
         stylesheet = url == null ? null : url.toExternalForm();
         getStyleClass().add("auto-layout");
         this.model = model;
-        style = new DefaultStyleProvider(this.model);
         this.root.set(root);
         data.addListener((o, p, c) -> setContent());
-        getStylesheets().addListener((ListChangeListener<String>) c -> style = new DefaultStyleProvider(getStylesheets(),
-                                                                                                        AutoLayout.this.model));
         controller = new FocusController<>(this);
     }
 
@@ -114,8 +110,8 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             return;
         }
         try {
-            layout = style.layout(top)
-                          .measure(data);
+            layout = model.layout(top)
+                          .measure(data, model);
         } catch (Throwable e) {
             log.log(Level.SEVERE, "cannot measure data", e);
         }
@@ -174,7 +170,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             measure(zeeData);
         }
         LayoutCell<?> old = control;
-        control = layout.autoLayout(width, controller);
+        control = layout.autoLayout(width, controller, model);
         Region node = control.getNode();
 
         setTopAnchor(node, 0d);
