@@ -28,8 +28,44 @@ import javafx.geometry.Insets;
  * @author halhildebrand
  *
  */
-public class PrimitiveStyle extends NodeStyle {
+abstract public class PrimitiveStyle extends NodeStyle {
     private final Insets listInsets;
+
+    public static class PrimitiveLabelStyle extends PrimitiveStyle {
+
+        public PrimitiveLabelStyle(LabelStyle labelStyle, Insets listInsets) {
+            super(labelStyle, listInsets);
+        }
+
+        @Override
+        public double width(JsonNode row) {
+            return labelStyle.width(LayoutModel.toString(row))
+                   + labelStyle.getHorizontalInset();
+        }
+
+        @Override
+        public double getHeight(double maxWidth, double justified) {
+            double rows = Math.ceil((maxWidth / justified) + 0.5);
+            return (labelStyle.getLineHeight() * rows)
+                   + labelStyle.getVerticalInset();
+        }
+
+        @Override
+        public LayoutCell<?> build(FocusTraversal<?> pt, PrimitiveLayout p) {
+            LabelCell cell = new LabelCell(p);
+            cell.getNode()
+                .getStyleClass()
+                .add(p.getField());
+            cell.getNode()
+                .setMinSize(p.getJustifiedWidth(), p.getCellHeight());
+            cell.getNode()
+                .setPrefSize(p.getJustifiedWidth(), p.getCellHeight());
+            cell.getNode()
+                .setMaxSize(p.getJustifiedWidth(), p.getCellHeight());
+            return cell;
+        }
+
+    }
 
     public PrimitiveStyle(LabelStyle labelStyle, Insets listInsets) {
         super(labelStyle);
@@ -45,23 +81,8 @@ public class PrimitiveStyle extends NodeStyle {
                + labelStyle.getHorizontalInset();
     }
 
-    public double getHeight(double maxWidth, double justified) {
-        double rows = Math.ceil((maxWidth / justified) + 0.5);
-        return (labelStyle.getLineHeight() * rows)
-               + labelStyle.getVerticalInset();
-    }
+    abstract public double getHeight(double maxWidth, double justified);
 
-    public LayoutCell<?> build(FocusTraversal<?> pt, PrimitiveLayout p) {
-        LabelCell cell = new LabelCell(p);
-        cell.getNode()
-            .getStyleClass()
-            .add(p.getField());
-        cell.getNode()
-            .setMinSize(p.getJustifiedWidth(), p.getCellHeight());
-        cell.getNode()
-            .setPrefSize(p.getJustifiedWidth(), p.getCellHeight());
-        cell.getNode()
-            .setMaxSize(p.getJustifiedWidth(), p.getCellHeight());
-        return cell;
-    }
+    abstract public LayoutCell<?> build(FocusTraversal<?> pt,
+                                        PrimitiveLayout p);
 }

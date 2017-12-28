@@ -33,6 +33,7 @@ import com.chiralbehaviors.layout.primitives.PrimitiveList;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.style.PrimitiveStyle.PrimitiveLabelStyle;
 import com.chiralbehaviors.layout.table.NestedCell;
 import com.chiralbehaviors.layout.table.NestedRow;
 import com.chiralbehaviors.layout.table.NestedTable;
@@ -158,7 +159,7 @@ public interface LayoutModel {
 
         list.applyCss();
         list.layout();
-        return new PrimitiveStyle(labelStyle(label), list.getInsets());
+        return new PrimitiveLabelStyle(labelStyle(label), list.getInsets());
     }
 
     default RelationStyle style(Relation r) {
