@@ -23,8 +23,17 @@ import javafx.geometry.Insets;
  *
  */
 public class RelationStyle extends NodeStyle {
+
+    public static Insets add(Insets a, Insets b) {
+        return new Insets(a.getTop() + b.getTop(), a.getRight() + b.getRight(),
+                          a.getBottom() + b.getBottom(),
+                          a.getLeft() + b.getLeft());
+    }
+
     private final Insets column;
     private final Insets element;
+    @SuppressWarnings("unused")
+    private final Insets nestedInsets;
     private final Insets outline;
     private final Insets outlineCell;
     private final Insets row;
@@ -44,6 +53,7 @@ public class RelationStyle extends NodeStyle {
         this.column = column;
         this.span = span;
         this.element = element;
+        nestedInsets = add(row, rowCell);
     }
 
     public double getColumnHorizontalInset() {
@@ -56,6 +66,10 @@ public class RelationStyle extends NodeStyle {
 
     public double getElementHorizontalInset() {
         return element.getLeft() + element.getRight();
+    }
+
+    public Insets getNestedInsets() {
+        return add(rowCell, row);
     }
 
     public double getOutineVerticalInset() {
@@ -74,12 +88,12 @@ public class RelationStyle extends NodeStyle {
         return rowCell.getLeft() + rowCell.getRight();
     }
 
-    public Insets getRowCellInsets() {
-        return rowCell;
-    }
-
     public double getRowCellVerticalInset() {
         return rowCell.getTop() + rowCell.getBottom();
+    }
+
+    public double getRowHorizontalInset() {
+        return row.getLeft() + row.getRight();
     }
 
     public double getRowVerticalInset() {
@@ -94,8 +108,16 @@ public class RelationStyle extends NodeStyle {
         return span.getTop() + span.getBottom();
     }
 
+    public double getTableHorizontalInset() {
+        return table.getLeft() + table.getRight();
+    }
+
     public double getTableVerticalInset() {
         return table.getTop() + table.getBottom();
+    }
+
+    public Insets getTableInset() {
+        return table;
     }
 
 }

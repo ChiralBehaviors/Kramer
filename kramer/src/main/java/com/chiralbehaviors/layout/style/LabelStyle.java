@@ -55,8 +55,6 @@ public class LabelStyle {
         label.setMaxWidth(width);
         label.setMinHeight(height);
         label.setMaxHeight(height);
-        label.setStyle("-fx-background-color: -fx-inner-border, -fx-body-color;\n"
-                       + "    -fx-background-insets: 0, 1;");
         return label;
     }
 

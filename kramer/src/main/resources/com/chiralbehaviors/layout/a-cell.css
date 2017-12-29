@@ -6,10 +6,6 @@
     -fx-focus-traversable: true;
 }
 
-.a-cell:odd {
-    -fx-background: -fx-control-inner-background-alt; 
-}
-
 .a-cell {
     -fx-background: -fx-control-inner-background; 
     -fx-text-fill: -fx-text-background-color;

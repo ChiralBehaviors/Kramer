@@ -38,6 +38,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
+import javafx.geometry.Insets;
 import javafx.scene.layout.Region;
 
 /**
@@ -171,7 +172,8 @@ public class RelationLayout extends SchemaNodeLayout {
         return children.stream()
                        .mapToDouble(c -> c.calculateTableColumnWidth())
                        .sum()
-               + style.getRowCellHorizontalInset();
+               + style.getRowCellHorizontalInset()
+               + style.getRowHorizontalInset();
     }
 
     @Override
@@ -293,23 +295,23 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public double justify(double justifed) {
         double available = LayoutModel.snap(justifed
-                                            - style.getRowCellHorizontalInset());
+                                            - style.getRowCellHorizontalInset()
+                                            - style.getRowHorizontalInset());
         double[] remaining = new double[] { available };
         SchemaNodeLayout last = children.get(children.size() - 1);
-        justifiedWidth = LayoutModel.snap(children.stream()
-                                                  .mapToDouble(child -> {
-                                                      double childJustified = LayoutModel.relax(available
-                                                                                                * (child.tableColumnWidth()
-                                                                                                   / tableColumnWidth));
+        justifiedWidth = LayoutModel.snap(available);
+        children.forEach(child -> {
+            double childJustified = LayoutModel.relax(available
+                                                      * (child.tableColumnWidth()
+                                                         / tableColumnWidth));
 
-                                                      if (child.equals(last)) {
-                                                          childJustified = remaining[0];
-                                                      } else {
-                                                          remaining[0] -= childJustified;
-                                                      }
-                                                      return child.justify(childJustified);
-                                                  })
-                                                  .sum());
+            if (child.equals(last)) {
+                childJustified = remaining[0];
+            } else {
+                remaining[0] -= childJustified;
+            }
+            child.justify(childJustified);
+        });
         return justifed;
     }
 
@@ -325,7 +327,7 @@ public class RelationLayout extends SchemaNodeLayout {
                       + labelWidth;
         double tableWidth = calculateTableColumnWidth();
         if (tableWidth <= columnWidth()) {
-            return nestTableColumn(Indent.TOP, 0);
+            return nestTableColumn(Indent.TOP, new Insets(0));
         }
         return columnWidth();
     }
@@ -380,9 +382,9 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double nestTableColumn(Indent indent, double indentation) {
-        columnHeaderIndentation = LayoutModel.snap(indentation
-                                                   + style.getRowCellHorizontalInset());
+    public double nestTableColumn(Indent indent, Insets indentation) {
+        columnHeaderIndentation = LayoutModel.snap(indentation.getLeft()
+                                                   + indentation.getRight());
         useTable = true;
         rowHeight = -1.0;
         columnHeaderHeight = -1.0;
@@ -393,7 +395,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                                                               c);
                                                         return c.nestTableColumn(child,
                                                                                  indent.indent(child,
-                                                                                               style.getRowCellInsets(),
+                                                                                               style.getNestedInsets(),
                                                                                                indentation));
                                                     })
                                                     .sum());
@@ -439,7 +441,8 @@ public class RelationLayout extends SchemaNodeLayout {
                                                       node.getLabel(),
                                                       tableColumnWidth);
         return LayoutModel.snap(tableColumnWidth
-                                + style.getRowCellHorizontalInset());
+                                + style.getRowCellHorizontalInset()
+                                + style.getRowHorizontalInset());
     }
 
     @Override

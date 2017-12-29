@@ -58,85 +58,93 @@ abstract public class SchemaNodeLayout {
     public enum Indent {
         LEFT {
             @Override
-            public double indent(Indent child, Insets insets,
-                                 double indentation) {
+            public Insets indent(Indent child, Insets insets,
+                                 Insets indentation) {
                 switch (child) {
                     case LEFT:
-                        return indentation + insets.getLeft();
+                        return new Insets(0, 0, 0, indentation.getLeft()
+                                                   + insets.getLeft());
                     case SINGULAR:
-                        return indentation + insets.getLeft()
-                               + insets.getRight();
+                        return new Insets(0, insets.getRight(), 0,
+                                          indentation.getLeft() + insets.getLeft());
                     case RIGHT:
-                        return insets.getRight();
+                        return new Insets(0, indentation.getRight(), 0, 0);
                     default:
-                        return 0;
+                        return new Insets(0);
                 }
             }
         },
-        NONE,
-        RIGHT {
+        NONE {
             @Override
-            public double indent(Indent child, Insets insets,
-                                 double indentation) {
+            public Insets indent(Indent child, Insets insets,
+                                 Insets indentation) {
                 switch (child) {
                     case LEFT:
-                        return insets.getLeft();
+                        return new Insets(0, 0, 0, insets.getLeft());
                     case RIGHT:
-                        return indentation + insets.getRight();
+                        return new Insets(0, insets.getRight(), 0, 0);
                     case SINGULAR:
-                        return indentation + insets.getLeft()
-                               + insets.getRight();
+                        return insets;
                     default:
-                        return 0;
+                        return new Insets(0);
+                }
+            }
+        },
+        RIGHT {
+            @Override
+            public Insets indent(Indent child, Insets insets,
+                                 Insets indentation) {
+                switch (child) {
+                    case LEFT:
+                        return new Insets(0, 0, 0, indentation.getLeft());
+                    case RIGHT:
+                        return new Insets(0, indentation.getRight()
+                                             + insets.getRight(),
+                                          0, 0);
+                    case SINGULAR:
+                        return new Insets(0,
+                                          indentation.getRight()
+                                             + insets.getRight(),
+                                          0, indentation.getLeft());
+                    default:
+                        return new Insets(0);
                 }
             }
         },
         SINGULAR {
             @Override
-            public double indent(Indent child, Insets insets,
-                                 double indentation) {
+            public Insets indent(Indent child, Insets insets,
+                                 Insets indentation) {
                 switch (child) {
                     case LEFT:
-                        return indentation + insets.getLeft();
+                        return new Insets(0, indentation.getRight(), 0,
+                                          indentation.getLeft() + insets.getLeft());
                     case RIGHT:
-                        return indentation + insets.getRight();
+                        return new Insets(0,
+                                          indentation.getRight()
+                                             + insets.getRight(),
+                                          0, indentation.getLeft());
                     case SINGULAR:
-                        return indentation + insets.getLeft()
-                               + insets.getRight();
+                        return new Insets(0,
+                                          indentation.getRight()
+                                             + insets.getRight(),
+                                          0, indentation.getLeft()
+                                             + insets.getLeft());
                     default:
-                        return 0;
+                        return new Insets(0);
                 }
             }
         },
         TOP {
             @Override
-            public double indent(Indent child, Insets insets,
-                                 double indentation) {
-                switch (child) {
-                    case LEFT:
-                        return insets.getLeft();
-                    case RIGHT:
-                        return insets.getRight();
-                    case SINGULAR:
-                        return insets.getLeft() + insets.getRight();
-                    default:
-                        return 0;
-                }
+            public Insets indent(Indent child, Insets insets,
+                                 Insets indentation) {
+                return new Insets(0);
             }
         };
 
-        public double indent(Indent child, Insets insets, double indentation) {
-            switch (child) {
-                case LEFT:
-                    return insets.getLeft();
-                case RIGHT:
-                    return insets.getRight();
-                case SINGULAR:
-                    return insets.getLeft() + insets.getRight();
-                default:
-                    return 0;
-            }
-        };
+        abstract public Insets indent(Indent child, Insets insets,
+                                      Insets indentation);
     }
 
     protected double           columnHeaderIndentation = 0.0;
@@ -248,7 +256,7 @@ abstract public class SchemaNodeLayout {
                                    Function<JsonNode, JsonNode> extractor,
                                    LayoutModel model);
 
-    abstract public double nestTableColumn(Indent indent, double indentation);
+    abstract public double nestTableColumn(Indent indent, Insets indentation);
 
     abstract public void normalizeRowHeight(double normalized);
 

@@ -43,7 +43,6 @@ import com.sun.javafx.scene.text.TextLayout;
 import com.sun.javafx.tk.FontLoader;
 import com.sun.javafx.tk.Toolkit;
 
-import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
@@ -57,12 +56,6 @@ public interface LayoutModel {
     static final TextLayout LAYOUT      = Toolkit.getToolkit()
                                                  .getTextLayoutFactory()
                                                  .createLayout();
-
-    static Insets add(Insets a, Insets b) {
-        return new Insets(a.getTop() + b.getTop(), a.getRight() + b.getRight(),
-                          a.getBottom() + b.getBottom(),
-                          a.getLeft() + b.getLeft());
-    }
 
     static double getLineHeight(Font font, TextBoundsType boundsType) {
         LAYOUT.setContent("W", font.impl_getNativeFont());
