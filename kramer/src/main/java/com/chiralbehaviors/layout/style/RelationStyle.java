@@ -46,6 +46,18 @@ public class RelationStyle extends NodeStyle {
         this.element = element;
     }
 
+    public double getColumnHorizontalInset() {
+        return column.getLeft() + column.getRight();
+    }
+
+    public double getColumnVerticalInset() {
+        return column.getTop() + column.getBottom();
+    }
+
+    public double getElementHorizontalInset() {
+        return element.getLeft() + element.getRight();
+    }
+
     public double getOutineVerticalInset() {
         return outline.getTop() + outline.getBottom();
     }
@@ -68,6 +80,18 @@ public class RelationStyle extends NodeStyle {
 
     public double getRowCellVerticalInset() {
         return rowCell.getTop() + rowCell.getBottom();
+    }
+
+    public double getRowVerticalInset() {
+        return row.getTop() + row.getBottom();
+    }
+
+    public double getSpanHorizontalInset() {
+        return span.getLeft() + span.getRight();
+    }
+
+    public double getSpanVerticalInset() {
+        return span.getTop() + span.getBottom();
     }
 
     public double getTableVerticalInset() {

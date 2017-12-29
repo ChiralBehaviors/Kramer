@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.stream.IntStream;
 
 import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.RelationStyle;
 
 /**
  *
@@ -49,50 +50,60 @@ public class ColumnSet {
         columns.forEach(c -> c.adjustHeight(delta));
     }
 
-    public void compress(int cardinality, double justified, double labelWidth) {
+    public void compress(int cardinality, double available, RelationStyle style,
+                         double labelWidth) {
+        double justified = available - style.getSpanHorizontalInset();
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
                                    .size(),
-                        max(1, (int) (justified
-                                      / firstColumn.maxWidth(labelWidth))));
-        double fieldWidth = justified - labelWidth;
+                        max(1,
+                            (int) (justified
+                                   / (firstColumn.maxWidth(labelWidth)
+                                      + style.getColumnHorizontalInset()))));
+        double fieldWidth = justified - labelWidth
+                            - style.getColumnHorizontalInset();
         if (count == 1) {
-            firstColumn.setWidth(justified);
+            firstColumn.setWidth(justified - style.getColumnHorizontalInset());
             firstColumn.getFields()
                        .forEach(f -> {
                            f.compress(fieldWidth);
                        });
-            cellHeight = firstColumn.cellHeight(cardinality, labelWidth);
+            cellHeight = firstColumn.cellHeight(cardinality, labelWidth)
+                         + style.getSpanVerticalInset();
             return;
         }
 
         // compression
-        double columnWidth = LayoutModel.relax(justified / count);
+        double columnWidth = (justified / (double) count)
+                             - style.getColumnHorizontalInset();
         firstColumn.setWidth(columnWidth);
-        double compressed = LayoutModel.relax(columnWidth - labelWidth);
+        double compressed = LayoutModel.relax(columnWidth - labelWidth
+                                              - style.getElementHorizontalInset());
         firstColumn.getFields()
                    .forEach(f -> {
                        f.compress(compressed);
                    });
         IntStream.range(1, count)
                  .forEach(i -> columns.add(new Column(columnWidth)));
-        cellHeight = firstColumn.cellHeight(cardinality, labelWidth);
+        double baseHeight = firstColumn.cellHeight(cardinality, labelWidth);
         double lastHeight;
         do {
-            lastHeight = cellHeight;
+            lastHeight = baseHeight;
             for (int i = 0; i < columns.size() - 1; i++) {
                 while (columns.get(i)
                               .slideRight(cardinality, columns.get(i + 1),
-                                          columnWidth, labelWidth)) {
+                                          labelWidth)) {
                 }
             }
-            cellHeight = columns.stream()
+            baseHeight = columns.stream()
                                 .mapToDouble(c -> c.cellHeight(cardinality,
                                                                labelWidth))
                                 .max()
                                 .orElse(0d);
-        } while (lastHeight > cellHeight);
-        columns.forEach(c -> c.distributeHeight(cellHeight));
+        } while (lastHeight > baseHeight);
+        double finalHeight = baseHeight;
+        columns.forEach(c -> c.distributeHeight(finalHeight));
+        cellHeight = finalHeight + style.getColumnVerticalInset() + style.getSpanVerticalInset();
     }
 
     public double getCellHeight() {

@@ -69,7 +69,7 @@ public class Column {
     }
 
     public boolean slideRight(int cardinality, Column column,
-                              double columnWidth, double labelWidth) {
+                              double labelWidth) {
         if (fields.size() < 1) {
             return false;
         }
@@ -105,7 +105,8 @@ public class Column {
                                   .mapToDouble(f -> f.getHeight())
                                   .sum();
         if (calculated < finalHeight) {
-            double delta = LayoutModel.snap((finalHeight - calculated) / fields.size());
+            double delta = LayoutModel.snap((finalHeight - calculated)
+                                            / fields.size());
             if (delta >= 1.0) {
                 fields.forEach(f -> f.adjustHeight(delta));
             }
