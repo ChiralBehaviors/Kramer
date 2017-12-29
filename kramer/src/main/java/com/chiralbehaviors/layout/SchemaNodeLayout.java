@@ -62,13 +62,13 @@ abstract public class SchemaNodeLayout {
                                  Insets inset) {
                 switch (child) {
                     case LEFT:
-                        return new Insets(0, 0, 0, indentation.getLeft()
-                                                   + inset.getLeft());
+                        return new Insets(0, indentation.getRight(), 0,
+                                          indentation.getLeft() + inset.getLeft());
                     case SINGULAR:
                         return new Insets(0, inset.getRight(), 0,
                                           indentation.getLeft() + inset.getLeft());
                     case RIGHT:
-                        return new Insets(0, indentation.getRight(), 0, 0);
+                        return new Insets(0, inset.getRight(), 0, inset.getLeft());
                     default:
                         return new Insets(0);
                 }
@@ -96,11 +96,13 @@ abstract public class SchemaNodeLayout {
                                  Insets inset) {
                 switch (child) {
                     case LEFT:
-                        return new Insets(0, 0, 0, indentation.getLeft());
+                        return new Insets(0, indentation.getRight(), 0,
+                                          inset.getLeft());
                     case RIGHT:
-                        return new Insets(0, indentation.getRight()
+                        return new Insets(0,
+                                          indentation.getRight()
                                              + inset.getRight(),
-                                          0, 0);
+                                          0, inset.getLeft());
                     case SINGULAR:
                         return new Insets(0,
                                           indentation.getRight()
@@ -146,10 +148,10 @@ abstract public class SchemaNodeLayout {
         abstract public Insets indent(Insets indentation, Indent child,
                                       Insets inset);
     }
-    
+
     protected double           columnWidth;
-    protected double           height                  = -1.0;
-    protected double           justifiedWidth          = -1.0;
+    protected double           height         = -1.0;
+    protected double           justifiedWidth = -1.0;
     protected double           labelWidth;
     protected final SchemaNode node;
     protected final LabelStyle labelStyle;
