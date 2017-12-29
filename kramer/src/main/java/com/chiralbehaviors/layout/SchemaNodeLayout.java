@@ -58,15 +58,15 @@ abstract public class SchemaNodeLayout {
     public enum Indent {
         LEFT {
             @Override
-            public Insets indent(Indent child, Insets insets,
-                                 Insets indentation) {
+            public Insets indent(Insets indentation, Indent child,
+                                 Insets inset) {
                 switch (child) {
                     case LEFT:
                         return new Insets(0, 0, 0, indentation.getLeft()
-                                                   + insets.getLeft());
+                                                   + inset.getLeft());
                     case SINGULAR:
-                        return new Insets(0, insets.getRight(), 0,
-                                          indentation.getLeft() + insets.getLeft());
+                        return new Insets(0, inset.getRight(), 0,
+                                          indentation.getLeft() + inset.getLeft());
                     case RIGHT:
                         return new Insets(0, indentation.getRight(), 0, 0);
                     default:
@@ -76,15 +76,15 @@ abstract public class SchemaNodeLayout {
         },
         NONE {
             @Override
-            public Insets indent(Indent child, Insets insets,
-                                 Insets indentation) {
+            public Insets indent(Insets indentation, Indent child,
+                                 Insets inset) {
                 switch (child) {
                     case LEFT:
-                        return new Insets(0, 0, 0, insets.getLeft());
+                        return new Insets(0, 0, 0, inset.getLeft());
                     case RIGHT:
-                        return new Insets(0, insets.getRight(), 0, 0);
+                        return new Insets(0, inset.getRight(), 0, 0);
                     case SINGULAR:
-                        return insets;
+                        return inset;
                     default:
                         return new Insets(0);
                 }
@@ -92,20 +92,20 @@ abstract public class SchemaNodeLayout {
         },
         RIGHT {
             @Override
-            public Insets indent(Indent child, Insets insets,
-                                 Insets indentation) {
+            public Insets indent(Insets indentation, Indent child,
+                                 Insets inset) {
                 switch (child) {
                     case LEFT:
                         return new Insets(0, 0, 0, indentation.getLeft());
                     case RIGHT:
                         return new Insets(0, indentation.getRight()
-                                             + insets.getRight(),
+                                             + inset.getRight(),
                                           0, 0);
                     case SINGULAR:
                         return new Insets(0,
                                           indentation.getRight()
-                                             + insets.getRight(),
-                                          0, indentation.getLeft());
+                                             + inset.getRight(),
+                                          0, inset.getLeft());
                     default:
                         return new Insets(0);
                 }
@@ -113,23 +113,23 @@ abstract public class SchemaNodeLayout {
         },
         SINGULAR {
             @Override
-            public Insets indent(Indent child, Insets insets,
-                                 Insets indentation) {
+            public Insets indent(Insets indentation, Indent child,
+                                 Insets inset) {
                 switch (child) {
                     case LEFT:
                         return new Insets(0, indentation.getRight(), 0,
-                                          indentation.getLeft() + insets.getLeft());
+                                          indentation.getLeft() + inset.getLeft());
                     case RIGHT:
                         return new Insets(0,
                                           indentation.getRight()
-                                             + insets.getRight(),
+                                             + inset.getRight(),
                                           0, indentation.getLeft());
                     case SINGULAR:
                         return new Insets(0,
                                           indentation.getRight()
-                                             + insets.getRight(),
+                                             + inset.getRight(),
                                           0, indentation.getLeft()
-                                             + insets.getLeft());
+                                             + inset.getLeft());
                     default:
                         return new Insets(0);
                 }
@@ -137,17 +137,16 @@ abstract public class SchemaNodeLayout {
         },
         TOP {
             @Override
-            public Insets indent(Indent child, Insets insets,
-                                 Insets indentation) {
+            public Insets indent(Insets indentation, Indent child,
+                                 Insets inset) {
                 return new Insets(0);
             }
         };
 
-        abstract public Insets indent(Indent child, Insets insets,
-                                      Insets indentation);
+        abstract public Insets indent(Insets indentation, Indent child,
+                                      Insets inset);
     }
-
-    protected double           columnHeaderIndentation = 0.0;
+    
     protected double           columnWidth;
     protected double           height                  = -1.0;
     protected double           justifiedWidth          = -1.0;

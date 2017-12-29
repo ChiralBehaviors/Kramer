@@ -69,7 +69,7 @@ public class RelationStyle extends NodeStyle {
     }
 
     public Insets getNestedInsets() {
-        return add(rowCell, row);
+        return nestedInsets;
     }
 
     public double getOutineVerticalInset() {
@@ -96,6 +96,10 @@ public class RelationStyle extends NodeStyle {
         return row.getLeft() + row.getRight();
     }
 
+    public Insets getRowInset() {
+        return row;
+    }
+
     public double getRowVerticalInset() {
         return row.getTop() + row.getBottom();
     }
@@ -112,12 +116,12 @@ public class RelationStyle extends NodeStyle {
         return table.getLeft() + table.getRight();
     }
 
-    public double getTableVerticalInset() {
-        return table.getTop() + table.getBottom();
-    }
-
     public Insets getTableInset() {
         return table;
+    }
+
+    public double getTableVerticalInset() {
+        return table.getTop() + table.getBottom();
     }
 
 }

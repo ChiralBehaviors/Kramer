@@ -110,8 +110,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public Function<Double, ColumnHeader> columnHeader() {
-        return rendered -> new ColumnHeader(LayoutModel.snap(justifiedWidth
-                                                             + columnHeaderIndentation),
+        return rendered -> new ColumnHeader(LayoutModel.snap(justifiedWidth),
                                             rendered, this);
     }
 
@@ -215,8 +214,6 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double nestTableColumn(Indent indent, Insets indentation) {
-        this.columnHeaderIndentation = indentation.getLeft()
-                                       + indentation.getRight();
         return tableColumnWidth();
     }
 
@@ -256,14 +253,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         calculateCellHeight();
     }
 
-    @Override
-    protected void clear() {
-        super.clear();
-        columnHeaderIndentation = 0.0;
-    }
-
     protected double getColumnHeaderWidth() {
-        return LayoutModel.snap(justifiedWidth + columnHeaderIndentation);
+        return LayoutModel.snap(justifiedWidth);
     }
 
     protected double width(JsonNode row) {

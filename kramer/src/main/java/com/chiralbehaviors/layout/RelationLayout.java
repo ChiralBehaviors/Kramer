@@ -63,16 +63,17 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     protected int                          averageChildCardinality;
-    protected final List<SchemaNodeLayout> children         = new ArrayList<>();
+    protected final List<SchemaNodeLayout> children                = new ArrayList<>();
     protected double                       columnHeaderHeight;
-    protected final List<ColumnSet>        columnSets       = new ArrayList<>();
+    protected double                       columnHeaderIndentation = 0.0;
+    protected final List<ColumnSet>        columnSets              = new ArrayList<>();
     protected Function<JsonNode, JsonNode> extractor;
     protected int                          maxCardinality;
     protected int                          resolvedCardinality;
-    protected double                       rowHeight        = -1;
+    protected double                       rowHeight               = -1;
     protected final RelationStyle          style;
-    protected double                       tableColumnWidth = 0;
-    protected boolean                      useTable         = false;
+    protected double                       tableColumnWidth        = 0;
+    protected boolean                      useTable                = false;
 
     public RelationLayout(Relation r, RelationStyle style) {
         super(r, style.getLabelStyle());
@@ -219,7 +220,7 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public void compress(double justified) {
         if (useTable) {
-            justify(justified);
+            justifyTable(justified);
             return;
         }
         columnSets.clear();
@@ -315,6 +316,27 @@ public class RelationLayout extends SchemaNodeLayout {
         return justifed;
     }
 
+    public double justifyTable(double justifed) {
+        double available = LayoutModel.snap(justifed
+                                            - style.getRowCellHorizontalInset());
+        double[] remaining = new double[] { available };
+        SchemaNodeLayout last = children.get(children.size() - 1);
+        justifiedWidth = LayoutModel.snap(available);
+        children.forEach(child -> {
+            double childJustified = LayoutModel.relax(available
+                                                      * (child.tableColumnWidth()
+                                                         / tableColumnWidth));
+
+            if (child.equals(last)) {
+                childJustified = remaining[0];
+            } else {
+                remaining[0] -= childJustified;
+            }
+            child.justify(childJustified);
+        });
+        return justifed;
+    }
+
     @Override
     public double layout(double width) {
         clear();
@@ -384,7 +406,8 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public double nestTableColumn(Indent indent, Insets indentation) {
         columnHeaderIndentation = LayoutModel.snap(indentation.getLeft()
-                                                   + indentation.getRight());
+                                                   + indentation.getRight())
+                                  + style.getRowCellHorizontalInset();
         useTable = true;
         rowHeight = -1.0;
         columnHeaderHeight = -1.0;
@@ -394,9 +417,9 @@ public class RelationLayout extends SchemaNodeLayout {
                                                         Indent child = indent(indent,
                                                                               c);
                                                         return c.nestTableColumn(child,
-                                                                                 indent.indent(child,
-                                                                                               style.getNestedInsets(),
-                                                                                               indentation));
+                                                                                 indent.indent(indentation,
+                                                                                               child,
+                                                                                               style.getNestedInsets()));
                                                     })
                                                     .sum());
         return tableColumnWidth();
