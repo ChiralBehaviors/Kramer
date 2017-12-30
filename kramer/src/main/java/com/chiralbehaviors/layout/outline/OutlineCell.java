@@ -83,6 +83,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
 
     public OutlineCell(String field, FocusTraversal<OutlineCell> parent) {
         super(STYLE_SHEET);
+        setAlignment(Pos.CENTER);
         initialize(DEFAULT_STYLE);
         getStyleClass().addAll(OUTLINE_CELL_CLASS,
                                String.format(SCHEMA_CLASS_TEMPLATE, field));

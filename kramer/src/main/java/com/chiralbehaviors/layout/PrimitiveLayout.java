@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
+import javafx.geometry.Insets;
 import javafx.scene.layout.Region;
 
 /**
@@ -109,7 +110,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public Function<Double, ColumnHeader> columnHeader() {
-        return rendered -> new ColumnHeader(Layout.snap(justifiedWidth),
+        return rendered -> new ColumnHeader(Layout.snap(justifiedWidth
+                                                        + columnHeaderIndentation),
                                             rendered, this);
     }
 
@@ -196,7 +198,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
         columnWidth = Math.max(labelWidth,
                                Layout.snap(Math.max(getNode().getDefaultWidth(),
-                                                         averageWidth)));
+                                                    averageWidth)));
         if (maxWidth > averageWidth) {
             variableLength = true;
         }
@@ -212,7 +214,23 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double nestTableColumn() {
+    public double nestTableColumn(Indent indent, Insets inset) {
+        switch (indent) {
+            case LEFT:
+                columnHeaderIndentation = inset.getLeft();
+                break;
+            case NONE:
+                break;
+            case RIGHT:
+                columnHeaderIndentation = inset.getRight();
+                break;
+            case SINGULAR:
+                columnHeaderIndentation = inset.getLeft() + inset.getRight();
+                break;
+            default:
+                break;
+
+        }
         return tableColumnWidth();
     }
 
@@ -245,7 +263,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return String.format("PrimitiveLayout [%s %s height, width {c: %s, j: %s} ]",
                              node.getField(), height, columnWidth,
                              justifiedWidth);
-    }
+    } 
 
     @Override
     protected void calculateRootHeight() {

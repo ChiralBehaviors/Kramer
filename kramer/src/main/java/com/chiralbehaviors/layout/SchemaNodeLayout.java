@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
+import javafx.geometry.Insets;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Region;
@@ -54,12 +55,118 @@ abstract public class SchemaNodeLayout {
         }
     }
 
+    public enum Indent {
+        LEFT {
+            @Override
+            public Insets indent(Insets indentation, Indent child,
+                                 Insets inset) {
+                switch (child) {
+                    case LEFT:
+                        return new Insets(0, indentation.getRight(), 0,
+                                          indentation.getLeft() + inset.getLeft());
+                    case SINGULAR:
+                        return new Insets(0, inset.getRight(), 0,
+                                          indentation.getLeft() + inset.getLeft());
+                    case RIGHT:
+                        return new Insets(0, inset.getRight(), 0,
+                                          inset.getLeft());
+                    default:
+                        return new Insets(0);
+                }
+            }
+        },
+        NONE {
+            @Override
+            public Insets indent(Insets indentation, Indent child,
+                                 Insets inset) {
+                switch (child) {
+                    case LEFT:
+                        return new Insets(0, 0, 0, inset.getLeft());
+                    case RIGHT:
+                        return new Insets(0, inset.getRight(), 0, 0);
+                    case SINGULAR:
+                        return inset;
+                    default:
+                        return new Insets(0);
+                }
+            }
+        },
+        RIGHT {
+            @Override
+            public Insets indent(Insets indentation, Indent child,
+                                 Insets inset) {
+                switch (child) {
+                    case LEFT:
+                        return new Insets(0, indentation.getRight(), 0,
+                                          inset.getLeft());
+                    case RIGHT:
+                        return new Insets(0,
+                                          indentation.getRight()
+                                             + inset.getRight(),
+                                          0, inset.getLeft());
+                    case SINGULAR:
+                        return new Insets(0,
+                                          indentation.getRight()
+                                             + inset.getRight(),
+                                          0, inset.getLeft());
+                    default:
+                        return new Insets(0);
+                }
+            }
+        },
+        SINGULAR {
+            @Override
+            public Insets indent(Insets indentation, Indent child,
+                                 Insets inset) {
+                switch (child) {
+                    case LEFT:
+                        return new Insets(0, indentation.getRight(), 0,
+                                          indentation.getLeft() + inset.getLeft());
+                    case RIGHT:
+                        return new Insets(0,
+                                          indentation.getRight()
+                                             + inset.getRight(),
+                                          0, indentation.getLeft());
+                    case SINGULAR:
+                        return new Insets(0,
+                                          indentation.getRight()
+                                             + inset.getRight(),
+                                          0, indentation.getLeft()
+                                             + inset.getLeft());
+                    default:
+                        return new Insets(0);
+                }
+            }
+        },
+        TOP {
+            @Override
+            public Insets indent(Insets indentation, Indent child,
+                                 Insets inset) {
+                switch (child) {
+                    case LEFT:
+                        return new Insets(0, 0, 0, inset.getLeft());
+                    case RIGHT:
+                        return new Insets(0, inset.getRight(), 0, 0);
+                    case SINGULAR:
+                        return inset;
+                    default:
+                        return new Insets(0);
+                }
+            }
+        };
+
+        abstract public Insets indent(Insets indentation, Indent child,
+                                      Insets inset);
+    }
+
+    protected double           columnHeaderIndentation = 0.0;
     protected double           columnWidth;
-    protected double           height         = -1.0;
-    protected double           justifiedWidth = -1.0;
-    protected double           labelWidth;
-    protected final SchemaNode node;
+    protected double           height                  = -1.0;
+    protected double           justifiedWidth          = -1.0;
     protected final LabelStyle labelStyle;
+    protected double           labelWidth;
+
+    protected final SchemaNode node;
 
     public SchemaNodeLayout(SchemaNode node, LabelStyle labelStyle) {
         this.node = node;
@@ -131,6 +238,8 @@ abstract public class SchemaNodeLayout {
         return labelWidth;
     }
 
+    public abstract SchemaNode getNode();
+
     abstract public double justify(double justified);
 
     public Control label(double labelWidth) {
@@ -149,6 +258,10 @@ abstract public class SchemaNodeLayout {
 
     abstract public double layoutWidth();
 
+    abstract public double measure(JsonNode data,
+                                   Function<JsonNode, JsonNode> extractor,
+                                   Layout model);
+
     public SchemaNodeLayout measure(JsonNode datum, Layout model) {
         Fold fold = fold(JsonNodeFactory.instance.objectNode()
                                                  .set(getField(), datum),
@@ -158,11 +271,7 @@ abstract public class SchemaNodeLayout {
         return fold.getLayout();
     }
 
-    abstract public double measure(JsonNode data,
-                                   Function<JsonNode, JsonNode> extractor,
-                                   Layout model);
-
-    abstract public double nestTableColumn();
+    abstract public double nestTableColumn(Indent inset, Insets indentation);
 
     abstract public void normalizeRowHeight(double normalized);
 
@@ -183,6 +292,7 @@ abstract public class SchemaNodeLayout {
     protected void clear() {
         height = -1.0;
         justifiedWidth = -1.0;
+        columnHeaderIndentation = 0.0;
     }
 
     protected Fold fold(JsonNode datum) {
@@ -212,8 +322,6 @@ abstract public class SchemaNodeLayout {
                         Layout model) {
         return fold(datum);
     }
-
-    public abstract SchemaNode getNode();
 
     protected Label label(double labelWidth, String label) {
         return labelStyle.label(labelWidth, label, height);

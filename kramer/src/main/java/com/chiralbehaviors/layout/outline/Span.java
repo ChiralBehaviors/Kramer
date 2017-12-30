@@ -76,6 +76,7 @@ public class Span extends HorizontalCell<Span>
 
     public Span(String field, FocusTraversal<Span> parentTraversal) {
         super(STYLE_SHEET);
+        setAlignment(Pos.CENTER);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(S_SPAN, field));
         selectionModel = buildSelectionModel(i -> null, () -> columns.size(),

@@ -66,8 +66,12 @@ public class RelationStyle extends NodeStyle {
         return element.getTop() + element.getBottom();
     }
 
+    public double getNestedHorizontalInset() {
+        return nestedInsets.getLeft() + nestedInsets.getRight();
+    }
+
     public Insets getNestedInsets() {
-        return new Insets(0);
+        return nestedInsets;
     }
 
     public double getOutineVerticalInset() {

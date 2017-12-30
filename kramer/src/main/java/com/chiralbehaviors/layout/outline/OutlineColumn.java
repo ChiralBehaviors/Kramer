@@ -79,6 +79,7 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
                          FocusTraversal<OutlineColumn> parentTraversal) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
+        setAlignment(Pos.CENTER);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
         selectionModel = buildSelectionModel(i -> null, () -> elements.size(),
                                              i -> elements.get(i));

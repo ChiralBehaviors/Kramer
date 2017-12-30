@@ -24,6 +24,7 @@ import com.chiralbehaviors.layout.style.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.beans.InvalidationListener;
+import javafx.geometry.Pos;
 import javafx.scene.control.Control;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -70,6 +71,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
         setMinSize(justified, height);
         setPrefSize(justified, height);
         setMaxSize(justified, height);
+        setAlignment(Pos.CENTER);
         VBox.setVgrow(this, Priority.ALWAYS);
         Control label = layout.label(labelWidth);
         label.setMinWidth(labelWidth);
