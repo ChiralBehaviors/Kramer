@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
-import javafx.geometry.Insets;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Region;
@@ -53,100 +52,6 @@ abstract public class SchemaNodeLayout {
         public SchemaNodeLayout getLayout() {
             return SchemaNodeLayout.this;
         }
-    }
-
-    public enum Indent {
-        LEFT {
-            @Override
-            public Insets indent(Insets indentation, Indent child,
-                                 Insets inset) {
-                switch (child) {
-                    case LEFT:
-                        return new Insets(0, indentation.getRight(), 0,
-                                          indentation.getLeft() + inset.getLeft());
-                    case SINGULAR:
-                        return new Insets(0, inset.getRight(), 0,
-                                          indentation.getLeft() + inset.getLeft());
-                    case RIGHT:
-                        return new Insets(0, inset.getRight(), 0, inset.getLeft());
-                    default:
-                        return new Insets(0);
-                }
-            }
-        },
-        NONE {
-            @Override
-            public Insets indent(Insets indentation, Indent child,
-                                 Insets inset) {
-                switch (child) {
-                    case LEFT:
-                        return new Insets(0, 0, 0, inset.getLeft());
-                    case RIGHT:
-                        return new Insets(0, inset.getRight(), 0, 0);
-                    case SINGULAR:
-                        return inset;
-                    default:
-                        return new Insets(0);
-                }
-            }
-        },
-        RIGHT {
-            @Override
-            public Insets indent(Insets indentation, Indent child,
-                                 Insets inset) {
-                switch (child) {
-                    case LEFT:
-                        return new Insets(0, indentation.getRight(), 0,
-                                          inset.getLeft());
-                    case RIGHT:
-                        return new Insets(0,
-                                          indentation.getRight()
-                                             + inset.getRight(),
-                                          0, inset.getLeft());
-                    case SINGULAR:
-                        return new Insets(0,
-                                          indentation.getRight()
-                                             + inset.getRight(),
-                                          0, inset.getLeft());
-                    default:
-                        return new Insets(0);
-                }
-            }
-        },
-        SINGULAR {
-            @Override
-            public Insets indent(Insets indentation, Indent child,
-                                 Insets inset) {
-                switch (child) {
-                    case LEFT:
-                        return new Insets(0, indentation.getRight(), 0,
-                                          indentation.getLeft() + inset.getLeft());
-                    case RIGHT:
-                        return new Insets(0,
-                                          indentation.getRight()
-                                             + inset.getRight(),
-                                          0, indentation.getLeft());
-                    case SINGULAR:
-                        return new Insets(0,
-                                          indentation.getRight()
-                                             + inset.getRight(),
-                                          0, indentation.getLeft()
-                                             + inset.getLeft());
-                    default:
-                        return new Insets(0);
-                }
-            }
-        },
-        TOP {
-            @Override
-            public Insets indent(Insets indentation, Indent child,
-                                 Insets inset) {
-                return new Insets(0);
-            }
-        };
-
-        abstract public Insets indent(Insets indentation, Indent child,
-                                      Insets inset);
     }
 
     protected double           columnWidth;
@@ -257,7 +162,7 @@ abstract public class SchemaNodeLayout {
                                    Function<JsonNode, JsonNode> extractor,
                                    LayoutModel model);
 
-    abstract public double nestTableColumn(Indent indent, Insets indentation);
+    abstract public double nestTableColumn();
 
     abstract public void normalizeRowHeight(double normalized);
 

@@ -69,7 +69,7 @@ public class RelationStyle extends NodeStyle {
     }
 
     public Insets getNestedInsets() {
-        return nestedInsets;
+        return new Insets(0);
     }
 
     public double getOutineVerticalInset() {

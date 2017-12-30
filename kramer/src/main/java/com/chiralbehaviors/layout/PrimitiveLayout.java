@@ -34,7 +34,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
-import javafx.geometry.Insets;
 import javafx.scene.layout.Region;
 
 /**
@@ -213,7 +212,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double nestTableColumn(Indent indent, Insets indentation) {
+    public double nestTableColumn() {
         return tableColumnWidth();
     }
 

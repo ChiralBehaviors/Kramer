@@ -38,7 +38,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
-import javafx.geometry.Insets;
 import javafx.scene.layout.Region;
 
 /**
@@ -349,7 +348,7 @@ public class RelationLayout extends SchemaNodeLayout {
                       + labelWidth;
         double tableWidth = calculateTableColumnWidth();
         if (tableWidth <= columnWidth()) {
-            return nestTableColumn(Indent.TOP, new Insets(0));
+            return nestTableColumn();
         }
         return columnWidth();
     }
@@ -404,23 +403,15 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double nestTableColumn(Indent indent, Insets indentation) {
-        columnHeaderIndentation = LayoutModel.snap(indentation.getLeft()
-                                                   + indentation.getRight())
-                                  + style.getRowCellHorizontalInset();
+    public double nestTableColumn() {
+        columnHeaderIndentation = style.getRowCellHorizontalInset();
+
         useTable = true;
         rowHeight = -1.0;
         columnHeaderHeight = -1.0;
         height = -1.0;
         tableColumnWidth = LayoutModel.snap(children.stream()
-                                                    .mapToDouble(c -> {
-                                                        Indent child = indent(indent,
-                                                                              c);
-                                                        return c.nestTableColumn(child,
-                                                                                 indent.indent(indentation,
-                                                                                               child,
-                                                                                               style.getNestedInsets()));
-                                                    })
+                                                    .mapToDouble(c -> c.nestTableColumn())
                                                     .sum());
         return tableColumnWidth();
     }
@@ -540,22 +531,6 @@ public class RelationLayout extends SchemaNodeLayout {
         this.extractor = extractor;
 
         return fold(datum);
-    }
-
-    protected Indent indent(Indent parent, SchemaNodeLayout child) {
-
-        boolean isFirst = isFirst(child);
-        boolean isLast = isLast(child);
-        if (isFirst && isLast) {
-            return Indent.SINGULAR;
-        }
-        if (isFirst) {
-            return Indent.LEFT;
-        } else if (isLast) {
-            return Indent.RIGHT;
-        } else {
-            return Indent.NONE;
-        }
     }
 
     protected boolean isFirst(SchemaNodeLayout child) {
