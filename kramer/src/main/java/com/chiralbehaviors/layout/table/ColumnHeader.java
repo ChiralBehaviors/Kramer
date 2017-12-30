@@ -22,7 +22,7 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.VerticalCell;
-import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.Layout;
 
 import javafx.scene.layout.HBox;
 
@@ -54,7 +54,7 @@ public class ColumnHeader extends VerticalCell<ColumnHeader> {
         setMinSize(width, height);
         setPrefSize(width, height);
         setMaxSize(width, height);
-        double half = LayoutModel.snap(height / 2.0);
+        double half = Layout.snap(height / 2.0);
         getChildren().addAll(layout.label(width, half), nested);
 
         nestedHeaders.forEach(n -> {

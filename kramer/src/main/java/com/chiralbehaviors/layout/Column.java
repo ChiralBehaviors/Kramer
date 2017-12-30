@@ -21,7 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.RelationStyle;
 
 /**
  *
@@ -45,8 +46,9 @@ public class Column {
         fields.addFirst(field);
     }
 
-    public double cellHeight(int cardinality, double labelWidth) {
-        return cellHeight(cardinality, fields, labelWidth);
+    public double cellHeight(int cardinality, double labelWidth,
+                             RelationStyle style) {
+        return cellHeight(cardinality, fields, labelWidth, style);
     }
 
     public List<SchemaNodeLayout> getFields() {
@@ -68,8 +70,8 @@ public class Column {
         this.width = width;
     }
 
-    public boolean slideRight(int cardinality, Column column,
-                              double labelWidth) {
+    public boolean slideRight(int cardinality, Column column, double labelWidth,
+                              RelationStyle style) {
         if (fields.size() < 1) {
             return false;
         }
@@ -77,9 +79,9 @@ public class Column {
             column.addFirst(fields.removeLast());
             return true;
         }
-        if (without(cardinality, labelWidth) < column.with(cardinality,
-                                                           fields.getLast(),
-                                                           labelWidth)) {
+        if (without(cardinality, labelWidth,
+                    style) < column.with(cardinality, fields.getLast(),
+                                         labelWidth, style)) {
             return false;
         }
         column.addFirst(fields.removeLast());
@@ -105,7 +107,7 @@ public class Column {
                                   .mapToDouble(f -> f.getHeight())
                                   .sum();
         if (calculated < finalHeight) {
-            double delta = LayoutModel.snap((finalHeight - calculated)
+            double delta = Layout.snap((finalHeight - calculated)
                                             / fields.size());
             if (delta >= 1.0) {
                 fields.forEach(f -> f.adjustHeight(delta));
@@ -115,25 +117,26 @@ public class Column {
 
     private double cellHeight(int cardinality,
                               ArrayDeque<SchemaNodeLayout> elements,
-                              double labelWidth) {
-        double available = LayoutModel.snap(width - labelWidth);
+                              double labelWidth, RelationStyle style) {
+        double available = Layout.snap(width - labelWidth);
         return elements.stream()
                        .mapToDouble(field -> field.cellHeight(cardinality,
                                                               available))
-                       .reduce((a, b) -> a + b)
-                       .orElse(0d);
+                       .map(height -> height + style.getElementVerticalInset())
+                       .sum();
     }
 
     private double with(int cardinality, SchemaNodeLayout field,
-                        double labelWidth) {
+                        double labelWidth, RelationStyle style) {
         ArrayDeque<SchemaNodeLayout> elements = fields.clone();
         elements.add(field);
-        return cellHeight(cardinality, elements, labelWidth);
+        return cellHeight(cardinality, elements, labelWidth, style);
     }
 
-    private double without(int cardinality, double labelWidth) {
+    private double without(int cardinality, double labelWidth,
+                           RelationStyle style) {
         ArrayDeque<SchemaNodeLayout> elements = fields.clone();
         elements.removeLast();
-        return cellHeight(cardinality, elements, labelWidth);
+        return cellHeight(cardinality, elements, labelWidth, style);
     }
 }

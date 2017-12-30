@@ -26,7 +26,7 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
-import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
@@ -53,14 +53,14 @@ public class NestedTable extends VerticalCell<NestedTable> {
     private final VirtualFlow<NestedCell> rows;
 
     public NestedTable(int childCardinality, RelationLayout layout,
-                       FocusTraversal<?> parentTraversal, LayoutModel model) {
+                       FocusTraversal<?> parentTraversal, Layout model) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE,
                                           layout.getField()));
         Region header = layout.buildColumnHeader();
         double width = layout.getJustifiedColumnWidth();
-        double height = LayoutModel.snap(layout.getHeight()
+        double height = Layout.snap(layout.getHeight()
                              - layout.getColumnHeaderHeight());
 
         rows = buildRows(width, height, childCardinality, layout,
@@ -104,7 +104,7 @@ public class NestedTable extends VerticalCell<NestedTable> {
                                                 int childCardinality,
                                                 RelationLayout layout,
                                                 FocusTraversal<?> parentTraversal,
-                                                LayoutModel model) {
+                                                Layout model) {
         BiFunction<JsonNode, FocusTraversalNode<NestedCell>, NestedCell> factory = (item,
                                                                                     pt) -> {
             NestedCell cell = new NestedCell(layout, pt, model);

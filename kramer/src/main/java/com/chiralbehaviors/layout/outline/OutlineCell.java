@@ -30,9 +30,11 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
-import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
@@ -56,19 +58,22 @@ public class OutlineCell extends VerticalCell<OutlineCell>
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
                        double cellHeight, RelationLayout layout,
-                       FocusTraversal<OutlineCell> pt, LayoutModel model) {
+                       FocusTraversal<OutlineCell> pt, Layout model,
+                       RelationStyle style) {
         this(layout.getField(), pt);
+        setAlignment(Pos.CENTER);
         setMinSize(layout.getJustifiedColumnWidth(), cellHeight);
         setPrefSize(layout.getJustifiedColumnWidth(), cellHeight);
         setMaxSize(layout.getJustifiedColumnWidth(), cellHeight);
         columnSets.forEach(cs -> {
             Span span = new Span(layout.getField(), cs.getWidth(),
                                  cs.getColumns(), childCardinality,
-                                 cs.getCellHeight(), layout.getLabelWidth(),
-                                 focus, model);
+                                 cs.getCellHeight() + style.getSpanVerticalInset(),
+                                 layout.getLabelWidth(), focus, model, style);
             spans.add(span);
+            alignmentProperty();
             VBox.setVgrow(span.getNode(), Priority.ALWAYS);
-            getChildren().add(span.getNode());
+            getChildren().add(span.getNode()); 
         });
     }
 

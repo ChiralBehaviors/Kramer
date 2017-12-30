@@ -28,9 +28,11 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
-import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 
 /**
@@ -54,15 +56,18 @@ public class Span extends HorizontalCell<Span>
 
     public Span(String field, double justified, List<Column> columns,
                 int cardinality, double cellHeight, double labelWidth,
-                FocusTraversal<Span> parentTraversal, LayoutModel model) {
+                FocusTraversal<Span> parentTraversal, Layout model,
+                RelationStyle style) {
         this(field, parentTraversal);
+        setAlignment(Pos.CENTER);
         setMinSize(justified, cellHeight);
         setPrefSize(justified, cellHeight);
         setMaxSize(justified, cellHeight);
 
         columns.forEach(c -> {
             OutlineColumn cell = new OutlineColumn(field, c, cardinality,
-                                                   labelWidth, cellHeight,
+                                                   labelWidth,
+                                                   cellHeight - style.getColumnVerticalInset(),
                                                    focus, model);
             this.columns.add(cell);
             getChildren().add(cell.getNode());

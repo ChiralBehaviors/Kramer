@@ -39,7 +39,8 @@ import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil.QueryException;
 import com.chiralbehaviors.layout.schema.Relation;
-import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Layout.LayoutObserver;
 import com.chiralbehaviors.layout.toy.Page.Route;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,8 +62,7 @@ import javafx.stage.Stage;
  * @author hhildebrand
  *
  */
-public class SinglePageApp extends Application
-        implements LayoutModel {
+public class SinglePageApp extends Application implements LayoutObserver {
     private static final Logger log = LoggerFactory.getLogger(SinglePageApp.class);
 
     public static void main(String[] args) {
@@ -189,7 +189,8 @@ public class SinglePageApp extends Application
     }
 
     private AutoLayout layout(PageContext pageContext) throws QueryException {
-        AutoLayout layout = new AutoLayout(pageContext.getRoot(), this);
+        AutoLayout layout = new AutoLayout(pageContext.getRoot(),
+                                           new Layout(this));
         JsonNode data = pageContext.evaluate(endpoint);
         layout.updateItem(data);
         layout.measure(data);

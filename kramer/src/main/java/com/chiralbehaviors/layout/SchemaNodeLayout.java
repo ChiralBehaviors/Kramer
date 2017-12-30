@@ -23,7 +23,7 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.style.LabelStyle;
-import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.Layout;
 import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -67,13 +67,13 @@ abstract public class SchemaNodeLayout {
     }
 
     public void adjustHeight(double delta) {
-        this.height = LayoutModel.snap(height + delta);
+        this.height = Layout.snap(height + delta);
     }
 
     public LayoutCell<? extends Region> autoLayout(double width,
                                                    FocusTraversal<?> parentTraversal,
-                                                   LayoutModel model) {
-        double justified = LayoutModel.snap(width);
+                                                   Layout model) {
+        double justified = Layout.snap(width);
         layout(justified);
         compress(justified);
         calculateRootHeight();
@@ -82,10 +82,10 @@ abstract public class SchemaNodeLayout {
 
     abstract public LayoutCell<? extends Region> buildColumn(double rendered,
                                                              FocusTraversal<?> focus,
-                                                             LayoutModel model);
+                                                             Layout model);
 
     abstract public LayoutCell<? extends Region> buildControl(FocusTraversal<?> parentTraversal,
-                                                              LayoutModel model);
+                                                              Layout model);
 
     abstract public void calculateCellHeight();
 
@@ -100,7 +100,7 @@ abstract public class SchemaNodeLayout {
     abstract public Function<Double, ColumnHeader> columnHeader();
 
     public double columnHeaderHeight() {
-        return labelStyle.getLineHeight() + labelStyle.getVerticalInset();
+        return labelStyle.getHeight();
     }
 
     abstract public double columnWidth();
@@ -142,14 +142,14 @@ abstract public class SchemaNodeLayout {
     }
 
     public double labelWidth(String label) {
-        return LayoutModel.snap(labelStyle.width(label));
+        return Layout.snap(labelStyle.width(label));
     }
 
     abstract public double layout(double width);
 
     abstract public double layoutWidth();
 
-    public SchemaNodeLayout measure(JsonNode datum, LayoutModel model) {
+    public SchemaNodeLayout measure(JsonNode datum, Layout model) {
         Fold fold = fold(JsonNodeFactory.instance.objectNode()
                                                  .set(getField(), datum),
                          n -> n, model);
@@ -160,7 +160,7 @@ abstract public class SchemaNodeLayout {
 
     abstract public double measure(JsonNode data,
                                    Function<JsonNode, JsonNode> extractor,
-                                   LayoutModel model);
+                                   Layout model);
 
     abstract public double nestTableColumn();
 
@@ -171,7 +171,7 @@ abstract public class SchemaNodeLayout {
                                                   double labelWidth,
                                                   double justified,
                                                   FocusTraversal<OutlineElement> parentTraversal,
-                                                  LayoutModel model);
+                                                  Layout model);
 
     abstract public double rowHeight(int averageCardinality,
                                      double justifiedWidth);
@@ -209,7 +209,7 @@ abstract public class SchemaNodeLayout {
     }
 
     protected Fold fold(JsonNode datum, Function<JsonNode, JsonNode> extractor,
-                        LayoutModel model) {
+                        Layout model) {
         return fold(datum);
     }
 

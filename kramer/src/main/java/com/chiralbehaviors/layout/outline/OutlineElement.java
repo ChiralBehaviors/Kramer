@@ -20,7 +20,7 @@ import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
-import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.beans.InvalidationListener;
@@ -53,7 +53,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
                           int cardinality, double labelWidth, double justified,
                           double height,
                           FocusTraversal<OutlineElement> parentTraversal,
-                          LayoutModel model) {
+                          Layout model) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
@@ -93,7 +93,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     public OutlineElement(String field, SchemaNodeLayout layout,
                           int cardinality, double labelWidth, double justified,
                           FocusTraversal<OutlineElement> parentTraversal,
-                          LayoutModel model) {
+                          Layout model) {
         this(layout, field, cardinality, labelWidth, justified,
              layout.getHeight(), parentTraversal, model);
     }

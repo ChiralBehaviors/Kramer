@@ -17,7 +17,7 @@
 package com.chiralbehaviors.layout;
 
 import static com.chiralbehaviors.layout.schema.SchemaNode.asList;
-import static com.chiralbehaviors.layout.style.LayoutModel.snap;
+import static com.chiralbehaviors.layout.style.Layout.snap;
 
 import java.util.List;
 import java.util.function.Function;
@@ -27,7 +27,7 @@ import com.chiralbehaviors.layout.cell.PrimitiveList;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.schema.Primitive;
-import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.Layout;
 import com.chiralbehaviors.layout.style.PrimitiveStyle;
 import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -61,7 +61,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public LayoutCell<? extends Region> buildColumn(double rendered,
                                                     FocusTraversal<?> parentTraversal,
-                                                    LayoutModel model) {
+                                                    Layout model) {
         LayoutCell<? extends Region> control = buildControl(parentTraversal,
                                                             model);
         control.getNode()
@@ -75,7 +75,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public LayoutCell<? extends Region> buildControl(FocusTraversal<?> parentTraversal,
-                                                     LayoutModel model) {
+                                                     Layout model) {
         return averageCardinality > 1 ? new PrimitiveList(this, parentTraversal)
                                       : buildCell(parentTraversal);
     }
@@ -109,7 +109,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public Function<Double, ColumnHeader> columnHeader() {
-        return rendered -> new ColumnHeader(LayoutModel.snap(justifiedWidth),
+        return rendered -> new ColumnHeader(Layout.snap(justifiedWidth),
                                             rendered, this);
     }
 
@@ -120,7 +120,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public void compress(double available) {
-        justifiedWidth = LayoutModel.snap(available);
+        justifiedWidth = Layout.snap(available);
     }
 
     @Override
@@ -134,7 +134,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double getJustifiedColumnWidth() {
-        return LayoutModel.snap(justifiedWidth);
+        return Layout.snap(justifiedWidth);
     }
 
     @Override
@@ -144,7 +144,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double justify(double justified) {
-        justifiedWidth = LayoutModel.snap(justified);
+        justifiedWidth = Layout.snap(justified);
         return justifiedWidth;
     }
 
@@ -161,7 +161,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double measure(JsonNode data, Function<JsonNode, JsonNode> extractor,
-                          LayoutModel model) {
+                          Layout model) {
         clear();
         labelWidth = labelWidth(node.getLabel());
         double summedDataWidth = 0;
@@ -195,7 +195,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         }
 
         columnWidth = Math.max(labelWidth,
-                               LayoutModel.snap(Math.max(getNode().getDefaultWidth(),
+                               Layout.snap(Math.max(getNode().getDefaultWidth(),
                                                          averageWidth)));
         if (maxWidth > averageWidth) {
             variableLength = true;
@@ -204,7 +204,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public SchemaNodeLayout measure(JsonNode datum, LayoutModel layout) {
+    public SchemaNodeLayout measure(JsonNode datum, Layout layout) {
         ArrayNode setOf = JsonNodeFactory.instance.arrayNode();
         setOf.add(datum);
         measure(setOf, n -> n, layout);
@@ -225,7 +225,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     public OutlineElement outlineElement(String parent, int cardinality,
                                          double labelWidth, double justified,
                                          FocusTraversal<OutlineElement> parentTraversal,
-                                         LayoutModel model) {
+                                         Layout model) {
         return new OutlineElement(parent, this, cardinality, labelWidth,
                                   justified, parentTraversal, model);
     }
@@ -253,7 +253,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     protected double getColumnHeaderWidth() {
-        return LayoutModel.snap(justifiedWidth);
+        return Layout.snap(justifiedWidth);
     }
 
     protected double width(JsonNode row) {

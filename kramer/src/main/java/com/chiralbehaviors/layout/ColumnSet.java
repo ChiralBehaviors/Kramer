@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.Layout;
 import com.chiralbehaviors.layout.style.RelationStyle;
 
 /**
@@ -46,7 +46,7 @@ public class ColumnSet {
     }
 
     public void adjustHeight(double delta) {
-        cellHeight = LayoutModel.snap(cellHeight + delta);
+        cellHeight = Layout.snap(cellHeight + delta);
         columns.forEach(c -> c.adjustHeight(delta));
     }
 
@@ -68,8 +68,8 @@ public class ColumnSet {
                        .forEach(f -> {
                            f.compress(fieldWidth);
                        });
-            cellHeight = firstColumn.cellHeight(cardinality, labelWidth)
-                         + style.getSpanVerticalInset();
+            cellHeight = firstColumn.cellHeight(cardinality, labelWidth, style)
+                         + style.getColumnVerticalInset();
             return;
         }
 
@@ -77,7 +77,7 @@ public class ColumnSet {
         double columnWidth = (justified / (double) count)
                              - style.getColumnHorizontalInset();
         firstColumn.setWidth(columnWidth);
-        double compressed = LayoutModel.relax(columnWidth - labelWidth
+        double compressed = Layout.relax(columnWidth - labelWidth
                                               - style.getElementHorizontalInset());
         firstColumn.getFields()
                    .forEach(f -> {
@@ -85,25 +85,27 @@ public class ColumnSet {
                    });
         IntStream.range(1, count)
                  .forEach(i -> columns.add(new Column(columnWidth)));
-        double baseHeight = firstColumn.cellHeight(cardinality, labelWidth);
+        double baseHeight = firstColumn.cellHeight(cardinality, labelWidth,
+                                                   style);
         double lastHeight;
         do {
             lastHeight = baseHeight;
             for (int i = 0; i < columns.size() - 1; i++) {
                 while (columns.get(i)
                               .slideRight(cardinality, columns.get(i + 1),
-                                          labelWidth)) {
+                                          labelWidth, style)) {
                 }
             }
             baseHeight = columns.stream()
                                 .mapToDouble(c -> c.cellHeight(cardinality,
-                                                               labelWidth))
+                                                               labelWidth,
+                                                               style))
                                 .max()
                                 .orElse(0d);
         } while (lastHeight > baseHeight);
         double finalHeight = baseHeight;
         columns.forEach(c -> c.distributeHeight(finalHeight));
-        cellHeight = finalHeight + style.getColumnVerticalInset() + style.getSpanVerticalInset();
+        cellHeight = finalHeight + style.getColumnVerticalInset();
     }
 
     public double getCellHeight() {

@@ -39,14 +39,13 @@ abstract public class PrimitiveStyle extends NodeStyle {
         }
 
         public double width(JsonNode row) {
-            return labelStyle.width(LayoutModel.toString(row))
+            return labelStyle.width(Layout.toString(row))
                    + labelStyle.getHorizontalInset();
         }
 
         public double getHeight(double maxWidth, double justified) {
             double rows = Math.ceil((maxWidth / justified) + 0.5);
-            return (labelStyle.getLineHeight() * rows)
-                   + labelStyle.getVerticalInset();
+            return labelStyle.getHeight(rows);
         }
 
         public LayoutCell<?> build(FocusTraversal<?> pt, PrimitiveLayout p) {
@@ -96,7 +95,7 @@ abstract public class PrimitiveStyle extends NodeStyle {
     }
 
     public double width(JsonNode row) {
-        return labelStyle.width(LayoutModel.toString(row))
+        return labelStyle.width(Layout.toString(row))
                + labelStyle.getHorizontalInset();
     }
 

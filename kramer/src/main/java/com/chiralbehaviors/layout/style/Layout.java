@@ -16,7 +16,7 @@
 
 package com.chiralbehaviors.layout.style;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.chiralbehaviors.layout.PrimitiveLayout;
@@ -43,6 +43,7 @@ import com.sun.javafx.scene.text.TextLayout;
 import com.sun.javafx.tk.FontLoader;
 import com.sun.javafx.tk.Toolkit;
 
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
@@ -50,41 +51,50 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextBoundsType;
 
 @SuppressWarnings({ "deprecation", "restriction" })
-public interface LayoutModel {
-    static FontLoader       FONT_LOADER = Toolkit.getToolkit()
-                                                 .getFontLoader();
-    static final TextLayout LAYOUT      = Toolkit.getToolkit()
-                                                 .getTextLayoutFactory()
-                                                 .createLayout();
+public class Layout {
 
-    static double getLineHeight(Font font, TextBoundsType boundsType) {
-        LAYOUT.setContent("W", font.impl_getNativeFont());
-        LAYOUT.setWrapWidth(0);
-        LAYOUT.setLineSpacing(0);
-        if (boundsType == TextBoundsType.LOGICAL_VERTICAL_CENTER) {
-            LAYOUT.setBoundsType(TextLayout.BOUNDS_CENTER);
-        } else {
-            LAYOUT.setBoundsType(0);
+    public interface LayoutObserver {
+        default <T extends LayoutCell<?>> void apply(T cell, Primitive p) {
         }
 
-        // RT-37092: Use the line bounds specifically, to include font leading.
-        return LAYOUT.getLines()[0].getBounds()
-                                   .getHeight();
+        default <T extends LayoutCell<?>> void apply(VirtualFlow<T> list,
+                                                     Relation relation) {
+        }
     }
 
-    static double relax(double value) {
+    private static FontLoader       FONT_LOADER = Toolkit.getToolkit()
+                                                         .getFontLoader();
+
+    private static final TextLayout LAYOUT      = Toolkit.getToolkit()
+                                                         .getTextLayoutFactory()
+                                                         .createLayout();
+
+    public static Insets add(Insets a, Insets b) {
+        return new Insets(a.getTop() + b.getTop(), a.getRight() + b.getRight(),
+                          a.getBottom() + b.getBottom(),
+                          a.getLeft() + b.getLeft());
+    }
+
+    public static LabelStyle labelStyle(Label label) {
+        return new LabelStyle(add(label.getInsets(), label.getPadding()),
+                              getLineHeight(label.getFont(),
+                                            TextBoundsType.LOGICAL_VERTICAL_CENTER),
+                              label.getFont());
+    }
+
+    public static double relax(double value) {
         return Math.max(0, Math.floor(value) - 1);
     }
 
-    static double snap(double value) {
+    public static double snap(double value) {
         return Math.ceil(value);
     }
 
-    static double textWidth(String text, Font textFont) {
+    public static double textWidth(String text, Font textFont) {
         return FONT_LOADER.computeStringWidth(text, textFont);
     }
 
-    static String toString(JsonNode value) {
+    public static String toString(JsonNode value) {
         if (value == null) {
             return "";
         }
@@ -107,34 +117,63 @@ public interface LayoutModel {
         }
     }
 
-    default <T extends LayoutCell<?>> void apply(T cell, Primitive p) {
+    protected static double getLineHeight(Font font,
+                                          TextBoundsType boundsType) {
+        LAYOUT.setContent("W", font.impl_getNativeFont());
+        LAYOUT.setWrapWidth(0);
+        LAYOUT.setLineSpacing(0);
+        if (boundsType == TextBoundsType.LOGICAL_VERTICAL_CENTER) {
+            LAYOUT.setBoundsType(TextLayout.BOUNDS_CENTER);
+        } else {
+            LAYOUT.setBoundsType(0);
+        }
+
+        // RT-37092: Use the line bounds specifically, to include font leading.
+        return LAYOUT.getLines()[0].getBounds()
+                                   .getHeight();
     }
 
-    default <T extends LayoutCell<?>> void apply(VirtualFlow<T> list,
-                                                 Relation relation) {
+    private final LayoutObserver observer;
+
+    private final List<String>   styleSheets = new ArrayList<>();
+
+    public Layout() {
+        this(new LayoutObserver() {
+        });
     }
 
-    default LabelStyle labelStyle(Label label) {
-        return new LabelStyle(label.getInsets(),
-                              getLineHeight(label.getFont(),
-                                            TextBoundsType.LOGICAL_VERTICAL_CENTER),
-                              label.getFont());
+    public Layout(LayoutObserver observer) {
+        this.observer = observer;
     }
 
-    default PrimitiveLayout layout(Primitive p) {
+    public <T extends LayoutCell<?>> void apply(T cell, Primitive p) {
+        observer.apply(cell, p);
+    }
+
+    public <T extends LayoutCell<?>> void apply(VirtualFlow<T> list,
+                                                Relation relation) {
+        observer.apply(list, relation);
+    }
+
+    public PrimitiveLayout layout(Primitive p) {
         return new PrimitiveLayout(p, style(p));
     }
 
-    default RelationLayout layout(Relation r) {
+    public RelationLayout layout(Relation r) {
         return new RelationLayout(r, style(r));
     }
 
-    default SchemaNodeLayout layout(SchemaNode n) {
+    public SchemaNodeLayout layout(SchemaNode n) {
         return n instanceof Primitive ? layout((Primitive) n)
                                       : layout((Relation) n);
     }
 
-    default PrimitiveStyle style(Primitive p) {
+    public void setStyleSheets(List<String> stylesheets) {
+        this.styleSheets.clear();
+        this.styleSheets.addAll(stylesheets);
+    }
+
+    public PrimitiveStyle style(Primitive p) {
         VBox root = new VBox();
 
         PrimitiveList list = new PrimitiveList(p.getField());
@@ -144,18 +183,15 @@ public interface LayoutModel {
         root.getChildren()
             .addAll(list, label);
         Scene scene = new Scene(root, 800, 600);
-        List<String> styleSheets = styleSheets();
-        if (styleSheets != null) {
-            scene.getStylesheets()
-                 .addAll(styleSheets);
-        }
+        scene.getStylesheets()
+             .addAll(styleSheets);
 
         list.applyCss();
         list.layout();
         return new PrimitiveLabelStyle(labelStyle(label), list.getInsets());
     }
 
-    default RelationStyle style(Relation r) {
+    public RelationStyle style(Relation r) {
 
         VBox root = new VBox();
 
@@ -175,11 +211,8 @@ public interface LayoutModel {
             .addAll(table, row, rowCell, outline, outlineCell, column, element,
                     span, label);
         Scene scene = new Scene(root, 800, 600);
-        List<String> styleSheets = styleSheets();
-        if (styleSheets != null) {
-            scene.getStylesheets()
-                 .addAll(styleSheets);
-        }
+        scene.getStylesheets()
+             .addAll(styleSheets);
         table.applyCss();
         table.layout();
 
@@ -207,15 +240,21 @@ public interface LayoutModel {
         label.applyCss();
         label.layout();
 
-        return new RelationStyle(labelStyle(label), table.getInsets(),
-                                 row.getInsets(), rowCell.getInsets(),
-                                 outline.getInsets(), outlineCell.getInsets(),
-                                 column.getInsets(), span.getInsets(),
-                                 element.getInsets());
+        return new RelationStyle(labelStyle(label),
+                                 add(table.getInsets(), table.getPadding()),
+                                 add(row.getInsets(), row.getPadding()),
+                                 add(rowCell.getInsets(), rowCell.getPadding()),
+                                 add(outline.getInsets(), outline.getPadding()),
+                                 add(outlineCell.getInsets(),
+                                     outlineCell.getPadding()),
+                                 add(column.getInsets(), column.getPadding()),
+                                 add(span.getInsets(), span.getPadding()),
+                                 add(element.getInsets(),
+                                     element.getPadding()));
 
     }
 
-    default List<String> styleSheets() {
-        return Collections.emptyList();
+    public List<String> styleSheets() {
+        return styleSheets;
     }
 }

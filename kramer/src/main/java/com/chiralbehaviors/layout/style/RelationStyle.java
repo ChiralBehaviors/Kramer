@@ -24,12 +24,6 @@ import javafx.geometry.Insets;
  */
 public class RelationStyle extends NodeStyle {
 
-    public static Insets add(Insets a, Insets b) {
-        return new Insets(a.getTop() + b.getTop(), a.getRight() + b.getRight(),
-                          a.getBottom() + b.getBottom(),
-                          a.getLeft() + b.getLeft());
-    }
-
     private final Insets column;
     private final Insets element;
     @SuppressWarnings("unused")
@@ -53,7 +47,7 @@ public class RelationStyle extends NodeStyle {
         this.column = column;
         this.span = span;
         this.element = element;
-        nestedInsets = add(row, rowCell);
+        nestedInsets = Layout.add(row, rowCell);
     }
 
     public double getColumnHorizontalInset() {
@@ -66,6 +60,10 @@ public class RelationStyle extends NodeStyle {
 
     public double getElementHorizontalInset() {
         return element.getLeft() + element.getRight();
+    }
+
+    public double getElementVerticalInset() {
+        return element.getTop() + element.getBottom();
     }
 
     public Insets getNestedInsets() {

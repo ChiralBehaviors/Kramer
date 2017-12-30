@@ -24,12 +24,13 @@ import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusController;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
-import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.collections.ListChangeListener;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 
@@ -47,7 +48,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     private SimpleObjectProperty<JsonNode>         data               = new SimpleObjectProperty<>();
     private SchemaNodeLayout                       layout;
     private double                                 layoutWidth        = 0.0;
-    private LayoutModel                            model;
+    private Layout                            model;
     private final SimpleObjectProperty<SchemaNode> root               = new SimpleObjectProperty<>();
     private final String                           stylesheet;
 
@@ -56,11 +57,11 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     }
 
     public AutoLayout(Relation root) {
-        this(root, new LayoutModel() {
+        this(root, new Layout() {
         });
     }
 
-    public AutoLayout(Relation root, LayoutModel model) {
+    public AutoLayout(Relation root, Layout model) {
         getStylesheets().add(getClass().getResource(A_CELL_STYLE_SHEET)
                                        .toExternalForm());
         URL url = getClass().getResource(STYLE_SHEET);
@@ -70,6 +71,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         this.root.set(root);
         data.addListener((o, p, c) -> setContent());
         controller = new FocusController<>(this);
+        getStylesheets().addListener((ListChangeListener<String>) c -> model.setStyleSheets(getStylesheets()));
     }
 
     public void autoLayout() {

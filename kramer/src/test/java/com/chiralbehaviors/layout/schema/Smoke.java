@@ -26,7 +26,7 @@ import org.fxmisc.wellbehaved.event.Nodes;
 import com.chiralbehaviors.layout.AutoLayout;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
-import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.application.Application;
@@ -45,7 +45,7 @@ public class Smoke extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        LayoutModel model = new LayoutModel() {
+        Layout model = new Layout() {
             @Override
             public <T extends LayoutCell<?>> void apply(VirtualFlow<T> list,
                                                         Relation relation) {

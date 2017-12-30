@@ -24,7 +24,8 @@ import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
-import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
@@ -40,24 +41,29 @@ public class Outline extends VirtualFlow<OutlineCell> {
 
     public Outline(double height, Collection<ColumnSet> columnSets,
                    int averageCardinality, RelationLayout layout,
-                   FocusTraversal<?> parentTraversal, LayoutModel model) {
+                   FocusTraversal<?> parentTraversal, Layout model,
+                   RelationStyle style) {
         this(layout.getJustifiedWidth(),
              layout.outlineCellHeight(columnSets.stream()
                                                 .mapToDouble(cs -> cs.getCellHeight())
+                                                .map(h -> h
+                                                          + style.getSpanVerticalInset())
                                                 .sum()),
-             columnSets, averageCardinality, layout, parentTraversal, model);
+             columnSets, averageCardinality, layout, parentTraversal, model,
+             style);
     }
 
     public Outline(double width, double cellHeight,
                    Collection<ColumnSet> columnSets, int averageCardinality,
                    RelationLayout layout, FocusTraversal<?> parentTraversal,
-                   LayoutModel model) {
+                   Layout model, RelationStyle style) {
         super(STYLE_SHEET, width, cellHeight,
               FXCollections.observableArrayList(), (item, pt) -> {
                   OutlineCell outlineCell = new OutlineCell(columnSets,
                                                             averageCardinality,
                                                             layout.baseOutlineCellHeight(cellHeight),
-                                                            layout, pt, model);
+                                                            layout, pt, model,
+                                                            style);
                   outlineCell.updateItem(item);
                   return outlineCell;
               }, parentTraversal);

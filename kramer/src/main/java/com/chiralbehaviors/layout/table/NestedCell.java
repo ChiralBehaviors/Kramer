@@ -30,9 +30,10 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
-import com.chiralbehaviors.layout.style.LayoutModel;
+import com.chiralbehaviors.layout.style.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.layout.Region;
 
@@ -57,8 +58,9 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
 
     public NestedCell(RelationLayout layout,
                       FocusTraversal<NestedCell> parentTraversal,
-                      LayoutModel model) {
+                      Layout model) {
         this(layout.getField(), parentTraversal);
+        setAlignment(Pos.CENTER);
         setMinSize(layout.getJustifiedWidth(), layout.getRowHeight());
         setPrefSize(layout.getJustifiedWidth(), layout.getRowHeight());
         setMaxSize(layout.getJustifiedWidth(), layout.getRowHeight());

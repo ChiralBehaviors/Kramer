@@ -36,16 +36,16 @@ public class LabelStyle {
         this.font = font;
     }
 
+    public double getHeight() {
+        return lineHeight + insets.getTop() + insets.getBottom();
+    }
+
+    public double getHeight(double rows) {
+        return (lineHeight * rows) + insets.getTop() + insets.getBottom();
+    }
+
     public double getHorizontalInset() {
         return insets.getLeft() + insets.getRight();
-    }
-
-    public double getLineHeight() {
-        return lineHeight;
-    }
-
-    public double getVerticalInset() {
-        return insets.getTop() + insets.getBottom();
     }
 
     public Label label(double width, String text, double height) {
@@ -59,6 +59,7 @@ public class LabelStyle {
     }
 
     public double width(String text) {
-        return LayoutModel.textWidth(text, font);
+        return Layout.textWidth(text, font) + insets.getLeft()
+               + insets.getRight();
     }
 }
