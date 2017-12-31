@@ -26,9 +26,11 @@ import javafx.scene.text.Font;
  *
  */
 public class LabelStyle {
-    private final Font   font;
-    private final Insets insets;
-    private final double lineHeight;
+    public static final String LAYOUT_LABEL = "layout-label";
+
+    private final Font         font;
+    private final Insets       insets;
+    private final double       lineHeight;
 
     public LabelStyle(Insets insets, double lineHeight, Font font) {
         this.insets = insets;
@@ -37,11 +39,11 @@ public class LabelStyle {
     }
 
     public double getHeight() {
-        return (lineHeight * 2.0) + insets.getTop() + insets.getBottom();
+        return lineHeight + insets.getTop() + insets.getBottom();
     }
 
     public double getHeight(double rows) {
-        return (lineHeight * (rows + 0.5)) + insets.getTop() + insets.getBottom();
+        return (lineHeight * rows) + insets.getTop() + insets.getBottom();
     }
 
     public double getHorizontalInset() {
@@ -50,6 +52,10 @@ public class LabelStyle {
 
     public Label label(double width, String text, double height) {
         Label label = new Label(text);
+        label.getStyleClass()
+             .clear();
+        label.getStyleClass()
+             .add(LAYOUT_LABEL);
         label.setAlignment(Pos.CENTER);
         label.setMinWidth(width);
         label.setMaxWidth(width);

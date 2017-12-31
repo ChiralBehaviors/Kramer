@@ -33,7 +33,7 @@ import com.chiralbehaviors.layout.outline.Span;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
-import com.chiralbehaviors.layout.style.PrimitiveStyle.PrimitiveLabelStyle;
+import com.chiralbehaviors.layout.style.PrimitiveStyle.PrimitiveTextStyle;
 import com.chiralbehaviors.layout.table.NestedCell;
 import com.chiralbehaviors.layout.table.NestedRow;
 import com.chiralbehaviors.layout.table.NestedTable;
@@ -119,7 +119,7 @@ public class Layout {
 
     protected static double getLineHeight(Font font,
                                           TextBoundsType boundsType) {
-        LAYOUT.setContent("W", font.impl_getNativeFont());
+        LAYOUT.setContent("W\n ", font.impl_getNativeFont());
         LAYOUT.setWrapWidth(0);
         LAYOUT.setLineSpacing(0);
         if (boundsType == TextBoundsType.LOGICAL_VERTICAL_CENTER) {
@@ -179,16 +179,40 @@ public class Layout {
         PrimitiveList list = new PrimitiveList(p.getField());
 
         Label label = new Label("Lorem Ipsum");
+        label.getStyleClass()
+             .clear();
+        label.getStyleClass()
+             .addAll(LabelStyle.LAYOUT_LABEL);
+
+        Label primitiveText = new Label("Lorem Ipsum");
+        primitiveText.getStyleClass()
+                     .clear();
+        primitiveText.getStyleClass()
+                     .addAll(PrimitiveTextStyle.DEFAULT_STYLE,
+                             PrimitiveTextStyle.PRIMITIVE_TEXT_CLASS,
+                             p.getField());
 
         root.getChildren()
-            .addAll(list, label);
+            .addAll(list, label, primitiveText);
+
         Scene scene = new Scene(root, 800, 600);
         scene.getStylesheets()
              .addAll(styleSheets);
 
+        root.applyCss();
+        root.layout();
+
         list.applyCss();
         list.layout();
-        return new PrimitiveLabelStyle(labelStyle(label), list.getInsets());
+
+        label.applyCss();
+        label.layout();
+
+        primitiveText.applyCss();
+        primitiveText.layout();
+
+        return new PrimitiveTextStyle(labelStyle(label), list.getInsets(),
+                                      labelStyle(primitiveText));
     }
 
     public RelationStyle style(Relation r) {
@@ -206,6 +230,10 @@ public class Layout {
         Span span = new Span(r.getField());
 
         Label label = new Label("Lorem Ipsum");
+        label.getStyleClass()
+             .clear();
+        label.getStyleClass()
+             .addAll(LabelStyle.LAYOUT_LABEL);
 
         root.getChildren()
             .addAll(table, row, rowCell, outline, outlineCell, column, element,
@@ -213,6 +241,10 @@ public class Layout {
         Scene scene = new Scene(root, 800, 600);
         scene.getStylesheets()
              .addAll(styleSheets);
+
+        root.applyCss();
+        root.layout();
+
         table.applyCss();
         table.layout();
 

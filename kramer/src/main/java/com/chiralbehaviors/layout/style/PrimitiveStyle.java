@@ -30,29 +30,23 @@ import javafx.scene.control.Label;
  *
  */
 abstract public class PrimitiveStyle extends NodeStyle {
-    private final Insets listInsets;
+    public static class PrimitiveTextStyle extends PrimitiveStyle {
 
-    public static class PrimitiveLabelStyle extends PrimitiveStyle {
+        public static String     DEFAULT_STYLE        = "primitive";
+        public static String     PRIMITIVE_TEXT_CLASS = "primitive-text";
 
-        public PrimitiveLabelStyle(LabelStyle labelStyle, Insets listInsets) {
+        private final LabelStyle primitiveStyle;
+
+        public PrimitiveTextStyle(LabelStyle labelStyle, Insets listInsets,
+                                  LabelStyle primitiveStyle) {
             super(labelStyle, listInsets);
-        }
-
-        public double width(JsonNode row) {
-            return labelStyle.width(Layout.toString(row))
-                   + labelStyle.getHorizontalInset();
-        }
-
-        public double getHeight(double maxWidth, double justified) {
-            double rows = Math.ceil((maxWidth / justified) + 0.5);
-            return labelStyle.getHeight(rows);
+            this.primitiveStyle = primitiveStyle;
         }
 
         public LayoutCell<?> build(FocusTraversal<?> pt, PrimitiveLayout p) {
-            String DEFAULT_STYLE = "primitive";
             Label label = new Label();
             label.getStyleClass()
-                 .add(p.getField());
+                 .clear();
             label.setMinSize(p.getJustifiedWidth(), p.getCellHeight());
             label.setPrefSize(p.getJustifiedWidth(), p.getCellHeight());
             label.setMaxSize(p.getJustifiedWidth(), p.getCellHeight());
@@ -61,6 +55,8 @@ abstract public class PrimitiveStyle extends NodeStyle {
                     initialize(p.getField());
                     label.setWrapText(true);
                     initialize(DEFAULT_STYLE);
+                    label.getStyleClass()
+                         .addAll(PRIMITIVE_TEXT_CLASS, p.getField());
                 }
 
                 @Override
@@ -83,24 +79,33 @@ abstract public class PrimitiveStyle extends NodeStyle {
 
         }
 
+        public double getHeight(double maxWidth, double justified) {
+            double rows = Math.ceil((maxWidth / justified));
+            return primitiveStyle.getHeight(rows);
+        }
+
+        public double width(JsonNode row) {
+            return primitiveStyle.width(Layout.toString(row))
+                   + primitiveStyle.getHorizontalInset();
+        }
+
     }
+
+    private final Insets listInsets;
 
     public PrimitiveStyle(LabelStyle labelStyle, Insets listInsets) {
         super(labelStyle);
         this.listInsets = listInsets;
     }
 
+    abstract public LayoutCell<?> build(FocusTraversal<?> pt,
+                                        PrimitiveLayout p);
+
+    abstract public double getHeight(double maxWidth, double justified);
+
     public double getListVerticalInset() {
         return listInsets.getTop() + listInsets.getBottom();
     }
 
-    public double width(JsonNode row) {
-        return labelStyle.width(Layout.toString(row))
-               + labelStyle.getHorizontalInset();
-    }
-
-    abstract public double getHeight(double maxWidth, double justified);
-
-    abstract public LayoutCell<?> build(FocusTraversal<?> pt,
-                                        PrimitiveLayout p);
+    abstract public double width(JsonNode row);
 }
