@@ -43,6 +43,7 @@ public class ColumnHeader extends VerticalCell<ColumnHeader> {
 
     public ColumnHeader(double width, double height, PrimitiveLayout layout) {
         this();
+        setAlignment(Pos.CENTER);
         setMinSize(width, height);
         setPrefSize(width, height);
         setMaxSize(width, height);
@@ -52,6 +53,7 @@ public class ColumnHeader extends VerticalCell<ColumnHeader> {
     public ColumnHeader(double width, double height, RelationLayout layout,
                         List<Function<Double, ColumnHeader>> nestedHeaders) {
         this();
+        setAlignment(Pos.CENTER);
         HBox nested = new HBox();
         setMinSize(width, height);
         setPrefSize(width, height);

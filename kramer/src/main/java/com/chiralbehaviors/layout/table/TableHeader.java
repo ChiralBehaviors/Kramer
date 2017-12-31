@@ -41,6 +41,7 @@ public class TableHeader extends HorizontalCell<TableHeader> {
     public TableHeader(double width, double height,
                        List<SchemaNodeLayout> children) {
         this();
+        setAlignment(Pos.CENTER);
         setMinSize(width, height);
         setPrefSize(width, height);
         setMaxSize(width, height);

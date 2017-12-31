@@ -37,11 +37,11 @@ public class LabelStyle {
     }
 
     public double getHeight() {
-        return lineHeight + insets.getTop() + insets.getBottom();
+        return (lineHeight * 2.0) + insets.getTop() + insets.getBottom();
     }
 
     public double getHeight(double rows) {
-        return (lineHeight * rows) + insets.getTop() + insets.getBottom();
+        return (lineHeight * (rows + 0.5)) + insets.getTop() + insets.getBottom();
     }
 
     public double getHorizontalInset() {

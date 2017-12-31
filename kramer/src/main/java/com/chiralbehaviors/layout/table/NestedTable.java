@@ -31,9 +31,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
 
 /**
  * @author halhildebrand
@@ -68,8 +66,6 @@ public class NestedTable extends VerticalCell<NestedTable> {
         rows = buildRows(width, height, childCardinality, layout,
                          parentTraversal, model);
 
-        VBox.setVgrow(header, Priority.NEVER);
-        VBox.setVgrow(rows, Priority.ALWAYS);
 
         getChildren().addAll(header, rows);
         setMinWidth(layout.getJustifiedColumnWidth());

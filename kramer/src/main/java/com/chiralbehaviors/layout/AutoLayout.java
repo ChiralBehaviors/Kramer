@@ -39,17 +39,17 @@ import javafx.scene.layout.Region;
  *
  */
 public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
-    private static final String                    A_CELL_STYLE_SHEET = "a-cell.css";
-    private static final java.util.logging.Logger  log                = Logger.getLogger(AutoLayout.class.getCanonicalName());
-    private static final String                    STYLE_SHEET        = "auto-layout.css";
+    private static final String                    DEFAULT_CSS = "default.css";
+    private static final java.util.logging.Logger  log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
+    private static final String                    STYLE_SHEET = "auto-layout.css";
 
     private LayoutCell<? extends Region>           control;
     private final FocusController<AutoLayout>      controller;
-    private SimpleObjectProperty<JsonNode>         data               = new SimpleObjectProperty<>();
+    private SimpleObjectProperty<JsonNode>         data        = new SimpleObjectProperty<>();
     private SchemaNodeLayout                       layout;
-    private double                                 layoutWidth        = 0.0;
-    private Layout                            model;
-    private final SimpleObjectProperty<SchemaNode> root               = new SimpleObjectProperty<>();
+    private double                                 layoutWidth = 0.0;
+    private Layout                                 model;
+    private final SimpleObjectProperty<SchemaNode> root        = new SimpleObjectProperty<>();
     private final String                           stylesheet;
 
     public AutoLayout() {
@@ -62,8 +62,6 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     }
 
     public AutoLayout(Relation root, Layout model) {
-        getStylesheets().add(getClass().getResource(A_CELL_STYLE_SHEET)
-                                       .toExternalForm());
         URL url = getClass().getResource(STYLE_SHEET);
         stylesheet = url == null ? null : url.toExternalForm();
         getStyleClass().add("auto-layout");
@@ -71,7 +69,12 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         this.root.set(root);
         data.addListener((o, p, c) -> setContent());
         controller = new FocusController<>(this);
-        getStylesheets().addListener((ListChangeListener<String>) c -> model.setStyleSheets(getStylesheets()));
+        getStylesheets().addListener((ListChangeListener<String>) c -> {
+            model.setStyleSheets(getStylesheets());
+            layout = null;
+        });
+        getStylesheets().add(getClass().getResource(DEFAULT_CSS)
+                                       .toExternalForm());
     }
 
     public void autoLayout() {

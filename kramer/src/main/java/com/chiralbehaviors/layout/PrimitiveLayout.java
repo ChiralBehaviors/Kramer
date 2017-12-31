@@ -268,11 +268,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     protected void calculateRootHeight() {
         calculateCellHeight();
-    }
-
-    protected double getColumnHeaderWidth() {
-        return Layout.snap(justifiedWidth);
-    }
+    } 
 
     protected double width(JsonNode row) {
         return style.width(row);

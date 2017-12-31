@@ -36,8 +36,6 @@ import javafx.scene.layout.Region;
 public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
     PseudoClass EXTERNAL_PSEUDOCLASS_STATE = PseudoClass.getPseudoClass("external-focus");
     PseudoClass INTERNAL_PSEUDOCLASS_STATE = PseudoClass.getPseudoClass("internal-focus");
-    String      LAYOUT_CELL_CLASS          = "layout-cell";
-    String      LAYOUT_CELL_STYLESHEET     = "layout-cell.css";
     PseudoClass PSEUDO_CLASS_EMPTY         = PseudoClass.getPseudoClass("empty");
     PseudoClass PSEUDO_CLASS_EVEN          = PseudoClass.getPseudoClass("even");
     PseudoClass PSEUDO_CLASS_FILLED        = PseudoClass.getPseudoClass("filled");
@@ -95,6 +93,9 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
 
     default void initialize(String defaultStyle) {
         T node = getNode();
+        node.getStyleClass()
+            .add(defaultStyle);
+
         // focusTraversable is styleable through css. Calling setFocusTraversable
         // makes it look to css like the user set the value and css will not
         // override. Initializing focusTraversable by calling set on the
@@ -102,12 +103,6 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         @SuppressWarnings("unchecked")
         StyleableProperty<Boolean> styleableProperty = (StyleableProperty<Boolean>) node.focusTraversableProperty();
         styleableProperty.applyStyle(null, Boolean.TRUE);
-        node.getStyleClass()
-            .addAll(LAYOUT_CELL_CLASS, defaultStyle);
-
-        node.getStylesheets()
-            .add(LayoutCell.class.getResource(LAYOUT_CELL_STYLESHEET)
-                                 .toExternalForm());
 
         /**
          * Indicates whether or not this cell has focus. For example, a ListView

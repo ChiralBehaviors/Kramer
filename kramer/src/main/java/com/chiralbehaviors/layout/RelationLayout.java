@@ -461,6 +461,8 @@ public class RelationLayout extends SchemaNodeLayout {
         double elementHeight = Layout.snap(children.stream()
                                                    .mapToDouble(child -> child.rowHeight(averageChildCardinality,
                                                                                          justifiedWidth))
+                                                   .map(h -> h
+                                                             + style.getRowCellVerticalInset())
                                                    .max()
                                                    .getAsDouble());
         children.forEach(c -> c.normalizeRowHeight(elementHeight));
@@ -474,7 +476,6 @@ public class RelationLayout extends SchemaNodeLayout {
                                      .orElse(0.0);
         rowHeight = calculateRowHeight();
         height = Layout.snap((resolvedCardinality * rowHeight)
-                             + style.getTableVerticalInset()
                              + columnHeaderHeight);
     }
 
