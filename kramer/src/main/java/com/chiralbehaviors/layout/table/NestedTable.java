@@ -30,6 +30,7 @@ import com.chiralbehaviors.layout.style.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
+import javafx.geometry.Pos;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -56,6 +57,7 @@ public class NestedTable extends VerticalCell<NestedTable> {
                        FocusTraversal<?> parentTraversal, Layout model) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
+        setAlignment(Pos.CENTER);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE,
                                           layout.getField()));
         Region header = layout.buildColumnHeader();

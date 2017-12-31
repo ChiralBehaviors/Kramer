@@ -81,6 +81,7 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
                       FocusTraversal<NestedCell> parentTraversal) {
         super(STYLE_SHEET);
         this.initialize(DEFAULT_STYLE);
+        setAlignment(Pos.CENTER);
         getStyleClass().addAll(NESTED_CELL_CLASS,
                                String.format(SCHEMA_CLASS_TEMPLATE, field));
         selectionModel = buildSelectionModel(i -> null, () -> cells.size(),

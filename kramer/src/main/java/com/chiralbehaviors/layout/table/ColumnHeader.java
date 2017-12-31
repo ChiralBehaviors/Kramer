@@ -24,6 +24,7 @@ import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.style.Layout;
 
+import javafx.geometry.Pos;
 import javafx.scene.layout.HBox;
 
 /**
@@ -37,6 +38,7 @@ public class ColumnHeader extends VerticalCell<ColumnHeader> {
     public ColumnHeader() {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
+        setAlignment(Pos.CENTER);
     }
 
     public ColumnHeader(double width, double height, PrimitiveLayout layout) {
