@@ -20,64 +20,97 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.chiralbehaviors.layout.Column;
-import com.chiralbehaviors.layout.cell.FocusTraversal;
+import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
-import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.cell.LayoutContainer;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
+import com.chiralbehaviors.layout.cell.control.MouseHandler;
+import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
+import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 
 /**
  * @author halhildebrand
  *
  */
-public class Span extends HorizontalCell<Span> {
+public class Span extends HorizontalCell<Span>
+        implements LayoutContainer<JsonNode, Span, OutlineColumn> {
 
-    private static final String                       DEFAULT_STYLE = "span";
-    private static final String                       S_SPAN        = "%s-span";
-    private static final String                       STYLE_SHEET   = "span.css";
-    private final List<Cell<JsonNode, OutlineColumn>> columns       = new ArrayList<>();
-    private final FocusTraversal                      focus;
-    {
-        focus = new FocusTraversal() {
-
-            @Override
-            protected Node getNode() {
-                return Span.this;
-            }
-        };
-    }
+    private static final String                                  DEFAULT_STYLE = "span";
+    private static final String                                  S_SPAN        = "%s-span";
+    private static final String                                  STYLE_SHEET   = "span.css";
+    private final List<OutlineColumn>                            columns       = new ArrayList<>();
+    private final FocusTraversal<OutlineColumn>                  focus;
+    private final MouseHandler                                   mouseModel;
+    private final MultipleCellSelection<JsonNode, OutlineColumn> selectionModel;
 
     public Span(String field) {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(S_SPAN, field));
+        this(field, null);
     }
 
     public Span(String field, double justified, List<Column> columns,
-                int cardinality, double cellHeight, double labelWidth) {
-        this(field);
+                int cardinality, double cellHeight, double labelWidth,
+                FocusTraversal<Span> parentTraversal, Layout model,
+                RelationStyle style) {
+        this(field, parentTraversal);
+        setAlignment(Pos.CENTER);
         setMinSize(justified, cellHeight);
         setPrefSize(justified, cellHeight);
         setMaxSize(justified, cellHeight);
 
         columns.forEach(c -> {
-            Cell<JsonNode, OutlineColumn> cell = new OutlineColumn(field, c,
-                                                                   cardinality,
-                                                                   labelWidth,
-                                                                   cellHeight);
+            OutlineColumn cell = new OutlineColumn(field, c, cardinality,
+                                                   labelWidth,
+                                                   cellHeight - style.getColumnVerticalInset(),
+                                                   focus, model);
             this.columns.add(cell);
             getChildren().add(cell.getNode());
         });
     }
 
+    public Span(String field, FocusTraversal<Span> parentTraversal) {
+        super(STYLE_SHEET);
+        setAlignment(Pos.CENTER);
+        initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(S_SPAN, field));
+        selectionModel = buildSelectionModel(i -> null, () -> columns.size(),
+                                             i -> columns.get(i));
+        focus = new FocusTraversalNode<OutlineColumn>(parentTraversal,
+                                                      selectionModel,
+                                                      Bias.HORIZONTAL) {
+            @Override
+            protected Node getNode() {
+                return Span.this;
+            }
+        };
+        mouseModel = bind(selectionModel);
+    }
+
+    @Override
+    public void activate() {
+        focus.setCurrent();
+    }
+
     @Override
     public void dispose() {
-        focus.unbind();
+        super.dispose();
+        mouseModel.unbind();
+    }
+
+    @Override
+    public Hit<OutlineColumn> hit(double x, double y) {
+        return hit(x, y, columns);
     }
 
     @Override
     public void updateItem(JsonNode item) {
         columns.forEach(c -> c.updateItem(item));
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 }

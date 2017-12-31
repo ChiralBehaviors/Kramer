@@ -17,16 +17,16 @@
 package com.chiralbehaviors.layout.outline;
 
 import com.chiralbehaviors.layout.SchemaNodeLayout;
-import com.chiralbehaviors.layout.cell.FocusTraversal;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
-import com.chiralbehaviors.layout.flowless.Cell;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
+import com.chiralbehaviors.layout.style.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.scene.Node;
+import javafx.beans.InvalidationListener;
+import javafx.geometry.Pos;
 import javafx.scene.control.Control;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 /**
@@ -35,43 +35,45 @@ import javafx.scene.layout.VBox;
  */
 public class OutlineElement extends HorizontalCell<OutlineElement> {
 
-    private static final String                    DEFAULT_STYLE         = "outline-element";
-    private static final String                    SCHEMA_CLASS_TEMPLATE = "%s-outline-element";
-    private static final String                    STYLE_SHEET           = "outline-element.css";
+    private static final String                  DEFAULT_STYLE         = "outline-element";
+    private static final String                  SCHEMA_CLASS_TEMPLATE = "%s-outline-element";
+    private static final String                  STYLE_SHEET           = "outline-element.css";
 
-    private final Cell<JsonNode, ? extends Region> cell;
-    private final FocusTraversal                   focus;
-    {
-        focus = new FocusTraversal() {
+    private final LayoutCell<?>                  cell;
+    private final FocusTraversal<OutlineElement> parentTraversal;
 
-            @Override
-            protected Node getNode() {
-                return OutlineElement.this;
-            }
-        };
-    }
-
-    public OutlineElement(LayoutCell<? extends Region> cell, String field) {
+    public OutlineElement(String field) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
-        this.cell = cell;
+        this.cell = null;
+        this.parentTraversal = null;
     }
 
-    public OutlineElement(String field) {
-        this(null, field);
-    }
-
-    public OutlineElement(String field, Control label,
-                          LayoutCell<? extends Region> cell, int cardinality,
-                          double labelWidth, double justified, double height) {
-        this(cell, field);
+    public OutlineElement(SchemaNodeLayout layout, String field,
+                          int cardinality, double labelWidth, double justified,
+                          double height,
+                          FocusTraversal<OutlineElement> parentTraversal,
+                          Layout model) {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        this.cell = layout.buildControl(parentTraversal, model);
+        this.parentTraversal = parentTraversal;
+        OutlineElement node = getNode();
+        node.focusedProperty()
+            .addListener((InvalidationListener) property -> {
+                if (node.isFocused()) {
+                    parentTraversal.setCurrent();
+                }
+            });
 
         setMinSize(justified, height);
         setPrefSize(justified, height);
         setMaxSize(justified, height);
+        setAlignment(Pos.CENTER);
         VBox.setVgrow(this, Priority.ALWAYS);
-
+        Control label = layout.label(labelWidth);
         label.setMinWidth(labelWidth);
         label.setMaxWidth(labelWidth);
         double available = justified - labelWidth;
@@ -85,20 +87,22 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
 
     }
 
-    public OutlineElement(String field, SchemaNodeLayout layout,
-                          int cardinality, double labelWidth,
-                          double justified) {
-        this(field, layout.label(labelWidth), layout.buildControl(),
-             cardinality, labelWidth, justified, layout.getHeight());
+    @Override
+    public void activate() {
+        parentTraversal.setCurrent();
     }
 
-    @Override
-    public void dispose() {
-        focus.unbind();
+    public OutlineElement(String field, SchemaNodeLayout layout,
+                          int cardinality, double labelWidth, double justified,
+                          FocusTraversal<OutlineElement> parentTraversal,
+                          Layout model) {
+        this(layout, field, cardinality, labelWidth, justified,
+             layout.getHeight(), parentTraversal, model);
     }
 
     @Override
     public void updateItem(JsonNode item) {
         cell.updateItem(item);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 }

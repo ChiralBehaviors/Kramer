@@ -9,6 +9,8 @@ import org.reactfx.collection.MemoizationList;
 import org.reactfx.collection.QuasiListChange;
 import org.reactfx.collection.QuasiListModification;
 
+import com.chiralbehaviors.layout.cell.LayoutCell;
+
 import javafx.beans.binding.Bindings;
 import javafx.scene.Node;
 import javafx.scene.layout.Region;
@@ -24,19 +26,19 @@ import javafx.scene.layout.Region;
  * the "ground," based on the {@link VirtualFlow}'s {@link Gravity} value, and
  * any remaining unused space counts as the "sky."
  */
-final class Navigator<T, C extends Cell<T, ?>> extends Region
+final class Navigator<C extends LayoutCell<?>> extends Region
         implements TargetPositionVisitor {
-    private final CellListManager<T, C> cellListManager;
-    private final MemoizationList<C>    cells;
-    private TargetPosition              currentPosition = TargetPosition.BEGINNING;
-    private final Subscription          itemsSubscription;
-    private final CellPositioner<T, C>  positioner;
+    private final CellListManager<C> cellListManager;
+    private final MemoizationList<C> cells;
+    private TargetPosition           currentPosition = TargetPosition.BEGINNING;
+    private final Subscription       itemsSubscription;
+    private final CellPositioner<C>  positioner;
 
-    private final SizeTracker           sizeTracker;
-    private TargetPosition              targetPosition  = TargetPosition.BEGINNING;
+    private final SizeTracker        sizeTracker;
+    private TargetPosition           targetPosition  = TargetPosition.BEGINNING;
 
-    public Navigator(CellListManager<T, C> cellListManager,
-                     CellPositioner<T, C> positioner, SizeTracker sizeTracker) {
+    public Navigator(CellListManager<C> cellListManager,
+                     CellPositioner<C> positioner, SizeTracker sizeTracker) {
         this.cellListManager = cellListManager;
         this.cells = cellListManager.getLazyCellList();
         this.positioner = positioner;

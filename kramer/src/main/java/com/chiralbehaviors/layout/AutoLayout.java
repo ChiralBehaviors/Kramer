@@ -21,8 +21,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.control.FocusController;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.style.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.application.Platform;
@@ -37,16 +39,17 @@ import javafx.scene.layout.Region;
  *
  */
 public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
+    private static final String                    DEFAULT_CSS = "default.css";
     private static final java.util.logging.Logger  log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
     private static final String                    STYLE_SHEET = "auto-layout.css";
 
     private LayoutCell<? extends Region>           control;
+    private final FocusController<AutoLayout>      controller;
     private SimpleObjectProperty<JsonNode>         data        = new SimpleObjectProperty<>();
     private SchemaNodeLayout                       layout;
     private double                                 layoutWidth = 0.0;
-    private StyleProvider.LayoutModel              model;
+    private Layout                                 model;
     private final SimpleObjectProperty<SchemaNode> root        = new SimpleObjectProperty<>();
-    private StyleProvider                          style;
     private final String                           stylesheet;
 
     public AutoLayout() {
@@ -54,20 +57,24 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     }
 
     public AutoLayout(Relation root) {
-        this(root, new StyleProvider.LayoutModel() {
+        this(root, new Layout() {
         });
     }
 
-    public AutoLayout(Relation root, StyleProvider.LayoutModel model) {
+    public AutoLayout(Relation root, Layout model) {
         URL url = getClass().getResource(STYLE_SHEET);
         stylesheet = url == null ? null : url.toExternalForm();
         getStyleClass().add("auto-layout");
         this.model = model;
-        style = new LayoutProvider(this.model);
         this.root.set(root);
         data.addListener((o, p, c) -> setContent());
-        getStylesheets().addListener((ListChangeListener<String>) c -> style = new LayoutProvider(getStylesheets(),
-                                                                                                  AutoLayout.this.model));
+        controller = new FocusController<>(this);
+        getStylesheets().addListener((ListChangeListener<String>) c -> {
+            model.setStyleSheets(getStylesheets());
+            layout = null;
+        });
+        getStylesheets().add(getClass().getResource(DEFAULT_CSS)
+                                       .toExternalForm());
     }
 
     public void autoLayout() {
@@ -108,61 +115,14 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             return;
         }
         try {
-            layout = style.layout(top)
-                          .measure(data);
+            layout = model.layout(top)
+                          .measure(data, model);
         } catch (Throwable e) {
             log.log(Level.SEVERE, "cannot measure data", e);
         }
     }
 
-    public SchemaNode root() {
-        return root.get();
-    }
-
-    public Property<SchemaNode> rootProperty() {
-        return root;
-    }
-
     @Override
-    public void setFocus(boolean focus) {
-        setFocused(focus);
-    }
-
-    public void setRoot(SchemaNode rootNode) {
-        root.set(rootNode);
-    }
-
-    @Override
-    public void updateItem(JsonNode item) {
-        data.set(item);
-    }
-
-    private void autoLayout(JsonNode zeeData, double width) {
-        if (width < 10.0) {
-            return;
-        }
-        if (layout == null) {
-            measure(zeeData);
-        }
-        LayoutCell<?> old = control;
-        control = layout.autoLayout(width);
-        Region node = control.getNode();
-        
-        setTopAnchor(node, 0d);
-        setRightAnchor(node, 0d);
-        setBottomAnchor(node, 0d);
-        setLeftAnchor(node, 0d);
-
-        getChildren().setAll(node);
-        if (old != null) {
-            old.dispose();
-        }
-        node.setMinWidth(width);
-        node.setPrefWidth(width);
-        node.setMaxWidth(width);
-        control.updateItem(zeeData);
-    }
-
     public void resize(double width, double height) {
         super.resize(width, height);
         if (layoutWidth == width || width < 10.0 || height < 10.0) {
@@ -187,6 +147,50 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             log.log(Level.SEVERE,
                     String.format("Unable to resize to %s", width), e);
         }
+    }
+
+    public SchemaNode root() {
+        return root.get();
+    }
+
+    public Property<SchemaNode> rootProperty() {
+        return root;
+    }
+
+    public void setRoot(SchemaNode rootNode) {
+        root.set(rootNode);
+    }
+
+    @Override
+    public void updateItem(JsonNode item) {
+        data.set(item);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
+    }
+
+    private void autoLayout(JsonNode zeeData, double width) {
+        if (width < 10.0) {
+            return;
+        }
+        if (layout == null) {
+            measure(zeeData);
+        }
+        LayoutCell<?> old = control;
+        control = layout.autoLayout(width, controller, model);
+        Region node = control.getNode();
+
+        setTopAnchor(node, 0d);
+        setRightAnchor(node, 0d);
+        setBottomAnchor(node, 0d);
+        setLeftAnchor(node, 0d);
+
+        getChildren().setAll(node);
+        if (old != null) {
+            old.dispose();
+        }
+        node.setMinWidth(width);
+        node.setPrefWidth(width);
+        node.setMaxWidth(width);
+        control.updateItem(zeeData);
     }
 
     private void setContent() {

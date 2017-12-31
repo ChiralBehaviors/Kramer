@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import javafx.css.CssMetaData;
 import javafx.css.Styleable;
 import javafx.scene.layout.Region;
@@ -29,8 +31,8 @@ import javafx.scene.layout.Region;
  * @author halhildebrand
  *
  */
-abstract public class RegionCell<T extends Region> extends Region
-        implements LayoutCell<T> {
+abstract public class RegionCell<T extends Region, C extends LayoutCell<?>>
+        extends Region implements LayoutContainer<JsonNode, T, C> {
     public static final String                                     STYLE_CLASS = "region-cell";
 
     private static final List<CssMetaData<? extends Styleable, ?>> STYLEABLES;
@@ -55,10 +57,5 @@ abstract public class RegionCell<T extends Region> extends Region
     @Override
     public String getUserAgentStylesheet() {
         return stylesheet;
-    }
-
-    @Override
-    public void setFocus(boolean focus) {
-        setFocused(focus);
     }
 }

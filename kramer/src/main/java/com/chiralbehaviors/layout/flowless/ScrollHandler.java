@@ -47,16 +47,12 @@ public class ScrollHandler {
                                                      evt) -> handler.scrollDown())));
     }
 
-    private VirtualFlow<?, ?> flow;
+    private VirtualFlow<?> flow;
 
-    public ScrollHandler(VirtualFlow<?, ?> flow) {
+    public ScrollHandler(VirtualFlow<?> flow) {
         assert flow != null;
         this.flow = flow;
         bind();
-    }
-
-    public void scroll(ScrollEvent se) { 
-        flow.scrollYBy(-se.getDeltaY());
     }
 
     public void bind() {
@@ -65,6 +61,10 @@ public class ScrollHandler {
 
     public boolean isDisabled() {
         return flow.isDisabled();
+    }
+
+    public void scroll(ScrollEvent se) {
+        flow.scrollYBy(-se.getDeltaY());
     }
 
     public void scrollDown() {

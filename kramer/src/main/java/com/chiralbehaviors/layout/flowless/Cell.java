@@ -93,8 +93,8 @@ public interface Cell<T, N extends Node> {
         // do nothing by default
     }
 
-    default void setFocus(boolean focussed) {
-        // do nothing by default
+    default void setFocus() {
+        getNode().requestFocus();
     }
 
     /**
@@ -120,5 +120,9 @@ public interface Cell<T, N extends Node> {
      */
     default void updateItem(T item) {
         throw new UnsupportedOperationException();
+    }
+
+    default void updateSelection(boolean selected) {
+        // do nothing
     }
 }

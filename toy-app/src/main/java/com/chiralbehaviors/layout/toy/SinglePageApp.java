@@ -16,7 +16,7 @@
 
 package com.chiralbehaviors.layout.toy;
 
-import static com.chiralbehaviors.layout.cell.SelectionEvent.DOUBLE_SELECT;
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.DOUBLE_SELECT;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -35,11 +35,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.chiralbehaviors.layout.AutoLayout;
-import com.chiralbehaviors.layout.StyleProvider;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil.QueryException;
 import com.chiralbehaviors.layout.schema.Relation;
+import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Layout.LayoutObserver;
 import com.chiralbehaviors.layout.toy.Page.Route;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -61,8 +62,7 @@ import javafx.stage.Stage;
  * @author hhildebrand
  *
  */
-public class SinglePageApp extends Application
-        implements StyleProvider.LayoutModel {
+public class SinglePageApp extends Application implements LayoutObserver {
     private static final Logger log = LoggerFactory.getLogger(SinglePageApp.class);
 
     public static void main(String[] args) {
@@ -81,7 +81,7 @@ public class SinglePageApp extends Application
     private Button                   reloadButton;
 
     @Override
-    public <T extends LayoutCell<?>> void apply(VirtualFlow<JsonNode, T> list,
+    public <T extends LayoutCell<?>> void apply(VirtualFlow<T> list,
                                                 Relation relation) {
 
         Nodes.addInputMap(list, InputMap.consume(DOUBLE_SELECT, e -> {
@@ -189,7 +189,8 @@ public class SinglePageApp extends Application
     }
 
     private AutoLayout layout(PageContext pageContext) throws QueryException {
-        AutoLayout layout = new AutoLayout(pageContext.getRoot(), this);
+        AutoLayout layout = new AutoLayout(pageContext.getRoot(),
+                                           new Layout(this));
         JsonNode data = pageContext.evaluate(endpoint);
         layout.updateItem(data);
         layout.measure(data);

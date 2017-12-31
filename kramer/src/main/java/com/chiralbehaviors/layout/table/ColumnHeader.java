@@ -16,15 +16,15 @@
 
 package com.chiralbehaviors.layout.table;
 
-import static com.chiralbehaviors.layout.LayoutProvider.snap;
-
 import java.util.List;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.VerticalCell;
+import com.chiralbehaviors.layout.style.Layout;
 
+import javafx.geometry.Pos;
 import javafx.scene.layout.HBox;
 
 /**
@@ -38,10 +38,12 @@ public class ColumnHeader extends VerticalCell<ColumnHeader> {
     public ColumnHeader() {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
+        setAlignment(Pos.CENTER);
     }
 
     public ColumnHeader(double width, double height, PrimitiveLayout layout) {
         this();
+        setAlignment(Pos.CENTER);
         setMinSize(width, height);
         setPrefSize(width, height);
         setMaxSize(width, height);
@@ -51,11 +53,12 @@ public class ColumnHeader extends VerticalCell<ColumnHeader> {
     public ColumnHeader(double width, double height, RelationLayout layout,
                         List<Function<Double, ColumnHeader>> nestedHeaders) {
         this();
+        setAlignment(Pos.CENTER);
         HBox nested = new HBox();
         setMinSize(width, height);
         setPrefSize(width, height);
         setMaxSize(width, height);
-        double half = snap(height / 2.0);
+        double half = Layout.snap(height / 2.0);
         getChildren().addAll(layout.label(width, half), nested);
 
         nestedHeaders.forEach(n -> {

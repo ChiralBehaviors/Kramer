@@ -17,7 +17,9 @@
 package com.chiralbehaviors.layout.table;
 
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
+import com.chiralbehaviors.layout.style.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
@@ -26,24 +28,26 @@ import javafx.collections.FXCollections;
  * @author halhildebrand
  *
  */
-public class NestedRow extends VirtualFlow<JsonNode, NestedCell> {
+public class NestedRow extends VirtualFlow<NestedCell> {
     private static final String DEFAULT_STYLE         = "nested-row";
     private static final String SCHEMA_CLASS_TEMPLATE = "%s-nested-row";
     private static final String STYLE_SHEET           = "nested-row.css";
 
     public NestedRow(double rendered, RelationLayout layout,
-                     int childCardinality) {
+                     int childCardinality,
+                     FocusTraversal<NestedRow> parentTraversal, Layout model) {
         super(layout.getField(), layout.getJustifiedColumnWidth(),
-              layout.getHeight(), FXCollections.observableArrayList(), item -> {
-                  NestedCell cell = new NestedCell(layout);
+              layout.getHeight(), FXCollections.observableArrayList(),
+              (item, pt) -> {
+                  NestedCell cell = new NestedCell(layout, pt, model);
                   cell.updateItem(item);
                   return cell;
-              });
+              }, parentTraversal);
         double width = layout.getJustifiedColumnWidth();
         setMinSize(width, rendered);
         setPrefSize(width, rendered);
         setMaxSize(width, rendered);
-        layout.apply(this);
+        model.apply(this, layout.getNode());
     }
 
     public NestedRow(String field) {
@@ -54,7 +58,7 @@ public class NestedRow extends VirtualFlow<JsonNode, NestedCell> {
 
     @Override
     public void dispose() {
-        focus.unbind();
+        super.dispose();
         mouseHandler.unbind();
         if (scrollHandler != null) {
             scrollHandler.unbind();
@@ -64,5 +68,6 @@ public class NestedRow extends VirtualFlow<JsonNode, NestedCell> {
     @Override
     public void updateItem(JsonNode item) {
         items.setAll(NestedTable.itemsAsArray(item));
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 }

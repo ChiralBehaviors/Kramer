@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.chiralbehaviors.layout.cell;
+package com.chiralbehaviors.layout.cell.control;
 
 import static org.fxmisc.wellbehaved.event.EventPattern.mouseClicked;
 import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.consume;

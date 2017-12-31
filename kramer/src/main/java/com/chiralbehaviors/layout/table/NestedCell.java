@@ -21,11 +21,19 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.cell.FocusTraversal;
+import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.LayoutContainer;
+import com.chiralbehaviors.layout.cell.control.FocusTraversal;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
+import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
+import com.chiralbehaviors.layout.cell.control.MouseHandler;
+import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
+import com.chiralbehaviors.layout.style.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.layout.Region;
 
@@ -33,43 +41,77 @@ import javafx.scene.layout.Region;
  * @author halhildebrand
  *
  */
-public class NestedCell extends HorizontalCell<NestedCell> {
-    private static final String            DEFAULT_STYLE         = "nested-cell";
-    private static final String            SCHEMA_CLASS_TEMPLATE = "%s-nested-cell";
-    private static final String            STYLE_SHEET           = "nested-cell.css";
-    private final List<Consumer<JsonNode>> consumers             = new ArrayList<>();
-    private final FocusTraversal           focus;
-    {
-        focus = new FocusTraversal() {
+public class NestedCell extends HorizontalCell<NestedCell> implements
+        LayoutContainer<JsonNode, NestedCell, LayoutCell<? extends Region>> {
+    private static final String                                                 DEFAULT_STYLE         = "a-cell";
+    /**
+     *
+     */
+    private static final String                                                 NESTED_CELL_CLASS     = "nested-cell";
+    private static final String                                                 SCHEMA_CLASS_TEMPLATE = "%s-nested-cell";
+    private static final String                                                 STYLE_SHEET           = "nested-cell.css";
+    private List<LayoutCell<? extends Region>>                                  cells                 = new ArrayList<>();
+    private final List<Consumer<JsonNode>>                                      consumers             = new ArrayList<>();
+    private final FocusTraversal<?>                                             focus;
+    private final MouseHandler                                                  mouseModel;
+    private final MultipleCellSelection<JsonNode, LayoutCell<? extends Region>> selectionModel;
 
-            @Override
-            protected Node getNode() {
-                return NestedCell.this;
-            }
-        };
-    }
-
-    public NestedCell(RelationLayout layout) {
-        this(layout.getField());
+    public NestedCell(RelationLayout layout,
+                      FocusTraversal<NestedCell> parentTraversal,
+                      Layout model) {
+        this(layout.getField(), parentTraversal);
+        setAlignment(Pos.CENTER);
         setMinSize(layout.getJustifiedWidth(), layout.getRowHeight());
         setPrefSize(layout.getJustifiedWidth(), layout.getRowHeight());
         setMaxSize(layout.getJustifiedWidth(), layout.getRowHeight());
         layout.forEach(child -> {
-            LayoutCell<? extends Region> cell = child.buildColumn(layout.baseRowCellHeight(layout.getRowHeight()));
+            LayoutCell<? extends Region> cell = child.buildColumn(layout.baseRowCellHeight(layout.getRowHeight()),
+                                                                  focus, model);
+            cells.add(cell);
             consumers.add(item -> cell.updateItem(child.extractFrom(item)));
             getChildren().add(cell.getNode());
         });
     }
 
     public NestedCell(String field) {
+        this(field, null);
+    }
+
+    public NestedCell(String field,
+                      FocusTraversal<NestedCell> parentTraversal) {
         super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        this.initialize(DEFAULT_STYLE);
+        setAlignment(Pos.CENTER);
+        getStyleClass().addAll(NESTED_CELL_CLASS,
+                               String.format(SCHEMA_CLASS_TEMPLATE, field));
+        selectionModel = buildSelectionModel(i -> null, () -> cells.size(),
+                                             i -> cells.get(i));
+        focus = new FocusTraversalNode<LayoutCell<? extends Region>>(parentTraversal,
+                                                                     selectionModel,
+                                                                     Bias.HORIZONTAL) {
+
+            @Override
+            protected Node getNode() {
+                return NestedCell.this;
+            }
+        };
+        mouseModel = bind(selectionModel);
+    }
+
+    @Override
+    public void activate() {
+        focus.setCurrent();
     }
 
     @Override
     public void dispose() {
-        focus.unbind();
+        super.dispose();
+        mouseModel.unbind();
+    }
+
+    @Override
+    public Hit<LayoutCell<? extends Region>> hit(double x, double y) {
+        return hit(x, y, cells);
     }
 
     @Override
@@ -82,5 +124,6 @@ public class NestedCell extends HorizontalCell<NestedCell> {
     @Override
     public void updateItem(JsonNode item) {
         consumers.forEach(c -> c.accept(item));
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
     }
 }

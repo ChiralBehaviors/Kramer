@@ -21,6 +21,8 @@ import java.util.List;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 
+import javafx.geometry.Pos;
+
 /**
  * @author halhildebrand
  *
@@ -32,12 +34,14 @@ public class TableHeader extends HorizontalCell<TableHeader> {
 
     public TableHeader() {
         super(STYLE_SHEET);
+        setAlignment(Pos.CENTER);
         initialize(DEFAULT_STYLE);
     }
 
     public TableHeader(double width, double height,
                        List<SchemaNodeLayout> children) {
         this();
+        setAlignment(Pos.CENTER);
         setMinSize(width, height);
         setPrefSize(width, height);
         setMaxSize(width, height);

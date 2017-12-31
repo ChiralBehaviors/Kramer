@@ -16,16 +16,16 @@
 
 package com.chiralbehaviors.layout.graphql;
 
-import static com.chiralbehaviors.layout.cell.SelectionEvent.DOUBLE_SELECT;
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.DOUBLE_SELECT;
 
 import org.fxmisc.wellbehaved.event.InputMap;
 import org.fxmisc.wellbehaved.event.Nodes;
 
 import com.chiralbehaviors.layout.AutoLayout;
-import com.chiralbehaviors.layout.StyleProvider.LayoutModel;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.Relation;
+import com.chiralbehaviors.layout.style.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -45,9 +45,9 @@ public class SmokeTable extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        LayoutModel model = new LayoutModel() {
+        Layout model = new Layout() {
             @Override
-            public <T extends LayoutCell<?>> void apply(VirtualFlow<JsonNode, T> list,
+            public <T extends LayoutCell<?>> void apply(VirtualFlow<T> list,
                                                         Relation relation) {
                 Nodes.addInputMap(list,
                                   InputMap.consume(DOUBLE_SELECT,
