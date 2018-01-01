@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import javafx.beans.InvalidationListener;
 import javafx.geometry.Pos;
 import javafx.scene.control.Control;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
@@ -52,8 +53,8 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     }
 
     public OutlineElement(SchemaNodeLayout layout, String field,
-                          int cardinality, double labelWidth, double justified,
-                          double height,
+                          int cardinality, double labelWidth,
+                          double justified, double elementHeight,
                           FocusTraversal<OutlineElement> parentTraversal,
                           Layout model, RelationStyle style) {
         super(STYLE_SHEET);
@@ -69,22 +70,21 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
                 }
             });
 
-        setMinSize(justified, height);
-        setPrefSize(justified, height);
-        setMaxSize(justified, height);
+        double width = justified - style.getElementHorizontalInset();
+        double height = elementHeight + style.getElementVerticalInset();
+        setMinSize(width, height);
+        setPrefSize(width, height);
+        setMaxSize(width, height);
         setAlignment(Pos.CENTER);
-        VBox.setVgrow(this, Priority.ALWAYS);
-        Control label = layout.label(labelWidth, height - style.getElementVerticalInset());
+        Control label = layout.label(labelWidth, elementHeight);
         label.setMinWidth(labelWidth);
-        label.setMaxWidth(labelWidth);
-        double available = justified - labelWidth - style.getElementHorizontalInset();
-        double indentedHeight = height - style.getElementVerticalInset();
+        label.setMaxWidth(labelWidth); 
         cell.getNode()
-            .setMinSize(available, indentedHeight);
+            .setMinSize(justified - labelWidth, elementHeight);
         cell.getNode()
-            .setPrefSize(available, indentedHeight);
+            .setPrefSize(justified - labelWidth, elementHeight);
         cell.getNode()
-            .setMaxSize(available, indentedHeight);
+            .setMaxSize(justified - labelWidth, elementHeight);
         getChildren().addAll(label, cell.getNode());
 
     }
@@ -95,7 +95,8 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     }
 
     public OutlineElement(String field, SchemaNodeLayout layout,
-                          int cardinality, double labelWidth, double justified,
+                          int cardinality, double labelWidth,
+                          double justified,
                           FocusTraversal<OutlineElement> parentTraversal,
                           Layout model, RelationStyle style) {
         this(layout, field, cardinality, labelWidth, justified,

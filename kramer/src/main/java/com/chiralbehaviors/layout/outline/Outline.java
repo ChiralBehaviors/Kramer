@@ -39,16 +39,14 @@ public class Outline extends VirtualFlow<OutlineCell> {
     private static final String SCHEMA_CLASS_TEMPLATE = "%s-outline";
     private static final String STYLE_SHEET           = "outline.css";
 
-    public Outline(double height, Collection<ColumnSet> columnSets,
-                   int averageCardinality, RelationLayout layout,
-                   FocusTraversal<?> parentTraversal, Layout model,
-                   RelationStyle style) {
-        this(layout.getJustifiedWidth(),
-             layout.outlineCellHeight(columnSets.stream()
-                                                .mapToDouble(cs -> cs.getCellHeight())
-                                                .map(h -> h
-                                                          + style.getSpanVerticalInset())
-                                                .sum()),
+    public Outline(Collection<ColumnSet> columnSets, int averageCardinality,
+                   RelationLayout layout, FocusTraversal<?> parentTraversal,
+                   Layout model, RelationStyle style) {
+        this(layout.getJustifiedWidth(), columnSets.stream()
+                                                   .mapToDouble(cs -> cs.getHeight()
+                                                                      + style.getSpanVerticalInset())
+                                                   .sum()
+                                         + style.getOutlineCellVerticalInset(),
              columnSets, averageCardinality, layout, parentTraversal, model,
              style);
     }
@@ -61,9 +59,8 @@ public class Outline extends VirtualFlow<OutlineCell> {
               FXCollections.observableArrayList(), (item, pt) -> {
                   OutlineCell outlineCell = new OutlineCell(columnSets,
                                                             averageCardinality,
-                                                            layout.baseOutlineCellHeight(cellHeight),
-                                                            layout, pt, model,
-                                                            style);
+                                                            cellHeight, layout,
+                                                            pt, model, style);
                   outlineCell.updateItem(item);
                   return outlineCell;
               }, parentTraversal);

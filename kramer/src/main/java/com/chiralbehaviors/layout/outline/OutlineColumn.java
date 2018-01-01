@@ -57,15 +57,15 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
     }
 
     public OutlineColumn(String field, Column c, int cardinality,
-                         double labelWidth, double cellHeight,
+                         double labelWidth, double height,
                          FocusTraversal<OutlineColumn> parentTraversal,
                          Layout model, RelationStyle style) {
         this(field, parentTraversal);
         setAlignment(Pos.CENTER);
         double width = c.getWidth() + style.getColumnHorizontalInset();
-        setMinSize(width, cellHeight);
-        setMaxSize(width, cellHeight);
-        setPrefSize(width, cellHeight);
+        setMinSize(width, height);
+        setMaxSize(width, height);
+        setPrefSize(width, height);
         c.getFields()
          .forEach(f -> {
              OutlineElement cell = new OutlineElement(field, f, cardinality,

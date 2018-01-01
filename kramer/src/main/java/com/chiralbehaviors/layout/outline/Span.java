@@ -55,19 +55,19 @@ public class Span extends HorizontalCell<Span>
     }
 
     public Span(String field, double justified, List<Column> columns,
-                int cardinality, double cellHeight, double labelWidth,
+                int cardinality, double columnHeight, double labelWidth,
                 FocusTraversal<Span> parentTraversal, Layout model,
                 RelationStyle style) {
         this(field, parentTraversal);
         setAlignment(Pos.CENTER);
-        setMinSize(justified, cellHeight);
-        setPrefSize(justified, cellHeight);
-        setMaxSize(justified, cellHeight);
+        double spanHeight = columnHeight + style.getSpanVerticalInset();
+        setMinSize(justified, spanHeight);
+        setPrefSize(justified, spanHeight);
+        setMaxSize(justified, spanHeight);
 
         columns.forEach(c -> {
             OutlineColumn cell = new OutlineColumn(field, c, cardinality,
-                                                   labelWidth,
-                                                   cellHeight - style.getSpanVerticalInset(),
+                                                   labelWidth, columnHeight,
                                                    focus, model, style);
             this.columns.add(cell);
             getChildren().add(cell.getNode());

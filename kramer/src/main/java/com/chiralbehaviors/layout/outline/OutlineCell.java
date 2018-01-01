@@ -56,18 +56,19 @@ public class OutlineCell extends VerticalCell<OutlineCell>
     private List<Span>                                  spans                 = new ArrayList<>();
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
-                       double cellHeight, RelationLayout layout,
+                       double height, RelationLayout layout,
                        FocusTraversal<OutlineCell> pt, Layout model,
                        RelationStyle style) {
         this(layout.getField(), pt);
         setAlignment(Pos.CENTER);
-        setMinSize(layout.getJustifiedColumnWidth(), cellHeight);
-        setPrefSize(layout.getJustifiedColumnWidth(), cellHeight);
-        setMaxSize(layout.getJustifiedColumnWidth(), cellHeight);
+        setMinSize(layout.getJustifiedColumnWidth(), height);
+        setPrefSize(layout.getJustifiedColumnWidth(), height);
+        setMaxSize(layout.getJustifiedColumnWidth(), height);
         columnSets.forEach(cs -> {
-            Span span = new Span(layout.getField(), cs.getWidth(),
+            Span span = new Span(layout.getField(),
+                                 cs.getWidth() + style.getColumnHorizontalInset(),
                                  cs.getColumns(), childCardinality,
-                                 cs.getCellHeight() + style.getSpanVerticalInset(),
+                                 cs.getHeight(),
                                  layout.getLabelWidth(), focus, model, style);
             spans.add(span);
             alignmentProperty();

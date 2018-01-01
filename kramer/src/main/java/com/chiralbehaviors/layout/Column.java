@@ -108,7 +108,7 @@ public class Column {
                                   .sum();
         if (calculated < finalHeight) {
             double delta = Layout.snap((finalHeight - calculated)
-                                            / fields.size());
+                                       / fields.size());
             if (delta >= 1.0) {
                 fields.forEach(f -> f.adjustHeight(delta));
             }
@@ -121,8 +121,8 @@ public class Column {
         double available = Layout.snap(width - labelWidth);
         return elements.stream()
                        .mapToDouble(field -> field.cellHeight(cardinality,
-                                                              available))
-                       .map(height -> height + style.getElementVerticalInset())
+                                                              available)
+                                             + style.getElementVerticalInset())
                        .sum();
     }
 

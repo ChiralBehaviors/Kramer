@@ -33,7 +33,7 @@ import com.chiralbehaviors.layout.style.RelationStyle;
  */
 public class ColumnSet {
 
-    private double             cellHeight;
+    private double             height;
     private final List<Column> columns = new ArrayList<>();
 
     {
@@ -46,7 +46,7 @@ public class ColumnSet {
     }
 
     public void adjustHeight(double delta) {
-        cellHeight = Layout.snap(cellHeight + delta);
+        height = Layout.snap(height + delta);
         columns.forEach(c -> c.adjustHeight(delta));
     }
 
@@ -68,7 +68,7 @@ public class ColumnSet {
                        .forEach(f -> {
                            f.compress(fieldWidth);
                        });
-            cellHeight = firstColumn.cellHeight(cardinality, labelWidth, style)
+            height = firstColumn.cellHeight(cardinality, labelWidth, style)
                          + style.getColumnVerticalInset();
             return;
         }
@@ -105,11 +105,11 @@ public class ColumnSet {
         } while (lastHeight > baseHeight);
         double finalHeight = baseHeight;
         columns.forEach(c -> c.distributeHeight(finalHeight));
-        cellHeight = finalHeight + style.getColumnVerticalInset();
+        height = finalHeight + style.getColumnVerticalInset();
     }
 
-    public double getCellHeight() {
-        return cellHeight;
+    public double getHeight() {
+        return height;
     }
 
     public List<Column> getColumns() {
@@ -124,6 +124,6 @@ public class ColumnSet {
 
     @Override
     public String toString() {
-        return String.format("ColumnSet [%s] [%s]", cellHeight, columns);
+        return String.format("ColumnSet [%s] [%s]", height, columns);
     }
 }
