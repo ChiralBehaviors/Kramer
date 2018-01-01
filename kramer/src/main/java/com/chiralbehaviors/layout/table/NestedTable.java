@@ -18,18 +18,15 @@ package com.chiralbehaviors.layout.table;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiFunction;
 
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
-import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.style.Layout;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.collections.FXCollections;
 import javafx.geometry.Pos;
 import javafx.scene.layout.Region;
 
@@ -59,13 +56,10 @@ public class NestedTable extends VerticalCell<NestedTable> {
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE,
                                           layout.getField()));
         Region header = layout.buildColumnHeader();
-        double width = layout.getJustifiedColumnWidth();
-        double height = Layout.snap(layout.getHeight()
-                             - layout.getColumnHeaderHeight());
-
-        rows = buildRows(width, height, childCardinality, layout,
-                         parentTraversal, model);
-
+        rows = new NestedRow(Layout.snap(layout.getHeight()
+                                         - layout.getColumnHeaderHeight()),
+                             layout.getRowCellHeight(), layout,
+                             childCardinality, parentTraversal, model);
 
         getChildren().addAll(header, rows);
         setMinWidth(layout.getJustifiedColumnWidth());
@@ -96,28 +90,5 @@ public class NestedTable extends VerticalCell<NestedTable> {
         rows.getItems()
             .setAll(SchemaNode.asList(item));
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
-    }
-
-    protected VirtualFlow<NestedCell> buildRows(double width, double height,
-                                                int childCardinality,
-                                                RelationLayout layout,
-                                                FocusTraversal<?> parentTraversal,
-                                                Layout model) {
-        BiFunction<JsonNode, FocusTraversalNode<NestedCell>, NestedCell> factory = (item,
-                                                                                    pt) -> {
-            NestedCell cell = new NestedCell(layout, pt, model);
-            cell.updateItem(item);
-            return cell;
-        };
-        VirtualFlow<NestedCell> rows = new VirtualFlow<NestedCell>(DEFAULT_STYLE,
-                                                                   layout.getJustifiedColumnWidth(),
-                                                                   layout.getRowHeight(),
-                                                                   FXCollections.observableArrayList(),
-                                                                   factory,
-                                                                   parentTraversal);
-        rows.setMinSize(width, height);
-        rows.setPrefSize(width, height);
-        rows.setMaxSize(width, height);
-        return rows;
     }
 }

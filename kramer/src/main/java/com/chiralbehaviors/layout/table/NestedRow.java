@@ -36,7 +36,14 @@ public class NestedRow extends VirtualFlow<NestedCell> {
     public NestedRow(double rendered, RelationLayout layout,
                      int childCardinality, FocusTraversal<?> parentTraversal,
                      Layout model) {
-        super(STYLE_SHEET, layout.getJustifiedColumnWidth(), layout.getHeight(),
+        this(rendered, layout.getHeight(), layout, childCardinality,
+             parentTraversal, model);
+    }
+
+    public NestedRow(double rendered, double rowHeight, RelationLayout layout,
+                     int childCardinality, FocusTraversal<?> parentTraversal,
+                     Layout model) {
+        super(STYLE_SHEET, layout.getJustifiedColumnWidth(), rowHeight,
               FXCollections.observableArrayList(), (item, pt) -> {
                   NestedCell cell = new NestedCell(layout, pt, model);
                   cell.updateItem(item);
