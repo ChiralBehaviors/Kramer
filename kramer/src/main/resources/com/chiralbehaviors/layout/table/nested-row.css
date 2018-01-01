@@ -1,5 +1,0 @@
-.nested-row {
-    -fx-background-color: -fx-faint-focus-color, -fx-focus-color, -fx-control-inner-background;
-    -fx-background-insets: -1.4, -0.3, 1;
-    -fx-background-radius: 2, 0, 0;
-}

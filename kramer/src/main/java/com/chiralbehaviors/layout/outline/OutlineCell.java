@@ -46,7 +46,6 @@ import javafx.scene.layout.VBox;
 public class OutlineCell extends VerticalCell<OutlineCell>
         implements LayoutContainer<JsonNode, OutlineCell, Span> {
 
-    private static final String                         DEFAULT_STYLE         = "a-cell";
     private static final String                         OUTLINE_CELL_CLASS    = "outline-cell";
     private static final String                         SCHEMA_CLASS_TEMPLATE = "%s-outline-cell";
     private static final String                         STYLE_SHEET           = "outline-cell.css";
@@ -73,7 +72,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
             spans.add(span);
             alignmentProperty();
             VBox.setVgrow(span.getNode(), Priority.ALWAYS);
-            getChildren().add(span.getNode()); 
+            getChildren().add(span.getNode());
         });
     }
 
@@ -84,9 +83,8 @@ public class OutlineCell extends VerticalCell<OutlineCell>
     public OutlineCell(String field, FocusTraversal<OutlineCell> parent) {
         super(STYLE_SHEET);
         setAlignment(Pos.CENTER);
-        initialize(DEFAULT_STYLE);
-        getStyleClass().addAll(OUTLINE_CELL_CLASS,
-                               String.format(SCHEMA_CLASS_TEMPLATE, field));
+        initialize(OUTLINE_CELL_CLASS);
+        getStyleClass().addAll(String.format(SCHEMA_CLASS_TEMPLATE, field));
         selectionModel = buildSelectionModel(i -> null, () -> spans.size(),
                                              i -> spans.get(i));
         mouseHandler = bind(selectionModel);

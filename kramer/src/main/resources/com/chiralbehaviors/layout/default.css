@@ -4,12 +4,38 @@
         linear-gradient(#303842 0.0%, #3e5577 20.0%, #375074 100.0%),
         linear-gradient(#768aa5 0.0%, #849cbb 5.0%, #5877a2 50.0%, #486a9a 51.0%, #4a6c9b 100.0%);
     -fx-background-insets: 0.0 0.0 -1.0 0.0,0.0,1.0; 
-    -fx-background-radius: 5,5,4;
+    -fx-background-radius: 5.0,5.0,4.0;
     -fx-padding: 3.0 3.0 3.0 3.0;
     -fx-text-fill: #242d35;
     -fx-font-family: "Helvetica";
     -fx-font-size: 14.0px;
     -fx-text-fill: white;
+}
+
+.outline-cell { 
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+    -fx-text-fill: -fx-text-base-color;
+    -fx-padding: 0.333333em 0.666667em 0.333333em 0.666667em; /* 4 8 4 8 */
+}
+
+.nested-cell { 
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+    -fx-text-fill: -fx-text-base-color;
+    -fx-padding: 0.333333em 0.666667em 0.333333em 0.666667em; /* 4 8 4 8 */
+}  
+
+.layout-label:hover {
+    -fx-text-fill: orange;
+}
+
+.outline-element:focused > .layout-label {
+     -fx-background-color: #969A9F;
+}
+
+.outline:focused > .layout-label, .table:focused > .layout-label {
+     -fx-background-color: #969A9F;
 }
 
 .primitive {
@@ -20,4 +46,8 @@
     -fx-text-fill: #242d35;
     -fx-font-size: 14.0px;
     -fx-background-insets: 0.0 0.0 -1.0 0.0, 0.0, 1.0;
+}
+
+.primitive:focused {
+     -fx-background-color: #969A9F;
 }
