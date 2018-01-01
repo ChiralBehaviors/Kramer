@@ -39,31 +39,23 @@ public class Outline extends VirtualFlow<OutlineCell> {
     private static final String SCHEMA_CLASS_TEMPLATE = "%s-outline";
     private static final String STYLE_SHEET           = "outline.css";
 
-    public Outline(Collection<ColumnSet> columnSets, int averageCardinality,
-                   RelationLayout layout, FocusTraversal<?> parentTraversal,
-                   Layout model, RelationStyle style) {
-        this(layout.getJustifiedWidth(), columnSets.stream()
-                                                   .mapToDouble(cs -> cs.getHeight()
-                                                                      + style.getSpanVerticalInset())
-                                                   .sum()
-                                         + style.getOutlineCellVerticalInset(),
-             columnSets, averageCardinality, layout, parentTraversal, model,
-             style);
-    }
-
     public Outline(double width, double cellHeight,
                    Collection<ColumnSet> columnSets, int averageCardinality,
                    RelationLayout layout, FocusTraversal<?> parentTraversal,
-                   Layout model, RelationStyle style) {
+                   Layout model, RelationStyle style, double labelWidth) {
         super(STYLE_SHEET, width, cellHeight,
               FXCollections.observableArrayList(), (item, pt) -> {
                   OutlineCell outlineCell = new OutlineCell(columnSets,
                                                             averageCardinality,
                                                             cellHeight, layout,
-                                                            pt, model, style);
+                                                            pt, model, style,
+                                                            labelWidth);
                   outlineCell.updateItem(item);
                   return outlineCell;
               }, parentTraversal);
+        initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE,
+                                          layout.getField()));
         model.apply(this, layout.getNode());
     }
 

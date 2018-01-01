@@ -223,10 +223,8 @@ abstract public class SchemaNodeLayout {
         return height;
     }
 
-    abstract public double getJustifiedColumnWidth();
-
     public double getJustifiedWidth() {
-        return justifiedWidth;
+        return Layout.snap(justifiedWidth);
     }
 
     public String getLabel() {
@@ -239,7 +237,7 @@ abstract public class SchemaNodeLayout {
 
     public abstract SchemaNode getNode();
 
-    abstract public double justify(double justified); 
+    abstract public double justify(double justified);
 
     public Control label(double width, double height) {
         return labelStyle.label(width, getLabel(), height);

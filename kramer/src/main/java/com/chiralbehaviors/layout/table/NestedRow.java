@@ -20,6 +20,7 @@ import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
@@ -35,16 +36,18 @@ public class NestedRow extends VirtualFlow<NestedCell> {
 
     public NestedRow(double rendered, RelationLayout layout,
                      int childCardinality, FocusTraversal<?> parentTraversal,
-                     Layout model) {
+                     Layout model, RelationStyle style) {
         this(rendered, layout.getHeight(), layout, childCardinality,
-             parentTraversal, model);
+             parentTraversal, model, style);
     }
 
     public NestedRow(double rendered, double rowHeight, RelationLayout layout,
                      int childCardinality, FocusTraversal<?> parentTraversal,
-                     Layout model) {
-        super(STYLE_SHEET, layout.getJustifiedColumnWidth(), rowHeight,
-              FXCollections.observableArrayList(), (item, pt) -> {
+                     Layout model, RelationStyle style) {
+        super(STYLE_SHEET,
+              layout.getJustifiedWidth() + style.getRowCellHorizontalInset()
+                           + style.getRowHorizontalInset(),
+              rowHeight, FXCollections.observableArrayList(), (item, pt) -> {
                   NestedCell cell = new NestedCell(layout, pt, model);
                   cell.updateItem(item);
                   return cell;
@@ -52,7 +55,7 @@ public class NestedRow extends VirtualFlow<NestedCell> {
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE,
                                           layout.getField()));
-        double width = layout.getJustifiedColumnWidth();
+        double width = layout.getJustifiedWidth();
         setMinSize(width, rendered);
         setPrefSize(width, rendered);
         setMaxSize(width, rendered);

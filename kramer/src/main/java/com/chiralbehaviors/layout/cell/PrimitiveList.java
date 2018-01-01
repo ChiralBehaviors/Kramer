@@ -42,7 +42,7 @@ public class PrimitiveList extends VirtualFlow<LayoutCell<?>> {
                   outlineCell.updateItem(item);
                   return outlineCell;
               }, parentTraversal);
-        double width = layout.getJustifiedColumnWidth();
+        double width = layout.getJustifiedWidth();
         double height = layout.getHeight();
         setMinSize(width, height);
         setPrefSize(width, height);

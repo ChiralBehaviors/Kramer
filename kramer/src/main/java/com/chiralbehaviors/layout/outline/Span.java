@@ -19,7 +19,7 @@ package com.chiralbehaviors.layout.outline;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.chiralbehaviors.layout.Column;
+import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
@@ -54,20 +54,15 @@ public class Span extends HorizontalCell<Span>
         this(field, null);
     }
 
-    public Span(String field, double justified, List<Column> columns,
-                int cardinality, double columnHeight, double labelWidth,
+    public Span(int cardinality, String field, double labelWidth, ColumnSet columnSet,
                 FocusTraversal<Span> parentTraversal, Layout model,
                 RelationStyle style) {
         this(field, parentTraversal);
-        setAlignment(Pos.CENTER);
-        double spanHeight = columnHeight + style.getSpanVerticalInset();
-        setMinSize(justified, spanHeight);
-        setPrefSize(justified, spanHeight);
-        setMaxSize(justified, spanHeight);
+        setAlignment(Pos.CENTER); 
 
-        columns.forEach(c -> {
+        columnSet.getColumns().forEach(c -> {
             OutlineColumn cell = new OutlineColumn(field, c, cardinality,
-                                                   labelWidth, columnHeight,
+                                                   labelWidth, columnSet.getHeight(),
                                                    focus, model, style);
             this.columns.add(cell);
             getChildren().add(cell.getNode());

@@ -27,9 +27,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import javafx.beans.InvalidationListener;
 import javafx.geometry.Pos;
 import javafx.scene.control.Control;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
 
 /**
  * @author halhildebrand

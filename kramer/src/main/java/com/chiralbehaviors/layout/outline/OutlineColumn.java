@@ -63,9 +63,10 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
         this(field, parentTraversal);
         setAlignment(Pos.CENTER);
         double width = c.getWidth() + style.getColumnHorizontalInset();
-        setMinSize(width, height);
-        setMaxSize(width, height);
-        setPrefSize(width, height);
+        double expanded = height + style.getColumnVerticalInset();
+        setMinSize(width, expanded);
+        setMaxSize(width, expanded);
+        setPrefSize(width, expanded);
         c.getFields()
          .forEach(f -> {
              OutlineElement cell = new OutlineElement(field, f, cardinality,

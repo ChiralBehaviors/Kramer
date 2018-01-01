@@ -134,11 +134,6 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public double getJustifiedColumnWidth() {
-        return Layout.snap(justifiedWidth);
-    }
-
-    @Override
     public Primitive getNode() {
         return (Primitive) node;
     }
@@ -253,12 +248,12 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return String.format("PrimitiveLayout [%s %s height, width {c: %s, j: %s} ]",
                              node.getField(), height, columnWidth,
                              justifiedWidth);
-    } 
+    }
 
     @Override
     protected void calculateRootHeight() {
         calculateCellHeight();
-    } 
+    }
 
     protected double width(JsonNode row) {
         return style.width(row);

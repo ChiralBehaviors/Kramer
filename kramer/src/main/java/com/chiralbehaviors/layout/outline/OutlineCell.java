@@ -58,18 +58,12 @@ public class OutlineCell extends VerticalCell<OutlineCell>
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
                        double height, RelationLayout layout,
                        FocusTraversal<OutlineCell> pt, Layout model,
-                       RelationStyle style) {
+                       RelationStyle style, double labelWidth) {
         this(layout.getField(), pt);
-        setAlignment(Pos.CENTER);
-        setMinSize(layout.getJustifiedColumnWidth(), height);
-        setPrefSize(layout.getJustifiedColumnWidth(), height);
-        setMaxSize(layout.getJustifiedColumnWidth(), height);
+        setAlignment(Pos.CENTER); 
         columnSets.forEach(cs -> {
-            Span span = new Span(layout.getField(),
-                                 cs.getWidth() + style.getColumnHorizontalInset(),
-                                 cs.getColumns(), childCardinality,
-                                 cs.getHeight(),
-                                 layout.getLabelWidth(), focus, model, style);
+            Span span = new Span(childCardinality, layout.getField(), labelWidth, cs, focus,
+                                 model, style);
             spans.add(span);
             alignmentProperty();
             VBox.setVgrow(span.getNode(), Priority.ALWAYS);
