@@ -104,7 +104,8 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public double baseRowCellHeight(double extended) {
-        return Layout.snap(extended - style.getRowCellVerticalInset());
+        return Layout.snap(extended - style.getRowCellVerticalInset()
+                           - style.getRowVerticalInset());
     }
 
     @SuppressWarnings("unchecked")
@@ -461,12 +462,11 @@ public class RelationLayout extends SchemaNodeLayout {
         double elementHeight = Layout.snap(children.stream()
                                                    .mapToDouble(child -> child.rowHeight(averageChildCardinality,
                                                                                          justifiedWidth))
-                                                   .map(h -> h
-                                                             + style.getRowCellVerticalInset())
                                                    .max()
                                                    .getAsDouble());
         children.forEach(c -> c.normalizeRowHeight(elementHeight));
-        return Layout.snap(elementHeight + style.getRowCellVerticalInset());
+        return Layout.snap(elementHeight + style.getRowCellVerticalInset()
+                           + style.getRowVerticalInset());
     }
 
     protected void calculateTableHeight() {
@@ -476,7 +476,11 @@ public class RelationLayout extends SchemaNodeLayout {
                                      .orElse(0.0);
         rowHeight = calculateRowHeight();
         height = Layout.snap((resolvedCardinality * rowHeight)
-                             + columnHeaderHeight);
+                             + columnHeaderHeight)
+                 + style.getTableVerticalInset();
+        System.out.println(String.format("%s: %s, %s, %s", getLabel(),
+                                         columnHeaderHeight, rowHeight,
+                                         height));
     }
 
     @Override
@@ -549,5 +553,9 @@ public class RelationLayout extends SchemaNodeLayout {
 
     protected int resolveCardinality(int cardinality) {
         return Math.max(1, Math.min(cardinality, maxCardinality));
+    }
+
+    public double getRowCellHeight() {
+        return rowHeight - style.getRowVerticalInset();
     }
 }

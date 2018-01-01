@@ -56,10 +56,10 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
                       FocusTraversal<NestedCell> parentTraversal,
                       Layout model) {
         this(layout.getField(), parentTraversal);
-        setAlignment(Pos.CENTER);
-        setMinSize(layout.getJustifiedWidth(), layout.getRowHeight());
-        setPrefSize(layout.getJustifiedWidth(), layout.getRowHeight());
-        setMaxSize(layout.getJustifiedWidth(), layout.getRowHeight());
+        setAlignment(Pos.CENTER); 
+        setMinSize(layout.getJustifiedWidth(), layout.getRowCellHeight());
+        setPrefSize(layout.getJustifiedWidth(), layout.getRowCellHeight());
+        setMaxSize(layout.getJustifiedWidth(), layout.getRowCellHeight());
         layout.forEach(child -> {
             LayoutCell<? extends Region> cell = child.buildColumn(layout.baseRowCellHeight(layout.getRowHeight()),
                                                                   focus, model);

@@ -12,18 +12,11 @@
     -fx-text-fill: white;
 }
 
-.outline-cell { 
+.outline-cell, .nested-cell { 
     -fx-background: transparent;
     -fx-background-color: transparent;
     -fx-text-fill: -fx-text-base-color;
-    -fx-padding: 0.333333em 0.666667em 0.333333em 0.666667em; /* 4 8 4 8 */
-}
-
-.nested-cell { 
-    -fx-background: transparent;
-    -fx-background-color: transparent;
-    -fx-text-fill: -fx-text-base-color;
-    -fx-padding: 0.333333em 0.666667em 0.333333em 0.666667em; /* 4 8 4 8 */
+    -fx-padding: 1 4 1 4; 
 }  
 
 .layout-label:hover {

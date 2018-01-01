@@ -34,17 +34,17 @@ public class NestedRow extends VirtualFlow<NestedCell> {
     private static final String STYLE_SHEET           = "nested-row.css";
 
     public NestedRow(double rendered, RelationLayout layout,
-                     int childCardinality,
-                     FocusTraversal<NestedRow> parentTraversal, Layout model) {
-        super(STYLE_SHEET, layout.getJustifiedColumnWidth(),
-              layout.getHeight(), FXCollections.observableArrayList(),
-              (item, pt) -> {
+                     int childCardinality, FocusTraversal<?> parentTraversal,
+                     Layout model) {
+        super(STYLE_SHEET, layout.getJustifiedColumnWidth(), layout.getHeight(),
+              FXCollections.observableArrayList(), (item, pt) -> {
                   NestedCell cell = new NestedCell(layout, pt, model);
                   cell.updateItem(item);
                   return cell;
               }, parentTraversal);
         initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, layout.getField()));
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE,
+                                          layout.getField()));
         double width = layout.getJustifiedColumnWidth();
         setMinSize(width, rendered);
         setPrefSize(width, rendered);
