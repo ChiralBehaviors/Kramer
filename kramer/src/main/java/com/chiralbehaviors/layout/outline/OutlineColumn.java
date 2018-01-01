@@ -30,6 +30,7 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
 import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.geometry.Pos;
@@ -42,7 +43,7 @@ import javafx.scene.Node;
 public class OutlineColumn extends VerticalCell<OutlineColumn>
         implements LayoutContainer<JsonNode, OutlineColumn, OutlineElement> {
 
-    private static final String                                   DEFAULT_STYLE         = "span";
+    private static final String                                   DEFAULT_STYLE         = "outline-column";
     private static final String                                   SCHEMA_CLASS_TEMPLATE = "%s-outline-column";
     private static final String                                   STYLE_SHEET           = "outline-column.css";
     private final List<OutlineElement>                            elements              = new ArrayList<>();
@@ -58,17 +59,18 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
     public OutlineColumn(String field, Column c, int cardinality,
                          double labelWidth, double cellHeight,
                          FocusTraversal<OutlineColumn> parentTraversal,
-                         Layout model) {
+                         Layout model, RelationStyle style) {
         this(field, parentTraversal);
         setAlignment(Pos.CENTER);
-        setMinSize(c.getWidth(), cellHeight);
-        setMaxSize(c.getWidth(), cellHeight);
-        setPrefSize(c.getWidth(), cellHeight);
+        double width = c.getWidth() + style.getColumnHorizontalInset();
+        setMinSize(width, cellHeight);
+        setMaxSize(width, cellHeight);
+        setPrefSize(width, cellHeight);
         c.getFields()
          .forEach(f -> {
-             OutlineElement cell = f.outlineElement(field, cardinality,
-                                                    labelWidth, c.getWidth(),
-                                                    focus, model);
+             OutlineElement cell = new OutlineElement(field, f, cardinality,
+                                                      labelWidth, c.getWidth(),
+                                                      focus, model, style);
              elements.add(cell);
              fields.add(item -> cell.updateItem(f.extractFrom(item)));
              getChildren().add(cell.getNode());

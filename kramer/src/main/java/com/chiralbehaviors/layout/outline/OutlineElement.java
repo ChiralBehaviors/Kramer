@@ -21,6 +21,7 @@ import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.beans.InvalidationListener;
@@ -54,7 +55,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
                           int cardinality, double labelWidth, double justified,
                           double height,
                           FocusTraversal<OutlineElement> parentTraversal,
-                          Layout model) {
+                          Layout model, RelationStyle style) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
@@ -73,16 +74,17 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
         setMaxSize(justified, height);
         setAlignment(Pos.CENTER);
         VBox.setVgrow(this, Priority.ALWAYS);
-        Control label = layout.label(labelWidth);
+        Control label = layout.label(labelWidth, height - style.getElementVerticalInset());
         label.setMinWidth(labelWidth);
         label.setMaxWidth(labelWidth);
-        double available = justified - labelWidth;
+        double available = justified - labelWidth - style.getElementHorizontalInset();
+        double indentedHeight = height - style.getElementVerticalInset();
         cell.getNode()
-            .setMinSize(available, height);
+            .setMinSize(available, indentedHeight);
         cell.getNode()
-            .setPrefSize(available, height);
+            .setPrefSize(available, indentedHeight);
         cell.getNode()
-            .setMaxSize(available, height);
+            .setMaxSize(available, indentedHeight);
         getChildren().addAll(label, cell.getNode());
 
     }
@@ -95,9 +97,9 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     public OutlineElement(String field, SchemaNodeLayout layout,
                           int cardinality, double labelWidth, double justified,
                           FocusTraversal<OutlineElement> parentTraversal,
-                          Layout model) {
+                          Layout model, RelationStyle style) {
         this(layout, field, cardinality, labelWidth, justified,
-             layout.getHeight(), parentTraversal, model);
+             layout.getHeight(), parentTraversal, model, style);
     }
 
     @Override

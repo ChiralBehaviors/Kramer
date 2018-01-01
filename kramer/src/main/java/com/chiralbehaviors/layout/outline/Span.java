@@ -67,8 +67,8 @@ public class Span extends HorizontalCell<Span>
         columns.forEach(c -> {
             OutlineColumn cell = new OutlineColumn(field, c, cardinality,
                                                    labelWidth,
-                                                   cellHeight - style.getColumnVerticalInset(),
-                                                   focus, model);
+                                                   cellHeight - style.getSpanVerticalInset(),
+                                                   focus, model, style);
             this.columns.add(cell);
             getChildren().add(cell.getNode());
         });

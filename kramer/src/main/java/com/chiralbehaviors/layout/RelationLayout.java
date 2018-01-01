@@ -226,8 +226,9 @@ public class RelationLayout extends SchemaNodeLayout {
                                      - style.getSpanHorizontalInset());
         columnSets.clear();
         ColumnSet current = null;
-        double available = baseColumnWidth(justified);
-        double halfWidth = Layout.snap(available / 2d);
+        double available = justified;
+        double halfWidth = Layout.snap(available / 2d)
+                           - (2.0 * -style.getColumnHorizontalInset());
         for (SchemaNodeLayout child : children) {
             double childWidth = labelWidth + child.layoutWidth();
             if (childWidth > halfWidth || current == null) {
@@ -401,15 +402,14 @@ public class RelationLayout extends SchemaNodeLayout {
     public double outlineCellHeight(double baseHeight) {
         return baseHeight + style.getOutlineCellVerticalInset();
     }
-
-    @Override
+ 
     public OutlineElement outlineElement(String parent, int cardinality,
                                          double labelWidth, double justified,
                                          FocusTraversal<OutlineElement> parentTraversal,
                                          Layout model) {
 
         return new OutlineElement(parent, this, cardinality, labelWidth,
-                                  justified, parentTraversal, model);
+                                  justified, parentTraversal, model, style);
     }
 
     @Override
@@ -438,17 +438,17 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     protected double baseColumnWidth(double width) {
-        return Layout.snap(width - style.getOutlineCellHorizontalInset());
+        return Layout.snap(width - style.getElementHorizontalInset()
+                           - style.getColumnHorizontalInset());
     }
 
     protected void calculateOutlineHeight() {
         height = Layout.snap((resolvedCardinality * (columnSets.stream()
-                                                               .mapToDouble(cs -> cs.getCellHeight())
-                                                               .map(h -> h
-                                                                         + style.getSpanVerticalInset())
+                                                               .mapToDouble(cs -> cs.getCellHeight()
+                                                                                  + style.getSpanVerticalInset())
                                                                .sum()
-                                                     + style.getOutlineCellVerticalInset()))
-                             + style.getOutineVerticalInset());
+                                                     + style.getOutlineCellVerticalInset())
+                              + style.getOutineVerticalInset()));
     }
 
     @Override

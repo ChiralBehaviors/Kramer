@@ -20,7 +20,6 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
-import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.style.LabelStyle;
 import com.chiralbehaviors.layout.style.Layout;
@@ -240,14 +239,10 @@ abstract public class SchemaNodeLayout {
 
     public abstract SchemaNode getNode();
 
-    abstract public double justify(double justified);
+    abstract public double justify(double justified); 
 
-    public Control label(double labelWidth) {
-        return label(labelWidth, node.getLabel());
-    }
-
-    public Control label(double width, double half) {
-        return labelStyle.label(width, getLabel(), half);
+    public Control label(double width, double height) {
+        return labelStyle.label(width, getLabel(), height);
     }
 
     public double labelWidth(String label) {
@@ -274,13 +269,6 @@ abstract public class SchemaNodeLayout {
     abstract public double nestTableColumn(Indent inset, Insets indentation);
 
     abstract public void normalizeRowHeight(double normalized);
-
-    abstract public OutlineElement outlineElement(String parent,
-                                                  int cardinality,
-                                                  double labelWidth,
-                                                  double justified,
-                                                  FocusTraversal<OutlineElement> parentTraversal,
-                                                  Layout model);
 
     abstract public double rowHeight(int averageCardinality,
                                      double justifiedWidth);

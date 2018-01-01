@@ -57,10 +57,8 @@ public class LabelStyle {
         label.getStyleClass()
              .add(LAYOUT_LABEL);
         label.setAlignment(Pos.CENTER);
-        label.setMinWidth(width);
-        label.setMaxWidth(width);
-        label.setMinHeight(height);
-        label.setMaxHeight(height);
+        label.setMinSize(width, height);
+        label.setMaxSize(width, height);
         return label;
     }
 
