@@ -69,9 +69,9 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
         setPrefSize(width, expanded);
         c.getFields()
          .forEach(f -> {
-             OutlineElement cell = new OutlineElement(field, f, cardinality,
-                                                      labelWidth, c.getWidth(),
-                                                      focus, model, style);
+             OutlineElement cell = new OutlineElement(field, c.getWidth(), f, cardinality,
+                                                      labelWidth, focus, model,
+                                                      style);
              elements.add(cell);
              fields.add(item -> cell.updateItem(f.extractFrom(item)));
              getChildren().add(cell.getNode());

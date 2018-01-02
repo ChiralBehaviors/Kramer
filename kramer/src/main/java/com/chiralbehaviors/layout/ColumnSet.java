@@ -116,12 +116,6 @@ public class ColumnSet {
         return columns;
     }
 
-    public double getWidth() {
-        return columns.stream()
-                      .mapToDouble(c -> c.getWidth())
-                      .sum();
-    }
-
     @Override
     public String toString() {
         return String.format("ColumnSet [%s] [%s]", height, columns);

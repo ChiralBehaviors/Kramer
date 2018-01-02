@@ -49,8 +49,8 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
         this.parentTraversal = null;
     }
 
-    public OutlineElement(SchemaNodeLayout layout, String field,
-                          int cardinality, double labelWidth, double justified,
+    public OutlineElement(SchemaNodeLayout layout, double width, String field,
+                          int cardinality, double labelWidth,
                           double elementHeight,
                           FocusTraversal<OutlineElement> parentTraversal,
                           Layout model, RelationStyle style) {
@@ -66,10 +66,9 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
                     parentTraversal.setCurrent();
                 }
             });
-
-        double width = justified - style.getElementHorizontalInset();
+ 
         double height = elementHeight + style.getElementVerticalInset();
-        
+
         setMinSize(width, height);
         setPrefSize(width, height);
         setMaxSize(width, height);
@@ -77,10 +76,10 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
 
         Label label = layout.label(labelWidth, elementHeight);
 
-        double cellWidth = justified - labelWidth;
-        node.setMinSize(cellWidth, elementHeight);
-        node.setPrefSize(cellWidth, elementHeight);
-        node.setMaxSize(cellWidth, elementHeight);
+        double cellWidth = width - labelWidth - style.getElementHorizontalInset(); 
+        cell.getNode().setMinSize(cellWidth, elementHeight);
+        cell.getNode().setPrefSize(cellWidth, elementHeight);
+        cell.getNode().setMaxSize(cellWidth, elementHeight);
         getChildren().addAll(label, cell.getNode());
 
     }
@@ -90,12 +89,12 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
         parentTraversal.setCurrent();
     }
 
-    public OutlineElement(String field, SchemaNodeLayout layout,
-                          int cardinality, double labelWidth, double justified,
+    public OutlineElement(String field, double width, SchemaNodeLayout layout,
+                          int cardinality, double labelWidth,
                           FocusTraversal<OutlineElement> parentTraversal,
                           Layout model, RelationStyle style) {
-        this(layout, field, cardinality, labelWidth, justified,
-             layout.getHeight(), parentTraversal, model, style);
+        this(layout, width, field, cardinality, labelWidth, layout.getHeight(),
+             parentTraversal, model, style);
     }
 
     @Override

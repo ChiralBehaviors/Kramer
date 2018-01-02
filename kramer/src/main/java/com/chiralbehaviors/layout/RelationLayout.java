@@ -217,12 +217,12 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public void compress(double justified) {
-        double available = justified - style.getOutlineHorizontalInset()
-                           - style.getOutlineCellHorizontalInset();
         if (useTable) {
-            justifyTable(available);
+            justifyTable(justified);
             return;
         }
+        double available = justified - style.getOutlineHorizontalInset()
+                - style.getOutlineCellHorizontalInset();
         columnSets.clear();
         justifiedWidth = Layout.snap(available);
         columnSets.clear();

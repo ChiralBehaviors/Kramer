@@ -62,7 +62,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
         this(layout.getField(), pt);
         setAlignment(Pos.CENTER); 
         columnSets.forEach(cs -> {
-            Span span = new Span(childCardinality, layout.getField(), labelWidth, cs, focus,
+            Span span = new Span(childCardinality, layout, labelWidth, cs, focus,
                                  model, style);
             spans.add(span);
             alignmentProperty();
