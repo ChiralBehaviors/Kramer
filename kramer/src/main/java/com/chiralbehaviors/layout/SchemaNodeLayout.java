@@ -29,7 +29,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import javafx.geometry.Insets;
-import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Region;
 
@@ -239,7 +238,7 @@ abstract public class SchemaNodeLayout {
 
     abstract public double justify(double justified);
 
-    public Control label(double width, double height) {
+    public Label label(double width, double height) {
         return labelStyle.label(width, getLabel(), height);
     }
 

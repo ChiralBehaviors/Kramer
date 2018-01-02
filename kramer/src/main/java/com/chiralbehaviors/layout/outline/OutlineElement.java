@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.beans.InvalidationListener;
 import javafx.geometry.Pos;
-import javafx.scene.control.Control;
+import javafx.scene.control.Label;
 
 /**
  * @author halhildebrand
@@ -50,8 +50,8 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     }
 
     public OutlineElement(SchemaNodeLayout layout, String field,
-                          int cardinality, double labelWidth,
-                          double justified, double elementHeight,
+                          int cardinality, double labelWidth, double justified,
+                          double elementHeight,
                           FocusTraversal<OutlineElement> parentTraversal,
                           Layout model, RelationStyle style) {
         super(STYLE_SHEET);
@@ -69,19 +69,18 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
 
         double width = justified - style.getElementHorizontalInset();
         double height = elementHeight + style.getElementVerticalInset();
+        
         setMinSize(width, height);
         setPrefSize(width, height);
         setMaxSize(width, height);
         setAlignment(Pos.CENTER);
-        Control label = layout.label(labelWidth, elementHeight);
-        label.setMinWidth(labelWidth);
-        label.setMaxWidth(labelWidth); 
-        cell.getNode()
-            .setMinSize(justified - labelWidth, elementHeight);
-        cell.getNode()
-            .setPrefSize(justified - labelWidth, elementHeight);
-        cell.getNode()
-            .setMaxSize(justified - labelWidth, elementHeight);
+
+        Label label = layout.label(labelWidth, elementHeight);
+
+        double cellWidth = justified - labelWidth;
+        node.setMinSize(cellWidth, elementHeight);
+        node.setPrefSize(cellWidth, elementHeight);
+        node.setMaxSize(cellWidth, elementHeight);
         getChildren().addAll(label, cell.getNode());
 
     }
@@ -92,8 +91,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     }
 
     public OutlineElement(String field, SchemaNodeLayout layout,
-                          int cardinality, double labelWidth,
-                          double justified,
+                          int cardinality, double labelWidth, double justified,
                           FocusTraversal<OutlineElement> parentTraversal,
                           Layout model, RelationStyle style) {
         this(layout, field, cardinality, labelWidth, justified,
