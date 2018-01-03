@@ -11,13 +11,15 @@
     -fx-text-fill: white;
 }
 
+/*
 .outline {   
     -fx-padding: 2.0 4.0 2.0 4.0; 
     -fx-background-insets: 0.0 0.0 -1.0 0.0, 0.0, 1.0;
     -fx-background-color: rgba(0.0, 0.0, 0.0, 0.08),
         linear-gradient(#9a9a9a, #909090),
         linear-gradient(white 0.0%, #f3f3f3 50.0%, #ececec 51.0%, #f2f2f2 100.0%);
-}
+} 
+*/
 
 .outline-cell {   
     -fx-padding: 1.0 1.0 1.0 1.0; 
@@ -49,7 +51,27 @@
     -fx-background-color: rgba(0.0, 0.0, 0.0, 0.08),
         linear-gradient(#9a9a9a, #909090),
         linear-gradient(white 0.0%, #f3f3f3 50.0%, #ececec 51.0%, #f2f2f2 100.0%);
-} 
+}
+
+/*
+.nested-table {
+    -fx-padding: 2.0 2.0 2.0 2.0; 
+    -fx-background-insets: 0.0 0.0 -1.0 0.0, 0.0, 1.0;
+    -fx-background-color: rgba(0.0, 0.0, 0.0, 0.08),
+        linear-gradient(#9a9a9a, #909090),
+        linear-gradient(white 0.0%, #f3f3f3 50.0%, #ececec 51.0%, #f2f2f2 100.0%);
+}
+*/
+
+/*
+.nested-row {
+    -fx-padding: 2.0 4.0 2.0 4.0; 
+    -fx-background-insets: 0.0 0.0 -1.0 0.0, 0.0, 1.0;
+    -fx-background-color: rgba(0.0, 0.0, 0.0, 0.08),
+        linear-gradient(#9a9a9a, #909090),
+        linear-gradient(white 0.0%, #f3f3f3 50.0%, #ececec 51.0%, #f2f2f2 100.0%);
+}
+*/  
 
 .nested-cell {   
     -fx-background-insets: 0.0 0.0 -1.0 0.0, 0.0, 1.0;

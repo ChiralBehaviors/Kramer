@@ -16,6 +16,7 @@
 
 package com.chiralbehaviors.layout.outline;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -52,10 +53,9 @@ public class Outline extends VirtualFlow<OutlineCell> {
                                                             labelWidth);
                   outlineCell.updateItem(item);
                   return outlineCell;
-              }, parentTraversal);
-        initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE,
-                                          layout.getField()));
+              }, parentTraversal,
+              Arrays.asList(DEFAULT_STYLE, String.format(SCHEMA_CLASS_TEMPLATE,
+                                                         layout.getField())));
         model.apply(this, layout.getNode());
     }
 

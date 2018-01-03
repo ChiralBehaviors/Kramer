@@ -1,5 +1,8 @@
 package com.chiralbehaviors.layout.flowless;
 
+import static com.chiralbehaviors.layout.style.Layout.add;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -9,9 +12,9 @@ import org.reactfx.util.Lists;
 import org.reactfx.value.Val;
 import org.reactfx.value.Var;
 
+import com.chiralbehaviors.layout.cell.AnchorCell;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.LayoutCell;
-import com.chiralbehaviors.layout.cell.RegionCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
@@ -24,9 +27,12 @@ import javafx.collections.ObservableList;
 import javafx.css.CssMetaData;
 import javafx.css.Styleable;
 import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
+import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 
 /**
@@ -52,7 +58,9 @@ import javafx.scene.shape.Rectangle;
  *            {@link javafx.scene.Node}.
  */
 public class VirtualFlow<C extends LayoutCell<?>>
-        extends RegionCell<VirtualFlow<LayoutCell<?>>, C> {
+        extends AnchorCell<VirtualFlow<C>, C> {
+    private static final String VIRTUAL_FLOW = "virtual-flow";
+
     private static class CellHit<C extends LayoutCell<?>> extends Hit<C> {
         private final C       cell;
         private final int     cellIdx;
@@ -222,17 +230,20 @@ public class VirtualFlow<C extends LayoutCell<?>>
 
     public VirtualFlow(String styleSheet) {
         this(styleSheet, 0, 0, FXCollections.observableArrayList(),
-             (n, f) -> null, null);
+             (n, f) -> null, null, Collections.emptyList());
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public VirtualFlow(String styleSheet, double cellBreadth, double cellLength,
                        ObservableList<JsonNode> observableList,
                        BiFunction<JsonNode, FocusTraversalNode<C>, C> factory,
-                       FocusTraversal<?> parentTraversal) {
+                       FocusTraversal<?> parentTraversal,
+                       List<String> styleSheets) {
         super(styleSheet);
         this.getStyleClass()
-            .add("virtual-flow");
+            .add(VIRTUAL_FLOW);
+        this.getStyleClass()
+            .addAll(styleSheets);
         this.items = observableList;
         selectionModel = buildSelectionModel(i -> observableList.get(i),
                                              () -> observableList.size(),
@@ -256,7 +267,11 @@ public class VirtualFlow<C extends LayoutCell<?>>
                                                    sizeTracker);
         this.navigator = new Navigator<>(cellListManager, cellPositioner,
                                          sizeTracker);
-
+        Insets insets = add(getInsets(), getPadding());
+        AnchorPane.setTopAnchor(navigator, insets.getTop());
+        AnchorPane.setLeftAnchor(navigator, insets.getLeft());
+        AnchorPane.setBottomAnchor(navigator, insets.getBottom());
+        AnchorPane.setRightAnchor(navigator, insets.getRight());
         getChildren().add(navigator);
         clipProperty().bind(Val.map(layoutBoundsProperty(),
                                     b -> new Rectangle(b.getWidth(),
@@ -578,10 +593,11 @@ public class VirtualFlow<C extends LayoutCell<?>>
     @Override
     protected void layoutChildren() {
 
+        VBox.setMargin(navigator, add(getInsets(), getPadding()));
         // navigate to the target position and fill viewport
         while (true) {
             double oldLayoutBreadth = sizeTracker.getCellLayoutBreadth();
-            navigator.resize(oldLayoutBreadth, sizeTracker.getViewportLength());
+            //            navigator.resize(oldLayoutBreadth, sizeTracker.getViewportLength());
             navigator.layout();
             if (oldLayoutBreadth == sizeTracker.getCellLayoutBreadth()) {
                 break;
