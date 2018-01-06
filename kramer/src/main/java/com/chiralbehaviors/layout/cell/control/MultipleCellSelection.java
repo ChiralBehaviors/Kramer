@@ -37,8 +37,7 @@ import javafx.scene.control.SelectionMode;
 /**
  * @author halhildebrand
  *
- */
-@SuppressWarnings("restriction")
+ */ 
 abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
         extends MultipleSelectionModel<T> {
     static <T> ListChangeListener.Change<T> buildClearAndSelectChange(ObservableList<T> list,
