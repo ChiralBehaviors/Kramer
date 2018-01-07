@@ -42,9 +42,6 @@ public class TableHeader extends HorizontalCell<TableHeader> {
                        List<SchemaNodeLayout> children) {
         this();
         setAlignment(Pos.CENTER);
-        setMinSize(width, height);
-        setPrefSize(width, height);
-        setMaxSize(width, height);
         children.forEach(c -> getChildren().add(c.columnHeader()
                                                  .apply(height)));
     }

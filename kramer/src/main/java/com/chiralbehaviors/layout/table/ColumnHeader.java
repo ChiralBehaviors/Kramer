@@ -52,9 +52,6 @@ public class ColumnHeader extends VerticalCell<ColumnHeader> {
         this();
         setAlignment(Pos.CENTER);
         HBox nested = new HBox();
-        setMinSize(width, height);
-        setPrefSize(width, height);
-        setMaxSize(width, height);
         double half = Layout.snap(height / 2.0);
         getChildren().addAll(layout.label(width, half), nested);
 
