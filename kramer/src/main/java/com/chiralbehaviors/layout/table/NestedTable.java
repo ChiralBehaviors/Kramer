@@ -64,9 +64,6 @@ public class NestedTable extends VerticalCell<NestedTable> {
                              childCardinality, parentTraversal, model, style);
 
         getChildren().addAll(header, rows);
-        setMinWidth(layout.getJustifiedWidth());
-        setPrefWidth(layout.getJustifiedWidth());
-        setMaxWidth(layout.getJustifiedWidth());
         model.apply(rows, layout.getNode());
     }
 

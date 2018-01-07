@@ -60,12 +60,6 @@ public class Span extends HorizontalCell<Span>
                 Layout model, RelationStyle style) {
         this(layout.getField(), parentTraversal);
         setAlignment(Pos.CENTER);
-        setMinWidth(layout.getJustifiedWidth()
-                    + style.getSpanHorizontalInset());
-        setPrefWidth(layout.getJustifiedWidth()
-                    + style.getSpanHorizontalInset());
-        setMaxWidth(layout.getJustifiedWidth()
-                    + style.getSpanHorizontalInset());
 
         columnSet.getColumns()
                  .forEach(c -> {

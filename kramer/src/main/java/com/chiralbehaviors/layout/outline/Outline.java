@@ -48,9 +48,8 @@ public class Outline extends VirtualFlow<OutlineCell> {
               FXCollections.observableArrayList(), (item, pt) -> {
                   OutlineCell outlineCell = new OutlineCell(columnSets,
                                                             averageCardinality,
-                                                            cellHeight, layout,
-                                                            pt, model, style,
-                                                            labelWidth);
+                                                            layout, pt,
+                                                            model, style, labelWidth);
                   outlineCell.updateItem(item);
                   return outlineCell;
               }, parentTraversal,

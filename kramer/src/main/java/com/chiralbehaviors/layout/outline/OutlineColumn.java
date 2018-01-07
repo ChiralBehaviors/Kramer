@@ -62,16 +62,11 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
                          Layout model, RelationStyle style) {
         this(field, parentTraversal);
         setAlignment(Pos.CENTER);
-        double width = c.getWidth() + style.getColumnHorizontalInset();
-        double expanded = height + style.getColumnVerticalInset();
-        setMinSize(width, expanded);
-        setMaxSize(width, expanded);
-        setPrefSize(width, expanded);
         c.getFields()
          .forEach(f -> {
-             OutlineElement cell = new OutlineElement(field, c.getWidth(), f, cardinality,
-                                                      labelWidth, focus, model,
-                                                      style);
+             OutlineElement cell = new OutlineElement(field, c.getWidth(), f,
+                                                      cardinality, labelWidth,
+                                                      focus, model, style);
              elements.add(cell);
              fields.add(item -> cell.updateItem(f.extractFrom(item)));
              getChildren().add(cell.getNode());

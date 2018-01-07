@@ -146,14 +146,6 @@ public class RelationLayout extends SchemaNodeLayout {
                                       columnSets, resolvedCardinality, this,
                                       parentTraversal, model, style,
                                       labelWidth);
-        double width = justifiedWidth + style.getOutlineCellHorizontalInset()
-                       + style.getOutlineHorizontalInset();
-        outline.getNode()
-               .setMinSize(width, height);
-        outline.getNode()
-               .setPrefSize(width, height);
-        outline.getNode()
-               .setMaxSize(width, height);
         return outline;
     }
 
@@ -222,7 +214,7 @@ public class RelationLayout extends SchemaNodeLayout {
             return;
         }
         double available = justified - style.getOutlineHorizontalInset()
-                - style.getOutlineCellHorizontalInset();
+                           - style.getOutlineCellHorizontalInset();
         columnSets.clear();
         justifiedWidth = Layout.snap(available);
         columnSets.clear();

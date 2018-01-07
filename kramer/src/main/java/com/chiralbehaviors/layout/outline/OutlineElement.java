@@ -66,12 +66,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
                     parentTraversal.setCurrent();
                 }
             });
- 
-        double height = elementHeight + style.getElementVerticalInset();
 
-        setMinSize(width, height);
-        setPrefSize(width, height);
-        setMaxSize(width, height);
         setAlignment(Pos.CENTER);
 
         Label label = layout.label(labelWidth, elementHeight);

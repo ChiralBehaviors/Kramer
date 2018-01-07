@@ -44,9 +44,6 @@ public class ColumnHeader extends VerticalCell<ColumnHeader> {
     public ColumnHeader(double width, double height, PrimitiveLayout layout) {
         this();
         setAlignment(Pos.CENTER);
-        setMinSize(width, height);
-        setPrefSize(width, height);
-        setMaxSize(width, height);
         getChildren().add(layout.label(width, height));
     }
 
