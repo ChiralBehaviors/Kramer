@@ -50,35 +50,35 @@ public class ColumnSet {
         columns.forEach(c -> c.adjustHeight(delta));
     }
 
-    public void compress(int cardinality, double available, RelationStyle style,
+    public void compress(int cardinality, double justified, RelationStyle style,
                          double labelWidth) {
-        double justified = available - style.getSpanHorizontalInset();
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
                                    .size(),
                         max(1,
                             (int) (justified
                                    / (firstColumn.maxWidth(labelWidth)
+                                      + style.getElementHorizontalInset()
                                       + style.getColumnHorizontalInset()))));
-        double fieldWidth = justified - labelWidth
-                            - style.getColumnHorizontalInset();
         if (count == 1) {
             firstColumn.setWidth(justified - style.getColumnHorizontalInset());
+            double fieldWidth = justified - labelWidth
+                                - style.getElementHorizontalInset()
+                                - style.getColumnHorizontalInset();
             firstColumn.getFields()
                        .forEach(f -> {
                            f.compress(fieldWidth);
                        });
             height = firstColumn.cellHeight(cardinality, labelWidth, style)
-                         + style.getColumnVerticalInset();
+                     + style.getColumnVerticalInset();
             return;
         }
 
         // compression
-        double columnWidth = (justified / (double) count)
-                             - style.getColumnHorizontalInset();
+        double columnWidth = (justified / (double) count);
         firstColumn.setWidth(columnWidth);
         double compressed = Layout.relax(columnWidth - labelWidth
-                                              - style.getElementHorizontalInset());
+                                         - style.getElementHorizontalInset());
         firstColumn.getFields()
                    .forEach(f -> {
                        f.compress(compressed);

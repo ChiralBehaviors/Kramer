@@ -213,14 +213,15 @@ public class RelationLayout extends SchemaNodeLayout {
             justifyTable(justified);
             return;
         }
-        double available = justified - style.getOutlineHorizontalInset()
-                           - style.getOutlineCellHorizontalInset();
         columnSets.clear();
-        justifiedWidth = Layout.snap(available);
+        justifiedWidth = Layout.snap(justified
+                                     - style.getOutlineHorizontalInset()
+                                     - style.getOutlineCellHorizontalInset());
         columnSets.clear();
         ColumnSet current = null;
-        double halfWidth = Layout.snap((available / 2d)
-                                       - style.getColumnHorizontalInset());
+        double available = justified - style.getSpanHorizontalInset();
+        double halfWidth = (available / 2.0) - style.getColumnHorizontalInset()
+                           - style.getElementHorizontalInset();
         for (SchemaNodeLayout child : children) {
             double childWidth = labelWidth + child.layoutWidth();
             if (childWidth > halfWidth || current == null) {
