@@ -26,7 +26,6 @@ public class RelationStyle extends NodeStyle {
 
     private final Insets column;
     private final Insets element;
-    @SuppressWarnings("unused")
     private final Insets nestedInsets;
     private final Insets outline;
     private final Insets outlineCell;

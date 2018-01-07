@@ -92,7 +92,8 @@ public class RelationLayout extends SchemaNodeLayout {
             }
             return;
         }
-        double subDelta = delta / columnSets.size();
+        double subDelta = (delta / columnSets.size())
+                          - style.getSpanHorizontalInset();
         if (subDelta >= 1.0) {
             columnSets.forEach(c -> c.adjustHeight(subDelta));
         }

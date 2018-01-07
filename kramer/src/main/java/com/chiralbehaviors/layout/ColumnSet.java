@@ -103,8 +103,8 @@ public class ColumnSet {
                                 .max()
                                 .orElse(0d);
         } while (lastHeight > baseHeight);
-        double finalHeight = baseHeight;
-        columns.forEach(c -> c.distributeHeight(finalHeight));
+        double finalHeight = Layout.snap(baseHeight);
+        columns.forEach(c -> c.distributeHeight(finalHeight, style));
         height = finalHeight + style.getColumnVerticalInset();
     }
 

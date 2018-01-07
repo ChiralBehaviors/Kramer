@@ -102,9 +102,10 @@ public class Column {
         }
     }
 
-    void distributeHeight(double finalHeight) {
+    void distributeHeight(double finalHeight, RelationStyle style) {
         double calculated = fields.stream()
-                                  .mapToDouble(f -> f.getHeight())
+                                  .mapToDouble(f -> Layout.snap(f.getHeight()
+                                                                + style.getElementVerticalInset()))
                                   .sum();
         if (calculated < finalHeight) {
             double delta = Layout.snap((finalHeight - calculated)
@@ -118,11 +119,12 @@ public class Column {
     private double cellHeight(int cardinality,
                               ArrayDeque<SchemaNodeLayout> elements,
                               double labelWidth, RelationStyle style) {
-        double available = Layout.snap(width - labelWidth);
+        double available = Layout.snap(width - labelWidth
+                                       - style.getElementHorizontalInset());
         return elements.stream()
-                       .mapToDouble(field -> field.cellHeight(cardinality,
-                                                              available)
-                                             + style.getElementVerticalInset())
+                       .mapToDouble(field -> Layout.snap(field.cellHeight(cardinality,
+                                                                          available)
+                                                         + style.getElementVerticalInset()))
                        .sum();
     }
 
