@@ -78,12 +78,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
                                                      Layout model) {
         return averageCardinality > 1 ? new PrimitiveList(this, parentTraversal)
                                       : buildCell(parentTraversal);
-    }
-
-    @Override
-    public void calculateCellHeight() {
-        cellHeight(averageCardinality, justifiedWidth);
-    }
+    } 
 
     @Override
     public double calculateTableColumnWidth() {
@@ -252,7 +247,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     protected void calculateRootHeight() {
-        calculateCellHeight();
+        cellHeight(averageCardinality, justifiedWidth);
     }
 
     protected double width(JsonNode row) {

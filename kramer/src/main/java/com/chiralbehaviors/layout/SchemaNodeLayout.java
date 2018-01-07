@@ -192,8 +192,6 @@ abstract public class SchemaNodeLayout {
     abstract public LayoutCell<? extends Region> buildControl(FocusTraversal<?> parentTraversal,
                                                               Layout model);
 
-    abstract public void calculateCellHeight();
-
     public double calculateLabelWidth() {
         return labelWidth;
     }

@@ -33,11 +33,10 @@ import com.chiralbehaviors.layout.style.RelationStyle;
  */
 public class ColumnSet {
 
-    private double             height;
     private final List<Column> columns = new ArrayList<>();
 
     {
-        columns.add(new Column(0d));
+        columns.add(new Column());
     }
 
     public void add(SchemaNodeLayout node) {
@@ -46,12 +45,11 @@ public class ColumnSet {
     }
 
     public void adjustHeight(double delta) {
-        height = Layout.snap(height + delta);
         columns.forEach(c -> c.adjustHeight(delta));
     }
 
-    public void compress(int cardinality, double justified, RelationStyle style,
-                         double labelWidth) {
+    public double compress(int cardinality, double justified,
+                           RelationStyle style, double labelWidth) {
         Column firstColumn = columns.get(0);
         int count = min(firstColumn.getFields()
                                    .size(),
@@ -61,7 +59,6 @@ public class ColumnSet {
                                       + style.getElementHorizontalInset()
                                       + style.getColumnHorizontalInset()))));
         if (count == 1) {
-            firstColumn.setWidth(justified - style.getColumnHorizontalInset());
             double fieldWidth = justified - labelWidth
                                 - style.getElementHorizontalInset()
                                 - style.getColumnHorizontalInset();
@@ -69,14 +66,13 @@ public class ColumnSet {
                        .forEach(f -> {
                            f.compress(fieldWidth);
                        });
-            height = firstColumn.cellHeight(cardinality, labelWidth, style)
-                     + style.getColumnVerticalInset();
-            return;
+            return firstColumn.cellHeight(cardinality, style, fieldWidth)
+                   + style.getColumnVerticalInset();
         }
 
         // compression
-        double columnWidth = (justified / (double) count);
-        firstColumn.setWidth(columnWidth);
+        double columnWidth = (justified / (double) count)
+                             - style.getColumnHorizontalInset();
         double compressed = Layout.relax(columnWidth - labelWidth
                                          - style.getElementHorizontalInset());
         firstColumn.getFields()
@@ -84,32 +80,28 @@ public class ColumnSet {
                        f.compress(compressed);
                    });
         IntStream.range(1, count)
-                 .forEach(i -> columns.add(new Column(columnWidth)));
-        double baseHeight = firstColumn.cellHeight(cardinality, labelWidth,
-                                                   style);
+                 .forEach(i -> columns.add(new Column()));
+        double baseHeight = firstColumn.cellHeight(cardinality, style,
+                                                   compressed);
         double lastHeight;
         do {
             lastHeight = baseHeight;
             for (int i = 0; i < columns.size() - 1; i++) {
                 while (columns.get(i)
                               .slideRight(cardinality, columns.get(i + 1),
-                                          labelWidth, style)) {
+                                          labelWidth, style, compressed)) {
                 }
             }
             baseHeight = columns.stream()
                                 .mapToDouble(c -> c.cellHeight(cardinality,
-                                                               labelWidth,
-                                                               style))
+                                                               style,
+                                                               compressed))
                                 .max()
                                 .orElse(0d);
         } while (lastHeight > baseHeight);
         double finalHeight = Layout.snap(baseHeight);
         columns.forEach(c -> c.distributeHeight(finalHeight, style));
-        height = finalHeight + style.getColumnVerticalInset();
-    }
-
-    public double getHeight() {
-        return height;
+        return finalHeight + style.getColumnVerticalInset();
     }
 
     public List<Column> getColumns() {
@@ -118,6 +110,6 @@ public class ColumnSet {
 
     @Override
     public String toString() {
-        return String.format("ColumnSet [%s] [%s]", height, columns);
+        return String.format("ColumnSet [%s]", columns);
     }
 }

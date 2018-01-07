@@ -39,7 +39,7 @@ public class NestedRow extends VirtualFlow<NestedCell> {
     public NestedRow(double rendered, RelationLayout layout,
                      int childCardinality, FocusTraversal<?> parentTraversal,
                      Layout model, RelationStyle style) {
-        this(rendered, layout.getHeight(), layout, childCardinality,
+        this(rendered, layout.getCellHeight(), layout, childCardinality,
              parentTraversal, model, style);
     }
 

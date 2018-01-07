@@ -49,7 +49,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
         this.parentTraversal = null;
     }
 
-    public OutlineElement(SchemaNodeLayout layout, double width, String field,
+    public OutlineElement(SchemaNodeLayout layout, String field,
                           int cardinality, double labelWidth,
                           double elementHeight,
                           FocusTraversal<OutlineElement> parentTraversal,
@@ -68,9 +68,12 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
             });
 
         setAlignment(Pos.CENTER);
-        cell.getNode().setMinHeight(elementHeight);
-        cell.getNode().setPrefHeight(elementHeight);
-        cell.getNode().setMaxHeight(elementHeight);
+        cell.getNode()
+            .setMinHeight(elementHeight);
+        cell.getNode()
+            .setPrefHeight(elementHeight);
+        cell.getNode()
+            .setMaxHeight(elementHeight);
         Label label = layout.label(labelWidth, elementHeight);
         getChildren().addAll(label, cell.getNode());
 
@@ -81,11 +84,11 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
         parentTraversal.setCurrent();
     }
 
-    public OutlineElement(String field, double width, SchemaNodeLayout layout,
+    public OutlineElement(String field, SchemaNodeLayout layout,
                           int cardinality, double labelWidth,
                           FocusTraversal<OutlineElement> parentTraversal,
                           Layout model, RelationStyle style) {
-        this(layout, width, field, cardinality, labelWidth, layout.getHeight(),
+        this(layout, field, cardinality, labelWidth, layout.getHeight(),
              parentTraversal, model, style);
     }
 

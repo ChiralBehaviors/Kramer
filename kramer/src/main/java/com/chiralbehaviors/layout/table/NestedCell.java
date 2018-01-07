@@ -58,7 +58,7 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
         this(layout.getField(), parentTraversal);
         setAlignment(Pos.CENTER); 
         layout.forEach(child -> {
-            LayoutCell<? extends Region> cell = child.buildColumn(layout.baseRowCellHeight(layout.getRowHeight()),
+            LayoutCell<? extends Region> cell = child.buildColumn(layout.baseRowCellHeight(layout.getCellHeight()),
                                                                   focus, model);
             cells.add(cell);
             consumers.add(item -> cell.updateItem(child.extractFrom(item)));
