@@ -196,10 +196,10 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public double columnHeaderHeight() {
-        return super.columnHeaderHeight() + children.stream()
-                                                    .mapToDouble(c -> c.columnHeaderHeight())
-                                                    .max()
-                                                    .orElse(0.0);
+        return Layout.snap(super.columnHeaderHeight() + children.stream()
+                                                                .mapToDouble(c -> c.columnHeaderHeight())
+                                                                .max()
+                                                                .orElse(0.0));
     }
 
     @Override

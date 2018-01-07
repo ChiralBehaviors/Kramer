@@ -68,13 +68,10 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
             });
 
         setAlignment(Pos.CENTER);
-
+        cell.getNode().setMinHeight(elementHeight);
+        cell.getNode().setPrefHeight(elementHeight);
+        cell.getNode().setMaxHeight(elementHeight);
         Label label = layout.label(labelWidth, elementHeight);
-
-        double cellWidth = width - labelWidth - style.getElementHorizontalInset(); 
-        cell.getNode().setMinSize(cellWidth, elementHeight);
-        cell.getNode().setPrefSize(cellWidth, elementHeight);
-        cell.getNode().setMaxSize(cellWidth, elementHeight);
         getChildren().addAll(label, cell.getNode());
 
     }

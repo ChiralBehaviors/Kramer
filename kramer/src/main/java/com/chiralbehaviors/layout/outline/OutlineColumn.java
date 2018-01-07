@@ -57,7 +57,7 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
     }
 
     public OutlineColumn(String field, Column c, int cardinality,
-                         double labelWidth, double height,
+                         double labelWidth,
                          FocusTraversal<OutlineColumn> parentTraversal,
                          Layout model, RelationStyle style) {
         this(field, parentTraversal);

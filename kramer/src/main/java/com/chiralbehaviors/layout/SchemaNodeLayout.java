@@ -205,7 +205,7 @@ abstract public class SchemaNodeLayout {
     abstract public Function<Double, ColumnHeader> columnHeader();
 
     public double columnHeaderHeight() {
-        return labelStyle.getHeight();
+        return Layout.snap(labelStyle.getHeight());
     }
 
     abstract public double columnWidth();

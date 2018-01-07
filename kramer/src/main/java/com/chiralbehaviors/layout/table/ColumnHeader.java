@@ -21,24 +21,20 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.style.Layout;
 
 import javafx.geometry.Pos;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 /**
  * @author halhildebrand
  *
  */
-public class ColumnHeader extends VerticalCell<ColumnHeader> {
-    private static final String DEFAULT_STYLE = "column-header";
-    private static final String STYLE_SHEET   = "column-header.css";
+public class ColumnHeader extends VBox {
 
     public ColumnHeader() {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-        setAlignment(Pos.CENTER);
+        getStyleClass().clear();
     }
 
     public ColumnHeader(double width, double height, PrimitiveLayout layout) {
