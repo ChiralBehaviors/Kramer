@@ -78,7 +78,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
                                                      Layout model) {
         return averageCardinality > 1 ? new PrimitiveList(this, parentTraversal)
                                       : buildCell(parentTraversal);
-    } 
+    }
 
     @Override
     public double calculateTableColumnWidth() {
@@ -92,7 +92,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         }
         int resolvedCardinality = Math.min(cardinality, averageCardinality);
         boolean list = resolvedCardinality > 1;
-        cellHeight = snap((style.getHeight(maxWidth, justified)));
+        cellHeight = snap(style.getHeight(maxWidth, justified));
         if (list) {
             height = (cellHeight * resolvedCardinality)
                      + style.getListVerticalInset();

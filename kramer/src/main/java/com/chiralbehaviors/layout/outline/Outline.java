@@ -44,12 +44,13 @@ public class Outline extends VirtualFlow<OutlineCell> {
                    Collection<ColumnSet> columnSets, int averageCardinality,
                    RelationLayout layout, FocusTraversal<?> parentTraversal,
                    Layout model, RelationStyle style, double labelWidth) {
-        super(STYLE_SHEET, width, cellHeight,
+        super(STYLE_SHEET, width + style.getOutlineCellHorizontalInset(),
+              cellHeight + style.getOutlineCellVerticalInset(),
               FXCollections.observableArrayList(), (item, pt) -> {
                   OutlineCell outlineCell = new OutlineCell(columnSets,
                                                             averageCardinality,
-                                                            layout, pt,
-                                                            model, style, labelWidth);
+                                                            layout, pt, model,
+                                                            style, labelWidth);
                   outlineCell.updateItem(item);
                   return outlineCell;
               }, parentTraversal,

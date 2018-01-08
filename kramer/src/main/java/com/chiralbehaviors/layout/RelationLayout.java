@@ -90,12 +90,11 @@ public class RelationLayout extends SchemaNodeLayout {
                     children.forEach(f -> f.adjustHeight(subDelta));
                 }
             }
-            return;
-        }
-        double subDelta = (delta / columnSets.size())
-                          - style.getSpanVerticalInset();
-        if (subDelta >= 1.0) {
-            columnSets.forEach(c -> c.adjustHeight(subDelta));
+        } else {
+            double subDelta = delta / columnSets.size();
+            if (subDelta >= 1.0) {
+                columnSets.forEach(c -> c.adjustHeight(subDelta));
+            }
         }
     }
 
@@ -108,14 +107,12 @@ public class RelationLayout extends SchemaNodeLayout {
                            - style.getRowVerticalInset());
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public LayoutCell<? extends Region> buildColumn(double rendered,
                                                     FocusTraversal<?> parentTraversal,
                                                     Layout model) {
         return new NestedRow(rendered, this, resolvedCardinality,
-                             (FocusTraversal<NestedRow>) parentTraversal, model,
-                             style);
+                             parentTraversal, model, style);
     }
 
     public TableHeader buildColumnHeader() {
@@ -139,8 +136,7 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public Outline buildOutline(FocusTraversal<?> parentTraversal,
                                 Layout model) {
-        Outline outline = new Outline(getJustifiedWidth(),
-                                      cellHeight + style.getOutlineCellVerticalInset(),
+        Outline outline = new Outline(getJustifiedWidth(), cellHeight,
                                       columnSets, resolvedCardinality, this,
                                       parentTraversal, model, style,
                                       labelWidth);
@@ -212,9 +208,11 @@ public class RelationLayout extends SchemaNodeLayout {
                                      - style.getOutlineCellHorizontalInset());
         columnSets.clear();
         ColumnSet current = null;
-        double available = justified - style.getSpanHorizontalInset();
-        double halfWidth = (available / 2.0) - style.getColumnHorizontalInset()
-                           - style.getElementHorizontalInset();
+        double available = Layout.snap(justifiedWidth
+                                       - style.getSpanHorizontalInset());
+        double halfWidth = Layout.snap((available / 2.0)
+                                       - style.getColumnHorizontalInset()
+                                       - style.getElementHorizontalInset());
         for (SchemaNodeLayout child : children) {
             double childWidth = labelWidth + child.layoutWidth();
             if (childWidth > halfWidth || current == null) {
@@ -229,10 +227,11 @@ public class RelationLayout extends SchemaNodeLayout {
             }
         }
         cellHeight = columnSets.stream()
-                               .mapToDouble(cs -> cs.compress(averageChildCardinality,
-                                                              available, style,
-                                                              labelWidth)
-                                                  + style.getSpanVerticalInset())
+                               .mapToDouble(cs -> Layout.snap(cs.compress(averageChildCardinality,
+                                                                          available,
+                                                                          style,
+                                                                          labelWidth)
+                                                              + style.getSpanVerticalInset()))
                                .sum();
     }
 
@@ -415,7 +414,7 @@ public class RelationLayout extends SchemaNodeLayout {
         height = Layout.snap((resolvedCardinality
                               * (cellHeight
                                  + style.getOutlineCellVerticalInset()))
-                             + style.getOutineVerticalInset());
+                             + style.getOutlineVerticalInset());
     }
 
     @Override

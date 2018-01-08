@@ -73,7 +73,7 @@ public class RelationStyle extends NodeStyle {
         return nestedInsets;
     }
 
-    public double getOutineVerticalInset() {
+    public double getOutlineVerticalInset() {
         return outline.getTop() + outline.getBottom();
     }
 

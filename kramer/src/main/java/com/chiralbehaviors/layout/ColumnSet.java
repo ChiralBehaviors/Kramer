@@ -54,14 +54,14 @@ public class ColumnSet {
         int count = min(firstColumn.getFields()
                                    .size(),
                         max(1,
-                            (int) (justified
-                                   / (firstColumn.maxWidth(labelWidth)
-                                      + style.getElementHorizontalInset()
-                                      + style.getColumnHorizontalInset()))));
+                            (int) Math.floor(justified
+                                             / (firstColumn.maxWidth(labelWidth)
+                                                + style.getElementHorizontalInset()
+                                                + style.getColumnHorizontalInset()))));
         if (count == 1) {
-            double fieldWidth = justified - labelWidth
-                                - style.getElementHorizontalInset()
-                                - style.getColumnHorizontalInset();
+            double fieldWidth = Layout.snap(justified - labelWidth
+                                            - style.getElementHorizontalInset()
+                                            - style.getColumnHorizontalInset());
             firstColumn.getFields()
                        .forEach(f -> {
                            f.compress(fieldWidth);
@@ -71,31 +71,31 @@ public class ColumnSet {
         }
 
         // compression
-        double columnWidth = (justified / (double) count)
-                             - style.getColumnHorizontalInset();
-        double compressed = Layout.relax(columnWidth - labelWidth
-                                         - style.getElementHorizontalInset());
+        double columnWidth = justified / (double) count;
+        double fieldWidth = Layout.snap(columnWidth - labelWidth
+                                        - style.getElementHorizontalInset()
+                                        - style.getColumnHorizontalInset());
         firstColumn.getFields()
                    .forEach(f -> {
-                       f.compress(compressed);
+                       f.compress(fieldWidth);
                    });
         IntStream.range(1, count)
                  .forEach(i -> columns.add(new Column()));
         double baseHeight = firstColumn.cellHeight(cardinality, style,
-                                                   compressed);
+                                                   fieldWidth);
         double lastHeight;
         do {
             lastHeight = baseHeight;
             for (int i = 0; i < columns.size() - 1; i++) {
                 while (columns.get(i)
                               .slideRight(cardinality, columns.get(i + 1),
-                                          labelWidth, style, compressed)) {
+                                          style, fieldWidth)) {
                 }
             }
             baseHeight = columns.stream()
                                 .mapToDouble(c -> c.cellHeight(cardinality,
                                                                style,
-                                                               compressed))
+                                                               fieldWidth))
                                 .max()
                                 .orElse(0d);
         } while (lastHeight > baseHeight);

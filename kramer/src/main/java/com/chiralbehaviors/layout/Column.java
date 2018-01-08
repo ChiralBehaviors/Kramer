@@ -60,7 +60,7 @@ public class Column {
                      .orElse(0d);
     }
 
-    public boolean slideRight(int cardinality, Column column, double labelWidth,
+    public boolean slideRight(int cardinality, Column column,
                               RelationStyle style, double fieldWidth) {
         if (fields.size() < 1) {
             return false;
@@ -99,7 +99,7 @@ public class Column {
                                   .sum();
         if (calculated < finalHeight) {
             double delta = Layout.snap((finalHeight - calculated)
-                                       / fields.size());
+                                       / (double) fields.size());
             if (delta >= 1.0) {
                 fields.forEach(f -> f.adjustHeight(delta));
             }
