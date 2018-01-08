@@ -16,6 +16,15 @@
 
 package com.chiralbehaviors.layout.style;
 
+import com.chiralbehaviors.layout.outline.Outline;
+import com.chiralbehaviors.layout.outline.OutlineCell;
+import com.chiralbehaviors.layout.outline.OutlineColumn;
+import com.chiralbehaviors.layout.outline.OutlineElement;
+import com.chiralbehaviors.layout.outline.Span;
+import com.chiralbehaviors.layout.table.NestedCell;
+import com.chiralbehaviors.layout.table.NestedRow;
+import com.chiralbehaviors.layout.table.NestedTable;
+
 import javafx.geometry.Insets;
 
 /**
@@ -34,19 +43,20 @@ public class RelationStyle extends NodeStyle {
     private final Insets span;
     private final Insets table;
 
-    public RelationStyle(LabelStyle labelStyle, Insets table, Insets row,
-                         Insets rowCell, Insets outline, Insets outlineCell,
-                         Insets column, Insets span, Insets element) {
+    public RelationStyle(LabelStyle labelStyle, NestedTable table,
+                         NestedRow row, NestedCell rowCell, Outline outline,
+                         OutlineCell outlineCell, OutlineColumn column,
+                         Span span, OutlineElement element) {
         super(labelStyle);
-        this.table = table;
-        this.row = row;
-        this.rowCell = rowCell;
-        this.outline = outline;
-        this.outlineCell = outlineCell;
-        this.column = column;
-        this.span = span;
-        this.element = element;
-        nestedInsets = Layout.add(row, rowCell);
+        this.table = table.getInsets();
+        this.row = row.getInsets();
+        this.rowCell = rowCell.getInsets();
+        this.outline = outline.getInsets();
+        this.outlineCell = outlineCell.getInsets();
+        this.column = column.getInsets();
+        this.span = span.getInsets();
+        this.element = element.getInsets();
+        nestedInsets = Layout.add(this.row, this.rowCell);
     }
 
     public double getColumnHorizontalInset() {

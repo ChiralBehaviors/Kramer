@@ -282,17 +282,8 @@ public class Layout {
         label.applyCss();
         label.layout();
 
-        return new RelationStyle(labelStyle(label),
-                                 add(table.getInsets(), table.getPadding()),
-                                 add(row.getInsets(), row.getPadding()),
-                                 add(rowCell.getInsets(), rowCell.getPadding()),
-                                 add(outline.getInsets(), outline.getPadding()),
-                                 add(outlineCell.getInsets(),
-                                     outlineCell.getPadding()),
-                                 add(column.getInsets(), column.getPadding()),
-                                 add(span.getInsets(), span.getPadding()),
-                                 add(element.getInsets(),
-                                     element.getPadding()));
+        return new RelationStyle(labelStyle(label), table, row, rowCell,
+                                 outline, outlineCell, column, span, element);
 
     }
 
