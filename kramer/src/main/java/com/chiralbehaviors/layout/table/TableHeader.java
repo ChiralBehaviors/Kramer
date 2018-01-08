@@ -19,32 +19,24 @@ package com.chiralbehaviors.layout.table;
 import java.util.List;
 
 import com.chiralbehaviors.layout.SchemaNodeLayout;
-import com.chiralbehaviors.layout.cell.HorizontalCell;
 
 import javafx.geometry.Pos;
+import javafx.scene.layout.HBox;
 
 /**
  * @author halhildebrand
  *
  */
-public class TableHeader extends HorizontalCell<TableHeader> {
-
-    private static final String DEFAULT_STYLE = "table-header";
-    private static final String STYLE_SHEET   = "table-header.css";
+public class TableHeader extends HBox {
 
     public TableHeader() {
-        super(STYLE_SHEET);
-        setAlignment(Pos.CENTER);
-        initialize(DEFAULT_STYLE);
+        getStyleClass().clear();
     }
 
     public TableHeader(double width, double height,
                        List<SchemaNodeLayout> children) {
         this();
         setAlignment(Pos.CENTER);
-        setMinSize(width, height);
-        setPrefSize(width, height);
-        setMaxSize(width, height);
         children.forEach(c -> getChildren().add(c.columnHeader()
                                                  .apply(height)));
     }

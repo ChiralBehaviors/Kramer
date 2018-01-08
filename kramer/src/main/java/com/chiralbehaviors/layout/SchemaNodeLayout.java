@@ -20,7 +20,6 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
-import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.style.LabelStyle;
 import com.chiralbehaviors.layout.style.Layout;
@@ -30,7 +29,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import javafx.geometry.Insets;
-import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Region;
 
@@ -194,8 +192,6 @@ abstract public class SchemaNodeLayout {
     abstract public LayoutCell<? extends Region> buildControl(FocusTraversal<?> parentTraversal,
                                                               Layout model);
 
-    abstract public void calculateCellHeight();
-
     public double calculateLabelWidth() {
         return labelWidth;
     }
@@ -207,7 +203,7 @@ abstract public class SchemaNodeLayout {
     abstract public Function<Double, ColumnHeader> columnHeader();
 
     public double columnHeaderHeight() {
-        return labelStyle.getHeight();
+        return Layout.snap(labelStyle.getHeight());
     }
 
     abstract public double columnWidth();
@@ -224,10 +220,8 @@ abstract public class SchemaNodeLayout {
         return height;
     }
 
-    abstract public double getJustifiedColumnWidth();
-
     public double getJustifiedWidth() {
-        return justifiedWidth;
+        return Layout.snap(justifiedWidth);
     }
 
     public String getLabel() {
@@ -242,12 +236,8 @@ abstract public class SchemaNodeLayout {
 
     abstract public double justify(double justified);
 
-    public Control label(double labelWidth) {
-        return label(labelWidth, node.getLabel());
-    }
-
-    public Control label(double width, double half) {
-        return labelStyle.label(width, getLabel(), half);
+    public Label label(double width, double height) {
+        return labelStyle.label(width, getLabel(), height);
     }
 
     public double labelWidth(String label) {
@@ -274,13 +264,6 @@ abstract public class SchemaNodeLayout {
     abstract public double nestTableColumn(Indent inset, Insets indentation);
 
     abstract public void normalizeRowHeight(double normalized);
-
-    abstract public OutlineElement outlineElement(String parent,
-                                                  int cardinality,
-                                                  double labelWidth,
-                                                  double justified,
-                                                  FocusTraversal<OutlineElement> parentTraversal,
-                                                  Layout model);
 
     abstract public double rowHeight(int averageCardinality,
                                      double justifiedWidth);

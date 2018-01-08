@@ -25,6 +25,7 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.geometry.Pos;
@@ -49,7 +50,8 @@ public class NestedTable extends VerticalCell<NestedTable> {
     private final VirtualFlow<NestedCell> rows;
 
     public NestedTable(int childCardinality, RelationLayout layout,
-                       FocusTraversal<?> parentTraversal, Layout model) {
+                       FocusTraversal<?> parentTraversal, Layout model,
+                       RelationStyle style) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         setAlignment(Pos.CENTER);
@@ -58,13 +60,10 @@ public class NestedTable extends VerticalCell<NestedTable> {
         Region header = layout.buildColumnHeader();
         rows = new NestedRow(Layout.snap(layout.getHeight()
                                          - layout.getColumnHeaderHeight()),
-                             layout.getRowCellHeight(), layout,
-                             childCardinality, parentTraversal, model);
+                             layout, childCardinality, parentTraversal, model,
+                             style);
 
         getChildren().addAll(header, rows);
-        setMinWidth(layout.getJustifiedColumnWidth());
-        setPrefWidth(layout.getJustifiedColumnWidth());
-        setMaxWidth(layout.getJustifiedColumnWidth());
         model.apply(rows, layout.getNode());
     }
 

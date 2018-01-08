@@ -16,10 +16,13 @@
 
 package com.chiralbehaviors.layout.table;
 
+import java.util.Arrays;
+
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
@@ -35,27 +38,24 @@ public class NestedRow extends VirtualFlow<NestedCell> {
 
     public NestedRow(double rendered, RelationLayout layout,
                      int childCardinality, FocusTraversal<?> parentTraversal,
-                     Layout model) {
-        this(rendered, layout.getHeight(), layout, childCardinality,
-             parentTraversal, model);
+                     Layout model, RelationStyle style) {
+        this(rendered, layout.getCellHeight(), layout, childCardinality,
+             parentTraversal, model, style);
     }
 
     public NestedRow(double rendered, double rowHeight, RelationLayout layout,
                      int childCardinality, FocusTraversal<?> parentTraversal,
-                     Layout model) {
-        super(STYLE_SHEET, layout.getJustifiedColumnWidth(), rowHeight,
-              FXCollections.observableArrayList(), (item, pt) -> {
+                     Layout model, RelationStyle style) {
+        super(STYLE_SHEET,
+              layout.getJustifiedWidth(),
+              rowHeight, FXCollections.observableArrayList(), (item, pt) -> {
                   NestedCell cell = new NestedCell(layout, pt, model);
                   cell.updateItem(item);
                   return cell;
-              }, parentTraversal);
-        initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE,
-                                          layout.getField()));
-        double width = layout.getJustifiedColumnWidth();
-        setMinSize(width, rendered);
-        setPrefSize(width, rendered);
-        setMaxSize(width, rendered);
+              }, parentTraversal,
+              Arrays.asList(DEFAULT_STYLE, String.format(SCHEMA_CLASS_TEMPLATE,
+                                                         layout.getField())));
+        setPrefHeight(rendered);
         model.apply(this, layout.getNode());
     }
 

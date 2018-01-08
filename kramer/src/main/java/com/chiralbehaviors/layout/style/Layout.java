@@ -39,18 +39,18 @@ import com.chiralbehaviors.layout.table.NestedRow;
 import com.chiralbehaviors.layout.table.NestedTable;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.sun.javafx.scene.text.TextLayout;
-import com.sun.javafx.tk.FontLoader;
-import com.sun.javafx.tk.Toolkit;
 
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import javafx.scene.text.TextBoundsType;
 
-@SuppressWarnings({ "deprecation", "restriction" })
 public class Layout {
 
     public interface LayoutObserver {
@@ -61,13 +61,6 @@ public class Layout {
                                                      Relation relation) {
         }
     }
-
-    private static FontLoader       FONT_LOADER = Toolkit.getToolkit()
-                                                         .getFontLoader();
-
-    private static final TextLayout LAYOUT      = Toolkit.getToolkit()
-                                                         .getTextLayoutFactory()
-                                                         .createLayout();
 
     public static Insets add(Insets a, Insets b) {
         return new Insets(a.getTop() + b.getTop(), a.getRight() + b.getRight(),
@@ -90,8 +83,29 @@ public class Layout {
         return Math.ceil(value);
     }
 
-    public static double textWidth(String text, Font textFont) {
-        return FONT_LOADER.computeStringWidth(text, textFont);
+    public static double textWidth(String string, Font textFont) {
+        Text text = new Text(string);
+        text.setFont(textFont);
+        Bounds tb = text.getBoundsInLocal();
+        return Shape.intersect(text,
+                               new Rectangle(tb.getMinX(), tb.getMinY(),
+                                             tb.getWidth(), tb.getHeight()))
+                    .getBoundsInLocal()
+                    .getWidth();
+    }
+
+    public void reportSize(String s, Font myFont) {
+        Text text = new Text(s);
+        text.setFont(myFont);
+        Bounds tb = text.getBoundsInLocal();
+        Rectangle stencil = new Rectangle(tb.getMinX(), tb.getMinY(),
+                                          tb.getWidth(), tb.getHeight());
+
+        Shape intersection = Shape.intersect(text, stencil);
+
+        Bounds ib = intersection.getBoundsInLocal();
+        System.out.println("Text size: " + ib.getWidth() + ", "
+                           + ib.getHeight());
     }
 
     public static String toString(JsonNode value) {
@@ -119,18 +133,14 @@ public class Layout {
 
     protected static double getLineHeight(Font font,
                                           TextBoundsType boundsType) {
-        LAYOUT.setContent("W\n ", font.impl_getNativeFont());
-        LAYOUT.setWrapWidth(0);
-        LAYOUT.setLineSpacing(0);
-        if (boundsType == TextBoundsType.LOGICAL_VERTICAL_CENTER) {
-            LAYOUT.setBoundsType(TextLayout.BOUNDS_CENTER);
-        } else {
-            LAYOUT.setBoundsType(0);
-        }
-
-        // RT-37092: Use the line bounds specifically, to include font leading.
-        return LAYOUT.getLines()[0].getBounds()
-                                   .getHeight();
+        Text text = new Text("WgTy\n ");
+        text.setFont(font);
+        Bounds tb = text.getBoundsInLocal();
+        return Shape.intersect(text,
+                               new Rectangle(tb.getMinX(), tb.getMinY(),
+                                             tb.getWidth(), tb.getHeight()))
+                    .getBoundsInLocal()
+                    .getHeight();
     }
 
     private final LayoutObserver observer;
@@ -272,17 +282,8 @@ public class Layout {
         label.applyCss();
         label.layout();
 
-        return new RelationStyle(labelStyle(label),
-                                 add(table.getInsets(), table.getPadding()),
-                                 add(row.getInsets(), row.getPadding()),
-                                 add(rowCell.getInsets(), rowCell.getPadding()),
-                                 add(outline.getInsets(), outline.getPadding()),
-                                 add(outlineCell.getInsets(),
-                                     outlineCell.getPadding()),
-                                 add(column.getInsets(), column.getPadding()),
-                                 add(span.getInsets(), span.getPadding()),
-                                 add(element.getInsets(),
-                                     element.getPadding()));
+        return new RelationStyle(labelStyle(label), table, row, rowCell,
+                                 outline, outlineCell, column, span, element);
 
     }
 

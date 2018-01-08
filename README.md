@@ -9,6 +9,12 @@
 
 It's all about levels.
 
+### News
+
+CSS all the things.  Well, most of them.  Will be publishing some examples on this, but there's some interesting and frankly terrifying semantic driven CSS styling that I can now leverage with Kramer.  See the [default.css](https://github.com/ChiralBehaviors/Kramer/blob/master/kramer/src/main/resources/com/chiralbehaviors/layout/default.css) for stylable details.
+
+It's all boxes, so not that hard ;)
+
 ### Building
 Kramer requires [maven 3.3+](https://maven.apache.org), Java 1.8+.  To build Kramer, cd to the top level directory:
 

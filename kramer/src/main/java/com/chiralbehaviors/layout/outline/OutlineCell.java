@@ -36,8 +36,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
 
 /**
  * @author halhildebrand
@@ -56,22 +54,15 @@ public class OutlineCell extends VerticalCell<OutlineCell>
     private List<Span>                                  spans                 = new ArrayList<>();
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
-                       double cellHeight, RelationLayout layout,
-                       FocusTraversal<OutlineCell> pt, Layout model,
-                       RelationStyle style) {
+                       RelationLayout layout, FocusTraversal<OutlineCell> pt,
+                       Layout model, RelationStyle style, double labelWidth) {
         this(layout.getField(), pt);
         setAlignment(Pos.CENTER);
-        setMinSize(layout.getJustifiedColumnWidth(), cellHeight);
-        setPrefSize(layout.getJustifiedColumnWidth(), cellHeight);
-        setMaxSize(layout.getJustifiedColumnWidth(), cellHeight);
         columnSets.forEach(cs -> {
-            Span span = new Span(layout.getField(), cs.getWidth(),
-                                 cs.getColumns(), childCardinality,
-                                 cs.getCellHeight() + style.getSpanVerticalInset(),
-                                 layout.getLabelWidth(), focus, model, style);
+            Span span = new Span(childCardinality, layout, labelWidth, cs,
+                                 focus, model, style);
             spans.add(span);
             alignmentProperty();
-            VBox.setVgrow(span.getNode(), Priority.ALWAYS);
             getChildren().add(span.getNode());
         });
     }

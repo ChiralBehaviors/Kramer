@@ -32,10 +32,8 @@ import com.chiralbehaviors.layout.style.RelationStyle;
 public class Column {
 
     private ArrayDeque<SchemaNodeLayout> fields = new ArrayDeque<>();
-    private double                       width  = 0;
 
-    public Column(double width) {
-        this.width = width;
+    public Column() {
     }
 
     public void add(SchemaNodeLayout node) {
@@ -46,17 +44,13 @@ public class Column {
         fields.addFirst(field);
     }
 
-    public double cellHeight(int cardinality, double labelWidth,
-                             RelationStyle style) {
-        return cellHeight(cardinality, fields, labelWidth, style);
+    public double cellHeight(int cardinality, RelationStyle style,
+                             double fieldWidth) {
+        return cellHeight(cardinality, fields, style, fieldWidth);
     }
 
     public List<SchemaNodeLayout> getFields() {
         return new ArrayList<>(fields);
-    }
-
-    public double getWidth() {
-        return width;
     }
 
     public double maxWidth(double labelWidth) {
@@ -66,12 +60,8 @@ public class Column {
                      .orElse(0d);
     }
 
-    public void setWidth(double width) {
-        this.width = width;
-    }
-
-    public boolean slideRight(int cardinality, Column column, double labelWidth,
-                              RelationStyle style) {
+    public boolean slideRight(int cardinality, Column column,
+                              RelationStyle style, double fieldWidth) {
         if (fields.size() < 1) {
             return false;
         }
@@ -79,9 +69,9 @@ public class Column {
             column.addFirst(fields.removeLast());
             return true;
         }
-        if (without(cardinality, labelWidth,
-                    style) < column.with(cardinality, fields.getLast(),
-                                         labelWidth, style)) {
+        if (without(cardinality, style,
+                    fieldWidth) < column.with(cardinality, fields.getLast(),
+                                              style, fieldWidth)) {
             return false;
         }
         column.addFirst(fields.removeLast());
@@ -90,9 +80,9 @@ public class Column {
 
     @Override
     public String toString() {
-        return String.format("Column [%s] [fields=%s]", width, fields.stream()
-                                                                     .map(p -> p.getField())
-                                                                     .collect(Collectors.toList()));
+        return String.format("Column %s", fields.stream()
+                                                .map(p -> p.getField())
+                                                .collect(Collectors.toList()));
     }
 
     void adjustHeight(double distributed) {
@@ -102,13 +92,14 @@ public class Column {
         }
     }
 
-    void distributeHeight(double finalHeight) {
+    void distributeHeight(double finalHeight, RelationStyle style) {
         double calculated = fields.stream()
-                                  .mapToDouble(f -> f.getHeight())
+                                  .mapToDouble(f -> Layout.snap(f.getHeight()
+                                                                + style.getElementVerticalInset()))
                                   .sum();
         if (calculated < finalHeight) {
             double delta = Layout.snap((finalHeight - calculated)
-                                            / fields.size());
+                                       / (double) fields.size());
             if (delta >= 1.0) {
                 fields.forEach(f -> f.adjustHeight(delta));
             }
@@ -117,26 +108,25 @@ public class Column {
 
     private double cellHeight(int cardinality,
                               ArrayDeque<SchemaNodeLayout> elements,
-                              double labelWidth, RelationStyle style) {
-        double available = Layout.snap(width - labelWidth);
+                              RelationStyle style, double fieldWidth) {
         return elements.stream()
-                       .mapToDouble(field -> field.cellHeight(cardinality,
-                                                              available))
-                       .map(height -> height + style.getElementVerticalInset())
+                       .mapToDouble(field -> Layout.snap(field.cellHeight(cardinality,
+                                                                          fieldWidth)
+                                                         + style.getElementVerticalInset()))
                        .sum();
     }
 
     private double with(int cardinality, SchemaNodeLayout field,
-                        double labelWidth, RelationStyle style) {
+                        RelationStyle style, double fieldWidth) {
         ArrayDeque<SchemaNodeLayout> elements = fields.clone();
         elements.add(field);
-        return cellHeight(cardinality, elements, labelWidth, style);
+        return cellHeight(cardinality, elements, style, fieldWidth);
     }
 
-    private double without(int cardinality, double labelWidth,
-                           RelationStyle style) {
+    private double without(int cardinality, RelationStyle style,
+                           double fieldWidth) {
         ArrayDeque<SchemaNodeLayout> elements = fields.clone();
         elements.removeLast();
-        return cellHeight(cardinality, elements, labelWidth, style);
+        return cellHeight(cardinality, elements, style, fieldWidth);
     }
 }

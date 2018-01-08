@@ -16,6 +16,7 @@
 
 package com.chiralbehaviors.layout.outline;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -39,34 +40,22 @@ public class Outline extends VirtualFlow<OutlineCell> {
     private static final String SCHEMA_CLASS_TEMPLATE = "%s-outline";
     private static final String STYLE_SHEET           = "outline.css";
 
-    public Outline(double height, Collection<ColumnSet> columnSets,
-                   int averageCardinality, RelationLayout layout,
-                   FocusTraversal<?> parentTraversal, Layout model,
-                   RelationStyle style) {
-        this(layout.getJustifiedWidth(),
-             layout.outlineCellHeight(columnSets.stream()
-                                                .mapToDouble(cs -> cs.getCellHeight())
-                                                .map(h -> h
-                                                          + style.getSpanVerticalInset())
-                                                .sum()),
-             columnSets, averageCardinality, layout, parentTraversal, model,
-             style);
-    }
-
     public Outline(double width, double cellHeight,
                    Collection<ColumnSet> columnSets, int averageCardinality,
                    RelationLayout layout, FocusTraversal<?> parentTraversal,
-                   Layout model, RelationStyle style) {
-        super(STYLE_SHEET, width, cellHeight,
+                   Layout model, RelationStyle style, double labelWidth) {
+        super(STYLE_SHEET, width + style.getOutlineCellHorizontalInset(),
+              cellHeight + style.getOutlineCellVerticalInset(),
               FXCollections.observableArrayList(), (item, pt) -> {
                   OutlineCell outlineCell = new OutlineCell(columnSets,
                                                             averageCardinality,
-                                                            layout.baseOutlineCellHeight(cellHeight),
                                                             layout, pt, model,
-                                                            style);
+                                                            style, labelWidth);
                   outlineCell.updateItem(item);
                   return outlineCell;
-              }, parentTraversal);
+              }, parentTraversal,
+              Arrays.asList(DEFAULT_STYLE, String.format(SCHEMA_CLASS_TEMPLATE,
+                                                         layout.getField())));
         model.apply(this, layout.getNode());
     }
 

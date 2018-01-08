@@ -21,13 +21,12 @@ import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.beans.InvalidationListener;
 import javafx.geometry.Pos;
-import javafx.scene.control.Control;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.Label;
 
 /**
  * @author halhildebrand
@@ -51,10 +50,10 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     }
 
     public OutlineElement(SchemaNodeLayout layout, String field,
-                          int cardinality, double labelWidth, double justified,
-                          double height,
+                          int cardinality, double labelWidth,
+                          double elementHeight,
                           FocusTraversal<OutlineElement> parentTraversal,
-                          Layout model) {
+                          Layout model, RelationStyle style) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
@@ -68,21 +67,14 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
                 }
             });
 
-        setMinSize(justified, height);
-        setPrefSize(justified, height);
-        setMaxSize(justified, height);
         setAlignment(Pos.CENTER);
-        VBox.setVgrow(this, Priority.ALWAYS);
-        Control label = layout.label(labelWidth);
-        label.setMinWidth(labelWidth);
-        label.setMaxWidth(labelWidth);
-        double available = justified - labelWidth;
         cell.getNode()
-            .setMinSize(available, height);
+            .setMinHeight(elementHeight);
         cell.getNode()
-            .setPrefSize(available, height);
+            .setPrefHeight(elementHeight);
         cell.getNode()
-            .setMaxSize(available, height);
+            .setMaxHeight(elementHeight);
+        Label label = layout.label(labelWidth, elementHeight);
         getChildren().addAll(label, cell.getNode());
 
     }
@@ -93,11 +85,11 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     }
 
     public OutlineElement(String field, SchemaNodeLayout layout,
-                          int cardinality, double labelWidth, double justified,
+                          int cardinality, double labelWidth,
                           FocusTraversal<OutlineElement> parentTraversal,
-                          Layout model) {
-        this(layout, field, cardinality, labelWidth, justified,
-             layout.getHeight(), parentTraversal, model);
+                          Layout model, RelationStyle style) {
+        this(layout, field, cardinality, labelWidth, layout.getHeight(),
+             parentTraversal, model, style);
     }
 
     @Override

@@ -25,7 +25,6 @@ import java.util.function.Function;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.PrimitiveList;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
-import com.chiralbehaviors.layout.outline.OutlineElement;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.style.Layout;
 import com.chiralbehaviors.layout.style.PrimitiveStyle;
@@ -82,11 +81,6 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public void calculateCellHeight() {
-        cellHeight(averageCardinality, justifiedWidth);
-    }
-
-    @Override
     public double calculateTableColumnWidth() {
         return columnWidth();
     }
@@ -98,7 +92,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         }
         int resolvedCardinality = Math.min(cardinality, averageCardinality);
         boolean list = resolvedCardinality > 1;
-        cellHeight = snap((style.getHeight(maxWidth, justified)));
+        cellHeight = snap(style.getHeight(maxWidth, justified));
         if (list) {
             height = (cellHeight * resolvedCardinality)
                      + style.getListVerticalInset();
@@ -132,11 +126,6 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     public double getCellHeight() {
         return cellHeight;
-    }
-
-    @Override
-    public double getJustifiedColumnWidth() {
-        return Layout.snap(justifiedWidth);
     }
 
     @Override
@@ -240,15 +229,6 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public OutlineElement outlineElement(String parent, int cardinality,
-                                         double labelWidth, double justified,
-                                         FocusTraversal<OutlineElement> parentTraversal,
-                                         Layout model) {
-        return new OutlineElement(parent, this, cardinality, labelWidth,
-                                  justified, parentTraversal, model);
-    }
-
-    @Override
     public double rowHeight(int averageCardinality, double justifiedWidth) {
         return cellHeight(1, justifiedWidth);
     }
@@ -263,12 +243,12 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         return String.format("PrimitiveLayout [%s %s height, width {c: %s, j: %s} ]",
                              node.getField(), height, columnWidth,
                              justifiedWidth);
-    } 
+    }
 
     @Override
     protected void calculateRootHeight() {
-        calculateCellHeight();
-    } 
+        cellHeight(averageCardinality, justifiedWidth);
+    }
 
     protected double width(JsonNode row) {
         return style.width(row);

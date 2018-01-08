@@ -80,8 +80,7 @@ abstract public class PrimitiveStyle extends NodeStyle {
         }
 
         public double getHeight(double maxWidth, double justified) {
-            double rows = Math.ceil((maxWidth / justified));
-            return primitiveStyle.getHeight(rows);
+            return primitiveStyle.getHeight(Math.ceil((maxWidth / justified)));
         }
 
         public double width(JsonNode row) {

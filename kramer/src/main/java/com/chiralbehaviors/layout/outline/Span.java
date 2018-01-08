@@ -19,7 +19,8 @@ package com.chiralbehaviors.layout.outline;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.chiralbehaviors.layout.Column;
+import com.chiralbehaviors.layout.ColumnSet;
+import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
@@ -54,24 +55,22 @@ public class Span extends HorizontalCell<Span>
         this(field, null);
     }
 
-    public Span(String field, double justified, List<Column> columns,
-                int cardinality, double cellHeight, double labelWidth,
-                FocusTraversal<Span> parentTraversal, Layout model,
-                RelationStyle style) {
-        this(field, parentTraversal);
+    public Span(int cardinality, RelationLayout layout, double labelWidth,
+                ColumnSet columnSet, FocusTraversal<Span> parentTraversal,
+                Layout model, RelationStyle style) {
+        this(layout.getField(), parentTraversal);
         setAlignment(Pos.CENTER);
-        setMinSize(justified, cellHeight);
-        setPrefSize(justified, cellHeight);
-        setMaxSize(justified, cellHeight);
 
-        columns.forEach(c -> {
-            OutlineColumn cell = new OutlineColumn(field, c, cardinality,
-                                                   labelWidth,
-                                                   cellHeight - style.getColumnVerticalInset(),
-                                                   focus, model);
-            this.columns.add(cell);
-            getChildren().add(cell.getNode());
-        });
+        columnSet.getColumns()
+                 .forEach(c -> {
+                     OutlineColumn cell = new OutlineColumn(layout.getField(),
+                                                            c, cardinality,
+                                                            labelWidth,
+                                                            focus,
+                                                            model, style);
+                     this.columns.add(cell);
+                     getChildren().add(cell.getNode());
+                 });
     }
 
     public Span(String field, FocusTraversal<Span> parentTraversal) {
