@@ -19,6 +19,7 @@ package com.chiralbehaviors.layout.style;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.chiralbehaviors.layout.LayoutLabel;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
@@ -188,7 +189,7 @@ public class Layout {
 
         PrimitiveList list = new PrimitiveList(p.getField());
 
-        Label label = new Label("Lorem Ipsum");
+        LayoutLabel label = new LayoutLabel("Lorem Ipsum");
         label.getStyleClass()
              .clear();
         label.getStyleClass()
@@ -239,7 +240,7 @@ public class Layout {
         OutlineElement element = new OutlineElement(r.getField());
         Span span = new Span(r.getField());
 
-        Label label = new Label("Lorem Ipsum");
+        LayoutLabel label = new LayoutLabel("Lorem Ipsum");
         label.getStyleClass()
              .clear();
         label.getStyleClass()

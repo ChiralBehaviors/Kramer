@@ -39,6 +39,10 @@ import javafx.scene.layout.Region;
  *
  */
 public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
+    /**
+     * 
+     */
+    private static final String                    AUTO_LAYOUT = "auto-layout";
     private static final String                    DEFAULT_CSS = "default.css";
     private static final java.util.logging.Logger  log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
     private static final String                    STYLE_SHEET = "auto-layout.css";
@@ -64,7 +68,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     public AutoLayout(Relation root, Layout model) {
         URL url = getClass().getResource(STYLE_SHEET);
         stylesheet = url == null ? null : url.toExternalForm();
-        getStyleClass().add("auto-layout");
+        getStyleClass().add(AUTO_LAYOUT);
         this.model = model;
         this.root.set(root);
         data.addListener((o, p, c) -> setContent());
