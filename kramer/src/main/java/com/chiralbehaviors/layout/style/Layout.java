@@ -95,20 +95,6 @@ public class Layout {
                     .getWidth();
     }
 
-    public void reportSize(String s, Font myFont) {
-        Text text = new Text(s);
-        text.setFont(myFont);
-        Bounds tb = text.getBoundsInLocal();
-        Rectangle stencil = new Rectangle(tb.getMinX(), tb.getMinY(),
-                                          tb.getWidth(), tb.getHeight());
-
-        Shape intersection = Shape.intersect(text, stencil);
-
-        Bounds ib = intersection.getBoundsInLocal();
-        System.out.println("Text size: " + ib.getWidth() + ", "
-                           + ib.getHeight());
-    }
-
     public static String toString(JsonNode value) {
         if (value == null) {
             return "";
@@ -190,10 +176,6 @@ public class Layout {
         PrimitiveList list = new PrimitiveList(p.getField());
 
         LayoutLabel label = new LayoutLabel("Lorem Ipsum");
-        label.getStyleClass()
-             .clear();
-        label.getStyleClass()
-             .addAll(LabelStyle.LAYOUT_LABEL);
 
         Label primitiveText = new Label("Lorem Ipsum");
         primitiveText.getStyleClass()
@@ -241,10 +223,6 @@ public class Layout {
         Span span = new Span(r.getField());
 
         LayoutLabel label = new LayoutLabel("Lorem Ipsum");
-        label.getStyleClass()
-             .clear();
-        label.getStyleClass()
-             .addAll(LabelStyle.LAYOUT_LABEL);
 
         root.getChildren()
             .addAll(table, row, rowCell, outline, outlineCell, column, element,
