@@ -54,6 +54,10 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
                     }
                 }
             });
+        node.setOnMouseEntered(e -> node.pseudoClassStateChanged(LayoutCell.PSEUDO_CLASS_FOCUSED,
+                                                                 true));
+        node.setOnMouseExited(e -> node.pseudoClassStateChanged(LayoutCell.PSEUDO_CLASS_FOCUSED,
+                                                                false));
     }
 
     @Override
