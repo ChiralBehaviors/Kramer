@@ -26,7 +26,7 @@ Individual modules may be built independently.
 Kramer is licensed under [Apache 2.0 license](LICENSE)
 
 ## What it does
-Watch a [short video of the autolayout in action](https://youtu.be/RhVwDfI7KHU).
+Watch a [short video of the autolayout in action](https://youtu.be/I8s2Qv7ssQM).
 
 Kramer is based on the system described in the paper [Automatic Layout of Structured Hierarchical Reports](http://people.csail.mit.edu/ebakke/research/reportlayout_infovis2013.pdf).  Kramer uses a schema to automatically layout structured JSON.  The layout is adaptive between outline and nested table views, providing multicolumn hybrids that are dense and is highly usable.  One could call it the Unicorn of reactive layouts for hierarchical data (and who doesn't have that, amirite?).
 
