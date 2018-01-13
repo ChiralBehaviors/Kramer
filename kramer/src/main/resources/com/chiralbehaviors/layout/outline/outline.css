@@ -1,4 +1,3 @@
-.outline {
-    -fx-alignment: center;
-    -fx-focus-traversable: true;
+.outline:focused > .layout-label, .table:focused > .layout-label {
+     -fx-background-color: #969A9F;
 }
