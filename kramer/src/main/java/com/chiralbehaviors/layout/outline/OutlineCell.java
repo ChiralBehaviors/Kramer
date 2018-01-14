@@ -34,7 +34,6 @@ import com.chiralbehaviors.layout.style.Layout;
 import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 
 /**
@@ -57,7 +56,6 @@ public class OutlineCell extends VerticalCell<OutlineCell>
                        RelationLayout layout, FocusTraversal<OutlineCell> pt,
                        Layout model, RelationStyle style, double labelWidth) {
         this(layout.getField(), pt);
-        setAlignment(Pos.CENTER);
         columnSets.forEach(cs -> {
             Span span = new Span(childCardinality, layout, labelWidth, cs,
                                  focus, model, style);
@@ -73,7 +71,6 @@ public class OutlineCell extends VerticalCell<OutlineCell>
 
     public OutlineCell(String field, FocusTraversal<OutlineCell> parent) {
         super(STYLE_SHEET);
-        setAlignment(Pos.CENTER);
         initialize(OUTLINE_CELL_CLASS);
         getStyleClass().addAll(String.format(SCHEMA_CLASS_TEMPLATE, field));
         selectionModel = buildSelectionModel(i -> null, () -> spans.size(),

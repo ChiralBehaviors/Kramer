@@ -19,7 +19,6 @@ package com.chiralbehaviors.layout.style;
 import com.chiralbehaviors.layout.LayoutLabel;
 
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.text.Font;
 
@@ -54,7 +53,6 @@ public class LabelStyle {
 
     public Label label(double width, String text, double height) {
         LayoutLabel label = new LayoutLabel(text);
-        label.setAlignment(Pos.CENTER);
         label.setMinSize(width, height);
         label.setMaxSize(width, height);
         return label;

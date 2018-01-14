@@ -25,7 +25,6 @@ import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.beans.InvalidationListener;
-import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 
 /**
@@ -67,7 +66,6 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
                 }
             });
 
-        setAlignment(Pos.CENTER);
         cell.getNode()
             .setMinHeight(elementHeight);
         cell.getNode()

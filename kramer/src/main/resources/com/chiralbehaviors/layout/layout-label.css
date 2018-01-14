@@ -1,7 +1,7 @@
 
 .layout-label {
 	-fx-alignment: center;
-    -fx-background-insets: 0.0 0.0 -1.0 0.0, 0.0, 1.0;
+    -fx-background-insets: -1.0, 0.0, 1.0;
     -fx-background-color: 
         #a6b5c9,
         linear-gradient(#303842 0.0%, #3e5577 20.0%, #375074 100.0%),

@@ -33,7 +33,6 @@ import com.chiralbehaviors.layout.style.Layout;
 import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 
 /**
@@ -61,7 +60,6 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
                          FocusTraversal<OutlineColumn> parentTraversal,
                          Layout model, RelationStyle style) {
         this(field, parentTraversal);
-        setAlignment(Pos.CENTER);
         c.getFields()
          .forEach(f -> {
              OutlineElement cell = new OutlineElement(field, f, cardinality,
@@ -77,7 +75,6 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
                          FocusTraversal<OutlineColumn> parentTraversal) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-        setAlignment(Pos.CENTER);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
         selectionModel = buildSelectionModel(i -> null, () -> elements.size(),
                                              i -> elements.get(i));
