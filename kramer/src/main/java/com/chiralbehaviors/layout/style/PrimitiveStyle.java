@@ -84,7 +84,7 @@ abstract public class PrimitiveStyle extends NodeStyle {
         }
 
         public double width(JsonNode row) {
-            return primitiveStyle.width(Layout.toString(row))
+            return primitiveStyle.width(Style.toString(row))
                    + primitiveStyle.getHorizontalInset();
         }
 

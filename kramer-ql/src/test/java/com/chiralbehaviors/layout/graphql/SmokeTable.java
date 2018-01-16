@@ -25,7 +25,7 @@ import com.chiralbehaviors.layout.AutoLayout;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.Relation;
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -45,7 +45,7 @@ public class SmokeTable extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        Layout model = new Layout() {
+        Style model = new Style() {
             @Override
             public <T extends LayoutCell<?>> void apply(VirtualFlow<T> list,
                                                         Relation relation) {

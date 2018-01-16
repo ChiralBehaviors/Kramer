@@ -52,7 +52,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextBoundsType;
 
-public class Layout {
+public class Style {
 
     public interface LayoutObserver {
         default <T extends LayoutCell<?>> void apply(T cell, Primitive p) {
@@ -77,7 +77,7 @@ public class Layout {
     }
 
     public static double relax(double value) {
-        return Math.max(0, Math.floor(value) - 1);
+        return Math.max(0, Math.floor(value));
     }
 
     public static double snap(double value) {
@@ -134,12 +134,12 @@ public class Layout {
 
     private final List<String>   styleSheets = new ArrayList<>();
 
-    public Layout() {
+    public Style() {
         this(new LayoutObserver() {
         });
     }
 
-    public Layout(LayoutObserver observer) {
+    public Style(LayoutObserver observer) {
         this.observer = observer;
     }
 

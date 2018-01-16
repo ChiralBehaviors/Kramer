@@ -24,7 +24,7 @@ import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusController;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.application.Platform;
@@ -52,7 +52,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     private SimpleObjectProperty<JsonNode>         data        = new SimpleObjectProperty<>();
     private SchemaNodeLayout                       layout;
     private double                                 layoutWidth = 0.0;
-    private Layout                                 model;
+    private Style                                 model;
     private final SimpleObjectProperty<SchemaNode> root        = new SimpleObjectProperty<>();
     private final String                           stylesheet;
 
@@ -61,11 +61,11 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     }
 
     public AutoLayout(Relation root) {
-        this(root, new Layout() {
+        this(root, new Style() {
         });
     }
 
-    public AutoLayout(Relation root, Layout model) {
+    public AutoLayout(Relation root, Style model) {
         URL url = getClass().getResource(STYLE_SHEET);
         stylesheet = url == null ? null : url.toExternalForm();
         getStyleClass().add(AUTO_LAYOUT);

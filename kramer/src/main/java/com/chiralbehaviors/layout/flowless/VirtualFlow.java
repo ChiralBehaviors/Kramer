@@ -1,6 +1,6 @@
 package com.chiralbehaviors.layout.flowless;
 
-import static com.chiralbehaviors.layout.style.Layout.add;
+import static com.chiralbehaviors.layout.style.Style.add;
 
 import java.util.Collections;
 import java.util.List;

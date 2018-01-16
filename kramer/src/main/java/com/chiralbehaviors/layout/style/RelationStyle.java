@@ -56,7 +56,7 @@ public class RelationStyle extends NodeStyle {
         this.column = column.getInsets();
         this.span = span.getInsets();
         this.element = element.getInsets();
-        nestedInsets = Layout.add(this.row, this.rowCell);
+        nestedInsets = Style.add(this.row, this.rowCell);
     }
 
     public double getColumnHorizontalInset() {

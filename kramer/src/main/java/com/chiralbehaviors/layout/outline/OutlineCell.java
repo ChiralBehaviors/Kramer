@@ -30,7 +30,7 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -54,7 +54,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
                        RelationLayout layout, FocusTraversal<OutlineCell> pt,
-                       Layout model, RelationStyle style, double labelWidth) {
+                       Style model, RelationStyle style, double labelWidth) {
         this(layout.getField(), pt);
         columnSets.forEach(cs -> {
             Span span = new Span(childCardinality, layout, labelWidth, cs,

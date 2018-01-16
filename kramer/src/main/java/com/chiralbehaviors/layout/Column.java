@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
 
 /**
@@ -94,11 +94,11 @@ public class Column {
 
     void distributeHeight(double finalHeight, RelationStyle style) {
         double calculated = fields.stream()
-                                  .mapToDouble(f -> Layout.snap(f.getHeight()
+                                  .mapToDouble(f -> Style.snap(f.getHeight()
                                                                 + style.getElementVerticalInset()))
                                   .sum();
         if (calculated < finalHeight) {
-            double delta = Layout.snap((finalHeight - calculated)
+            double delta = Style.relax((finalHeight - calculated)
                                        / (double) fields.size());
             if (delta >= 1.0) {
                 fields.forEach(f -> f.adjustHeight(delta));
@@ -109,11 +109,11 @@ public class Column {
     private double cellHeight(int cardinality,
                               ArrayDeque<SchemaNodeLayout> elements,
                               RelationStyle style, double fieldWidth) {
-        return elements.stream()
-                       .mapToDouble(field -> Layout.snap(field.cellHeight(cardinality,
+        return Style.snap(elements.stream()
+                       .mapToDouble(field -> Style.snap(field.cellHeight(cardinality,
                                                                           fieldWidth)
                                                          + style.getElementVerticalInset()))
-                       .sum();
+                       .sum());
     }
 
     private double with(int cardinality, SchemaNodeLayout field,

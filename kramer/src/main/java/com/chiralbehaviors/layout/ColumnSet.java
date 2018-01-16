@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
 
 /**
@@ -59,7 +59,7 @@ public class ColumnSet {
                                                 + style.getElementHorizontalInset()
                                                 + style.getColumnHorizontalInset()))));
         if (count == 1) {
-            double fieldWidth = Layout.snap(justified - labelWidth
+            double fieldWidth = Style.snap(justified - labelWidth
                                             - style.getElementHorizontalInset()
                                             - style.getColumnHorizontalInset());
             firstColumn.getFields()
@@ -72,7 +72,7 @@ public class ColumnSet {
 
         // compression
         double columnWidth = justified / (double) count;
-        double fieldWidth = Layout.snap(columnWidth - labelWidth
+        double fieldWidth = Style.snap(columnWidth - labelWidth
                                         - style.getElementHorizontalInset()
                                         - style.getColumnHorizontalInset());
         firstColumn.getFields()
@@ -99,9 +99,9 @@ public class ColumnSet {
                                 .max()
                                 .orElse(0d);
         } while (lastHeight > baseHeight);
-        double finalHeight = Layout.snap(baseHeight);
+        double finalHeight = Style.snap(baseHeight);
         columns.forEach(c -> c.distributeHeight(finalHeight, style));
-        return finalHeight + style.getColumnVerticalInset();
+        return Style.snap(finalHeight + style.getColumnVerticalInset());
     }
 
     public List<Column> getColumns() {

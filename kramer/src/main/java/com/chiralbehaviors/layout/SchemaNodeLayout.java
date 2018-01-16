@@ -22,7 +22,7 @@ import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.style.LabelStyle;
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -172,13 +172,13 @@ abstract public class SchemaNodeLayout {
     }
 
     public void adjustHeight(double delta) {
-        this.height = Layout.snap(height + delta);
+        this.height = Style.snap(height + delta);
     }
 
     public LayoutCell<? extends Region> autoLayout(double width,
                                                    FocusTraversal<?> parentTraversal,
-                                                   Layout model) {
-        double justified = Layout.snap(width);
+                                                   Style model) {
+        double justified = Style.snap(width);
         layout(justified);
         compress(justified);
         calculateRootHeight();
@@ -187,10 +187,10 @@ abstract public class SchemaNodeLayout {
 
     abstract public LayoutCell<? extends Region> buildColumn(double rendered,
                                                              FocusTraversal<?> focus,
-                                                             Layout model);
+                                                             Style model);
 
     abstract public LayoutCell<? extends Region> buildControl(FocusTraversal<?> parentTraversal,
-                                                              Layout model);
+                                                              Style model);
 
     public double calculateLabelWidth() {
         return labelWidth;
@@ -203,7 +203,7 @@ abstract public class SchemaNodeLayout {
     abstract public Function<Double, ColumnHeader> columnHeader();
 
     public double columnHeaderHeight() {
-        return Layout.snap(labelStyle.getHeight());
+        return Style.snap(labelStyle.getHeight());
     }
 
     abstract public double columnWidth();
@@ -221,7 +221,7 @@ abstract public class SchemaNodeLayout {
     }
 
     public double getJustifiedWidth() {
-        return Layout.snap(justifiedWidth);
+        return Style.snap(justifiedWidth);
     }
 
     public String getLabel() {
@@ -241,7 +241,7 @@ abstract public class SchemaNodeLayout {
     }
 
     public double labelWidth(String label) {
-        return Layout.snap(labelStyle.width(label));
+        return Style.snap(labelStyle.width(label));
     }
 
     abstract public double layout(double width);
@@ -250,9 +250,9 @@ abstract public class SchemaNodeLayout {
 
     abstract public double measure(JsonNode data,
                                    Function<JsonNode, JsonNode> extractor,
-                                   Layout model);
+                                   Style model);
 
-    public SchemaNodeLayout measure(JsonNode datum, Layout model) {
+    public SchemaNodeLayout measure(JsonNode datum, Style model) {
         Fold fold = fold(JsonNodeFactory.instance.objectNode()
                                                  .set(getField(), datum),
                          n -> n, model);
@@ -302,7 +302,7 @@ abstract public class SchemaNodeLayout {
     }
 
     protected Fold fold(JsonNode datum, Function<JsonNode, JsonNode> extractor,
-                        Layout model) {
+                        Style model) {
         return fold(datum);
     }
 

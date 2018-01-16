@@ -54,12 +54,13 @@ public class LabelStyle {
     public Label label(double width, String text, double height) {
         LayoutLabel label = new LayoutLabel(text);
         label.setMinSize(width, height);
+        label.setPrefSize(width, height);
         label.setMaxSize(width, height);
         return label;
     }
 
     public double width(String text) {
-        return Layout.textWidth(text, font) + insets.getLeft()
+        return Style.textWidth(text, font) + insets.getLeft()
                + insets.getRight();
     }
 }

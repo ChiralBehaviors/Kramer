@@ -29,7 +29,7 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -56,7 +56,7 @@ public class Span extends HorizontalCell<Span>
 
     public Span(int cardinality, RelationLayout layout, double labelWidth,
                 ColumnSet columnSet, FocusTraversal<Span> parentTraversal,
-                Layout model, RelationStyle style) {
+                Style model, RelationStyle style) {
         this(layout.getField(), parentTraversal);
 
         columnSet.getColumns()
