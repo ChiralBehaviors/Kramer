@@ -10,6 +10,5 @@
 }
 
 .layout-label:hover {
-     -fx-background-color: red;
     -fx-text-fill: orange;
 }

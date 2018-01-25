@@ -159,10 +159,10 @@ public class RelationLayout extends SchemaNodeLayout {
             return height;
         }
         resolvedCardinality = resolveCardinality(cardinality);
-        if (!useTable) {
-            calculateOutlineHeight();
-        } else {
+        if (useTable) {
             calculateTableHeight();
+        } else {
+            calculateOutlineHeight();
         }
         return height;
     }
@@ -180,10 +180,14 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public double columnHeaderHeight() {
-        return Style.snap(super.columnHeaderHeight() + children.stream()
-                                                               .mapToDouble(c -> c.columnHeaderHeight())
-                                                               .max()
-                                                               .orElse(0.0));
+        if (columnHeaderHeight <= 0) {
+            columnHeaderHeight = Style.snap((labelStyle.getHeight())
+                                            + children.stream()
+                                                      .mapToDouble(c -> c.columnHeaderHeight())
+                                                      .max()
+                                                      .orElse(0.0));
+        }
+        return columnHeaderHeight;
     }
 
     @Override
@@ -194,8 +198,7 @@ public class RelationLayout extends SchemaNodeLayout {
     @Override
     public void compress(double justified) {
         if (useTable) {
-            justifyTable(justified - style.getColumnHorizontalInset()
-                         - style.getElementHorizontalInset());
+            justifyTable(justified);
             return;
         }
         columnSets.clear();
@@ -247,17 +250,6 @@ public class RelationLayout extends SchemaNodeLayout {
 
     public double getCellHeight() {
         return cellHeight;
-    }
-
-    public double getColumnHeaderHeight() {
-        if (columnHeaderHeight <= 0) {
-            columnHeaderHeight = Style.snap((labelStyle.getHeight())
-                                            + children.stream()
-                                                      .mapToDouble(c -> c.columnHeaderHeight())
-                                                      .max()
-                                                      .orElse(0.0));
-        }
-        return columnHeaderHeight;
     }
 
     @Override

@@ -305,8 +305,4 @@ abstract public class SchemaNodeLayout {
                         Style model) {
         return fold(datum);
     }
-
-    protected Label label(double labelWidth, String label) {
-        return labelStyle.label(labelWidth, label, height);
-    }
 }
