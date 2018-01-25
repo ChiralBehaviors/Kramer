@@ -24,11 +24,10 @@ import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
-import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
+import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.geometry.Pos;
 import javafx.scene.layout.Region;
 
 /**
