@@ -58,20 +58,9 @@ public class ColumnSet {
                                              / (firstColumn.maxWidth(labelWidth)
                                                 + style.getElementHorizontalInset()
                                                 + style.getColumnHorizontalInset()))));
-        if (count == 1) {
-            double fieldWidth = Style.snap(justified - labelWidth
-                                            - style.getElementHorizontalInset()
-                                            - style.getColumnHorizontalInset());
-            firstColumn.getFields()
-                       .forEach(f -> {
-                           f.compress(fieldWidth);
-                       });
-            return firstColumn.cellHeight(cardinality, style, fieldWidth)
-                   + style.getColumnVerticalInset();
-        }
-
+        
         // compression
-        double columnWidth = justified / (double) count;
+        double columnWidth = Math.floor(justified / (double) count);
         double fieldWidth = Style.snap(columnWidth - labelWidth
                                         - style.getElementHorizontalInset()
                                         - style.getColumnHorizontalInset());

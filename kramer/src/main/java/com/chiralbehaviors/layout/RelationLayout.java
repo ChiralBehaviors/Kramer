@@ -113,9 +113,8 @@ public class RelationLayout extends SchemaNodeLayout {
     }
 
     public TableHeader buildColumnHeader() {
-        return new TableHeader(Style.snap(justifiedWidth
-                                          + style.getRowCellHorizontalInset()),
-                               columnHeaderHeight, children);
+        return new TableHeader(Style.snap(justifiedWidth), columnHeaderHeight,
+                               children);
     }
 
     @Override

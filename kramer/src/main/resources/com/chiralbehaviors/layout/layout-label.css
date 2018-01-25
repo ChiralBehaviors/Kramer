@@ -1,18 +1,15 @@
 
 .layout-label {
-	-fx-alignment: center;
-    -fx-background-insets: -1.0, 0.0, 1.0;
-    -fx-background-color: 
-        #a6b5c9,
-        linear-gradient(#303842 0.0%, #3e5577 20.0%, #375074 100.0%),
-        linear-gradient(#768aa5 0.0%, #849cbb 5.0%, #5877a2 50.0%, #486a9a 51.0%, #4a6c9b 100.0%);
+	-fx-alignment: center; 
     -fx-padding: 3.0 3.0 3.0 3.0;
-    -fx-text-fill: #242d35;
-    -fx-font-family: "Helvetica";
-    -fx-font-size: 14.0px;
+    -fx-background-insets: 0.0 0.0 -1.0 0.0, 0.0, 1.0;
     -fx-text-fill: white;
+    -fx-font-family: "Arial Narrow";
+    -fx-font-weight: bold;
+    -fx-background-color: linear-gradient(#61a2b1, #2A5058);
 }
 
 .layout-label:hover {
+     -fx-background-color: red;
     -fx-text-fill: orange;
 }
