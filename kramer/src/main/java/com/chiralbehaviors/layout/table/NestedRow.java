@@ -55,7 +55,9 @@ public class NestedRow extends VirtualFlow<NestedCell> {
               }, parentTraversal,
               Arrays.asList(DEFAULT_STYLE, String.format(SCHEMA_CLASS_TEMPLATE,
                                                          layout.getField())));
+        setMinHeight(rendered);
         setPrefHeight(rendered);
+        setMaxHeight(rendered);
         model.apply(this, layout.getNode());
     }
 

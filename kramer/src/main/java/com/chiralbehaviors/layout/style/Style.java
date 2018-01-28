@@ -50,7 +50,6 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextBoundsType;
 
 public class Style {
 
@@ -70,10 +69,7 @@ public class Style {
     }
 
     public static LabelStyle labelStyle(Label label) {
-        return new LabelStyle(add(label.getInsets(), label.getPadding()),
-                              getLineHeight(label.getFont(),
-                                            TextBoundsType.LOGICAL_VERTICAL_CENTER),
-                              label.getFont());
+        return new LabelStyle(label);
     }
 
     public static double relax(double value) {
@@ -116,18 +112,6 @@ public class Style {
         } else {
             return value.asText();
         }
-    }
-
-    protected static double getLineHeight(Font font,
-                                          TextBoundsType boundsType) {
-        Text text = new Text("WgTy\n ");
-        text.setFont(font);
-        Bounds tb = text.getBoundsInLocal();
-        return Shape.intersect(text,
-                               new Rectangle(tb.getMinX(), tb.getMinY(),
-                                             tb.getWidth(), tb.getHeight()))
-                    .getBoundsInLocal()
-                    .getHeight();
     }
 
     private final LayoutObserver observer;

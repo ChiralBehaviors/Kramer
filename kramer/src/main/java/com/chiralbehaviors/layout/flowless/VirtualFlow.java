@@ -1,7 +1,5 @@
 package com.chiralbehaviors.layout.flowless;
 
-import static com.chiralbehaviors.layout.style.Style.add;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -27,12 +25,9 @@ import javafx.collections.ObservableList;
 import javafx.css.CssMetaData;
 import javafx.css.Styleable;
 import javafx.geometry.Bounds;
-import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.VBox;
 import javafx.scene.shape.Rectangle;
 
 /**
@@ -267,11 +262,6 @@ public class VirtualFlow<C extends LayoutCell<?>>
                                                    sizeTracker);
         this.navigator = new Navigator<>(cellListManager, cellPositioner,
                                          sizeTracker);
-        Insets insets = add(getInsets(), getPadding());
-        AnchorPane.setTopAnchor(navigator, insets.getTop());
-        AnchorPane.setLeftAnchor(navigator, insets.getLeft());
-        AnchorPane.setBottomAnchor(navigator, insets.getBottom());
-        AnchorPane.setRightAnchor(navigator, insets.getRight());
         getChildren().add(navigator);
         clipProperty().bind(Val.map(layoutBoundsProperty(),
                                     b -> new Rectangle(b.getWidth(),
@@ -592,8 +582,6 @@ public class VirtualFlow<C extends LayoutCell<?>>
 
     @Override
     protected void layoutChildren() {
-
-        VBox.setMargin(navigator, add(getInsets(), getPadding()));
         // navigate to the target position and fill viewport
         while (true) {
             double oldLayoutBreadth = sizeTracker.getCellLayoutBreadth();

@@ -57,12 +57,18 @@ public class NestedTable extends VerticalCell<NestedTable> {
                                           layout.getField()));
         Region header = layout.buildColumnHeader();
         rows = new NestedRow(Style.snap(layout.getHeight()
-                                         - layout.columnHeaderHeight()),
+                                        - layout.columnHeaderHeight()),
                              layout, childCardinality, parentTraversal, model,
                              style);
 
         getChildren().addAll(header, rows);
         model.apply(rows, layout.getNode());
+        double width = layout.getJustifiedWidth()
+                    + style.getTableHorizontalInset();
+        double height = layout.getHeight() + style.getTableVerticalInset();
+        setMinSize(width, height);
+        setPrefSize(width, height);
+        setMaxSize(width, height);
     }
 
     public NestedTable(String field) {

@@ -1,14 +1,23 @@
 
 .primitive {
-    -fx-background-color: rgba(0.0, 0.0, 0.0, 0.08),
-        linear-gradient(#9a9a9a, #909090),
-        linear-gradient(white 0.0%, #f3f3f3 50.0%, #ececec 51.0%, #f2f2f2 100.0%);
     -fx-padding: 3.0 3.0 3.0 3.0;
+      
+    -fx-background-color: linear-gradient(to bottom, derive(-fx-text-box-border, -10%), -fx-text-box-border),
+        linear-gradient(from 0px 0px to 0px 5px, derive(-fx-control-inner-background, -9%), -fx-control-inner-background);
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 3, 2;
+        
     -fx-text-fill: #242d35;
-    -fx-font-size: 12.0px;
-    -fx-background-insets: 0.0 0.0 -1.0 0.0, 0.0, 1.0;
+    -fx-font-size: 12.0px; 
 }
 
-.primitive:focused {
-     -fx-background-color: #969A9F;
+.primitive:hover {
+    -fx-effect: innershadow(one-pass-box, -fx-focus-color, 5, 0.3, 0, 0);
+    -fx-background-color:
+        -fx-focus-color,
+        -fx-control-inner-background,
+        -fx-faint-focus-color,
+        linear-gradient(from 0px 0px to 0px 5px, derive(-fx-control-inner-background, -9%), -fx-control-inner-background);
+    -fx-background-insets: -0.2, 1, -1.4, 3;
+    -fx-background-radius: 3, 2, 4, 0;
 }

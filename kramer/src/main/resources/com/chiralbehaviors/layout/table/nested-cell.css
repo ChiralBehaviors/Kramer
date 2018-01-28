@@ -8,5 +8,5 @@
 }
 
 .nested-cell:hover {
-     -fx-background-color: red;
-}
+    -fx-effect: innershadow(one-pass-box, -fx-focus-color, 5, 0.3, 1, 1);
+} 
