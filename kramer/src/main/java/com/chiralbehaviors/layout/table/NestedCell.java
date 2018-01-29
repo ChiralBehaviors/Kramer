@@ -30,10 +30,9 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.layout.Region;
 
@@ -54,9 +53,8 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
 
     public NestedCell(RelationLayout layout,
                       FocusTraversal<NestedCell> parentTraversal,
-                      Layout model) {
+                      Style model) {
         this(layout.getField(), parentTraversal);
-        setAlignment(Pos.CENTER); 
         layout.forEach(child -> {
             LayoutCell<? extends Region> cell = child.buildColumn(layout.baseRowCellHeight(layout.getCellHeight()),
                                                                   focus, model);
@@ -74,7 +72,6 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
                       FocusTraversal<NestedCell> parentTraversal) {
         super(STYLE_SHEET);
         this.initialize(NESTED_CELL_CLASS);
-        setAlignment(Pos.CENTER);
         getStyleClass().addAll(String.format(SCHEMA_CLASS_TEMPLATE, field));
         selectionModel = buildSelectionModel(i -> null, () -> cells.size(),
                                              i -> cells.get(i));

@@ -21,7 +21,7 @@ import java.util.Arrays;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -38,17 +38,16 @@ public class NestedRow extends VirtualFlow<NestedCell> {
 
     public NestedRow(double rendered, RelationLayout layout,
                      int childCardinality, FocusTraversal<?> parentTraversal,
-                     Layout model, RelationStyle style) {
+                     Style model, RelationStyle style) {
         this(rendered, layout.getCellHeight(), layout, childCardinality,
              parentTraversal, model, style);
     }
 
     public NestedRow(double rendered, double rowHeight, RelationLayout layout,
                      int childCardinality, FocusTraversal<?> parentTraversal,
-                     Layout model, RelationStyle style) {
-        super(STYLE_SHEET,
-              layout.getJustifiedWidth(),
-              rowHeight, FXCollections.observableArrayList(), (item, pt) -> {
+                     Style model, RelationStyle style) {
+        super(STYLE_SHEET, layout.getJustifiedTableColumnWidth(), rowHeight,
+              FXCollections.observableArrayList(), (item, pt) -> {
                   NestedCell cell = new NestedCell(layout, pt, model);
                   cell.updateItem(item);
                   return cell;
@@ -56,6 +55,7 @@ public class NestedRow extends VirtualFlow<NestedCell> {
               Arrays.asList(DEFAULT_STYLE, String.format(SCHEMA_CLASS_TEMPLATE,
                                                          layout.getField())));
         setPrefHeight(rendered);
+        setMaxHeight(rendered);
         model.apply(this, layout.getNode());
     }
 

@@ -25,7 +25,7 @@ import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -43,7 +43,7 @@ public class Outline extends VirtualFlow<OutlineCell> {
     public Outline(double width, double cellHeight,
                    Collection<ColumnSet> columnSets, int averageCardinality,
                    RelationLayout layout, FocusTraversal<?> parentTraversal,
-                   Layout model, RelationStyle style, double labelWidth) {
+                   Style model, RelationStyle style, double labelWidth) {
         super(STYLE_SHEET, width + style.getOutlineCellHorizontalInset(),
               cellHeight + style.getOutlineCellVerticalInset(),
               FXCollections.observableArrayList(), (item, pt) -> {

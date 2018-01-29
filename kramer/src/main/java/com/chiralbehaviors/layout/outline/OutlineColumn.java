@@ -29,11 +29,10 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 
 /**
@@ -59,9 +58,8 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
     public OutlineColumn(String field, Column c, int cardinality,
                          double labelWidth,
                          FocusTraversal<OutlineColumn> parentTraversal,
-                         Layout model, RelationStyle style) {
+                         Style model, RelationStyle style) {
         this(field, parentTraversal);
-        setAlignment(Pos.CENTER);
         c.getFields()
          .forEach(f -> {
              OutlineElement cell = new OutlineElement(field, f, cardinality,
@@ -71,13 +69,15 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
              fields.add(item -> cell.updateItem(f.extractFrom(item)));
              getChildren().add(cell.getNode());
          });
+        setMinWidth(c.getWidth());
+        setPrefWidth(c.getWidth());
+        setMaxWidth(c.getWidth());
     }
 
     public OutlineColumn(String field,
                          FocusTraversal<OutlineColumn> parentTraversal) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-        setAlignment(Pos.CENTER);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
         selectionModel = buildSelectionModel(i -> null, () -> elements.size(),
                                              i -> elements.get(i));

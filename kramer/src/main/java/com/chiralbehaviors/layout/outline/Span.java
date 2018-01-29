@@ -29,11 +29,10 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.geometry.Pos;
 import javafx.scene.Node;
 
 /**
@@ -57,9 +56,8 @@ public class Span extends HorizontalCell<Span>
 
     public Span(int cardinality, RelationLayout layout, double labelWidth,
                 ColumnSet columnSet, FocusTraversal<Span> parentTraversal,
-                Layout model, RelationStyle style) {
+                Style model, RelationStyle style) {
         this(layout.getField(), parentTraversal);
-        setAlignment(Pos.CENTER);
 
         columnSet.getColumns()
                  .forEach(c -> {
@@ -75,7 +73,6 @@ public class Span extends HorizontalCell<Span>
 
     public Span(String field, FocusTraversal<Span> parentTraversal) {
         super(STYLE_SHEET);
-        setAlignment(Pos.CENTER);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(S_SPAN, field));
         selectionModel = buildSelectionModel(i -> null, () -> columns.size(),

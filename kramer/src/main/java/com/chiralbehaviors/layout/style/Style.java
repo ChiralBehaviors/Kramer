@@ -19,6 +19,7 @@ package com.chiralbehaviors.layout.style;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.chiralbehaviors.layout.LayoutLabel;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
@@ -49,9 +50,8 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javafx.scene.text.TextBoundsType;
 
-public class Layout {
+public class Style {
 
     public interface LayoutObserver {
         default <T extends LayoutCell<?>> void apply(T cell, Primitive p) {
@@ -69,14 +69,11 @@ public class Layout {
     }
 
     public static LabelStyle labelStyle(Label label) {
-        return new LabelStyle(add(label.getInsets(), label.getPadding()),
-                              getLineHeight(label.getFont(),
-                                            TextBoundsType.LOGICAL_VERTICAL_CENTER),
-                              label.getFont());
+        return new LabelStyle(label);
     }
 
     public static double relax(double value) {
-        return Math.max(0, Math.floor(value) - 1);
+        return Math.max(0, Math.floor(value));
     }
 
     public static double snap(double value) {
@@ -92,20 +89,6 @@ public class Layout {
                                              tb.getWidth(), tb.getHeight()))
                     .getBoundsInLocal()
                     .getWidth();
-    }
-
-    public void reportSize(String s, Font myFont) {
-        Text text = new Text(s);
-        text.setFont(myFont);
-        Bounds tb = text.getBoundsInLocal();
-        Rectangle stencil = new Rectangle(tb.getMinX(), tb.getMinY(),
-                                          tb.getWidth(), tb.getHeight());
-
-        Shape intersection = Shape.intersect(text, stencil);
-
-        Bounds ib = intersection.getBoundsInLocal();
-        System.out.println("Text size: " + ib.getWidth() + ", "
-                           + ib.getHeight());
     }
 
     public static String toString(JsonNode value) {
@@ -131,28 +114,16 @@ public class Layout {
         }
     }
 
-    protected static double getLineHeight(Font font,
-                                          TextBoundsType boundsType) {
-        Text text = new Text("WgTy\n ");
-        text.setFont(font);
-        Bounds tb = text.getBoundsInLocal();
-        return Shape.intersect(text,
-                               new Rectangle(tb.getMinX(), tb.getMinY(),
-                                             tb.getWidth(), tb.getHeight()))
-                    .getBoundsInLocal()
-                    .getHeight();
-    }
-
     private final LayoutObserver observer;
 
     private final List<String>   styleSheets = new ArrayList<>();
 
-    public Layout() {
+    public Style() {
         this(new LayoutObserver() {
         });
     }
 
-    public Layout(LayoutObserver observer) {
+    public Style(LayoutObserver observer) {
         this.observer = observer;
     }
 
@@ -188,11 +159,7 @@ public class Layout {
 
         PrimitiveList list = new PrimitiveList(p.getField());
 
-        Label label = new Label("Lorem Ipsum");
-        label.getStyleClass()
-             .clear();
-        label.getStyleClass()
-             .addAll(LabelStyle.LAYOUT_LABEL);
+        LayoutLabel label = new LayoutLabel("Lorem Ipsum");
 
         Label primitiveText = new Label("Lorem Ipsum");
         primitiveText.getStyleClass()
@@ -239,11 +206,7 @@ public class Layout {
         OutlineElement element = new OutlineElement(r.getField());
         Span span = new Span(r.getField());
 
-        Label label = new Label("Lorem Ipsum");
-        label.getStyleClass()
-             .clear();
-        label.getStyleClass()
-             .addAll(LabelStyle.LAYOUT_LABEL);
+        LayoutLabel label = new LayoutLabel("Lorem Ipsum");
 
         root.getChildren()
             .addAll(table, row, rowCell, outline, outlineCell, column, element,

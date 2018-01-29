@@ -39,8 +39,8 @@ import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil.QueryException;
 import com.chiralbehaviors.layout.schema.Relation;
-import com.chiralbehaviors.layout.style.Layout;
-import com.chiralbehaviors.layout.style.Layout.LayoutObserver;
+import com.chiralbehaviors.layout.style.Style;
+import com.chiralbehaviors.layout.style.Style.LayoutObserver;
 import com.chiralbehaviors.layout.toy.Page.Route;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -190,7 +190,7 @@ public class SinglePageApp extends Application implements LayoutObserver {
 
     private AutoLayout layout(PageContext pageContext) throws QueryException {
         AutoLayout layout = new AutoLayout(pageContext.getRoot(),
-                                           new Layout(this));
+                                           new Style(this));
         JsonNode data = pageContext.evaluate(endpoint);
         layout.updateItem(data);
         layout.measure(data);

@@ -24,11 +24,10 @@ import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
-import com.chiralbehaviors.layout.style.Layout;
 import com.chiralbehaviors.layout.style.RelationStyle;
+import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.geometry.Pos;
 import javafx.scene.layout.Region;
 
 /**
@@ -50,21 +49,28 @@ public class NestedTable extends VerticalCell<NestedTable> {
     private final VirtualFlow<NestedCell> rows;
 
     public NestedTable(int childCardinality, RelationLayout layout,
-                       FocusTraversal<?> parentTraversal, Layout model,
+                       FocusTraversal<?> parentTraversal, Style model,
                        RelationStyle style) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-        setAlignment(Pos.CENTER);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE,
                                           layout.getField()));
         Region header = layout.buildColumnHeader();
-        rows = new NestedRow(Layout.snap(layout.getHeight()
-                                         - layout.getColumnHeaderHeight()),
+        rows = new NestedRow(Style.snap(layout.getHeight()
+                                        - layout.columnHeaderHeight()),
                              layout, childCardinality, parentTraversal, model,
                              style);
 
         getChildren().addAll(header, rows);
         model.apply(rows, layout.getNode());
+        double width = layout.getJustifiedWidth()
+                       + style.getTableHorizontalInset()
+                       + style.getRowHorizontalInset();
+        double height = layout.getHeight() + style.getTableVerticalInset()
+                        + style.getRowVerticalInset();
+        setMinSize(width, height);
+        setPrefSize(width, height);
+        setMaxSize(width, height);
     }
 
     public NestedTable(String field) {

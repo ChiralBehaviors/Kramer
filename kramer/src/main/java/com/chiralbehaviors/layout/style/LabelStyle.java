@@ -16,10 +16,16 @@
 
 package com.chiralbehaviors.layout.style;
 
+import com.chiralbehaviors.layout.LayoutLabel;
+
+import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.control.Label;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
+import javafx.scene.text.TextBoundsType;
 
 /**
  * @author halhildebrand
@@ -28,14 +34,27 @@ import javafx.scene.text.Font;
 public class LabelStyle {
     public static final String LAYOUT_LABEL = "layout-label";
 
-    private final Font         font;
-    private final Insets       insets;
-    private final double       lineHeight;
+    private static double getLineHeight(Font font, TextBoundsType boundsType) {
+        Text text = new Text("WgTy\n a");
+        text.setFont(font);
+        Bounds tb = text.getBoundsInLocal();
+        return Shape.intersect(text,
+                               new Rectangle(tb.getMinX(), tb.getMinY(),
+                                             tb.getWidth(), tb.getHeight()))
+                    .getBoundsInLocal()
+                    .getHeight();
+    }
 
-    public LabelStyle(Insets insets, double lineHeight, Font font) {
-        this.insets = insets;
-        this.lineHeight = lineHeight;
-        this.font = font;
+    private final Font   font;
+    private final Insets insets;
+    private final double lineHeight;
+
+    public LabelStyle(Label label) {
+        Insets lInsets = label.getInsets();
+        insets = lInsets;
+        lineHeight = getLineHeight(label.getFont(),
+                                   TextBoundsType.LOGICAL_VERTICAL_CENTER);
+        font = label.getFont();
     }
 
     public double getHeight() {
@@ -51,19 +70,15 @@ public class LabelStyle {
     }
 
     public Label label(double width, String text, double height) {
-        Label label = new Label(text);
-        label.getStyleClass()
-             .clear();
-        label.getStyleClass()
-             .add(LAYOUT_LABEL);
-        label.setAlignment(Pos.CENTER);
+        LayoutLabel label = new LayoutLabel(text);
         label.setMinSize(width, height);
+        label.setPrefSize(width, height);
         label.setMaxSize(width, height);
         return label;
     }
 
     public double width(String text) {
-        return Layout.textWidth(text, font) + insets.getLeft()
+        return Style.textWidth(text, font) + insets.getLeft()
                + insets.getRight();
     }
 }

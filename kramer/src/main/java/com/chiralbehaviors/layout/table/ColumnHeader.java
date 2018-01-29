@@ -21,7 +21,7 @@ import java.util.function.Function;
 
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 
 import javafx.geometry.Pos;
 import javafx.scene.layout.HBox;
@@ -39,16 +39,18 @@ public class ColumnHeader extends VBox {
 
     public ColumnHeader(double width, double height, PrimitiveLayout layout) {
         this();
-        setAlignment(Pos.CENTER);
         getChildren().add(layout.label(width, height));
     }
 
     public ColumnHeader(double width, double height, RelationLayout layout,
                         List<Function<Double, ColumnHeader>> nestedHeaders) {
         this();
+        setMinHeight(height);
+        setPrefHeight(height);
+        setMaxHeight(height);
         setAlignment(Pos.CENTER);
         HBox nested = new HBox();
-        double half = Layout.snap(height / 2.0);
+        double half = Style.snap(height / 2.0);
         getChildren().addAll(layout.label(width, half), nested);
 
         nestedHeaders.forEach(n -> {

@@ -1,0 +1,12 @@
+.nested-cell {
+    -fx-padding: 0.0 0.0 0.0 3.0;
+    -fx-background-insets: 0, 1;
+	-fx-alignment: center-left;
+	-fx-focus-traversable: true;
+    -fx-background-color: linear-gradient(to bottom, derive(-fx-text-box-border, -10%), -fx-text-box-border),
+        linear-gradient(from 0px 0px to 0px 5px, derive(-fx-control-inner-background, -9%), -fx-control-inner-background);
+}
+
+.nested-cell:hover {
+    -fx-effect: innershadow(one-pass-box, -fx-focus-color, 5, 0.3, 1, 1);
+} 

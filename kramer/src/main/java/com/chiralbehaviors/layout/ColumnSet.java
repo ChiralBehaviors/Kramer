@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
 
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
 
 /**
@@ -58,29 +58,19 @@ public class ColumnSet {
                                              / (firstColumn.maxWidth(labelWidth)
                                                 + style.getElementHorizontalInset()
                                                 + style.getColumnHorizontalInset()))));
-        if (count == 1) {
-            double fieldWidth = Layout.snap(justified - labelWidth
-                                            - style.getElementHorizontalInset()
-                                            - style.getColumnHorizontalInset());
-            firstColumn.getFields()
-                       .forEach(f -> {
-                           f.compress(fieldWidth);
-                       });
-            return firstColumn.cellHeight(cardinality, style, fieldWidth)
-                   + style.getColumnVerticalInset();
-        }
 
         // compression
-        double columnWidth = justified / (double) count;
-        double fieldWidth = Layout.snap(columnWidth - labelWidth
-                                        - style.getElementHorizontalInset()
-                                        - style.getColumnHorizontalInset());
+        double columnWidth = Math.floor(justified / (double) count);
+        double fieldWidth = Style.snap(columnWidth - labelWidth
+                                       - style.getElementHorizontalInset()
+                                       - style.getColumnHorizontalInset());
+        firstColumn.setWidth(columnWidth);
         firstColumn.getFields()
                    .forEach(f -> {
                        f.compress(fieldWidth);
                    });
         IntStream.range(1, count)
-                 .forEach(i -> columns.add(new Column()));
+                 .forEach(i -> columns.add(new Column(columnWidth)));
         double baseHeight = firstColumn.cellHeight(cardinality, style,
                                                    fieldWidth);
         double lastHeight;
@@ -99,9 +89,9 @@ public class ColumnSet {
                                 .max()
                                 .orElse(0d);
         } while (lastHeight > baseHeight);
-        double finalHeight = Layout.snap(baseHeight);
+        double finalHeight = Style.snap(baseHeight);
         columns.forEach(c -> c.distributeHeight(finalHeight, style));
-        return finalHeight + style.getColumnVerticalInset();
+        return Style.snap(finalHeight + style.getColumnVerticalInset());
     }
 
     public List<Column> getColumns() {

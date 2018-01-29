@@ -24,7 +24,7 @@ import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusController;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.application.Platform;
@@ -39,6 +39,10 @@ import javafx.scene.layout.Region;
  *
  */
 public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
+    /**
+     * 
+     */
+    private static final String                    AUTO_LAYOUT = "auto-layout";
     private static final String                    DEFAULT_CSS = "default.css";
     private static final java.util.logging.Logger  log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
     private static final String                    STYLE_SHEET = "auto-layout.css";
@@ -48,7 +52,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     private SimpleObjectProperty<JsonNode>         data        = new SimpleObjectProperty<>();
     private SchemaNodeLayout                       layout;
     private double                                 layoutWidth = 0.0;
-    private Layout                                 model;
+    private Style                                 model;
     private final SimpleObjectProperty<SchemaNode> root        = new SimpleObjectProperty<>();
     private final String                           stylesheet;
 
@@ -57,14 +61,14 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     }
 
     public AutoLayout(Relation root) {
-        this(root, new Layout() {
+        this(root, new Style() {
         });
     }
 
-    public AutoLayout(Relation root, Layout model) {
+    public AutoLayout(Relation root, Style model) {
         URL url = getClass().getResource(STYLE_SHEET);
         stylesheet = url == null ? null : url.toExternalForm();
-        getStyleClass().add("auto-layout");
+        getStyleClass().add(AUTO_LAYOUT);
         this.model = model;
         this.root.set(root);
         data.addListener((o, p, c) -> setContent());

@@ -17,7 +17,7 @@
 package com.chiralbehaviors.layout;
 
 import static com.chiralbehaviors.layout.schema.SchemaNode.asList;
-import static com.chiralbehaviors.layout.style.Layout.snap;
+import static com.chiralbehaviors.layout.style.Style.snap;
 
 import java.util.List;
 import java.util.function.Function;
@@ -26,7 +26,7 @@ import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.PrimitiveList;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.schema.Primitive;
-import com.chiralbehaviors.layout.style.Layout;
+import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.PrimitiveStyle;
 import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -61,7 +61,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public LayoutCell<? extends Region> buildColumn(double rendered,
                                                     FocusTraversal<?> parentTraversal,
-                                                    Layout model) {
+                                                    Style model) {
         LayoutCell<? extends Region> control = buildControl(parentTraversal,
                                                             model);
         control.getNode()
@@ -75,7 +75,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public LayoutCell<? extends Region> buildControl(FocusTraversal<?> parentTraversal,
-                                                     Layout model) {
+                                                     Style model) {
         return averageCardinality > 1 ? new PrimitiveList(this, parentTraversal)
                                       : buildCell(parentTraversal);
     }
@@ -104,8 +104,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public Function<Double, ColumnHeader> columnHeader() {
-        return rendered -> new ColumnHeader(Layout.snap(justifiedWidth
-                                                        + columnHeaderIndentation),
+        return rendered -> new ColumnHeader(Style.snap(justifiedWidth
+                                                       + columnHeaderIndentation),
                                             rendered, this);
     }
 
@@ -116,7 +116,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public void compress(double available) {
-        justifiedWidth = Layout.snap(available);
+        justifiedWidth = Style.snap(available);
     }
 
     @Override
@@ -135,7 +135,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double justify(double justified) {
-        justifiedWidth = Layout.snap(justified);
+        justifiedWidth = Style.snap(justified);
         return justifiedWidth;
     }
 
@@ -152,7 +152,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double measure(JsonNode data, Function<JsonNode, JsonNode> extractor,
-                          Layout model) {
+                          Style model) {
         clear();
         labelWidth = labelWidth(node.getLabel());
         double summedDataWidth = 0;
@@ -186,8 +186,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         }
 
         columnWidth = Math.max(labelWidth,
-                               Layout.snap(Math.max(getNode().getDefaultWidth(),
-                                                    averageWidth)));
+                               Style.snap(Math.max(getNode().getDefaultWidth(),
+                                                   averageWidth)));
         if (maxWidth > averageWidth) {
             variableLength = true;
         }
@@ -195,7 +195,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     @Override
-    public SchemaNodeLayout measure(JsonNode datum, Layout layout) {
+    public SchemaNodeLayout measure(JsonNode datum, Style layout) {
         ArrayNode setOf = JsonNodeFactory.instance.arrayNode();
         setOf.add(datum);
         measure(setOf, n -> n, layout);
@@ -217,7 +217,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
                 columnHeaderIndentation = inset.getLeft() + inset.getRight();
                 break;
             default:
-                break;
+                throw new IllegalArgumentException(String.format("%s is not a valid primitive indentation",
+                                                                 indent));
 
         }
         return tableColumnWidth();
