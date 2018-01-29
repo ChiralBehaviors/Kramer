@@ -33,7 +33,6 @@ import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
 import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javafx.scene.Node;
 import javafx.scene.layout.Region;
 
 /**
@@ -41,19 +40,19 @@ import javafx.scene.layout.Region;
  *
  */
 public class NestedCell extends HorizontalCell<NestedCell> implements
-        LayoutContainer<JsonNode, NestedCell, LayoutCell<? extends Region>> { 
+        LayoutContainer<JsonNode, NestedCell, LayoutCell<? extends Region>> {
     private static final String                                                 NESTED_CELL_CLASS     = "nested-cell";
     private static final String                                                 SCHEMA_CLASS_TEMPLATE = "%s-nested-cell";
     private static final String                                                 STYLE_SHEET           = "nested-cell.css";
     private List<LayoutCell<? extends Region>>                                  cells                 = new ArrayList<>();
     private final List<Consumer<JsonNode>>                                      consumers             = new ArrayList<>();
     private final FocusTraversal<?>                                             focus;
+    private int                                                                 index;
     private final MouseHandler                                                  mouseModel;
     private final MultipleCellSelection<JsonNode, LayoutCell<? extends Region>> selectionModel;
 
     public NestedCell(RelationLayout layout,
-                      FocusTraversal<NestedCell> parentTraversal,
-                      Style model) {
+                      FocusTraversal<NestedCell> parentTraversal, Style model) {
         this(layout.getField(), parentTraversal);
         layout.forEach(child -> {
             LayoutCell<? extends Region> cell = child.buildColumn(layout.baseRowCellHeight(layout.getCellHeight()),
@@ -80,7 +79,7 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
                                                                      Bias.HORIZONTAL) {
 
             @Override
-            protected Node getNode() {
+            protected NestedCell getContainer() {
                 return NestedCell.this;
             }
         };
@@ -96,6 +95,12 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
     public void dispose() {
         super.dispose();
         mouseModel.unbind();
+        focus.unbind();
+    }
+
+    @Override
+    public int getIndex() {
+        return index;
     }
 
     @Override
@@ -108,6 +113,7 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
         boolean active = ((index % 2) == 0);
         pseudoClassStateChanged(PSEUDO_CLASS_EVEN, active);
         pseudoClassStateChanged(PSEUDO_CLASS_ODD, !active);
+        this.index = index;
     }
 
     @Override

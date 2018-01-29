@@ -97,6 +97,10 @@ public interface Cell<T, N extends Node> {
         getNode().requestFocus();
     }
 
+    default int getIndex() {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * Called to update index of a visible cell.
      *

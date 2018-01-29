@@ -69,6 +69,7 @@ public class Outline extends VirtualFlow<OutlineCell> {
     public void dispose() {
         super.dispose();
         mouseHandler.unbind();
+        focus.unbind();
     }
 
     @Override

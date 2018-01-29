@@ -38,15 +38,8 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     private static final String                  STYLE_SHEET           = "outline-element.css";
 
     private final LayoutCell<?>                  cell;
+    private int                                  index;
     private final FocusTraversal<OutlineElement> parentTraversal;
-
-    public OutlineElement(String field) {
-        super(STYLE_SHEET);
-        initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
-        this.cell = null;
-        this.parentTraversal = null;
-    }
 
     public OutlineElement(SchemaNodeLayout layout, String field,
                           int cardinality, double labelWidth,
@@ -77,9 +70,12 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
 
     }
 
-    @Override
-    public void activate() {
-        parentTraversal.setCurrent();
+    public OutlineElement(String field) {
+        super(STYLE_SHEET);
+        initialize(DEFAULT_STYLE);
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        this.cell = null;
+        this.parentTraversal = null;
     }
 
     public OutlineElement(String field, SchemaNodeLayout layout,
@@ -88,6 +84,21 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
                           Style model, RelationStyle style) {
         this(layout, field, cardinality, labelWidth, layout.getHeight(),
              parentTraversal, model, style);
+    }
+
+    @Override
+    public void activate() {
+        parentTraversal.setCurrent();
+    }
+
+    @Override
+    public int getIndex() {
+        return index;
+    }
+
+    @Override
+    public void updateIndex(int index) {
+        this.index = index;
     }
 
     @Override

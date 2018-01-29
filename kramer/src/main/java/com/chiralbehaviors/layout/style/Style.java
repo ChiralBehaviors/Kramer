@@ -34,6 +34,7 @@ import com.chiralbehaviors.layout.outline.Span;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.style.PrimitiveStyle.PrimitiveLayoutCell;
 import com.chiralbehaviors.layout.style.PrimitiveStyle.PrimitiveTextStyle;
 import com.chiralbehaviors.layout.table.NestedCell;
 import com.chiralbehaviors.layout.table.NestedRow;
@@ -165,7 +166,7 @@ public class Style {
         primitiveText.getStyleClass()
                      .clear();
         primitiveText.getStyleClass()
-                     .addAll(PrimitiveTextStyle.DEFAULT_STYLE,
+                     .addAll(PrimitiveLayoutCell.DEFAULT_STYLE,
                              PrimitiveTextStyle.PRIMITIVE_TEXT_CLASS,
                              p.getField());
 

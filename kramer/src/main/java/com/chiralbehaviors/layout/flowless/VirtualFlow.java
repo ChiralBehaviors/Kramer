@@ -13,6 +13,7 @@ import org.reactfx.value.Var;
 import com.chiralbehaviors.layout.cell.AnchorCell;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.LayoutContainer;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
@@ -54,8 +55,6 @@ import javafx.scene.shape.Rectangle;
  */
 public class VirtualFlow<C extends LayoutCell<?>>
         extends AnchorCell<VirtualFlow<C>, C> {
-    private static final String VIRTUAL_FLOW = "virtual-flow";
-
     private static class CellHit<C extends LayoutCell<?>> extends Hit<C> {
         private final C       cell;
         private final int     cellIdx;
@@ -206,6 +205,8 @@ public class VirtualFlow<C extends LayoutCell<?>>
         }
     }
 
+    private static final String                      VIRTUAL_FLOW  = "virtual-flow";
+
     protected final FocusTraversalNode<C>            focus;
 
     protected final ObservableList<JsonNode>         items;
@@ -247,7 +248,7 @@ public class VirtualFlow<C extends LayoutCell<?>>
                                        Bias.VERTICAL) {
 
             @Override
-            protected Node getNode() {
+            protected LayoutContainer getContainer() {
                 return VirtualFlow.this;
             }
 

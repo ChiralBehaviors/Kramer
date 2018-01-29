@@ -35,6 +35,7 @@ import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.unless;
 import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
 
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.LayoutContainer;
 
 import javafx.scene.Node;
 import javafx.scene.input.InputEvent;
@@ -91,7 +92,6 @@ public class FocusController<C extends LayoutCell<?>>
 
     public FocusController(Node node) {
         this.node = node;
-        InputMapTemplate.installFallback(TRAVERSAL_INPUT_MAP, this, c -> node);
     }
 
     @Override
@@ -103,7 +103,25 @@ public class FocusController<C extends LayoutCell<?>>
     }
 
     @Override
+    public boolean isCurrent() {
+        return false;
+    }
+
+    @Override
+    public boolean isCurrent(FocusTraversalNode<?> node) {
+        return node == current;
+    }
+
+    @Override
+    public void select(LayoutContainer<?, ?, ?> child) {
+    }
+
+    @Override
     public void selectNext() {
+    }
+
+    @Override
+    public void selectNoFocus(LayoutContainer<?, ?, ?> container) {
     }
 
     @Override
@@ -117,7 +135,7 @@ public class FocusController<C extends LayoutCell<?>>
     @Override
     public void setCurrent(FocusTraversalNode<?> focused) {
         System.out.println(String.format("Setting current: %s",
-                                         focused.getNode()
+                                         focused.getContainer()
                                                 .getClass()
                                                 .getSimpleName()));
         current = focused;

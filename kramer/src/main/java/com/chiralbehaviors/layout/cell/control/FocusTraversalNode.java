@@ -16,7 +16,15 @@
 
 package com.chiralbehaviors.layout.cell.control;
 
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.SINGLE_SELECT;
+import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.consume;
+import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.sequence;
+import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.unless;
+
+import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
+
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.LayoutContainer;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.beans.InvalidationListener;
@@ -35,9 +43,21 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
         VERTICAL;
     }
 
-    protected final Bias                         bias;
-    protected final FocusTraversal<?>            parent;
-    protected MultipleCellSelection<JsonNode, C> selectionModel;
+    protected final Bias                                                         bias;
+    protected final FocusTraversal<?>                                            parent;
+    protected MultipleCellSelection<JsonNode, C>                                 selectionModel;
+    private static final InputMapTemplate<FocusTraversalNode<?>, SelectionEvent> SELECTION_HANDLER_TEMPLATE;
+    static {
+        SELECTION_HANDLER_TEMPLATE = unless(h -> h.getContainer()
+                                                  .getNode()
+                                                  .isDisabled(),
+                                            sequence(consume(SINGLE_SELECT,
+                                                             (n, e) -> {
+                                                                 if (n.parent != null) {
+                                                                     n.parent.select(n.getContainer());
+                                                                 }
+                                                             })));
+    }
 
     public FocusTraversalNode(FocusTraversal<?> parent,
                               MultipleCellSelection<JsonNode, C> selectionModel,
@@ -45,7 +65,7 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
         this.bias = bias;
         this.parent = parent;
         this.selectionModel = selectionModel;
-        Node node = getNode();
+        Node node = getContainer().getNode();
         node.focusedProperty()
             .addListener((InvalidationListener) property -> {
                 if (node.isFocused()) {
@@ -58,12 +78,17 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
                                                                  true));
         node.setOnMouseExited(e -> node.pseudoClassStateChanged(LayoutCell.PSEUDO_CLASS_FOCUSED,
                                                                 false));
+        InputMapTemplate.installFallback(SELECTION_HANDLER_TEMPLATE, this,
+                                         n -> n.getContainer()
+                                               .getNode());
     }
 
     @Override
     public void activate() {
-        System.out.println(String.format("Activate: %s", getNode().getClass()
-                                                                  .getSimpleName()));
+        System.out.println(String.format("Activate: %s",
+                                         getContainer().getNode()
+                                                       .getClass()
+                                                       .getSimpleName()));
         int focusedIndex = selectionModel.getFocusedIndex();
         if (focusedIndex < 0) {
             return;
@@ -79,10 +104,38 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
     }
 
     @Override
+    public boolean isCurrent() {
+        return parent == null ? false : parent.isCurrent(this);
+    }
+
+    @Override
+    public boolean isCurrent(FocusTraversalNode<?> node) {
+        return parent == null ? false : parent.isCurrent(node);
+    }
+
+    @Override
+    public void select(LayoutContainer<?, ?, ?> child) {
+        if (parent != null) {
+            parent.selectNoFocus(getContainer());
+        }
+        selectionModel.select(child.getIndex());
+    }
+
+    @Override
+    public void selectNoFocus(LayoutContainer<?, ?, ?> child) {
+        System.out.println(" Traverse select, no focus");
+        if (parent != null) {
+            parent.selectNoFocus(getContainer());
+        }
+        selectionModel.select(child.getIndex(), false);
+    }
+
+    @Override
     public void selectNext() {
         System.out.println(String.format("Selecting next: %s",
-                                         getNode().getClass()
-                                                  .getSimpleName()));
+                                         getContainer().getNode()
+                                                       .getClass()
+                                                       .getSimpleName()));
         if (selectionModel.getItemCount() > 0) {
             int focusedIndex = selectionModel.getFocusedIndex();
             if (focusedIndex == -1) {
@@ -94,15 +147,16 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
                 selectionModel.focus(focusedIndex + 1);
             }
         } else {
-            getNode().requestFocus();
+            getContainer().getNode()
+                          .requestFocus();
         }
     }
 
     @Override
     public void selectPrevious() {
         System.out.println(String.format("Selecting previous: %s",
-                                         getNode().getClass()
-                                                  .getSimpleName()));
+                                         getContainer().getClass()
+                                                       .getSimpleName()));
         if (selectionModel.getItemCount() > 0) {
             int focusedIndex = selectionModel.getFocusedIndex();
             if (focusedIndex > 0) {
@@ -112,7 +166,8 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
                 //                selectionModel.focus(selectionModel.getItemCount() - 1);
             }
         } else {
-            getNode().requestFocus();
+            getContainer().getNode()
+                          .requestFocus();
         }
     }
 
@@ -133,8 +188,8 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
     @Override
     public final void traverseNext() {
         System.out.println(String.format("Traverse next: %s",
-                                         getNode().getClass()
-                                                  .getSimpleName()));
+                                         getContainer().getClass()
+                                                       .getSimpleName()));
         if (parent == null) {
             return;
         }
@@ -144,13 +199,20 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
     @Override
     public final void traversePrevious() {
         System.out.println(String.format("Traverse previous: %s",
-                                         getNode().getClass()
-                                                  .getSimpleName()));
+                                         getContainer().getClass()
+                                                       .getSimpleName()));
         if (parent == null) {
             return;
         }
         parent.selectPrevious();
     }
 
-    abstract protected Node getNode();
+    public void unbind() {
+        @SuppressWarnings("unchecked")
+        FocusTraversalNode<LayoutCell<?>> n = (FocusTraversalNode<LayoutCell<?>>) this;
+        InputMapTemplate.uninstall(SELECTION_HANDLER_TEMPLATE, n,
+                                   c -> getContainer().getNode());
+    }
+
+    abstract protected LayoutContainer<?, ?, ?> getContainer();
 }

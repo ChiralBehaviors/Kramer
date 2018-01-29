@@ -37,7 +37,7 @@ import javafx.scene.control.SelectionMode;
 /**
  * @author halhildebrand
  *
- */ 
+ */
 abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
         extends MultipleSelectionModel<T> {
     static <T> ListChangeListener.Change<T> buildClearAndSelectChange(ObservableList<T> list,
@@ -373,6 +373,10 @@ abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
 
     @Override
     public void select(int row) {
+        select(row, true);
+    }
+
+    public void select(int row, boolean focus) {
         if (row == -1) {
             clearSelection();
             return;
@@ -399,7 +403,9 @@ abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
         }
 
         setSelectedIndex(row);
-        focus(row);
+        if (focus) {
+            focus(row);
+        }
 
         stopAtomic();
         getCell(row).updateSelection(true);

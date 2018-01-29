@@ -17,6 +17,7 @@
 package com.chiralbehaviors.layout.cell.control;
 
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.LayoutContainer;
 
 /**
  * @author halhildebrand
@@ -29,6 +30,12 @@ public interface FocusTraversal<C extends LayoutCell<?>> {
 
     void edit();
 
+    boolean isCurrent();
+
+    boolean isCurrent(FocusTraversalNode<?> node);
+
+    void select(LayoutContainer<?, ?, ?> child);
+
     void selectNext();
 
     void selectPrevious();
@@ -40,5 +47,10 @@ public interface FocusTraversal<C extends LayoutCell<?>> {
     void traverseNext();
 
     void traversePrevious();
+
+    default void unbind() {
+    }
+ 
+    void selectNoFocus(LayoutContainer<?, ?, ?> container);
 
 }

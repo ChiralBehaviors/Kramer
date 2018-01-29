@@ -30,11 +30,9 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
-import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
+import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
-
-import javafx.scene.Node;
 
 /**
  * @author halhildebrand
@@ -48,6 +46,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
     private static final String                         STYLE_SHEET           = "outline-cell.css";
 
     private final FocusTraversal<Span>                  focus;
+    private int index;
     private final MouseHandler                          mouseHandler;
     private final MultipleCellSelection<JsonNode, Span> selectionModel;
     private List<Span>                                  spans                 = new ArrayList<>();
@@ -80,9 +79,10 @@ public class OutlineCell extends VerticalCell<OutlineCell>
                                              Bias.VERTICAL) {
 
             @Override
-            protected Node getNode() {
+            protected OutlineCell getContainer() {
                 return OutlineCell.this;
             }
+
         };
 
     }
@@ -96,6 +96,12 @@ public class OutlineCell extends VerticalCell<OutlineCell>
     public void dispose() {
         super.dispose();
         mouseHandler.unbind();
+        focus.unbind();
+    }
+
+    @Override
+    public int getIndex() {
+        return index;
     }
 
     @Override
@@ -108,6 +114,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
         boolean active = ((index % 2) == 0);
         pseudoClassStateChanged(PSEUDO_CLASS_EVEN, active);
         pseudoClassStateChanged(PSEUDO_CLASS_ODD, !active);
+        this.index = index;
     }
 
     @Override

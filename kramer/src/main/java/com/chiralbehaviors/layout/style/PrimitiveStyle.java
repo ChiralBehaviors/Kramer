@@ -16,23 +16,92 @@
 
 package com.chiralbehaviors.layout.style;
 
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.DOUBLE_SELECT;
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.SINGLE_SELECT;
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.TRIPLE_SELECT;
+
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
+import com.chiralbehaviors.layout.cell.control.MouseHandler;
+import com.chiralbehaviors.layout.cell.control.SelectionEvent;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.beans.InvalidationListener;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.Region;
+import javafx.util.Duration;
 
 /**
  * @author halhildebrand
  *
  */
 abstract public class PrimitiveStyle extends NodeStyle {
+
+    abstract public class PrimitiveLayoutCell<C extends Region>
+            implements LayoutCell<C> {
+        public static final String DEFAULT_STYLE = "primitive";
+        private final MouseHandler mouseHandler;
+
+        public PrimitiveLayoutCell(PrimitiveLayout p, String style) {
+            initialize(p.getField());
+            initialize(DEFAULT_STYLE);
+            getNode().getStyleClass()
+                     .addAll(style, p.getField());
+            mouseHandler = new MouseHandler(new Duration(300)) {
+
+                @Override
+                public void doubleClick(MouseEvent mouseEvent) {
+                    if (getNode().contains(new Point2D(mouseEvent.getX(),
+                                                       mouseEvent.getY()))) {
+                        getNode().fireEvent(new SelectionEvent(PrimitiveLayoutCell.this,
+                                                               DOUBLE_SELECT));
+                    }
+                }
+
+                @Override
+                public Node getNode() {
+                    return PrimitiveLayoutCell.this.getNode();
+                }
+
+                @Override
+                public void singleClick(MouseEvent mouseEvent) {
+                    if (getNode().contains(new Point2D(mouseEvent.getX(),
+                                                       mouseEvent.getY()))) {
+                        getNode().fireEvent(new SelectionEvent(PrimitiveLayoutCell.this,
+                                                               SINGLE_SELECT));
+                    }
+                }
+
+                @Override
+                public void tripleClick(MouseEvent mouseEvent) {
+                    if (getNode().contains(new Point2D(mouseEvent.getX(),
+                                                       mouseEvent.getY()))) {
+                        getNode().fireEvent(new SelectionEvent(PrimitiveLayoutCell.this,
+                                                               TRIPLE_SELECT));
+                    }
+                }
+            };
+        }
+
+        public void dispose() {
+            mouseHandler.unbind();
+        }
+
+        @Override
+        public void updateItem(JsonNode item) {
+            getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,
+                                              item != null);
+        }
+    }
+
     public static class PrimitiveTextStyle extends PrimitiveStyle {
 
-        public static String     DEFAULT_STYLE        = "primitive";
         public static String     PRIMITIVE_TEXT_CLASS = "primitive-text";
 
         private final LabelStyle primitiveStyle;
@@ -50,15 +119,14 @@ abstract public class PrimitiveStyle extends NodeStyle {
             label.setMinSize(p.getJustifiedWidth(), p.getCellHeight());
             label.setPrefSize(p.getJustifiedWidth(), p.getCellHeight());
             label.setMaxSize(p.getJustifiedWidth(), p.getCellHeight());
-            return new LayoutCell<Label>() {
-                {
-                    initialize(p.getField());
-                    label.setWrapText(true);
-                    initialize(DEFAULT_STYLE);
-                    label.getStyleClass()
-                         .addAll(PRIMITIVE_TEXT_CLASS, p.getField());
-                }
+            label.focusedProperty()
+                 .addListener((InvalidationListener) property -> {
+                     if (label.isFocused()) {
+                         pt.setCurrent();
+                     }
+                 });
 
+            return new PrimitiveLayoutCell<Region>(p, PRIMITIVE_TEXT_CLASS) {
                 @Override
                 public Label getNode() {
                     return label;
@@ -71,9 +139,8 @@ abstract public class PrimitiveStyle extends NodeStyle {
 
                 @Override
                 public void updateItem(JsonNode item) {
+                    super.updateItem(item);
                     label.setText(SchemaNode.asText(item));
-                    getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,
-                                                      item != null);
                 }
             };
 
