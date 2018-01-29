@@ -1,7 +1,7 @@
 .outline-column { 
     -fx-padding: 0.0 1.0 0.0 1.0; 
     
-    -fx-alignment: center;
+    -fx-alignment: center-left;
     -fx-focus-traversable: true;
     -fx-background-color: rgba(0.0, 0.0, 0.0, 0.08),
         linear-gradient(#9a9a9a, #909090),

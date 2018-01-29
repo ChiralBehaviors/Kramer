@@ -64,8 +64,10 @@ public class NestedTable extends VerticalCell<NestedTable> {
         getChildren().addAll(header, rows);
         model.apply(rows, layout.getNode());
         double width = layout.getJustifiedWidth()
-                    + style.getTableHorizontalInset();
-        double height = layout.getHeight() + style.getTableVerticalInset();
+                       + style.getTableHorizontalInset()
+                       + style.getRowHorizontalInset();
+        double height = layout.getHeight() + style.getTableVerticalInset()
+                        + style.getRowVerticalInset();
         setMinSize(width, height);
         setPrefSize(width, height);
         setMaxSize(width, height);

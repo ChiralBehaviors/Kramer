@@ -69,6 +69,9 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
              fields.add(item -> cell.updateItem(f.extractFrom(item)));
              getChildren().add(cell.getNode());
          });
+        setMinWidth(c.getWidth());
+        setPrefWidth(c.getWidth());
+        setMaxWidth(c.getWidth());
     }
 
     public OutlineColumn(String field,

@@ -263,13 +263,12 @@ public class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public double justify(double justifed) {
-        justifyColumn(Style.snap(justifed - style.getNestedHorizontalInset()));
+        justifyColumn(Style.snap(justifed - columnHeaderIndentation));
         return justifed;
     }
 
     public double justifyTable(double justifed) {
-        justifyColumn(Style.snap(justifed - style.getRowCellHorizontalInset()
-                                 - style.getTableHorizontalInset()));
+        justifyColumn(Style.snap(justifed - columnHeaderIndentation));
         return justifed;
     }
 
@@ -287,7 +286,7 @@ public class RelationLayout extends SchemaNodeLayout {
                       + labelWidth;
         double tableWidth = calculateTableColumnWidth();
         if (tableWidth <= columnWidth()) {
-            return nestTableColumn(Indent.TOP, style.getNestedInsets());
+            return nestTableColumn(Indent.TOP, new Insets(0));
         }
         return columnWidth();
     }
@@ -345,10 +344,8 @@ public class RelationLayout extends SchemaNodeLayout {
         cellHeight = -1.0;
         columnHeaderHeight = -1.0;
         height = -1.0;
-        Insets nestedInsets = style.getNestedInsets();
         columnHeaderIndentation = indentation.getLeft() + indentation.getRight()
-                                  + nestedInsets.getLeft()
-                                  + nestedInsets.getRight();
+                                  + style.getNestedHorizontalInset();
         tableColumnWidth = Style.snap(children.stream()
                                               .mapToDouble(c -> {
                                                   Indent child = indent(indent,
@@ -356,7 +353,7 @@ public class RelationLayout extends SchemaNodeLayout {
                                                   return c.nestTableColumn(child,
                                                                            indent.indent(indentation,
                                                                                          child,
-                                                                                         nestedInsets));
+                                                                                         style.getNestedInsets()));
                                               })
                                               .sum());
         return tableColumnWidth();
@@ -386,8 +383,7 @@ public class RelationLayout extends SchemaNodeLayout {
         assert tableColumnWidth > 0.0 : String.format("%s tcw <= 0: %s",
                                                       node.getLabel(),
                                                       tableColumnWidth);
-        return Style.snap(tableColumnWidth + style.getRowCellHorizontalInset()
-                          + style.getRowHorizontalInset());
+        return Style.snap(tableColumnWidth + columnHeaderIndentation);
     }
 
     @Override
@@ -504,5 +500,9 @@ public class RelationLayout extends SchemaNodeLayout {
 
     protected int resolveCardinality(int cardinality) {
         return Math.max(1, Math.min(cardinality, maxCardinality));
+    }
+
+    public double getJustifiedTableColumnWidth() {
+        return snap(justifiedWidth + columnHeaderIndentation);
     }
 }

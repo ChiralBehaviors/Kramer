@@ -45,9 +45,9 @@ public class ColumnHeader extends VBox {
     public ColumnHeader(double width, double height, RelationLayout layout,
                         List<Function<Double, ColumnHeader>> nestedHeaders) {
         this();
-//        setMinHeight(height);
-//        setPrefHeight(height);
-//        setMaxHeight(height);
+        setMinHeight(height);
+        setPrefHeight(height);
+        setMaxHeight(height);
         setAlignment(Pos.CENTER);
         HBox nested = new HBox();
         double half = Style.snap(height / 2.0);

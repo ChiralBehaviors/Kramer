@@ -105,7 +105,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public Function<Double, ColumnHeader> columnHeader() {
         return rendered -> new ColumnHeader(Style.snap(justifiedWidth
-                                                        + columnHeaderIndentation),
+                                                       + columnHeaderIndentation),
                                             rendered, this);
     }
 
@@ -187,7 +187,7 @@ public class PrimitiveLayout extends SchemaNodeLayout {
 
         columnWidth = Math.max(labelWidth,
                                Style.snap(Math.max(getNode().getDefaultWidth(),
-                                                    averageWidth)));
+                                                   averageWidth)));
         if (maxWidth > averageWidth) {
             variableLength = true;
         }
@@ -217,7 +217,8 @@ public class PrimitiveLayout extends SchemaNodeLayout {
                 columnHeaderIndentation = inset.getLeft() + inset.getRight();
                 break;
             default:
-                break;
+                throw new IllegalArgumentException(String.format("%s is not a valid primitive indentation",
+                                                                 indent));
 
         }
         return tableColumnWidth();

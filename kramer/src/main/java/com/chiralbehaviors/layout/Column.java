@@ -32,8 +32,13 @@ import com.chiralbehaviors.layout.style.RelationStyle;
 public class Column {
 
     private ArrayDeque<SchemaNodeLayout> fields = new ArrayDeque<>();
+    private double                       width;
 
     public Column() {
+    }
+
+    public Column(double width) {
+        this.width = width;
     }
 
     public void add(SchemaNodeLayout node) {
@@ -53,11 +58,19 @@ public class Column {
         return new ArrayList<>(fields);
     }
 
+    public double getWidth() {
+        return width;
+    }
+
     public double maxWidth(double labelWidth) {
         return fields.stream()
                      .mapToDouble(field -> labelWidth + field.layoutWidth())
                      .max()
                      .orElse(0d);
+    }
+
+    public void setWidth(double width) {
+        this.width = width;
     }
 
     public boolean slideRight(int cardinality, Column column,
@@ -95,7 +108,7 @@ public class Column {
     void distributeHeight(double finalHeight, RelationStyle style) {
         double calculated = fields.stream()
                                   .mapToDouble(f -> Style.snap(f.getHeight()
-                                                                + style.getElementVerticalInset()))
+                                                               + style.getElementVerticalInset()))
                                   .sum();
         if (calculated < finalHeight) {
             double delta = Style.relax((finalHeight - calculated)
@@ -110,10 +123,10 @@ public class Column {
                               ArrayDeque<SchemaNodeLayout> elements,
                               RelationStyle style, double fieldWidth) {
         return Style.snap(elements.stream()
-                       .mapToDouble(field -> Style.snap(field.cellHeight(cardinality,
-                                                                          fieldWidth)
-                                                         + style.getElementVerticalInset()))
-                       .sum());
+                                  .mapToDouble(field -> Style.snap(field.cellHeight(cardinality,
+                                                                                    fieldWidth)
+                                                                   + style.getElementVerticalInset()))
+                                  .sum());
     }
 
     private double with(int cardinality, SchemaNodeLayout field,

@@ -71,8 +71,9 @@ public class LabelStyle {
 
     public Label label(double width, String text, double height) {
         LayoutLabel label = new LayoutLabel(text);
-        label.setMaxSize(width, height);
+        label.setMinSize(width, height);
         label.setPrefSize(width, height);
+        label.setMaxSize(width, height);
         return label;
     }
 

@@ -142,9 +142,12 @@ abstract public class SchemaNodeLayout {
                                  Insets inset) {
                 switch (child) {
                     case LEFT:
-                        return new Insets(0, 0, 0, inset.getLeft());
+                        return new Insets(0, 0, 0, indentation.getLeft()
+                                                   + inset.getLeft());
                     case RIGHT:
-                        return new Insets(0, inset.getRight(), 0, 0);
+                        return new Insets(0, indentation.getRight()
+                                             + inset.getRight(),
+                                          0, 0);
                     case SINGULAR:
                         return inset;
                     default:
@@ -304,5 +307,9 @@ abstract public class SchemaNodeLayout {
     protected Fold fold(JsonNode datum, Function<JsonNode, JsonNode> extractor,
                         Style model) {
         return fold(datum);
+    }
+
+    public double getColumnHeaderIndentation() {
+        return columnHeaderIndentation;
     }
 }
