@@ -24,9 +24,6 @@ import java.util.Collections;
 import java.util.List;
 
 import com.chiralbehaviors.layout.flowless.Cell;
-import com.sun.javafx.collections.MappingChange;
-import com.sun.javafx.collections.NonIterableChange;
-import com.sun.javafx.scene.control.ReadOnlyUnbackedObservableList;
 
 import javafx.collections.ListChangeListener;
 import javafx.collections.ListChangeListener.Change;

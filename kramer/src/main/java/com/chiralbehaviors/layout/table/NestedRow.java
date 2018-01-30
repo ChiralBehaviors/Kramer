@@ -55,6 +55,7 @@ public class NestedRow extends VirtualFlow<NestedCell> {
               }, parentTraversal,
               Arrays.asList(DEFAULT_STYLE, String.format(SCHEMA_CLASS_TEMPLATE,
                                                          layout.getField())));
+        setMinHeight(rendered);
         setPrefHeight(rendered);
         setMaxHeight(rendered);
         model.apply(this, layout.getNode());
@@ -80,6 +81,7 @@ public class NestedRow extends VirtualFlow<NestedCell> {
     public void updateItem(JsonNode item) {
         items.setAll(NestedTable.itemsAsArray(item));
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);
     }
 
     @Override

@@ -97,6 +97,7 @@ abstract public class PrimitiveStyle extends NodeStyle {
         public void updateItem(JsonNode item) {
             getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED,
                                               item != null);
+            getNode().pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);
         }
     }
 

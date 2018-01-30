@@ -119,5 +119,6 @@ public class Span extends HorizontalCell<Span>
     public void updateItem(JsonNode item) {
         columns.forEach(c -> c.updateItem(item));
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);
     }
 }

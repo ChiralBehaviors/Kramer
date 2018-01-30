@@ -169,6 +169,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     public void updateItem(JsonNode item) {
         data.set(item);
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);
     }
 
     private void autoLayout(JsonNode zeeData, double width) {

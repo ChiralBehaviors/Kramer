@@ -46,7 +46,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
     private static final String                         STYLE_SHEET           = "outline-cell.css";
 
     private final FocusTraversal<Span>                  focus;
-    private int index;
+    private int                                         index;
     private final MouseHandler                          mouseHandler;
     private final MultipleCellSelection<JsonNode, Span> selectionModel;
     private List<Span>                                  spans                 = new ArrayList<>();
@@ -120,6 +120,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
     @Override
     public void updateItem(JsonNode item) {
         spans.forEach(s -> s.updateItem(item));
-        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
+        pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
+        pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);
     }
 }

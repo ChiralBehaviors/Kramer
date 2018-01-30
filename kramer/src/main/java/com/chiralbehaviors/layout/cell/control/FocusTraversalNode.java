@@ -17,7 +17,7 @@
 package com.chiralbehaviors.layout.cell.control;
 
 import static com.chiralbehaviors.layout.cell.control.SelectionEvent.SINGLE_SELECT;
-import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.consume;
+import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.consumeWhen;
 import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.sequence;
 import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.unless;
 
@@ -46,17 +46,19 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
     protected final Bias                                                         bias;
     protected final FocusTraversal<?>                                            parent;
     protected MultipleCellSelection<JsonNode, C>                                 selectionModel;
+
     private static final InputMapTemplate<FocusTraversalNode<?>, SelectionEvent> SELECTION_HANDLER_TEMPLATE;
     static {
         SELECTION_HANDLER_TEMPLATE = unless(h -> h.getContainer()
                                                   .getNode()
                                                   .isDisabled(),
-                                            sequence(consume(SINGLE_SELECT,
-                                                             (n, e) -> {
-                                                                 if (n.parent != null) {
-                                                                     n.parent.select(n.getContainer());
-                                                                 }
-                                                             })));
+                                            sequence(consumeWhen(SINGLE_SELECT,
+                                                                 n -> true,
+                                                                 (n, e) -> {
+                                                                     if (n.parent != null) {
+                                                                         n.parent.select(n.getContainer());
+                                                                     }
+                                                                 })));
     }
 
     public FocusTraversalNode(FocusTraversal<?> parent,
@@ -123,7 +125,6 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
 
     @Override
     public void selectNoFocus(LayoutContainer<?, ?, ?> child) {
-        System.out.println(" Traverse select, no focus");
         if (parent != null) {
             parent.selectNoFocus(getContainer());
         }

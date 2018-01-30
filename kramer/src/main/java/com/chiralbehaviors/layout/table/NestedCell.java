@@ -120,5 +120,6 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
     public void updateItem(JsonNode item) {
         consumers.forEach(c -> c.accept(item));
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);
     }
 }

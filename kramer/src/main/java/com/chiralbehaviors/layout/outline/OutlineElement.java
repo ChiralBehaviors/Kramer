@@ -105,5 +105,6 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     public void updateItem(JsonNode item) {
         cell.updateItem(item);
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);
     }
 }
