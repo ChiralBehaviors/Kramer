@@ -17,6 +17,7 @@
 package com.chiralbehaviors.layout.table;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -44,6 +45,7 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
     private static final String                                                 NESTED_CELL_CLASS     = "nested-cell";
     private static final String                                                 SCHEMA_CLASS_TEMPLATE = "%s-nested-cell";
     private static final String                                                 STYLE_SHEET           = "nested-cell.css";
+
     private List<LayoutCell<? extends Region>>                                  cells                 = new ArrayList<>();
     private final List<Consumer<JsonNode>>                                      consumers             = new ArrayList<>();
     private final FocusTraversal<?>                                             focus;
@@ -96,6 +98,11 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
         super.dispose();
         mouseModel.unbind();
         focus.unbind();
+    }
+
+    @Override
+    public Collection<LayoutCell<? extends Region>> getContained() {
+        return cells;
     }
 
     @Override

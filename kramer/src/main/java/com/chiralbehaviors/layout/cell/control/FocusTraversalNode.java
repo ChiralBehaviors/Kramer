@@ -16,8 +16,9 @@
 
 package com.chiralbehaviors.layout.cell.control;
 
-import static com.chiralbehaviors.layout.cell.control.SelectionEvent.SINGLE_SELECT;
-import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.consumeWhen;
+import static org.fxmisc.wellbehaved.event.EventPattern.eventType;
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.*;
+import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.*;
 import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.sequence;
 import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.unless;
 
@@ -28,6 +29,7 @@ import com.chiralbehaviors.layout.cell.LayoutContainer;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.beans.InvalidationListener;
+import javafx.collections.ListChangeListener;
 import javafx.scene.Node;
 
 /**
@@ -52,13 +54,39 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
         SELECTION_HANDLER_TEMPLATE = unless(h -> h.getContainer()
                                                   .getNode()
                                                   .isDisabled(),
-                                            sequence(consumeWhen(SINGLE_SELECT,
-                                                                 n -> true,
-                                                                 (n, e) -> {
-                                                                     if (n.parent != null) {
-                                                                         n.parent.select(n.getContainer());
-                                                                     }
-                                                                 })));
+                                            sequence(consume(eventType(SINGLE_SELECT).unless(e -> e.isComposed()),
+                                                             (n, e) -> {
+                                                                 n.parent.selectNoFocus(n.getContainer());
+                                                                 n.selectionModel.select(e.getSelected()
+                                                                                          .getIndex());
+                                                                 n.getContainer()
+                                                                  .getNode()
+                                                                  .fireEvent(new SelectionEvent(n.getContainer(),
+                                                                                                SINGLE_SELECT,
+                                                                                                true));
+                                                             }),
+                                                     consume(eventType(DOUBLE_SELECT).unless(e -> e.isComposed()),
+                                                             (n, e) -> {
+                                                                 n.parent.selectNoFocus(n.getContainer());
+                                                                 n.selectionModel.select(e.getSelected()
+                                                                                          .getIndex());
+                                                                 n.getContainer()
+                                                                  .getNode()
+                                                                  .fireEvent(new SelectionEvent(n.getContainer(),
+                                                                                                DOUBLE_SELECT,
+                                                                                                true));
+                                                             }),
+                                                     consume(eventType(TRIPLE_SELECT).unless(e -> e.isComposed()),
+                                                             (n, e) -> {
+                                                                 n.parent.selectNoFocus(n.getContainer());
+                                                                 n.selectionModel.select(e.getSelected()
+                                                                                          .getIndex());
+                                                                 n.getContainer()
+                                                                  .getNode()
+                                                                  .fireEvent(new SelectionEvent(n.getContainer(),
+                                                                                                TRIPLE_SELECT,
+                                                                                                true));
+                                                             })));
     }
 
     public FocusTraversalNode(FocusTraversal<?> parent,
@@ -83,7 +111,22 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
         InputMapTemplate.installFallback(SELECTION_HANDLER_TEMPLATE, this,
                                          n -> n.getContainer()
                                                .getNode());
+        selectionModel.getSelectedIndices()
+                      .addListener(new ListChangeListener<Integer>() {
+
+                          @Override
+                          public void onChanged(Change<? extends Integer> c) {
+                              c.next();
+                              if (c.wasRemoved()) {
+                                  c.getRemoved()
+                                   .forEach(i -> selectionModel.getCell(i)
+                                                               .unselect());
+                              }
+                          }
+                      });
     }
+    
+    
 
     @Override
     public void activate() {

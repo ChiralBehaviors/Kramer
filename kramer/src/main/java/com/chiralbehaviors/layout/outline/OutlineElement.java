@@ -16,22 +16,29 @@
 
 package com.chiralbehaviors.layout.outline;
 
+import java.util.Collection;
+import java.util.Collections;
+
 import com.chiralbehaviors.layout.SchemaNodeLayout;
+import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.LayoutContainer;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
-import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
+import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.beans.InvalidationListener;
+import javafx.geometry.Point2D;
 import javafx.scene.control.Label;
 
 /**
  * @author halhildebrand
  *
  */
-public class OutlineElement extends HorizontalCell<OutlineElement> {
+public class OutlineElement extends HorizontalCell<OutlineElement>
+        implements LayoutContainer<JsonNode, OutlineElement, LayoutCell<?>> {
 
     private static final String                  DEFAULT_STYLE         = "outline-element";
     private static final String                  SCHEMA_CLASS_TEMPLATE = "%s-outline-element";
@@ -92,8 +99,60 @@ public class OutlineElement extends HorizontalCell<OutlineElement> {
     }
 
     @Override
+    public Collection<LayoutCell<?>> getContained() {
+        return Collections.singletonList(cell);
+    }
+
+    @Override
     public int getIndex() {
         return index;
+    }
+
+    @Override
+    public Hit<LayoutCell<?>> hit(double x, double y) {
+        Hit<LayoutCell<?>> hit = new Hit<LayoutCell<?>>() {
+            @Override
+            public LayoutCell<?> getCell() {
+                return cell;
+            }
+
+            @Override
+            public int getCellIndex() {
+                return 0;
+            }
+
+            @Override
+            public Point2D getCellOffset() {
+                return new Point2D(0, 0);
+            }
+
+            @Override
+            public Point2D getOffsetAfterCells() {
+                return new Point2D(0, 0);
+            }
+
+            @Override
+            public Point2D getOffsetBeforeCells() {
+                return new Point2D(0, 0);
+            }
+
+            @Override
+            public boolean isAfterCells() {
+                return false;
+            }
+
+            @Override
+            public boolean isBeforeCells() {
+                return false;
+            }
+
+            @Override
+            public boolean isCellHit() {
+                return true;
+            }
+        };
+        return cell.getNode()
+                   .contains(new Point2D(x, y)) ? hit : null;
     }
 
     @Override

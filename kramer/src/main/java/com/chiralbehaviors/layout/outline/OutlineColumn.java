@@ -17,6 +17,7 @@
 package com.chiralbehaviors.layout.outline;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -46,10 +47,9 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
     private final List<OutlineElement>                            elements              = new ArrayList<>();
     private final List<Consumer<JsonNode>>                        fields                = new ArrayList<>();
     private final FocusTraversal<OutlineElement>                  focus;
-    private int index;
+    private int                                                   index;
     private final MouseHandler                                    mouseHandler;
     private final MultipleCellSelection<JsonNode, OutlineElement> selectionModel;
-
     public OutlineColumn(String field) {
         this(field, null);
     }
@@ -103,6 +103,11 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
         super.dispose();
         mouseHandler.unbind();
         focus.unbind();
+    }
+
+    @Override
+    public Collection<OutlineElement> getContained() {
+        return elements;
     }
 
     @Override

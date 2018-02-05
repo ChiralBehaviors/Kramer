@@ -63,27 +63,18 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         StyleableProperty<Boolean> styleableProperty = (StyleableProperty<Boolean>) node.focusTraversableProperty();
         styleableProperty.applyStyle(null, Boolean.TRUE);
 
-        /**
-         * Indicates whether or not this cell has focus. For example, a ListView
-         * defines zero or one cell as being the "focused" cell. This cell would
-         * have focused set to true.
-         */
         node.focusedProperty()
             .addListener((InvalidationListener) property -> {
                 System.out.println(String.format("Setting focus: %s on %s",
-                                                 node.isFocused(),
-                                                 node.getClass()
-                                                     .getSimpleName()));
+                                                 node.isFocused(), node));
                 node.pseudoClassStateChanged(PSEUDO_CLASS_FOCUSED,
-                                             node.isFocused()); // TODO is this necessary??
+                                             node.isFocused());
 
-                // The user has shifted focus, so we should cancel the editing on this cell
                 if (!node.isFocused() && isEditing()) {
                     cancelEdit();
                 }
             });
 
-        // initialize default pseudo-class state
         node.pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, true);
     }
 
@@ -103,6 +94,9 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         node.pseudoClassStateChanged(EXTERNAL_PSEUDOCLASS_STATE, externalFocus);
     }
 
+    default void unselect() {
+    }
+
     @Override
     default void updateItem(JsonNode item) {
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
@@ -111,9 +105,6 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
 
     @Override
     default void updateSelection(boolean selected) {
-        System.out.println("selecting " + this.getClass()
-                                              .getSimpleName()
-                           + " : " + selected);
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_SELECTED, selected);
     }
 }

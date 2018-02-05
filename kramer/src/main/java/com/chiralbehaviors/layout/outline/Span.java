@@ -17,6 +17,7 @@
 package com.chiralbehaviors.layout.outline;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import com.chiralbehaviors.layout.ColumnSet;
@@ -98,6 +99,11 @@ public class Span extends HorizontalCell<Span>
         super.dispose();
         mouseModel.unbind();
         focus.unbind();
+    }
+
+    @Override
+    public Collection<OutlineColumn> getContained() {
+        return columns;
     }
 
     @Override

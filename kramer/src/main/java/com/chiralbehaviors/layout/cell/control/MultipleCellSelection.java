@@ -392,7 +392,7 @@ abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
         if (!selectedIndices.get(row)) {
             if (getSelectionMode() == SINGLE) {
                 if (getSelectedIndex() >= 0) {
-                    getCell(getSelectedIndex()).updateSelection(true);
+                    getCell(getSelectedIndex()).updateSelection(false);
                 }
                 quietClearSelection();
             }

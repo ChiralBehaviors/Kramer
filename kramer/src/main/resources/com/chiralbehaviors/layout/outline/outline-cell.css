@@ -5,3 +5,18 @@
     -fx-background-color: linear-gradient(to bottom, derive(-fx-text-box-border, -10%), -fx-text-box-border),
         linear-gradient(from 0px 0px to 0px 5px, derive(-fx-control-inner-background, -9%), -fx-control-inner-background);
 }
+
+.outline-cell:hover {
+    -fx-effect: innershadow(one-pass-box, -fx-focus-color, 5, 0.3, 1, 1);
+}
+
+.outline-cell:filled:selected:focused:disabled,
+.outline-cell:filled:selected:disabled {
+    -fx-opacity: 0.4;
+}
+.outline-cell:filled:selected {
+    -fx-effect: innershadow(one-pass-box, -fx-focus-color, 6, 0.4, 0, 0);
+}
+.outline-cell:filled:selected:focused {
+    -fx-effect: innershadow(one-pass-box, -fx-faint-focus-color, 6, 0.4, 0, 0);
+}

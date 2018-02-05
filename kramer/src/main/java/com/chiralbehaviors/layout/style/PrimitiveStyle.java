@@ -46,6 +46,7 @@ abstract public class PrimitiveStyle extends NodeStyle {
     abstract public class PrimitiveLayoutCell<C extends Region>
             implements LayoutCell<C> {
         public static final String DEFAULT_STYLE = "primitive";
+        private int                index;
         private final MouseHandler mouseHandler;
 
         public PrimitiveLayoutCell(PrimitiveLayout p, String style) {
@@ -91,6 +92,16 @@ abstract public class PrimitiveStyle extends NodeStyle {
 
         public void dispose() {
             mouseHandler.unbind();
+        }
+
+        @Override
+        public int getIndex() {
+            return index;
+        }
+
+        @Override
+        public void updateIndex(int index) {
+            this.index = index;
         }
 
         @Override

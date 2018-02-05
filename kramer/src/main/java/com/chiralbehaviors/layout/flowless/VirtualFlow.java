@@ -1,5 +1,6 @@
 package com.chiralbehaviors.layout.flowless;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -331,6 +332,11 @@ public class VirtualFlow<C extends LayoutCell<?>>
     }
 
     @Override
+    public Collection<C> getContained() {
+        return cellListManager.getLazyCellList();
+    }
+
+    @Override
     public final Orientation getContentBias() {
         return Orientation.HORIZONTAL;
     }
@@ -628,7 +634,7 @@ public class VirtualFlow<C extends LayoutCell<?>>
     private double computePrefLength(double breadth) {
         return sizeTracker.getCellLength();
     }
-
+ 
     private void jumpToAbsolutePosition(double pixels) {
         if (items.isEmpty()) {
             return;

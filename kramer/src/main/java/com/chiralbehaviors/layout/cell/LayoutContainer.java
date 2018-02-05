@@ -107,6 +107,8 @@ public interface LayoutContainer<T, R extends Region, C extends LayoutCell<?>>
         };
     }
 
+    Collection<C> getContained();
+
     Hit<C> hit(double x, double y);
 
     default Hit<C> hit(double x, double y, Collection<C> cells) {
@@ -162,5 +164,10 @@ public interface LayoutContainer<T, R extends Region, C extends LayoutCell<?>>
         }
 
         return null;
+    }
+
+    @Override
+    default void unselect() {
+        getContained().forEach(c -> c.unselect());
     }
 }

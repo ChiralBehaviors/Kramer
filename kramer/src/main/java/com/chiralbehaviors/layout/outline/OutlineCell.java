@@ -100,6 +100,11 @@ public class OutlineCell extends VerticalCell<OutlineCell>
     }
 
     @Override
+    public Collection<Span> getContained() {
+        return spans;
+    }
+
+    @Override
     public int getIndex() {
         return index;
     }

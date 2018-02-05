@@ -16,8 +16,8 @@
     -fx-opacity: 0.4;
 }
 .nested-cell:filled:selected {
-    -fx-effect: innershadow(one-pass-box, -fx-faint-focus-color, 6, 0.4, 0, 0);
+    -fx-effect: innershadow(one-pass-box, -fx-focus-color, 6, 0.4, 0, 0);
 }
 .nested-cell:filled:selected:focused {
-    -fx-effect: innershadow(one-pass-box, -fx-focus-color, 6, 0.4, 0, 0);
+    -fx-effect: innershadow(one-pass-box, -fx-faint-focus-color, 6, 0.4, 0, 0);
 }
