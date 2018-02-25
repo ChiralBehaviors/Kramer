@@ -38,28 +38,15 @@ public class SelectionEvent extends Event {
         TRIPLE_SELECT = new EventType<>(DOUBLE_SELECT, "TRIPLE_SELECT");
     }
 
-    private final boolean    composed;
     private final Cell<?, ?> selected;
 
     public SelectionEvent(Cell<?, ?> selected,
                           EventType<? extends Event> eventType) {
-        this(selected, eventType, false);
-
-    }
-
-    public SelectionEvent(Cell<?, ?> selected,
-                          EventType<? extends Event> eventType,
-                          boolean composed) {
         super(null, null, eventType);
         this.selected = selected;
-        this.composed = composed;
     }
 
     public Cell<?, ?> getSelected() {
         return selected;
-    }
-
-    public boolean isComposed() {
-        return composed;
     }
 }

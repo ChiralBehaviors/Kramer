@@ -65,8 +65,6 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
 
         node.focusedProperty()
             .addListener((InvalidationListener) property -> {
-                System.out.println(String.format("Setting focus: %s on %s",
-                                                 node.isFocused(), node));
                 node.pseudoClassStateChanged(PSEUDO_CLASS_FOCUSED,
                                              node.isFocused());
 

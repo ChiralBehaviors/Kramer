@@ -49,7 +49,8 @@ abstract public class PrimitiveStyle extends NodeStyle {
         private int                index;
         private final MouseHandler mouseHandler;
 
-        public PrimitiveLayoutCell(PrimitiveLayout p, String style) {
+        public PrimitiveLayoutCell(PrimitiveLayout p, String style,
+                                   FocusTraversal<?> parentTraversal) {
             initialize(p.getField());
             initialize(DEFAULT_STYLE);
             getNode().getStyleClass()
@@ -60,8 +61,11 @@ abstract public class PrimitiveStyle extends NodeStyle {
                 public void doubleClick(MouseEvent mouseEvent) {
                     if (getNode().contains(new Point2D(mouseEvent.getX(),
                                                        mouseEvent.getY()))) {
-                        getNode().fireEvent(new SelectionEvent(PrimitiveLayoutCell.this,
-                                                               DOUBLE_SELECT));
+                        SelectionEvent event = new SelectionEvent(PrimitiveLayoutCell.this,
+                                                                  DOUBLE_SELECT);
+                        if (!parentTraversal.propagate(event)) {
+                            getNode().fireEvent(event);
+                        }
                     }
                 }
 
@@ -74,8 +78,11 @@ abstract public class PrimitiveStyle extends NodeStyle {
                 public void singleClick(MouseEvent mouseEvent) {
                     if (getNode().contains(new Point2D(mouseEvent.getX(),
                                                        mouseEvent.getY()))) {
-                        getNode().fireEvent(new SelectionEvent(PrimitiveLayoutCell.this,
-                                                               SINGLE_SELECT));
+                        SelectionEvent event = new SelectionEvent(PrimitiveLayoutCell.this,
+                                                                  SINGLE_SELECT);
+                        if (!parentTraversal.propagate(event)) {
+                            getNode().fireEvent(event);
+                        }
                     }
                 }
 
@@ -83,8 +90,11 @@ abstract public class PrimitiveStyle extends NodeStyle {
                 public void tripleClick(MouseEvent mouseEvent) {
                     if (getNode().contains(new Point2D(mouseEvent.getX(),
                                                        mouseEvent.getY()))) {
-                        getNode().fireEvent(new SelectionEvent(PrimitiveLayoutCell.this,
-                                                               TRIPLE_SELECT));
+                        SelectionEvent event = new SelectionEvent(PrimitiveLayoutCell.this,
+                                                                  TRIPLE_SELECT);
+                        if (!parentTraversal.propagate(event)) {
+                            getNode().fireEvent(event);
+                        }
                     }
                 }
             };
@@ -138,7 +148,8 @@ abstract public class PrimitiveStyle extends NodeStyle {
                      }
                  });
 
-            return new PrimitiveLayoutCell<Region>(p, PRIMITIVE_TEXT_CLASS) {
+            return new PrimitiveLayoutCell<Region>(p, PRIMITIVE_TEXT_CLASS,
+                                                   pt) {
                 @Override
                 public Label getNode() {
                     return label;

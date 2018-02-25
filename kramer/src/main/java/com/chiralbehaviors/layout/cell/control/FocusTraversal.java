@@ -34,9 +34,13 @@ public interface FocusTraversal<C extends LayoutCell<?>> {
 
     boolean isCurrent(FocusTraversalNode<?> node);
 
+    boolean propagate(SelectionEvent event);
+
     void select(LayoutContainer<?, ?, ?> child);
 
     void selectNext();
+
+    void selectNoFocus(LayoutContainer<?, ?, ?> container);
 
     void selectPrevious();
 
@@ -50,7 +54,5 @@ public interface FocusTraversal<C extends LayoutCell<?>> {
 
     default void unbind() {
     }
- 
-    void selectNoFocus(LayoutContainer<?, ?, ?> container);
 
 }

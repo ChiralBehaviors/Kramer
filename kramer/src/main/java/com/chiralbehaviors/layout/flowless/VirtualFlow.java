@@ -1,5 +1,9 @@
 package com.chiralbehaviors.layout.flowless;
 
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.DOUBLE_SELECT;
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.SINGLE_SELECT;
+import static com.chiralbehaviors.layout.cell.control.SelectionEvent.TRIPLE_SELECT;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -14,12 +18,12 @@ import org.reactfx.value.Var;
 import com.chiralbehaviors.layout.cell.AnchorCell;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.LayoutCell;
-import com.chiralbehaviors.layout.cell.LayoutContainer;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
+import com.chiralbehaviors.layout.cell.control.SelectionEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
@@ -230,7 +234,6 @@ public class VirtualFlow<C extends LayoutCell<?>>
              (n, f) -> null, null, Collections.emptyList());
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
     public VirtualFlow(String styleSheet, double cellBreadth, double cellLength,
                        ObservableList<JsonNode> observableList,
                        BiFunction<JsonNode, FocusTraversalNode<C>, C> factory,
@@ -245,15 +248,7 @@ public class VirtualFlow<C extends LayoutCell<?>>
         selectionModel = buildSelectionModel(i -> observableList.get(i),
                                              () -> observableList.size(),
                                              i -> getCell(i));
-        focus = new FocusTraversalNode(parentTraversal, selectionModel,
-                                       Bias.VERTICAL) {
-
-            @Override
-            protected LayoutContainer getContainer() {
-                return VirtualFlow.this;
-            }
-
-        };
+        focus = focusTraversalFor(parentTraversal);
         this.cellListManager = new CellListManager<C>(observableList,
                                                       item -> factory.apply(item,
                                                                             focus));
@@ -634,7 +629,51 @@ public class VirtualFlow<C extends LayoutCell<?>>
     private double computePrefLength(double breadth) {
         return sizeTracker.getCellLength();
     }
- 
+
+    private FocusTraversalNode<C> focusTraversalFor(FocusTraversal<?> parentTraversal) {
+        return new FocusTraversalNode<C>(parentTraversal, selectionModel,
+                                         Bias.VERTICAL) {
+
+            @Override
+            public boolean propagate(SelectionEvent event) {
+                if (event.getEventType()
+                         .equals(SINGLE_SELECT)) {
+                    parent.selectNoFocus(getContainer());
+                    selectionModel.select(event.getSelected()
+                                               .getIndex());
+                    getContainer().getNode()
+                                  .fireEvent(new SelectionEvent(getContainer(),
+                                                                SINGLE_SELECT));
+                    return true;
+                } else if (event.getEventType()
+                                .equals(DOUBLE_SELECT)) {
+                    parent.selectNoFocus(getContainer());
+                    selectionModel.select(event.getSelected()
+                                               .getIndex());
+                    getContainer().getNode()
+                                  .fireEvent(new SelectionEvent(getContainer(),
+                                                                DOUBLE_SELECT));
+                    return true;
+                } else if (event.getEventType()
+                                .equals(TRIPLE_SELECT)) {
+                    parent.selectNoFocus(getContainer());
+                    selectionModel.select(event.getSelected()
+                                               .getIndex());
+                    getContainer().getNode()
+                                  .fireEvent(new SelectionEvent(getContainer(),
+                                                                TRIPLE_SELECT));
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            protected VirtualFlow<C> getContainer() {
+                return VirtualFlow.this;
+            }
+        };
+    }
+
     private void jumpToAbsolutePosition(double pixels) {
         if (items.isEmpty()) {
             return;

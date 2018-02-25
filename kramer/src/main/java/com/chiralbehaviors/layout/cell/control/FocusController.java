@@ -113,6 +113,11 @@ public class FocusController<C extends LayoutCell<?>>
     }
 
     @Override
+    public boolean propagate(SelectionEvent event) {
+        return false;
+    }
+
+    @Override
     public void select(LayoutContainer<?, ?, ?> child) {
     }
 
