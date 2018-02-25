@@ -24,9 +24,6 @@ import java.util.Collections;
 import java.util.List;
 
 import com.chiralbehaviors.layout.flowless.Cell;
-import com.sun.javafx.collections.MappingChange;
-import com.sun.javafx.collections.NonIterableChange;
-import com.sun.javafx.scene.control.ReadOnlyUnbackedObservableList;
 
 import javafx.collections.ListChangeListener;
 import javafx.collections.ListChangeListener.Change;
@@ -37,7 +34,7 @@ import javafx.scene.control.SelectionMode;
 /**
  * @author halhildebrand
  *
- */ 
+ */
 abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
         extends MultipleSelectionModel<T> {
     static <T> ListChangeListener.Change<T> buildClearAndSelectChange(ObservableList<T> list,
@@ -373,6 +370,10 @@ abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
 
     @Override
     public void select(int row) {
+        select(row, true);
+    }
+
+    public void select(int row, boolean focus) {
         if (row == -1) {
             clearSelection();
             return;
@@ -391,7 +392,7 @@ abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
         if (!selectedIndices.get(row)) {
             if (getSelectionMode() == SINGLE) {
                 if (getSelectedIndex() >= 0) {
-                    getCell(getSelectedIndex()).updateSelection(true);
+                    getCell(getSelectedIndex()).updateSelection(false);
                 }
                 quietClearSelection();
             }
@@ -399,7 +400,9 @@ abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
         }
 
         setSelectedIndex(row);
-        focus(row);
+        if (focus) {
+            focus(row);
+        }
 
         stopAtomic();
         getCell(row).updateSelection(true);

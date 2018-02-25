@@ -17,6 +17,7 @@
 package com.chiralbehaviors.layout.outline;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -29,11 +30,9 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversalNode;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.cell.control.MouseHandler;
 import com.chiralbehaviors.layout.cell.control.MultipleCellSelection;
-import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
+import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
-
-import javafx.scene.Node;
 
 /**
  * @author halhildebrand
@@ -48,9 +47,9 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
     private final List<OutlineElement>                            elements              = new ArrayList<>();
     private final List<Consumer<JsonNode>>                        fields                = new ArrayList<>();
     private final FocusTraversal<OutlineElement>                  focus;
+    private int                                                   index;
     private final MouseHandler                                    mouseHandler;
     private final MultipleCellSelection<JsonNode, OutlineElement> selectionModel;
-
     public OutlineColumn(String field) {
         this(field, null);
     }
@@ -63,8 +62,8 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
         c.getFields()
          .forEach(f -> {
              OutlineElement cell = new OutlineElement(field, f, cardinality,
-                                                      labelWidth, focus,
-                                                      model, style);
+                                                      labelWidth, focus, model,
+                                                      style);
              elements.add(cell);
              fields.add(item -> cell.updateItem(f.extractFrom(item)));
              getChildren().add(cell.getNode());
@@ -87,9 +86,10 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
                                                        Bias.VERTICAL) {
 
             @Override
-            protected Node getNode() {
+            protected OutlineColumn getContainer() {
                 return OutlineColumn.this;
             }
+
         };
     }
 
@@ -102,11 +102,27 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
     public void dispose() {
         super.dispose();
         mouseHandler.unbind();
+        focus.unbind();
+    }
+
+    @Override
+    public Collection<OutlineElement> getContained() {
+        return elements;
+    }
+
+    @Override
+    public int getIndex() {
+        return index;
     }
 
     @Override
     public Hit<OutlineElement> hit(double x, double y) {
         return hit(x, y, elements);
+    }
+
+    @Override
+    public void updateIndex(int index) {
+        this.index = index;
     }
 
     @Override

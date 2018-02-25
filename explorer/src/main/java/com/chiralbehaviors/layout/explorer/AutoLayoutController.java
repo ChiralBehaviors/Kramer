@@ -36,7 +36,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.sun.javafx.webkit.WebConsoleListener;
 
 import javafx.concurrent.Worker.State;
 import javafx.fxml.FXML;
@@ -48,10 +47,8 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.web.WebEngine;
-import javafx.scene.web.WebView;
 import netscape.javascript.JSObject;
 
-@SuppressWarnings("restriction")
 public class AutoLayoutController {
     public class ActiveState extends QueryState {
         public ActiveState() {
@@ -244,15 +241,6 @@ public class AutoLayoutController {
     }
 
     private void initialize(WebEngine engine) {
-        WebConsoleListener.setDefaultListener(new WebConsoleListener() {
-            @Override
-            public void messageAdded(WebView webView, String message,
-                                     int lineNumber, String sourceId) {
-                System.out.println("Console: [" + sourceId + ":" + lineNumber
-                                   + "] " + message);
-
-            }
-        });
         engine.load(getClass().getResource("ide.html")
                               .toExternalForm());
     }

@@ -69,12 +69,14 @@ public class Outline extends VirtualFlow<OutlineCell> {
     public void dispose() {
         super.dispose();
         mouseHandler.unbind();
+        focus.unbind();
     }
 
     @Override
     public void updateItem(JsonNode item) {
         List<JsonNode> list = SchemaNode.asList(item);
         items.setAll(list);
-        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
+        pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
+        pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);
     }
 }

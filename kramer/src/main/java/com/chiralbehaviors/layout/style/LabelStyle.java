@@ -50,7 +50,7 @@ public class LabelStyle {
     private final double lineHeight;
 
     public LabelStyle(Label label) {
-        Insets lInsets = label.getInsets();
+        Insets lInsets = Style.add(label.getInsets() , label.getPadding());
         insets = lInsets;
         lineHeight = getLineHeight(label.getFont(),
                                    TextBoundsType.LOGICAL_VERTICAL_CENTER);

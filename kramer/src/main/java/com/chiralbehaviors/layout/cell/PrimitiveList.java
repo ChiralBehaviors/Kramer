@@ -70,6 +70,7 @@ public class PrimitiveList extends VirtualFlow<LayoutCell<?>> {
     @Override
     public void updateItem(JsonNode item) {
         items.setAll(SchemaNode.asList(item));
-        getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
+        pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
+        pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);
     }
 }

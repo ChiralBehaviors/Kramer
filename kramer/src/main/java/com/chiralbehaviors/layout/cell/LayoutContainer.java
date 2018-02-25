@@ -107,13 +107,17 @@ public interface LayoutContainer<T, R extends Region, C extends LayoutCell<?>>
         };
     }
 
+    Collection<C> getContained();
+
     Hit<C> hit(double x, double y);
 
     default Hit<C> hit(double x, double y, Collection<C> cells) {
         int i = 0;
+        Point2D p = new Point2D(x, y);
         for (C cell : cells) {
+            final int index = i;
+            i++;
             Region node = cell.getNode();
-            Point2D p = new Point2D(x, y);
             if (node.contains(p)) {
                 return new Hit<C>() {
                     @Override
@@ -123,7 +127,7 @@ public interface LayoutContainer<T, R extends Region, C extends LayoutCell<?>>
 
                     @Override
                     public int getCellIndex() {
-                        return i;
+                        return index;
                     }
 
                     @Override
@@ -160,5 +164,10 @@ public interface LayoutContainer<T, R extends Region, C extends LayoutCell<?>>
         }
 
         return null;
+    }
+
+    @Override
+    default void unselect() {
+        getContained().forEach(c -> c.unselect());
     }
 }

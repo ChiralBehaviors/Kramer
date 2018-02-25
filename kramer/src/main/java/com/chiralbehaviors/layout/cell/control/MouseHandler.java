@@ -40,7 +40,8 @@ abstract public class MouseHandler {
     private static final InputMapTemplate<MouseHandler, InputEvent> DEFAULT_INPUT_MAP;
 
     static {
-        DEFAULT_INPUT_MAP = unless(h -> h.isDisabled(),
+        DEFAULT_INPUT_MAP = unless(h -> h.getNode()
+                                         .isDisabled(),
                                    sequence(consume(mouseClicked(MouseButton.PRIMARY),
                                                     (handler,
                                                      evt) -> handler.select(evt))));
@@ -58,22 +59,27 @@ abstract public class MouseHandler {
             sequentialClickCount.set(0);
             switch (count) {
                 case 1:
+//                    System.out.println(String.format("Single click: %s",
+//                                                     getNode()));
                     singleClick(mouseEvent);
                     break;
                 case 2:
+//                    System.out.println(String.format("Double click: %s",
+//                                                     getNode()));
                     doubleClick(mouseEvent);
                     break;
                 case 3:
+//                    System.out.println(String.format("Triple click: %s",
+//                                                     getNode()));
                     tripleClick(mouseEvent);
                     break;
                 default:
             }
         });
-
     }
 
     public void bind() {
-        InputMapTemplate.installOverride(DEFAULT_INPUT_MAP, this,
+        InputMapTemplate.installFallback(DEFAULT_INPUT_MAP, this,
                                          c -> getNode());
     }
 
@@ -81,10 +87,6 @@ abstract public class MouseHandler {
     }
 
     abstract public Node getNode();
-
-    public boolean isDisabled() {
-        return false;
-    }
 
     public void singleClick(MouseEvent mouseEvent) {
     }

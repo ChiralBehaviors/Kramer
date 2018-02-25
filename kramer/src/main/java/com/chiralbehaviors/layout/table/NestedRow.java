@@ -21,8 +21,8 @@ import java.util.Arrays;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
-import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
+import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.collections.FXCollections;
@@ -35,6 +35,7 @@ public class NestedRow extends VirtualFlow<NestedCell> {
     private static final String DEFAULT_STYLE         = "nested-row";
     private static final String SCHEMA_CLASS_TEMPLATE = "%s-nested-row";
     private static final String STYLE_SHEET           = "nested-row.css";
+    private int                 index;
 
     public NestedRow(double rendered, RelationLayout layout,
                      int childCardinality, FocusTraversal<?> parentTraversal,
@@ -54,6 +55,7 @@ public class NestedRow extends VirtualFlow<NestedCell> {
               }, parentTraversal,
               Arrays.asList(DEFAULT_STYLE, String.format(SCHEMA_CLASS_TEMPLATE,
                                                          layout.getField())));
+        setMinHeight(rendered);
         setPrefHeight(rendered);
         setMaxHeight(rendered);
         model.apply(this, layout.getNode());
@@ -72,11 +74,23 @@ public class NestedRow extends VirtualFlow<NestedCell> {
         if (scrollHandler != null) {
             scrollHandler.unbind();
         }
+        focus.unbind();
     }
 
     @Override
     public void updateItem(JsonNode item) {
         items.setAll(NestedTable.itemsAsArray(item));
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
+        getNode().pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);
+    }
+
+    @Override
+    public int getIndex() {
+        return index;
+    }
+
+    @Override
+    public void updateIndex(int index) {
+        this.index = index;
     }
 }
