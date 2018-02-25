@@ -34,7 +34,11 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
 
     @Override
     public boolean propagate(SelectionEvent event) {
-        return parent.propagate(event);
+        parent.selectNoFocus(getContainer());
+        selectionModel.select(event.getSelected()
+                                   .getIndex());
+        return parent.propagate(new SelectionEvent(getContainer(),
+                                                   event.getEventType()));
     }
 
     public static enum Bias {
