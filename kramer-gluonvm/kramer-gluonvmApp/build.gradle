@@ -1,0 +1,54 @@
+buildscript {
+    repositories {
+        jcenter()
+        google()
+        maven {
+            url 'http://nexus.gluonhq.com/nexus/content/repositories/releases'
+        }
+    }
+    dependencies {
+        classpath 'org.javafxports:jfxmobile-plugin:2.0.12'
+    }
+}
+
+apply plugin: 'org.javafxports.jfxmobile'
+
+repositories {
+    jcenter()
+    maven {
+        url 'http://nexus.gluonhq.com/nexus/content/repositories/releases'
+    }   
+    maven {
+        url 'http://repository-chiralbehaviors.forge.cloudbees.com/snapshot/'
+    } 
+    maven {
+        url 'http://repository-chiralbehaviors.forge.cloudbees.com/release/'
+    }
+}
+
+mainClassName = 'com.chiralbehaviors.layout.gluon.Smoke'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+    compile 'com.chiralbehaviors.layout:kramer:0.0.1-SNAPSHOT'
+}
+
+jfxmobile {
+    downConfig {
+        version = '3.7.0'
+        // Do not edit the line below. Use Gluon Mobile Settings in your project context menu instead
+        plugins 'display', 'lifecycle', 'statusbar', 'storage'
+    }
+    ios {
+        infoPList = file('src/ios/Default-Info.plist')
+        forceLinkClasses = [
+                'com.chiralbehaviors.**.*',
+                'javax.annotations.**.*',
+                'javax.inject.**.*',
+                'javax.json.**.*',
+                'org.glassfish.json.**.*'
+        ]
+    }
+}
