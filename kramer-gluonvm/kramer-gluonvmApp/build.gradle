@@ -7,7 +7,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'org.javafxports:jfxmobile-plugin:2.0.12'
+        classpath 'org.javafxports:jfxmobile-plugin:2.0.19'
     }
 }
 
@@ -44,6 +44,7 @@ jfxmobile {
     ios {
         infoPList = file('src/ios/Default-Info.plist')
         forceLinkClasses = [
+                'org.reactfx.**.*',
                 'com.chiralbehaviors.**.*',
                 'javax.annotations.**.*',
                 'javax.inject.**.*',
