@@ -44,12 +44,10 @@ jfxmobile {
     ios {
         infoPList = file('src/ios/Default-Info.plist')
         forceLinkClasses = [
+                'com.fasterxml.jackson.**.*',
                 'org.reactfx.**.*',
-                'com.chiralbehaviors.**.*',
-                'javax.annotations.**.*',
-                'javax.inject.**.*',
-                'javax.json.**.*',
-                'org.glassfish.json.**.*'
+                'org.fxmisc.**.*',
+                'com.chiralbehaviors.**.*'
         ]
     }
 }
