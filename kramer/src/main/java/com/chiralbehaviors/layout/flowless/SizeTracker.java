@@ -82,31 +82,16 @@ final class SizeTracker {
                             .memoize();
 
         LiveList<Double> knownLengths = this.lengths.memoizedItems();
-        Val<Double> sumOfKnownLengths = knownLengths.reduce((a, b) -> a + b)
-                                                    .orElseConst(0.0);
-        Val<Integer> knownLengthCount = knownLengths.sizeProperty();
 
-        this.averageLengthEstimate = Val.create(() -> {
-            // make sure to use pref lengths of all present cells
-            for (int i = 0; i < cells.getMemoizedCount(); ++i) {
-                int j = cells.indexOfMemoizedItem(i);
-                lengths.force(j, j + 1);
-            }
+        this.averageLengthEstimate = Val.constant(height);
 
-            int count = knownLengthCount.getValue();
-            return count == 0 ? null : sumOfKnownLengths.getValue() / count;
-        }, sumOfKnownLengths, knownLengthCount);
-
-        this.totalLengthEstimate = Val.combine(averageLengthEstimate,
-                                               cells.sizeProperty(),
-                                               (avg, n) -> {
-                                                   return n * avg;
-                                               });
+        this.totalLengthEstimate = Val.constant(height * cells.size());
 
         Val<Integer> firstVisibleIndex = Val.create(() -> cells.getMemoizedCount() == 0 ? null
                                                                                         : cells.indexOfMemoizedItem(0),
                                                     cells,
-                                                    cells.memoizedItems()); // need to observe cells.memoizedItems()
+                                                    cells.memoizedItems());
+        // need to observe cells.memoizedItems()
         // as well, because they may change without a change in cells.
 
         Val<? extends Cell<?, ?>> firstVisibleCell = cells.memoizedItems()
@@ -152,8 +137,8 @@ final class SizeTracker {
 
         // pinning totalLengthEstimate and lengthOffsetEstimate
         // binds it all together and enables memoization
-        this.subscription = Subscription.multi(totalLengthEstimate.pin(),
-                                               lengthOffsetEstimate.pin());
+        this.subscription = Subscription.multi(() -> totalLengthEstimate.getValue(),
+                                               () -> lengthOffsetEstimate.getValue());
     }
 
     public Val<Double> averageLengthEstimateProperty() {

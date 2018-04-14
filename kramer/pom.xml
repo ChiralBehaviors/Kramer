@@ -15,6 +15,10 @@
 			<groupId>org.fxmisc.wellbehaved</groupId>
 			<artifactId>wellbehavedfx</artifactId>
 		</dependency>
+        <dependency>
+            <groupId>org.reactfx</groupId>
+            <artifactId>reactfx</artifactId>
+        </dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
@@ -28,20 +32,6 @@
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.testfx</groupId>
-			<artifactId>testfx-junit</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.testfx</groupId>
-			<artifactId>openjfx-monocle</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.reactfx</groupId>
-			<artifactId>reactfx</artifactId>
 		</dependency>
 	</dependencies>
 
