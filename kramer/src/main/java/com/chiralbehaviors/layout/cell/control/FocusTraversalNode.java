@@ -84,10 +84,6 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
 
     @Override
     public void activate() {
-        System.out.println(String.format("Activate: %s",
-                                         getContainer().getNode()
-                                                       .getClass()
-                                                       .getSimpleName()));
         int focusedIndex = selectionModel.getFocusedIndex();
         if (focusedIndex < 0) {
             return;
@@ -126,16 +122,11 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
 
     @Override
     public void selectNext() {
-        System.out.println(String.format("Selecting next: %s",
-                                         getContainer().getNode()
-                                                       .getClass()
-                                                       .getSimpleName()));
         if (selectionModel.getItemCount() > 0) {
             int focusedIndex = selectionModel.getFocusedIndex();
             if (focusedIndex == -1) {
                 selectionModel.focus(0);
             } else if (focusedIndex == selectionModel.getItemCount() - 1) {
-                //                selectionModel.focus(0);
                 traverseNext();
             } else {
                 selectionModel.focus(focusedIndex + 1);
@@ -148,16 +139,12 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
 
     @Override
     public void selectPrevious() {
-        System.out.println(String.format("Selecting previous: %s",
-                                         getContainer().getClass()
-                                                       .getSimpleName()));
         if (selectionModel.getItemCount() > 0) {
             int focusedIndex = selectionModel.getFocusedIndex();
             if (focusedIndex > 0) {
                 selectionModel.focus(focusedIndex - 1);
             } else {
                 traversePrevious();
-                //                selectionModel.focus(selectionModel.getItemCount() - 1);
             }
         } else {
             getContainer().getNode()
@@ -177,17 +164,11 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
 
     @Override
     public final void traverseNext() {
-        System.out.println(String.format("Traverse next: %s",
-                                         getContainer().getClass()
-                                                       .getSimpleName()));
         parent.selectNext();
     }
 
     @Override
     public final void traversePrevious() {
-        System.out.println(String.format("Traverse previous: %s",
-                                         getContainer().getClass()
-                                                       .getSimpleName()));
         parent.selectPrevious();
     }
 

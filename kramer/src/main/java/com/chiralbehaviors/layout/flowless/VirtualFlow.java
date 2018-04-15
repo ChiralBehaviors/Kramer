@@ -213,11 +213,8 @@ public class VirtualFlow<C extends LayoutCell<?>>
     private static final String                      VIRTUAL_FLOW  = "virtual-flow";
 
     protected final FocusTraversalNode<C>            focus;
-
     protected final ObservableList<JsonNode>         items;
-
     protected final MouseHandler                     mouseHandler;
-
     protected final ScrollHandler                    scrollHandler = new ScrollHandler(this);
     private final CellListManager<C>                 cellListManager;
     private final CellPositioner<C>                  cellPositioner;
@@ -560,26 +557,12 @@ public class VirtualFlow<C extends LayoutCell<?>>
 
     @Override
     protected final double computePrefHeight(double width) {
-        switch (getContentBias()) {
-            case HORIZONTAL: // vertical flow
-                return computePrefLength(width);
-            case VERTICAL: // horizontal flow
-                return computePrefBreadth();
-            default:
-                throw new AssertionError("Unreachable code");
-        }
+        return computePrefLength(width);
     }
 
     @Override
     protected final double computePrefWidth(double height) {
-        switch (getContentBias()) {
-            case HORIZONTAL: // vertical flow
-                return computePrefBreadth();
-            case VERTICAL: // horizontal flow
-                return computePrefLength(height);
-            default:
-                throw new AssertionError("Unreachable code");
-        }
+        return computePrefBreadth();
     }
 
     @Override
