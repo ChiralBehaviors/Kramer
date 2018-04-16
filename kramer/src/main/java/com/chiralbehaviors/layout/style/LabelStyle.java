@@ -20,6 +20,7 @@ import com.chiralbehaviors.layout.LayoutLabel;
 
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.control.Label;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
@@ -48,9 +49,10 @@ public class LabelStyle {
     private final Font   font;
     private final Insets insets;
     private final double lineHeight;
+    private Orientation  orientation = Orientation.HORIZONTAL;
 
     public LabelStyle(Label label) {
-        Insets lInsets = Style.add(label.getInsets() , label.getPadding());
+        Insets lInsets = Style.add(label.getInsets(), label.getPadding());
         insets = lInsets;
         lineHeight = getLineHeight(label.getFont(),
                                    TextBoundsType.LOGICAL_VERTICAL_CENTER);
@@ -69,16 +71,27 @@ public class LabelStyle {
         return insets.getLeft() + insets.getRight();
     }
 
+    public Orientation getOrientation() {
+        return orientation;
+    }
+
     public Label label(double width, String text, double height) {
         LayoutLabel label = new LayoutLabel(text);
         label.setMinSize(width, height);
         label.setPrefSize(width, height);
         label.setMaxSize(width, height);
+        if (orientation == Orientation.VERTICAL) {
+            label.setRotate(90d);
+        }
         return label;
     }
 
+    public void setOrientation(Orientation orientation) {
+        this.orientation = orientation;
+    }
+
     public double width(String text) {
-        return Style.textWidth(text, font) + insets.getLeft()
+        return Style.textWidth(text, font, orientation) + insets.getLeft()
                + insets.getRight();
     }
 }

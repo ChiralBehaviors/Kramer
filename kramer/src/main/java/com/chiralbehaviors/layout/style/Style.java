@@ -44,6 +44,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
@@ -81,15 +82,19 @@ public class Style {
         return Math.ceil(value);
     }
 
-    public static double textWidth(String string, Font textFont) {
+    public static double textWidth(String string, Font textFont,
+                                   Orientation orientation) {
         Text text = new Text(string);
         text.setFont(textFont);
         Bounds tb = text.getBoundsInLocal();
-        return Shape.intersect(text,
-                               new Rectangle(tb.getMinX(), tb.getMinY(),
-                                             tb.getWidth(), tb.getHeight()))
-                    .getBoundsInLocal()
-                    .getWidth();
+        Bounds bounds = Shape.intersect(text,
+                                        new Rectangle(tb.getMinX(),
+                                                      tb.getMinY(),
+                                                      tb.getWidth(),
+                                                      tb.getHeight()))
+                             .getBoundsInLocal();
+        return orientation == Orientation.HORIZONTAL ? bounds.getWidth()
+                                                     : bounds.getHeight();
     }
 
     public static String toString(JsonNode value) {
