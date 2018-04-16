@@ -43,6 +43,7 @@ jfxmobile {
                 'java.beans.**.*',
                 'javafx.beans.**.*',
                 'java.util.**.*',
+                'com.sun.javafx.**.*',
                 'javax.annotations.**.*',
                 'javax.inject.**.*',
                 'javax.json.**.*',
