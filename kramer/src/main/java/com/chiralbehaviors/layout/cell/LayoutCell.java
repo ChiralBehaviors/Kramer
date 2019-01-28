@@ -52,8 +52,13 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
 
     default void initialize(String defaultStyle) {
         T node = getNode();
-        node.getStyleClass()
-            .add(defaultStyle);
+        if (node == null) {
+            throw new IllegalStateException("no node");
+        }
+        if (node.getStyleClass() != null) {
+            node.getStyleClass()
+                .add(defaultStyle);
+        }
 
         // focusTraversable is styleable through css. Calling setFocusTraversable
         // makes it look to css like the user set the value and css will not
@@ -61,17 +66,21 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         // CssMetaData ensures that css will be able to override the value.
         @SuppressWarnings("unchecked")
         StyleableProperty<Boolean> styleableProperty = (StyleableProperty<Boolean>) node.focusTraversableProperty();
-        styleableProperty.applyStyle(null, Boolean.TRUE);
+        if (styleableProperty != null) {
+            styleableProperty.applyStyle(null, Boolean.TRUE);
+        }
 
-        node.focusedProperty()
-            .addListener((InvalidationListener) property -> {
-                node.pseudoClassStateChanged(PSEUDO_CLASS_FOCUSED,
-                                             node.isFocused());
+        if (node.focusedProperty() != null) {
+            node.focusedProperty()
+                .addListener((InvalidationListener) property -> {
+                    node.pseudoClassStateChanged(PSEUDO_CLASS_FOCUSED,
+                                                 node.isFocused());
 
-                if (!node.isFocused() && isEditing()) {
-                    cancelEdit();
-                }
-            });
+                    if (!node.isFocused() && isEditing()) {
+                        cancelEdit();
+                    }
+                });
+        }
 
         node.pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, true);
     }
