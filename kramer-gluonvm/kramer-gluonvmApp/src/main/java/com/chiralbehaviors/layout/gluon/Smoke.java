@@ -40,9 +40,6 @@ import javafx.stage.Stage;
  *
  */
 public class Smoke extends Application {
-    public static void main(String[] argv) {
-        launch(argv);
-    }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -76,7 +73,7 @@ public class Smoke extends Application {
         JsonNode data = Util.testData();
         layout.measure(data);
         layout.updateItem(data);
-        layout.autoLayout();
+//        layout.autoLayout();
     }
 
 }
