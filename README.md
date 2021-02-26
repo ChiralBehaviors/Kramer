@@ -16,7 +16,7 @@ CSS all the things.  Well, most of them.  Will be publishing some examples on th
 It's all boxes, so not that hard ;)
 
 ### Building
-Kramer requires [maven 3.3+](https://maven.apache.org), Java 1.8+.  To build Kramer, cd to the top level directory:
+Kramer requires [maven 3.3+](https://maven.apache.org), Java 11+.  To build Kramer, cd to the top level directory:
 
     mvn clean install
     

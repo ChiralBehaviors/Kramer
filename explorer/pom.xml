@@ -1,4 +1,5 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
@@ -11,17 +12,13 @@
 	<description>A simple app to explore GraphQL endpoints with the auto layout framework.</description>
 
 	<properties>
-		<main.class>com.chiralbehaviors.layout.explorer.AutoLayoutExplorer</main.class>
+		<main.class>com.chiralbehaviors.layout.explorer.Launcher</main.class>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>com.chiralbehaviors.layout</groupId>
 			<artifactId>kramer-ql</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.hellblazer</groupId>
-			<artifactId>utils</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.controlsfx</groupId>
@@ -31,9 +28,21 @@
 			<groupId>ch.qos.logback</groupId>
 			<artifactId>logback-classic</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-fxml</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-web</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>jakarta.xml.bind</groupId>
+			<artifactId>jakarta.xml.bind-api</artifactId>
+		</dependency>
 	</dependencies>
-	
-	
+
+
 	<build>
 		<plugins>
 			<plugin>
