@@ -12,7 +12,7 @@
     <description>Simple single page application using GraphQL queries and auto layout</description>
 
     <properties>
-        <main.class>com.chiralbehaviors.layout.toy.SinglePageApp</main.class>
+        <main.class>com.chiralbehaviors.layout.toy.Launcher</main.class>
     </properties>
 
     <dependencies>
