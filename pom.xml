@@ -9,7 +9,7 @@
 	<description>Automatic layout of structured data</description>
 	<packaging>pom</packaging>
 	<properties>
-		<jackson.version>2.9.8</jackson.version>
+		<jackson.version>2.12.7.1</jackson.version>
 		<testfx.version>4.0.1-alpha</testfx.version>
 	</properties>
 	<modules>
