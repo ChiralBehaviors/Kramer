@@ -85,8 +85,8 @@ public interface GraphQlUtil {
 
     static Relation buildSchema(Field parentField) {
         Relation parent = new Relation(parentField.getName());
-        for (Selection selection : parentField.getSelectionSet()
-                                              .getSelections()) {
+        for (Selection<?> selection : parentField.getSelectionSet()
+                                                .getSelections()) {
             if (selection instanceof Field) {
                 Field field = (Field) selection;
                 if (field.getSelectionSet() == null) {
@@ -107,8 +107,8 @@ public interface GraphQlUtil {
     }
 
     static void buildSchema(Relation parent, InlineFragment fragment) {
-        for (Selection selection : fragment.getSelectionSet()
-                                           .getSelections()) {
+        for (Selection<?> selection : fragment.getSelectionSet()
+                                             .getSelections()) {
             if (selection instanceof Field) {
                 Field field = (Field) selection;
                 if (field.getSelectionSet() == null) {
@@ -130,18 +130,18 @@ public interface GraphQlUtil {
     static Relation buildSchema(String query) {
         List<Relation> children = new ArrayList<Relation>();
         AtomicReference<String> operationName = new AtomicReference<>();
-        new Parser().parseDocument(query)
-                    .getDefinitions()
-                    .stream()
-                    .filter(d -> d instanceof OperationDefinition)
-                    .map(d -> (OperationDefinition) d)
+        Parser.parse(query)
+              .getDefinitions()
+              .stream()
+              .filter(OperationDefinition.class::isInstance)
+              .map(OperationDefinition.class::cast)
                     .filter(d -> d.getOperation()
                                   .equals(Operation.QUERY))
                     .findFirst()
                     .ifPresent(operation -> {
                         operationName.set(operation.getName());
-                        for (Selection selection : operation.getSelectionSet()
-                                                            .getSelections()) {
+                        for (Selection<?> selection : operation.getSelectionSet()
+                                                              .getSelections()) {
                             if (selection instanceof Field) {
                                 children.add(buildSchema((Field) selection));
                             }
@@ -166,14 +166,14 @@ public interface GraphQlUtil {
     }
 
     static Relation buildSchema(String query, String source) {
-        for (Definition definition : new Parser().parseDocument(query)
-                                                 .getDefinitions()) {
+        for (Definition<?> definition : Parser.parse(query)
+                                                   .getDefinitions()) {
             if (definition instanceof OperationDefinition) {
                 OperationDefinition operation = (OperationDefinition) definition;
                 if (operation.getOperation()
                              .equals(Operation.QUERY)) {
-                    for (Selection selection : operation.getSelectionSet()
-                                                        .getSelections()) {
+                    for (Selection<?> selection : operation.getSelectionSet()
+                                                          .getSelections()) {
                         if (selection instanceof Field) {
                             Field field = (Field) selection;
                             if (source.equals(field.getName())) {
