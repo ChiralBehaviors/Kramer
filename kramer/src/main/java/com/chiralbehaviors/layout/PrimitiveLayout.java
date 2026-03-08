@@ -46,8 +46,6 @@ public class PrimitiveLayout extends SchemaNodeLayout {
     protected double               maxWidth;
     protected final PrimitiveStyle style;
     private double                 cellHeight;
-    @SuppressWarnings("unused")
-    private boolean                variableLength;
 
     public PrimitiveLayout(Primitive p, PrimitiveStyle style) {
         super(p, style.getLabelStyle());
@@ -188,9 +186,6 @@ public class PrimitiveLayout extends SchemaNodeLayout {
         columnWidth = Math.max(labelWidth,
                                Style.snap(Math.max(getNode().getDefaultWidth(),
                                                    averageWidth)));
-        if (maxWidth > averageWidth) {
-            variableLength = true;
-        }
         return columnWidth;
     }
 

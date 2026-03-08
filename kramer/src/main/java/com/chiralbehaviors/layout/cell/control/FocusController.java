@@ -139,10 +139,6 @@ public class FocusController<C extends LayoutCell<?>>
 
     @Override
     public void setCurrent(FocusTraversalNode<?> focused) {
-        System.out.println(String.format("Setting current: %s",
-                                         focused.getContainer()
-                                                .getClass()
-                                                .getSimpleName()));
         current = focused;
     }
 
