@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "Kramer",
+  "project_id": "762ed00f-4494-4c76-b309-521ff6f6c0d7"
+}
