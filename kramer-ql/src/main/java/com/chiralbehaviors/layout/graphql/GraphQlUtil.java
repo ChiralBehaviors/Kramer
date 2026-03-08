@@ -63,23 +63,13 @@ public interface GraphQlUtil {
         }
     }
 
-    static class QueryRequest {
-        public String              operationName;
-        public String              query;
-        public Map<String, Object> variables = Collections.emptyMap();
+    record QueryRequest(String operationName, String query, Map<String, Object> variables) {
+        public QueryRequest(String query, Map<String, Object> variables) {
+            this(null, query, variables);
+        }
 
         public QueryRequest() {
-        }
-
-        public QueryRequest(String query, Map<String, Object> variables) {
-            this.query = query;
-            this.variables = variables;
-        }
-
-        @Override
-        public String toString() {
-            return "QueryRequest [query=" + query + ", variables=" + variables
-                   + "]";
+            this(null, null, Collections.emptyMap());
         }
     }
 

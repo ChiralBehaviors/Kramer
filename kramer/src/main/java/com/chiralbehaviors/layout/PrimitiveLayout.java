@@ -41,7 +41,7 @@ import javafx.scene.layout.Region;
  * @author halhildebrand
  *
  */
-public class PrimitiveLayout extends SchemaNodeLayout {
+public final class PrimitiveLayout extends SchemaNodeLayout {
     protected int                  averageCardinality;
     protected double               maxWidth;
     protected final PrimitiveStyle style;

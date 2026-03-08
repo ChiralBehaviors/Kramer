@@ -36,20 +36,11 @@ import javafx.scene.layout.Region;
  * @author halhildebrand
  *
  */
-abstract public class SchemaNodeLayout {
+public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationLayout {
 
-    public class Fold {
-        public final int      averageCardinality;
-        public final JsonNode datum;
-
-        Fold(JsonNode datum, int averageCardinality) {
+    public record Fold(JsonNode datum, int averageCardinality, SchemaNodeLayout layout) {
+        public Fold {
             assert averageCardinality > 0;
-            this.datum = datum;
-            this.averageCardinality = averageCardinality;
-        }
-
-        public SchemaNodeLayout getLayout() {
-            return SchemaNodeLayout.this;
         }
     }
 
@@ -259,9 +250,9 @@ abstract public class SchemaNodeLayout {
         Fold fold = fold(JsonNodeFactory.instance.objectNode()
                                                  .set(getField(), datum),
                          n -> n, model);
-        fold.getLayout()
-            .measure(fold.datum, n -> n, model);
-        return fold.getLayout();
+        fold.layout()
+            .measure(fold.datum(), n -> n, model);
+        return fold.layout();
     }
 
     abstract public double nestTableColumn(Indent inset, Insets indentation);
@@ -301,7 +292,8 @@ abstract public class SchemaNodeLayout {
                         (cardSum == 0
                          || data.size() == 0) ? 1
                                               : Math.round(cardSum
-                                                           / data.size()));
+                                                           / data.size()),
+                        this);
     }
 
     protected Fold fold(JsonNode datum, Function<JsonNode, JsonNode> extractor,

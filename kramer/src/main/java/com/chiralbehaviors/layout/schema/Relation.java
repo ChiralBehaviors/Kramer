@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author hhildebrand
  *
  */
-public class Relation extends SchemaNode {
+public non-sealed class Relation extends SchemaNode {
     private boolean                autoFold = true;
     private final List<SchemaNode> children = new ArrayList<>();
     private Relation               fold;
