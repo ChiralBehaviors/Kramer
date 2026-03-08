@@ -7,7 +7,6 @@ import org.reactfx.Subscription;
 import org.reactfx.collection.LiveList;
 import org.reactfx.collection.MemoizationList;
 import org.reactfx.value.Val;
-import org.reactfx.value.ValBase;
 import org.reactfx.value.Var;
 
 import javafx.beans.value.ObservableObjectValue;
@@ -24,18 +23,9 @@ import javafx.scene.control.IndexRange;
  */
 final class SizeTracker {
     private static <T> Val<T> avoidFalseInvalidations(Val<T> src) {
-        return new ValBase<T>() {
-            @Override
-            protected T computeValue() {
-                return src.getValue();
-            }
-
-            @Override
-            protected Subscription connect() {
-                return src.observeChanges((obs, oldVal,
-                                           newVal) -> invalidate());
-            }
-        };
+        Var<T> result = Var.newSimpleVar(src.getValue());
+        src.observeChanges((obs, oldVal, newVal) -> result.setValue(newVal));
+        return result;
     }
 
     /**

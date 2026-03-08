@@ -19,7 +19,7 @@ package com.chiralbehaviors.layout.toy;
 import java.util.Collections;
 import java.util.Map;
 
-import javax.ws.rs.client.WebTarget;
+import jakarta.ws.rs.client.WebTarget;
 
 import com.chiralbehaviors.layout.graphql.GraphQlUtil;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil.QueryException;
