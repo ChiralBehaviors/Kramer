@@ -560,26 +560,20 @@ public class VirtualFlow<C extends LayoutCell<?>>
 
     @Override
     protected final double computePrefHeight(double width) {
-        switch (getContentBias()) {
-            case HORIZONTAL: // vertical flow
-                return computePrefLength(width);
-            case VERTICAL: // horizontal flow
-                return computePrefBreadth();
-            default:
-                throw new AssertionError("Unreachable code");
-        }
+        return switch (getContentBias()) {
+            case HORIZONTAL -> computePrefLength(width);  // vertical flow
+            case VERTICAL -> computePrefBreadth();         // horizontal flow
+            default -> throw new AssertionError("Unreachable code");
+        };
     }
 
     @Override
     protected final double computePrefWidth(double height) {
-        switch (getContentBias()) {
-            case HORIZONTAL: // vertical flow
-                return computePrefBreadth();
-            case VERTICAL: // horizontal flow
-                return computePrefLength(height);
-            default:
-                throw new AssertionError("Unreachable code");
-        }
+        return switch (getContentBias()) {
+            case HORIZONTAL -> computePrefBreadth();       // vertical flow
+            case VERTICAL -> computePrefLength(height);    // horizontal flow
+            default -> throw new AssertionError("Unreachable code");
+        };
     }
 
     @Override

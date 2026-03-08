@@ -199,23 +199,14 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double nestTableColumn(Indent indent, Insets inset) {
-        switch (indent) {
-            case LEFT:
-                columnHeaderIndentation = inset.getLeft();
-                break;
-            case NONE:
-                break;
-            case RIGHT:
-                columnHeaderIndentation = inset.getRight();
-                break;
-            case SINGULAR:
-                columnHeaderIndentation = inset.getLeft() + inset.getRight();
-                break;
-            default:
-                throw new IllegalArgumentException(String.format("%s is not a valid primitive indentation",
-                                                                 indent));
-
-        }
+        columnHeaderIndentation = switch (indent) {
+            case LEFT -> inset.getLeft();
+            case NONE -> 0.0;
+            case RIGHT -> inset.getRight();
+            case SINGULAR -> inset.getLeft() + inset.getRight();
+            default -> throw new IllegalArgumentException(String.format("%s is not a valid primitive indentation",
+                                                                        indent));
+        };
         return tableColumnWidth();
     }
 

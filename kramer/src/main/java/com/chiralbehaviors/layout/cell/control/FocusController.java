@@ -164,40 +164,25 @@ public class FocusController<C extends LayoutCell<?>>
 
     private void down() {
         switch (current.bias) {
-            case HORIZONTAL:
-                current.traverseNext();
-                break;
-            case VERTICAL:
-                current.selectNext();
-                break;
-            default:
-                break;
+            case HORIZONTAL -> current.traverseNext();
+            case VERTICAL -> current.selectNext();
+            default -> {}
         }
     }
 
     private void left() {
         switch (current.bias) {
-            case HORIZONTAL:
-                current.selectPrevious();
-                break;
-            case VERTICAL:
-                current.traversePrevious();
-                break;
-            default:
-                break;
+            case HORIZONTAL -> current.selectPrevious();
+            case VERTICAL -> current.traversePrevious();
+            default -> {}
         }
     }
 
     private void right() {
         switch (current.bias) {
-            case HORIZONTAL:
-                current.selectNext();
-                break;
-            case VERTICAL:
-                current.traverseNext();
-                break;
-            default:
-                break;
+            case HORIZONTAL -> current.selectNext();
+            case VERTICAL -> current.traverseNext();
+            default -> {}
         }
     }
 
@@ -211,14 +196,9 @@ public class FocusController<C extends LayoutCell<?>>
 
     private void up() {
         switch (current.bias) {
-            case HORIZONTAL:
-                current.traversePrevious();
-                break;
-            case VERTICAL:
-                current.selectPrevious();
-                break;
-            default:
-                break;
+            case HORIZONTAL -> current.traversePrevious();
+            case VERTICAL -> current.selectPrevious();
+            default -> {}
         }
     }
 }

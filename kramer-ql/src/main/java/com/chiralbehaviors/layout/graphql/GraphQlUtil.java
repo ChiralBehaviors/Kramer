@@ -77,8 +77,7 @@ public interface GraphQlUtil {
         Relation parent = new Relation(parentField.getName());
         for (Selection<?> selection : parentField.getSelectionSet()
                                                 .getSelections()) {
-            if (selection instanceof Field) {
-                Field field = (Field) selection;
+            if (selection instanceof Field field) {
                 if (field.getSelectionSet() == null) {
                     if (!field.getName()
                               .equals("id")) {
@@ -87,8 +86,8 @@ public interface GraphQlUtil {
                 } else {
                     parent.addChild(buildSchema(field));
                 }
-            } else if (selection instanceof InlineFragment) {
-                buildSchema(parent, (InlineFragment) selection);
+            } else if (selection instanceof InlineFragment inlineFragment) {
+                buildSchema(parent, inlineFragment);
             } else if (selection instanceof FragmentSpread) {
 
             }
@@ -99,8 +98,7 @@ public interface GraphQlUtil {
     static void buildSchema(Relation parent, InlineFragment fragment) {
         for (Selection<?> selection : fragment.getSelectionSet()
                                              .getSelections()) {
-            if (selection instanceof Field) {
-                Field field = (Field) selection;
+            if (selection instanceof Field field) {
                 if (field.getSelectionSet() == null) {
                     if (!field.getName()
                               .equals("id")) {
@@ -109,8 +107,8 @@ public interface GraphQlUtil {
                 } else {
                     parent.addChild(buildSchema(field));
                 }
-            } else if (selection instanceof InlineFragment) {
-                buildSchema(parent, (InlineFragment) selection);
+            } else if (selection instanceof InlineFragment inlineFragment) {
+                buildSchema(parent, inlineFragment);
             } else if (selection instanceof FragmentSpread) {
 
             }
@@ -118,7 +116,7 @@ public interface GraphQlUtil {
     }
 
     static Relation buildSchema(String query) {
-        List<Relation> children = new ArrayList<Relation>();
+        List<Relation> children = new ArrayList<>();
         AtomicReference<String> operationName = new AtomicReference<>();
         Parser.parse(query)
               .getDefinitions()
@@ -132,8 +130,8 @@ public interface GraphQlUtil {
                         operationName.set(operation.getName());
                         for (Selection<?> selection : operation.getSelectionSet()
                                                               .getSelections()) {
-                            if (selection instanceof Field) {
-                                children.add(buildSchema((Field) selection));
+                            if (selection instanceof Field field) {
+                                children.add(buildSchema(field));
                             }
                         }
                     });
@@ -158,14 +156,12 @@ public interface GraphQlUtil {
     static Relation buildSchema(String query, String source) {
         for (Definition<?> definition : Parser.parse(query)
                                                    .getDefinitions()) {
-            if (definition instanceof OperationDefinition) {
-                OperationDefinition operation = (OperationDefinition) definition;
+            if (definition instanceof OperationDefinition operation) {
                 if (operation.getOperation()
                              .equals(Operation.QUERY)) {
                     for (Selection<?> selection : operation.getSelectionSet()
                                                           .getSelections()) {
-                        if (selection instanceof Field) {
-                            Field field = (Field) selection;
+                        if (selection instanceof Field field) {
                             if (source.equals(field.getName())) {
                                 return buildSchema(field);
                             }

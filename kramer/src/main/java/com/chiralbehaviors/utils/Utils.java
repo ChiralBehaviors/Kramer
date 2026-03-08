@@ -759,60 +759,57 @@ public class Utils {
         Writer writer = new BufferedWriter(new OutputStreamWriter(out));
         ParsingState state = ParsingState.PASS_THROUGH;
 
-        StringBuffer keyBuffer = null;
+        StringBuilder keyBuffer = null;
         for (int next = reader.read(); next != -1; next = reader.read()) {
             char c = (char) next;
             switch (state) {
-            case PASS_THROUGH: {
-                if (c == '$') {
-                    state = ParsingState.DOLLAR;
-                } else {
-                    writer.append(c);
-                }
-                break;
-            }
-            case DOLLAR: {
-                if (c == '{') {
-                    state = ParsingState.BRACKET;
-                    keyBuffer = new StringBuffer();
-                } else if (c == '$') {
-                    writer.append('$'); // just saw $$
-                } else {
-                    state = ParsingState.PASS_THROUGH;
-                    writer.append('$');
-                    writer.append(c);
-                }
-                break;
-            }
-            case BRACKET: {
-                if (c == '}') {
-                    state = ParsingState.PASS_THROUGH;
-                    if (keyBuffer.length() == 0) {
-                        writer.append("${}");
+                case PASS_THROUGH -> {
+                    if (c == '$') {
+                        state = ParsingState.DOLLAR;
                     } else {
-                        String value = null;
-                        String key = keyBuffer.toString();
-                        value = findValue(key, props);
-
-                        if (value != null) {
-                            writer.append(value);
-                        } else {
-                            writer.append("${");
-                            writer.append(key);
-                            writer.append('}');
-                        }
+                        writer.append(c);
                     }
-                    keyBuffer = null;
-                } else if (c == '$') {
-                    // We're inside of a ${ already, so bail and reset
-                    state = ParsingState.DOLLAR;
-                    writer.append("${");
-                    writer.append(keyBuffer.toString());
-                    keyBuffer = null;
-                } else {
-                    keyBuffer.append(c);
                 }
-            }
+                case DOLLAR -> {
+                    if (c == '{') {
+                        state = ParsingState.BRACKET;
+                        keyBuffer = new StringBuilder();
+                    } else if (c == '$') {
+                        writer.append('$'); // just saw $$
+                    } else {
+                        state = ParsingState.PASS_THROUGH;
+                        writer.append('$');
+                        writer.append(c);
+                    }
+                }
+                case BRACKET -> {
+                    if (c == '}') {
+                        state = ParsingState.PASS_THROUGH;
+                        if (keyBuffer.length() == 0) {
+                            writer.append("${}");
+                        } else {
+                            String key = keyBuffer.toString();
+                            String value = findValue(key, props);
+
+                            if (value != null) {
+                                writer.append(value);
+                            } else {
+                                writer.append("${");
+                                writer.append(key);
+                                writer.append('}');
+                            }
+                        }
+                        keyBuffer = null;
+                    } else if (c == '$') {
+                        // We're inside of a ${ already, so bail and reset
+                        state = ParsingState.DOLLAR;
+                        writer.append("${");
+                        writer.append(keyBuffer.toString());
+                        keyBuffer = null;
+                    } else {
+                        keyBuffer.append(c);
+                    }
+                }
             }
         }
         writer.flush();

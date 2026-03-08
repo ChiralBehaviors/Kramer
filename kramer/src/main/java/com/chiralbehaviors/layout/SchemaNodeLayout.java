@@ -49,101 +49,81 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
             @Override
             public Insets indent(Insets indentation, Indent child,
                                  Insets inset) {
-                switch (child) {
-                    case LEFT:
-                        return new Insets(0, indentation.getRight(), 0,
-                                          indentation.getLeft() + inset.getLeft());
-                    case SINGULAR:
-                        return new Insets(0, inset.getRight(), 0,
-                                          indentation.getLeft() + inset.getLeft());
-                    case RIGHT:
-                        return new Insets(0, inset.getRight(), 0,
-                                          inset.getLeft());
-                    default:
-                        return new Insets(0);
-                }
+                return switch (child) {
+                    case LEFT -> new Insets(0, indentation.getRight(), 0,
+                                            indentation.getLeft() + inset.getLeft());
+                    case SINGULAR -> new Insets(0, inset.getRight(), 0,
+                                                indentation.getLeft() + inset.getLeft());
+                    case RIGHT -> new Insets(0, inset.getRight(), 0,
+                                             inset.getLeft());
+                    default -> new Insets(0);
+                };
             }
         },
         NONE {
             @Override
             public Insets indent(Insets indentation, Indent child,
                                  Insets inset) {
-                switch (child) {
-                    case LEFT:
-                        return new Insets(0, 0, 0, inset.getLeft());
-                    case RIGHT:
-                        return new Insets(0, inset.getRight(), 0, 0);
-                    case SINGULAR:
-                        return inset;
-                    default:
-                        return new Insets(0);
-                }
+                return switch (child) {
+                    case LEFT -> new Insets(0, 0, 0, inset.getLeft());
+                    case RIGHT -> new Insets(0, inset.getRight(), 0, 0);
+                    case SINGULAR -> inset;
+                    default -> new Insets(0);
+                };
             }
         },
         RIGHT {
             @Override
             public Insets indent(Insets indentation, Indent child,
                                  Insets inset) {
-                switch (child) {
-                    case LEFT:
-                        return new Insets(0, indentation.getRight(), 0,
-                                          inset.getLeft());
-                    case RIGHT:
-                        return new Insets(0,
-                                          indentation.getRight()
-                                             + inset.getRight(),
-                                          0, inset.getLeft());
-                    case SINGULAR:
-                        return new Insets(0,
-                                          indentation.getRight()
-                                             + inset.getRight(),
-                                          0, inset.getLeft());
-                    default:
-                        return new Insets(0);
-                }
+                return switch (child) {
+                    case LEFT -> new Insets(0, indentation.getRight(), 0,
+                                            inset.getLeft());
+                    case RIGHT -> new Insets(0,
+                                             indentation.getRight()
+                                                + inset.getRight(),
+                                             0, inset.getLeft());
+                    case SINGULAR -> new Insets(0,
+                                                indentation.getRight()
+                                                   + inset.getRight(),
+                                                0, inset.getLeft());
+                    default -> new Insets(0);
+                };
             }
         },
         SINGULAR {
             @Override
             public Insets indent(Insets indentation, Indent child,
                                  Insets inset) {
-                switch (child) {
-                    case LEFT:
-                        return new Insets(0, indentation.getRight(), 0,
-                                          indentation.getLeft() + inset.getLeft());
-                    case RIGHT:
-                        return new Insets(0,
-                                          indentation.getRight()
-                                             + inset.getRight(),
-                                          0, indentation.getLeft());
-                    case SINGULAR:
-                        return new Insets(0,
-                                          indentation.getRight()
-                                             + inset.getRight(),
-                                          0, indentation.getLeft()
-                                             + inset.getLeft());
-                    default:
-                        return new Insets(0);
-                }
+                return switch (child) {
+                    case LEFT -> new Insets(0, indentation.getRight(), 0,
+                                            indentation.getLeft() + inset.getLeft());
+                    case RIGHT -> new Insets(0,
+                                             indentation.getRight()
+                                                + inset.getRight(),
+                                             0, indentation.getLeft());
+                    case SINGULAR -> new Insets(0,
+                                                indentation.getRight()
+                                                   + inset.getRight(),
+                                                0, indentation.getLeft()
+                                                   + inset.getLeft());
+                    default -> new Insets(0);
+                };
             }
         },
         TOP {
             @Override
             public Insets indent(Insets indentation, Indent child,
                                  Insets inset) {
-                switch (child) {
-                    case LEFT:
-                        return new Insets(0, 0, 0, indentation.getLeft()
-                                                   + inset.getLeft());
-                    case RIGHT:
-                        return new Insets(0, indentation.getRight()
-                                             + inset.getRight(),
-                                          0, 0);
-                    case SINGULAR:
-                        return inset;
-                    default:
-                        return new Insets(0);
-                }
+                return switch (child) {
+                    case LEFT -> new Insets(0, 0, 0, indentation.getLeft()
+                                                     + inset.getLeft());
+                    case RIGHT -> new Insets(0, indentation.getRight()
+                                                + inset.getRight(),
+                                             0, 0);
+                    case SINGULAR -> inset;
+                    default -> new Insets(0);
+                };
             }
         };
 
@@ -280,8 +260,8 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
                                                                   .add(datum);
         for (JsonNode node : data) {
             JsonNode sub = node.get(getField());
-            if (sub instanceof ArrayNode) {
-                aggregate.addAll((ArrayNode) sub);
+            if (sub instanceof ArrayNode subArray) {
+                aggregate.addAll(subArray);
                 cardSum += sub.size();
             } else {
                 cardSum += 1;

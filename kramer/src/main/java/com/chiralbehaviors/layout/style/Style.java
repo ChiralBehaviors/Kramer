@@ -146,8 +146,8 @@ public class Style {
     }
 
     public SchemaNodeLayout layout(SchemaNode n) {
-        return n instanceof Primitive ? layout((Primitive) n)
-                                      : layout((Relation) n);
+        return n instanceof Primitive p ? layout(p)
+                                       : layout((Relation) n);
     }
 
     public void setStyleSheets(List<String> stylesheets) {

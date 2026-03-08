@@ -536,7 +536,7 @@ abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
                                                                                             1,
                                                                                             selectedIndicesSeq));
         } else {
-            final List<Integer> actualSelectedRows = new ArrayList<Integer>();
+            final List<Integer> actualSelectedRows = new ArrayList<>();
 
             int lastIndex = -1;
             if (row >= 0 && row < rowCount) {
@@ -739,8 +739,7 @@ abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
 
             @Override
             public boolean contains(Object o) {
-                if (o instanceof Number) {
-                    Number n = (Number) o;
+                if (o instanceof Number n) {
                     int index = n.intValue();
 
                     return index >= 0 && index < bitset.length()
