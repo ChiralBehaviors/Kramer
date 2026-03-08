@@ -4,7 +4,9 @@
 
 ![alt text](media/autolayout.png "Logo Title Text 1")
 
-[![Build Status](https://chiralbehaviors.ci.cloudbees.com/buildStatus/icon?job=Kramer)](https://chiralbehaviors.ci.cloudbees.com/job/Kramer/)
+[![Java CI](https://github.com/ChiralBehaviors/Kramer/actions/workflows/maven.yml/badge.svg)](https://github.com/ChiralBehaviors/Kramer/actions/workflows/maven.yml)
+[![License](https://img.shields.io/github/license/ChiralBehaviors/Kramer)](LICENSE)
+[![GitHub release](https://img.shields.io/github/v/release/ChiralBehaviors/Kramer)](https://github.com/ChiralBehaviors/Kramer/releases)
 
 
 It's all about levels.
@@ -45,14 +47,11 @@ There are currently four modules that compose Kramer:
 
 ## Using Kramer
 
-From maven, you'll need to add the Chiral Behaviors repository:
-    
+From maven, add the GitHub Packages repository:
+
 	<repository>
-		<id>chiralbehaviors-snapshots</id>
-		<url>http://repository-chiralbehaviors.forge.cloudbees.com/snapshot/</url>
-		<snapshots>
-			<enabled>true</enabled>
-		</snapshots>
+		<id>github</id>
+		<url>https://maven.pkg.github.com/ChiralBehaviors/Kramer</url>
 	</repository>
 
 For [Kramer core](kramer/README.md):
