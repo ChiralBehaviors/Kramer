@@ -18,7 +18,7 @@ CSS all the things.  Well, most of them.  Will be publishing some examples on th
 It's all boxes, so not that hard ;)
 
 ### Building
-Kramer requires [maven 3.3+](https://maven.apache.org), Java 11+.  To build Kramer, cd to the top level directory:
+Kramer requires [Maven 3.3+](https://maven.apache.org) and Java 25+.  To build Kramer, cd to the top level directory:
 
     mvn clean install
     
@@ -32,7 +32,7 @@ Watch a [short video of the autolayout in action](https://youtu.be/I8s2Qv7ssQM).
 
 Kramer is based on the system described in the paper [Automatic Layout of Structured Hierarchical Reports](http://people.csail.mit.edu/ebakke/research/reportlayout_infovis2013.pdf).  Kramer uses a schema to automatically layout structured JSON.  The layout is adaptive between outline and nested table views, providing multicolumn hybrids that are dense and is highly usable.  One could call it the Unicorn of reactive layouts for hierarchical data (and who doesn't have that, amirite?).
 
-Kramer uses JSON, via the excellent [Jackson library](https://github.com/FasterXML/jackson).  Combined with the schema that describes the JSON data, Kramer provides a simple [JavaFX](http://docs.oracle.com/javase/8/javafx/get-started-tutorial/jfx-overview.htm#JFXST784) control that exposes the automatic layout.  Kramer uses the [Jackson TreeModel](http://wiki.fasterxml.com/JacksonTreeModel), focusing on the JsonNode as the data model used by the framework.
+Kramer uses JSON, via the excellent [Jackson library](https://github.com/FasterXML/jackson).  Combined with the schema that describes the JSON data, Kramer provides a simple [JavaFX](https://openjfx.io) control that exposes the automatic layout.  Kramer uses the Jackson TreeModel, focusing on the JsonNode as the data model used by the framework.
 
 For more information, see the [Kramer Wiki](https://github.com/ChiralBehaviors/Kramer/wiki)
 
