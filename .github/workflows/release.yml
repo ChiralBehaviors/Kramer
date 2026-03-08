@@ -1,0 +1,108 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      releaseVersion:
+        description: 'Release version (e.g., 0.1.0)'
+        required: true
+      nextVersion:
+        description: 'Next development version (e.g., 0.2.0-SNAPSHOT)'
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '25'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Set release version
+        run: mvn -batch-mode versions:set -DnewVersion="$RELEASE_VERSION" -DgenerateBackupPoms=false
+        env:
+          RELEASE_VERSION: ${{ github.event.inputs.releaseVersion }}
+
+      - name: Configure Maven for GitHub Packages
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<EOF
+          <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                                        https://maven.apache.org/xsd/settings-1.0.0.xsd">
+            <servers>
+              <server>
+                <id>github</id>
+                <username>\${env.GITHUB_ACTOR}</username>
+                <password>\${env.GITHUB_TOKEN}</password>
+              </server>
+            </servers>
+          </settings>
+          EOF
+
+      - name: Build and test
+        run: mvn -batch-mode clean install
+
+      - name: Commit release version
+        run: |
+          git add -A
+          git commit -m "Release $RELEASE_VERSION"
+          git tag "v$RELEASE_VERSION"
+        env:
+          RELEASE_VERSION: ${{ github.event.inputs.releaseVersion }}
+
+      - name: Publish to GitHub Packages
+        run: mvn -batch-mode deploy -DskipTests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set next development version
+        run: mvn -batch-mode versions:set -DnewVersion="$NEXT_VERSION" -DgenerateBackupPoms=false
+        env:
+          NEXT_VERSION: ${{ github.event.inputs.nextVersion }}
+
+      - name: Commit next development version
+        run: |
+          git add -A
+          git commit -m "Prepare next development iteration $NEXT_VERSION"
+        env:
+          NEXT_VERSION: ${{ github.event.inputs.nextVersion }}
+
+      - name: Push changes and tags
+        run: |
+          git push origin HEAD:master
+          git push origin "v$RELEASE_VERSION"
+        env:
+          RELEASE_VERSION: ${{ github.event.inputs.releaseVersion }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.event.inputs.releaseVersion }}
+          name: Release ${{ github.event.inputs.releaseVersion }}
+          generate_release_notes: true
