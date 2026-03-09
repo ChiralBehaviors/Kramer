@@ -495,7 +495,8 @@ public final class RelationLayout extends SchemaNodeLayout {
         justifiedWidth = Style.snap(available);
         if (children.isEmpty()) return;
 
-        // Phase 1: un-rotate vertical headers where extra space allows
+        // Phase 1: greedy un-rotation in document order. Not optimal for all
+        // configurations but avoids O(n log n) sort in the hot layout path.
         double extraSpace = available - tableColumnWidth;
         for (SchemaNodeLayout child : children) {
             if (child instanceof PrimitiveLayout pl && pl.isUseVerticalHeader()) {
@@ -529,17 +530,22 @@ public final class RelationLayout extends SchemaNodeLayout {
 
         // Edge case: no variable-length children → proportional for all
         if (variableChildren.isEmpty()) {
+            if (fixedTotal <= 0) {
+                double equalShare = Style.relax(available / children.size());
+                children.forEach(c -> c.justify(equalShare));
+                return;
+            }
             double totalEffective = fixedTotal;
-            double[] rem = new double[] { available };
+            double rem = available;
             SchemaNodeLayout last = children.get(children.size() - 1);
             for (SchemaNodeLayout child : children) {
                 double childJustified;
                 if (child.equals(last)) {
-                    childJustified = rem[0];
+                    childJustified = rem;
                 } else {
                     double ew = effectiveChildWidth(child);
                     childJustified = Style.relax(available * (ew / totalEffective));
-                    rem[0] -= childJustified;
+                    rem -= childJustified;
                 }
                 child.justify(childJustified);
             }
@@ -555,16 +561,21 @@ public final class RelationLayout extends SchemaNodeLayout {
 
         // Phase 2b: distribute remaining to variable-length children
         double varAvailable = available - fixedTotal;
+        if (varNaturalTotal <= 0) {
+            double equalShare = Style.relax(varAvailable / variableChildren.size());
+            variableChildren.forEach(c -> c.justify(equalShare));
+            return;
+        }
         SchemaNodeLayout lastVar = variableChildren.get(variableChildren.size() - 1);
-        double[] varRemaining = new double[] { varAvailable };
+        double varRemaining = varAvailable;
         for (SchemaNodeLayout child : variableChildren) {
             double childJustified;
             if (child.equals(lastVar)) {
-                childJustified = Math.max(0.0, varRemaining[0]); // anti-drift, clamp
+                childJustified = Math.max(0.0, varRemaining); // anti-drift, clamp
             } else {
                 double ew = effectiveChildWidth(child);
                 childJustified = Style.relax(varAvailable * (ew / varNaturalTotal));
-                varRemaining[0] -= childJustified;
+                varRemaining -= childJustified;
             }
             child.justify(childJustified);
         }

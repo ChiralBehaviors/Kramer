@@ -220,6 +220,11 @@ abstract public class PrimitiveStyle extends NodeStyle {
     }
 
     public void setVerticalHeaderThreshold(double verticalHeaderThreshold) {
+        if (verticalHeaderThreshold <= 0) {
+            throw new IllegalArgumentException(
+                "verticalHeaderThreshold must be > 0, got: "
+                + verticalHeaderThreshold);
+        }
         this.verticalHeaderThreshold = verticalHeaderThreshold;
     }
 

@@ -550,4 +550,90 @@ class VerticalHeaderTest {
         assertEquals(Style.snap(120), layout.columnHeaderHeight(),
                      "Vertical header height should be snap(labelWidth)");
     }
+
+    /**
+     * S-2: Vertical header stays vertical when extra space is insufficient
+     * for un-rotation.
+     */
+    @Test
+    void verticalHeaderRemainsWhenInsufficientSpace() {
+        RelationStyle relStyle = mockRelationStyle();
+        Relation parent = new Relation("parent");
+        parent.addChild(new Primitive("date"));
+        RelationLayout layout = new RelationLayout(parent, relStyle);
+
+        // date: vertical header (labelWidth=120, dataWidth=70, threshold 1.5 → 120 > 105)
+        PrimitiveLayout date = makePrimitive("date", 70, 120, false);
+        date.nestTableColumn(SchemaNodeLayout.Indent.NONE, new Insets(0));
+        assertTrue(date.isUseVerticalHeader(), "precondition: date must be vertical");
+
+        layout.children.clear();
+        layout.children.add(date);
+        layout.tableColumnWidth = date.tableColumnWidth();
+
+        // Needed to un-rotate: labelWidth - tcw = 120 - 70 = 50
+        // Extra space: available - tableColumnWidth = 90 - 70 = 20 < 50
+        layout.justify(90);
+
+        assertTrue(date.isUseVerticalHeader(),
+                   "Vertical header must remain when extra space (20) < needed (50)");
+    }
+
+    /**
+     * S-3: Exact threshold boundary does NOT trigger vertical header.
+     * Condition is strict greater-than: labelWidth > tcw * threshold.
+     */
+    @Test
+    void exactThresholdBoundaryDoesNotTriggerVertical() {
+        PrimitiveStyle primStyle = mockPrimitiveStyle(7.0);
+        // labelWidth = 150, dataWidth = 100 → 150 == 100 * 1.5 exactly → NOT vertical
+        when(primStyle.getLabelStyle().width(anyString())).thenReturn(150.0);
+
+        PrimitiveLayout layout = new PrimitiveLayout(new Primitive("field"), primStyle);
+        layout.dataWidth = 100;
+        layout.labelWidth = 150;
+        layout.columnWidth = 150;
+
+        layout.nestTableColumn(SchemaNodeLayout.Indent.NONE, new Insets(0));
+
+        assertFalse(layout.isUseVerticalHeader(),
+                    "labelWidth == tcw * threshold (150 == 100*1.5) should NOT trigger vertical");
+    }
+
+    /**
+     * S-4: Two vertical headers, only one un-rotated due to space.
+     * Greedy document-order allocation: first header gets un-rotated,
+     * second stays vertical.
+     */
+    @Test
+    void partialUnrotationWithMultipleVerticalHeaders() {
+        RelationStyle relStyle = mockRelationStyle();
+        Relation parent = new Relation("parent");
+        parent.addChild(new Primitive("col_a"));
+        parent.addChild(new Primitive("col_b"));
+        RelationLayout layout = new RelationLayout(parent, relStyle);
+
+        // col_a: vertical, needed to un-rotate = 120 - 70 = 50
+        PrimitiveLayout colA = makePrimitive("col_a", 70, 120, false);
+        colA.nestTableColumn(SchemaNodeLayout.Indent.NONE, new Insets(0));
+        assertTrue(colA.isUseVerticalHeader(), "precondition: colA must be vertical");
+
+        // col_b: vertical, needed to un-rotate = 110 - 60 = 50
+        PrimitiveLayout colB = makePrimitive("col_b", 60, 110, false);
+        colB.nestTableColumn(SchemaNodeLayout.Indent.NONE, new Insets(0));
+        assertTrue(colB.isUseVerticalHeader(), "precondition: colB must be vertical");
+
+        layout.children.clear();
+        layout.children.add(colA);
+        layout.children.add(colB);
+        layout.tableColumnWidth = colA.tableColumnWidth() + colB.tableColumnWidth();
+
+        // Extra space = 200 - 130 = 70. Enough for colA (50) but not both (100).
+        layout.justify(200);
+
+        assertFalse(colA.isUseVerticalHeader(),
+                    "First vertical header should be un-rotated (greedy, space=70 >= needed=50)");
+        assertTrue(colB.isUseVerticalHeader(),
+                   "Second vertical header must remain (remaining space=20 < needed=50)");
+    }
 }

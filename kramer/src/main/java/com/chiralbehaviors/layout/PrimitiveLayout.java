@@ -263,7 +263,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         return useVerticalHeader;
     }
 
-    public void setUseVerticalHeader(boolean useVerticalHeader) {
+    void setUseVerticalHeader(boolean useVerticalHeader) {
         this.useVerticalHeader = useVerticalHeader;
     }
 
