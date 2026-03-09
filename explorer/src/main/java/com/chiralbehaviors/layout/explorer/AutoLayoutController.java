@@ -20,6 +20,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
@@ -36,6 +38,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
+import javafx.application.Platform;
 import javafx.concurrent.Worker.State;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -50,13 +53,32 @@ import netscape.javascript.JSObject;
 
 public class AutoLayoutController {
     public class ActiveState extends QueryState {
+        private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
+            Thread t = new Thread(r, "graphql-fetch");
+            t.setDaemon(true);
+            return t;
+        });
+
         public ActiveState() {
             super();
         }
 
-        public String fetch(String query) {
-            setData(GraphQlUtil.evaluate(endpoint, query));
-            return getData();
+        public void fetchAsync(String query) {
+            executor.submit(() -> {
+                String result;
+                try {
+                    result = GraphQlUtil.evaluate(endpoint, query);
+                } catch (Exception e) {
+                    log.error("GraphQL fetch failed", e);
+                    result = "{}";
+                }
+                final String finalResult = result;
+                Platform.runLater(() -> {
+                    setData(finalResult);
+                    JSObject window = (JSObject) webEngine.executeScript("window");
+                    window.call("onFetchComplete", finalResult);
+                });
+            });
         }
 
         @Override
@@ -92,6 +114,7 @@ public class AutoLayoutController {
     private AnchorPane          anchor;
     private WebTarget           endpoint;
     private AutoLayout          layout;
+    private WebEngine           webEngine;
     @FXML
     private ToggleGroup         page;
     private QueryState          queryState;
@@ -194,6 +217,7 @@ public class AutoLayoutController {
         AnchorPane.setRightAnchor(graphiql, 0.0);
         GraphiqlController controller = loader.getController();
         WebEngine engine = controller.webview.getEngine();
+        webEngine = engine;
         engine.getLoadWorker()
               .stateProperty()
               .addListener((o, oldState, newState) -> {

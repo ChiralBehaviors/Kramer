@@ -56,15 +56,24 @@ html, body {
 			app.setOperationName(newOperationName);
 		}
 
-		function graphQLFetcher(graphQLParams) { 
-			try {
-				return new Promise(function(resolve, reject) {
-					resolve(JSON.parse(app.fetch(JSON.stringify(graphQLParams))));
-				}); 
-			} catch (error) { 
-				return new Promise(function(resolve, reject) { 
-					resolve(''); 
-				});
+		var pendingResolve = null;
+
+		function graphQLFetcher(graphQLParams) {
+			return new Promise(function(resolve) {
+				pendingResolve = resolve;
+				app.fetchAsync(JSON.stringify(graphQLParams));
+			});
+		}
+
+		function onFetchComplete(result) {
+			if (pendingResolve) {
+				var resolve = pendingResolve;
+				pendingResolve = null;
+				try {
+					resolve(JSON.parse(result));
+				} catch (e) {
+					resolve({});
+				}
 			}
 		}
 	</script>
