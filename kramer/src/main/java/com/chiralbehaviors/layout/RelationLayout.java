@@ -74,10 +74,6 @@ public final class RelationLayout extends SchemaNodeLayout {
     protected double                       tableColumnWidth = 0;
     protected boolean                      useTable         = false;
 
-    public boolean isUseTable() {
-        return useTable;
-    }
-
     public RelationLayout(Relation r, RelationStyle style) {
         super(r, style.getLabelStyle());
         assert r != null && style != null;
@@ -264,6 +260,10 @@ public final class RelationLayout extends SchemaNodeLayout {
 
     public String getStyleClass() {
         return node.getField();
+    }
+
+    public boolean isUseTable() {
+        return useTable;
     }
 
     @Override
