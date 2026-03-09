@@ -2,8 +2,10 @@
 title: "Stylesheet Property System Completion"
 id: RDR-002
 type: Feature
-status: accepted
+status: closed
 accepted_date: 2026-03-09
+closed_date: 2026-03-09
+close_reason: implemented
 priority: P2
 author: Hal Hildebrand
 reviewed-by: self
