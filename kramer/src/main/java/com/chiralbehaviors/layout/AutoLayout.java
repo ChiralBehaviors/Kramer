@@ -241,15 +241,14 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         return null;
     }
 
-    private Optional<VirtualFlow<?>> findVirtualFlow(Region root) {
-        if (root instanceof VirtualFlow<?> vf) {
+    private Optional<VirtualFlow<?>> findVirtualFlow(javafx.scene.Node node) {
+        if (node instanceof VirtualFlow<?> vf) {
             return Optional.of(vf);
         }
-        if (root instanceof javafx.scene.Parent p) {
+        if (node instanceof javafx.scene.Parent p) {
             for (javafx.scene.Node child : p.getChildrenUnmodifiable()) {
-                if (child instanceof VirtualFlow<?> vf) {
-                    return Optional.of(vf);
-                }
+                var found = findVirtualFlow(child);
+                if (found.isPresent()) return found;
             }
         }
         return Optional.empty();

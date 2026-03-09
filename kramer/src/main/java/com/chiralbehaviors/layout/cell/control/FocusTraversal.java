@@ -60,4 +60,7 @@ public interface FocusTraversal<C extends LayoutCell<?>> {
     default void unbind() {
     }
 
+    default void resetCursorState() {
+    }
+
 }

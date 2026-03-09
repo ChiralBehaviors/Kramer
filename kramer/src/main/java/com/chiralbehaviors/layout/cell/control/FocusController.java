@@ -175,6 +175,11 @@ public class FocusController<C extends LayoutCell<?>>
     }
 
     @Override
+    public void resetCursorState() {
+        cursorState = null;
+    }
+
+    @Override
     public void unbind() {
         for (Node n : boundNodes) {
             InputMapTemplate.uninstall(TRAVERSAL_INPUT_MAP, this, c -> n);
@@ -359,9 +364,10 @@ public class FocusController<C extends LayoutCell<?>>
         if (node instanceof AutoLayout autoLayout) {
             Hit<?> rootHit = autoLayout.hitSceneRoot(new Point2D(newX, newY));
             if (rootHit != null && rootHit.isCellHit()) {
-                // Found a cell in a different container — select it there
-                // For now, update cursor position to the hit location.
-                // Full cross-container focus transfer will be refined in Phase 3+.
+                // Found a cell in a different container — update cursor position.
+                // Note: current FTN is not transferred; subsequent navigation
+                // still operates on the original container until focus transfer
+                // is implemented.
                 LayoutCell<?> hitCell = rootHit.getCell();
                 Node cellNode = hitCell.getNode();
                 Bounds localBounds = cellNode.getLayoutBounds();
@@ -384,7 +390,7 @@ public class FocusController<C extends LayoutCell<?>>
         if (index < 0 || index >= vf.getItemCount()) return;
 
         var selModel = vf.getSelectionModel();
-        selModel.focus(index);
+        selModel.select(index);
 
         // Derive cursor state from the selected cell
         var items = vf.getItems();
@@ -403,7 +409,7 @@ public class FocusController<C extends LayoutCell<?>>
 
         cursorState = new CursorState(
             identity,
-            null,  // fieldPath — will be set by Phase 3 cross-container navigation
+            null,  // fieldPath — not yet implemented; requires schema-aware lookup
             index,
             cellCenter,
             localBounds
