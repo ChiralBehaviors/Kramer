@@ -45,10 +45,12 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     static final double            VARIABLE_LENGTH_THRESHOLD = 2.0;
 
     protected int                  averageCardinality;
+    protected double               dataWidth;
     private boolean                isVariableLength          = true;
     protected double               maxWidth;
     protected final PrimitiveStyle style;
     private double                 cellHeight;
+    private boolean                useVerticalHeader         = false;
 
     public PrimitiveLayout(Primitive p, PrimitiveStyle style) {
         super(p, style.getLabelStyle());
@@ -83,7 +85,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double calculateTableColumnWidth() {
-        return Math.min(columnWidth(), style.getMaxTablePrimitiveWidth());
+        return Math.min(dataWidth, style.getMaxTablePrimitiveWidth());
     }
 
     @Override
@@ -200,9 +202,9 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         }
 
         double effectiveWidth = isVariableLength ? averageWidth : maxWidth;
-        columnWidth = Math.max(labelWidth,
-                               Style.snap(Math.max(getNode().getDefaultWidth(),
-                                                   effectiveWidth)));
+        dataWidth = Style.snap(Math.max(getNode().getDefaultWidth(),
+                                        effectiveWidth));
+        columnWidth = Math.max(labelWidth, dataWidth);
         return columnWidth;
     }
 
@@ -224,7 +226,11 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
             default -> throw new IllegalArgumentException(String.format("%s is not a valid primitive indentation",
                                                                         indent));
         };
-        return tableColumnWidth();
+        // Paper Table 1: UseVerticalTableHeader — rotate label when column
+        // is narrow relative to label text
+        double tcw = tableColumnWidth();
+        useVerticalHeader = tcw > 0 && labelWidth > tcw * style.getVerticalHeaderThreshold();
+        return tcw;
     }
 
     @Override
@@ -239,7 +245,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double tableColumnWidth() {
-        return Math.min(columnWidth(), style.getMaxTablePrimitiveWidth());
+        return Math.min(dataWidth, style.getMaxTablePrimitiveWidth());
     }
 
     @Override
@@ -253,6 +259,26 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         return isVariableLength;
     }
 
+    public boolean isUseVerticalHeader() {
+        return useVerticalHeader;
+    }
+
+    public void setUseVerticalHeader(boolean useVerticalHeader) {
+        this.useVerticalHeader = useVerticalHeader;
+    }
+
+    public double getLabelHeight() {
+        return labelStyle.getHeight();
+    }
+
+    @Override
+    public double columnHeaderHeight() {
+        if (useVerticalHeader) {
+            return Style.snap(labelWidth);
+        }
+        return super.columnHeaderHeight();
+    }
+
     @Override
     protected void calculateRootHeight() {
         cellHeight(averageCardinality, justifiedWidth);
@@ -264,6 +290,9 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         // isVariableLength must NOT be reset here — it is set in measure()
         // and must survive through layout() into compress() in the
         // autoLayout pipeline: measure → layout → compress.
+        // useVerticalHeader MUST reset — it is set in nestTableColumn()
+        // which runs AFTER clear() in the layout() pipeline.
+        useVerticalHeader = false;
     }
 
     protected double width(JsonNode row) {

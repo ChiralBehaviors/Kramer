@@ -492,22 +492,90 @@ public final class RelationLayout extends SchemaNodeLayout {
     }
 
     protected void justifyColumn(double available) {
-        if (children.isEmpty()) return;
-        double[] remaining = new double[] { available };
-        SchemaNodeLayout last = children.get(children.size() - 1);
         justifiedWidth = Style.snap(available);
-        children.forEach(child -> {
-            double childJustified = Style.relax(available
-                                                * (child.tableColumnWidth()
-                                                   / tableColumnWidth));
+        if (children.isEmpty()) return;
 
-            if (child.equals(last)) {
-                childJustified = remaining[0];
+        // Phase 1: un-rotate vertical headers where extra space allows
+        double extraSpace = available - tableColumnWidth;
+        for (SchemaNodeLayout child : children) {
+            if (child instanceof PrimitiveLayout pl && pl.isUseVerticalHeader()) {
+                double needed = pl.getLabelWidth() - pl.tableColumnWidth();
+                if (extraSpace >= needed) {
+                    extraSpace -= needed;
+                    pl.setUseVerticalHeader(false);
+                }
+            }
+        }
+
+        // extraSpace is used only to gate Phase 1 un-rotation decisions.
+        // Phase 2 recomputes available width from effectiveChildWidth(),
+        // which automatically reflects the post-un-rotation state.
+
+        // Partition children into fixed-length and variable-length
+        // RelationLayout children are treated as variable-length by default
+        List<SchemaNodeLayout> variableChildren = new ArrayList<>();
+        double fixedTotal = 0;
+        double varNaturalTotal = 0;
+
+        for (SchemaNodeLayout child : children) {
+            double ew = effectiveChildWidth(child);
+            if (child instanceof PrimitiveLayout pl && !pl.isVariableLength()) {
+                fixedTotal += ew;
             } else {
-                remaining[0] -= childJustified;
+                variableChildren.add(child);
+                varNaturalTotal += ew;
+            }
+        }
+
+        // Edge case: no variable-length children → proportional for all
+        if (variableChildren.isEmpty()) {
+            double totalEffective = fixedTotal;
+            double[] rem = new double[] { available };
+            SchemaNodeLayout last = children.get(children.size() - 1);
+            for (SchemaNodeLayout child : children) {
+                double childJustified;
+                if (child.equals(last)) {
+                    childJustified = rem[0];
+                } else {
+                    double ew = effectiveChildWidth(child);
+                    childJustified = Style.relax(available * (ew / totalEffective));
+                    rem[0] -= childJustified;
+                }
+                child.justify(childJustified);
+            }
+            return;
+        }
+
+        // Phase 2a: justify fixed-length children at effective width
+        for (SchemaNodeLayout child : children) {
+            if (child instanceof PrimitiveLayout pl && !pl.isVariableLength()) {
+                child.justify(effectiveChildWidth(child));
+            }
+        }
+
+        // Phase 2b: distribute remaining to variable-length children
+        double varAvailable = available - fixedTotal;
+        SchemaNodeLayout lastVar = variableChildren.get(variableChildren.size() - 1);
+        double[] varRemaining = new double[] { varAvailable };
+        for (SchemaNodeLayout child : variableChildren) {
+            double childJustified;
+            if (child.equals(lastVar)) {
+                childJustified = Math.max(0.0, varRemaining[0]); // anti-drift, clamp
+            } else {
+                double ew = effectiveChildWidth(child);
+                childJustified = Style.relax(varAvailable * (ew / varNaturalTotal));
+                varRemaining[0] -= childJustified;
             }
             child.justify(childJustified);
-        });
+        }
+    }
+
+    private double effectiveChildWidth(SchemaNodeLayout child) {
+        // Un-rotated (horizontal) primitive headers need at least labelWidth
+        if (child instanceof PrimitiveLayout pl && !pl.isUseVerticalHeader()) {
+            return Math.max(pl.tableColumnWidth(), pl.getLabelWidth());
+        }
+        return child.tableColumnWidth();
     }
 
     protected int resolveCardinality(int cardinality) {

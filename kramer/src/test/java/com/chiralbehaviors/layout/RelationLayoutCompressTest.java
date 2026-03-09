@@ -67,9 +67,11 @@ class RelationLayoutCompressTest {
         when(primStyle.getListVerticalInset()).thenReturn(0.0);
         when(primStyle.getMinValueWidth()).thenReturn(30.0);
         when(primStyle.getMaxTablePrimitiveWidth()).thenReturn(Double.MAX_VALUE);
+        when(primStyle.getVerticalHeaderThreshold()).thenReturn(1.5);
 
         PrimitiveLayout layout = new PrimitiveLayout(new Primitive(name), primStyle);
         layout.columnWidth = width;
+        layout.dataWidth = width;
         layout.labelWidth = 0;
         return layout;
     }
