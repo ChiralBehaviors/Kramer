@@ -111,6 +111,20 @@ public interface LayoutContainer<T, R extends Region, C extends LayoutCell<?>>
 
     Hit<C> hit(double x, double y);
 
+    /**
+     * Hit-test using scene coordinates. Converts the scene point to local
+     * coordinates via sceneToLocal(), checks containment, then delegates
+     * to hit(x, y). Returns null if the point is outside this container's
+     * bounds or if the node is not in the scene graph.
+     */
+    default Hit<C> hitScene(Point2D scenePoint) {
+        Point2D local = getNode().sceneToLocal(scenePoint);
+        if (local == null || !getNode().contains(local)) {
+            return null;
+        }
+        return hit(local.getX(), local.getY());
+    }
+
     default Hit<C> hit(double x, double y, Collection<C> cells) {
         int i = 0;
         Point2D p = new Point2D(x, y);

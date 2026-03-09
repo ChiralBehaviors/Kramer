@@ -37,6 +37,7 @@ import java.util.List;
 
 import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
 
+import com.chiralbehaviors.layout.AutoLayout;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
@@ -282,8 +283,9 @@ public class FocusController<C extends LayoutCell<?>>
 
     /**
      * Physical cursor movement. Computes a new scene position from the current
-     * cursor state, hit-tests it against the VirtualFlow, and either selects
-     * the hit cell or falls back to index-based advancement for off-screen targets.
+     * cursor state, hit-tests against the current VirtualFlow first, then
+     * falls back to root-level scene dispatch for cross-container navigation.
+     * Off-screen targets use index-based advancement as final fallback.
      */
     private void movePhysical(double dx, double dy) {
         CursorState cs = cursorState;
@@ -295,31 +297,55 @@ public class FocusController<C extends LayoutCell<?>>
         double newX = cs.scenePosition().getX() + dx;
         double newY = cs.scenePosition().getY() + dy;
 
-        // Convert scene coords to VirtualFlow-local coords
+        // Fast path: try current VirtualFlow first
         Point2D local = vf.getNode().sceneToLocal(newX, newY);
-        if (local == null) return;
+        if (local != null) {
+            Hit<?> hit = vf.hit(local.getX(), local.getY());
+            if (hit.isCellHit()) {
+                selectCellAt(vf, hit.getCellIndex());
+                return;
+            }
+            // Off-screen within current VirtualFlow: index-based fallback
+            if (hit.isAfterCells()) {
+                vf.getLastVisibleIndex().ifPresent(lastIdx -> {
+                    int nextIdx = lastIdx + 1;
+                    if (nextIdx < vf.getItemCount()) {
+                        vf.show(nextIdx);
+                        selectCellAt(vf, nextIdx);
+                    }
+                });
+                return;
+            }
+            if (hit.isBeforeCells()) {
+                vf.getFirstVisibleIndex().ifPresent(firstIdx -> {
+                    int prevIdx = firstIdx - 1;
+                    if (prevIdx >= 0) {
+                        vf.show(prevIdx);
+                        selectCellAt(vf, prevIdx);
+                    }
+                });
+                return;
+            }
+        }
 
-        Hit<?> hit = vf.hit(local.getX(), local.getY());
-        if (hit.isCellHit()) {
-            selectCellAt(vf, hit.getCellIndex());
-        } else if (hit.isAfterCells()) {
-            // Off-screen below: advance to next item after last visible
-            vf.getLastVisibleIndex().ifPresent(lastIdx -> {
-                int nextIdx = lastIdx + 1;
-                if (nextIdx < vf.getItemCount()) {
-                    vf.show(nextIdx);
-                    selectCellAt(vf, nextIdx);
-                }
-            });
-        } else if (hit.isBeforeCells()) {
-            // Off-screen above: retreat to item before first visible
-            vf.getFirstVisibleIndex().ifPresent(firstIdx -> {
-                int prevIdx = firstIdx - 1;
-                if (prevIdx >= 0) {
-                    vf.show(prevIdx);
-                    selectCellAt(vf, prevIdx);
-                }
-            });
+        // Slow path: cross-container dispatch via AutoLayout root
+        if (node instanceof AutoLayout autoLayout) {
+            Hit<?> rootHit = autoLayout.hitSceneRoot(new Point2D(newX, newY));
+            if (rootHit != null && rootHit.isCellHit()) {
+                // Found a cell in a different container — select it there
+                // For now, update cursor position to the hit location.
+                // Full cross-container focus transfer will be refined in Phase 3+.
+                LayoutCell<?> hitCell = rootHit.getCell();
+                Node cellNode = hitCell.getNode();
+                Bounds localBounds = cellNode.getLayoutBounds();
+                Point2D cellCenter = cellNode.localToScene(
+                    localBounds.getWidth() / 2, localBounds.getHeight() / 2);
+                cursorState = new CursorState(
+                    cs.dataIdentity(), cs.fieldPath(),
+                    rootHit.getCellIndex(),
+                    cellCenter != null ? cellCenter : new Point2D(newX, newY),
+                    localBounds);
+            }
         }
     }
 
