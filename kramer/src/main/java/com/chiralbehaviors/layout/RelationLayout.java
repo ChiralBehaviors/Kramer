@@ -336,6 +336,10 @@ public final class RelationLayout extends SchemaNodeLayout {
                              .mapToDouble(child -> child.calculateLabelWidth())
                              .max()
                              .orElse(0.0);
+        // Paper Table 1: OutlineMaxLabelWidth cap
+        labelWidth = Math.min(labelWidth, style.getOutlineMaxLabelWidth());
+        // Paper Table 1: Bullet width budget
+        labelWidth += style.getBulletWidth();
         columnWidth = Style.snap(labelWidth + columnWidth);
         return columnWidth + style.getElementHorizontalInset()
                + style.getColumnHorizontalInset()

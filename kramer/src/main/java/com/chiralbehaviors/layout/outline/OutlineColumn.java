@@ -21,6 +21,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
+import javafx.geometry.Insets;
+
 import com.chiralbehaviors.layout.Column;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
@@ -68,6 +70,10 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
              fields.add(item -> cell.updateItem(f.extractFrom(item)));
              getChildren().add(cell.getNode());
          });
+        double indent = style.getIndentWidth();
+        if (indent > 0) {
+            setPadding(new Insets(0, 0, 0, indent));
+        }
         setMinWidth(c.getWidth());
         setPrefWidth(c.getWidth());
         setMaxWidth(c.getWidth());

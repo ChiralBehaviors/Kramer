@@ -181,6 +181,8 @@ abstract public class PrimitiveStyle extends NodeStyle {
     }
 
     private final Insets listInsets;
+    private double      minValueWidth          = 30;
+    private double      maxTablePrimitiveWidth = Double.MAX_VALUE;
 
     public PrimitiveStyle(LabelStyle labelStyle, Insets listInsets) {
         super(labelStyle);
@@ -194,6 +196,22 @@ abstract public class PrimitiveStyle extends NodeStyle {
 
     public double getListVerticalInset() {
         return listInsets.getTop() + listInsets.getBottom();
+    }
+
+    public double getMinValueWidth() {
+        return minValueWidth;
+    }
+
+    public void setMinValueWidth(double minValueWidth) {
+        this.minValueWidth = minValueWidth;
+    }
+
+    public double getMaxTablePrimitiveWidth() {
+        return maxTablePrimitiveWidth;
+    }
+
+    public void setMaxTablePrimitiveWidth(double maxTablePrimitiveWidth) {
+        this.maxTablePrimitiveWidth = maxTablePrimitiveWidth;
     }
 
     abstract public double width(JsonNode row);

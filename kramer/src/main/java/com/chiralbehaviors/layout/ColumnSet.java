@@ -51,13 +51,15 @@ public class ColumnSet {
     public double compress(int cardinality, double justified,
                            RelationStyle style, double labelWidth) {
         Column firstColumn = columns.get(0);
+        double minColumnWidth = Math.max(
+            firstColumn.maxWidth(labelWidth)
+                + style.getElementHorizontalInset()
+                + style.getColumnHorizontalInset(),
+            style.getOutlineColumnMinWidth());
         int count = min(firstColumn.getFields()
                                    .size(),
                         max(1,
-                            (int) Math.floor(justified
-                                             / (firstColumn.maxWidth(labelWidth)
-                                                + style.getElementHorizontalInset()
-                                                + style.getColumnHorizontalInset()))));
+                            (int) Math.floor(justified / minColumnWidth)));
 
         // compression
         double columnWidth = Math.floor(justified / (double) count);

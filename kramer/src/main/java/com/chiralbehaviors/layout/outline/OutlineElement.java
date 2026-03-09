@@ -73,7 +73,17 @@ public class OutlineElement extends HorizontalCell<OutlineElement>
         cell.getNode()
             .setMaxHeight(elementHeight);
         Label label = layout.label(labelWidth, elementHeight);
-        getChildren().addAll(label, cell.getNode());
+        String bulletText = style.getBulletText();
+        if (!bulletText.isEmpty() && style.getBulletWidth() > 0) {
+            Label bullet = new Label(bulletText);
+            bullet.getStyleClass().add("outline-bullet");
+            bullet.setMinSize(style.getBulletWidth(), elementHeight);
+            bullet.setPrefSize(style.getBulletWidth(), elementHeight);
+            bullet.setMaxSize(style.getBulletWidth(), elementHeight);
+            getChildren().addAll(bullet, label, cell.getNode());
+        } else {
+            getChildren().addAll(label, cell.getNode());
+        }
 
     }
 
