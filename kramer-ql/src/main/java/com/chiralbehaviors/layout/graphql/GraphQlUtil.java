@@ -1,6 +1,6 @@
 /**
  * Copyright (c) 2016 Chiral Behaviors, LLC, all rights reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 import jakarta.ws.rs.BadRequestException;
@@ -47,12 +48,14 @@ import graphql.language.Selection;
 import graphql.parser.Parser;
 
 /**
- * 
+ *
  * @author halhildebrand
  *
  */
 public final class GraphQlUtil {
     private static final Logger log = LoggerFactory.getLogger(GraphQlUtil.class);
+
+    private static final Set<String> DEFAULT_EXCLUDED = Set.of("id");
 
     private GraphQlUtil() {}
 
@@ -81,20 +84,24 @@ public final class GraphQlUtil {
     }
 
     public static Relation buildSchema(Field parentField) {
+        return buildSchema(parentField, DEFAULT_EXCLUDED);
+    }
+
+    public static Relation buildSchema(Field parentField,
+                                        Set<String> excludedFields) {
         Relation parent = new Relation(parentField.getName());
         for (Selection<?> selection : parentField.getSelectionSet()
                                                 .getSelections()) {
             if (selection instanceof Field field) {
                 if (field.getSelectionSet() == null) {
-                    if (!field.getName()
-                              .equals("id")) {
+                    if (!excludedFields.contains(field.getName())) {
                         parent.addChild(new Primitive(field.getName()));
                     }
                 } else {
-                    parent.addChild(buildSchema(field));
+                    parent.addChild(buildSchema(field, excludedFields));
                 }
             } else if (selection instanceof InlineFragment inlineFragment) {
-                buildSchema(parent, inlineFragment);
+                buildSchema(parent, inlineFragment, excludedFields);
             } else if (selection instanceof FragmentSpread) {
                 throw new UnsupportedOperationException("Named fragment spreads are not supported; use inline fragments");
             }
@@ -103,19 +110,23 @@ public final class GraphQlUtil {
     }
 
     public static void buildSchema(Relation parent, InlineFragment fragment) {
+        buildSchema(parent, fragment, DEFAULT_EXCLUDED);
+    }
+
+    public static void buildSchema(Relation parent, InlineFragment fragment,
+                                    Set<String> excludedFields) {
         for (Selection<?> selection : fragment.getSelectionSet()
                                              .getSelections()) {
             if (selection instanceof Field field) {
                 if (field.getSelectionSet() == null) {
-                    if (!field.getName()
-                              .equals("id")) {
+                    if (!excludedFields.contains(field.getName())) {
                         parent.addChild(new Primitive(field.getName()));
                     }
                 } else {
-                    parent.addChild(buildSchema(field));
+                    parent.addChild(buildSchema(field, excludedFields));
                 }
             } else if (selection instanceof InlineFragment inlineFragment) {
-                buildSchema(parent, inlineFragment);
+                buildSchema(parent, inlineFragment, excludedFields);
             } else if (selection instanceof FragmentSpread) {
                 throw new UnsupportedOperationException("Named fragment spreads are not supported; use inline fragments");
             }
@@ -123,6 +134,11 @@ public final class GraphQlUtil {
     }
 
     public static Relation buildSchema(String query) {
+        return buildSchema(query, DEFAULT_EXCLUDED);
+    }
+
+    public static Relation buildSchema(String query,
+                                        Set<String> excludedFields) {
         List<Relation> children = new ArrayList<>();
         AtomicReference<String> operationName = new AtomicReference<>();
         Parser.parse(query)
@@ -138,7 +154,7 @@ public final class GraphQlUtil {
                         for (Selection<?> selection : operation.getSelectionSet()
                                                               .getSelections()) {
                             if (selection instanceof Field field) {
-                                children.add(buildSchema(field));
+                                children.add(buildSchema(field, excludedFields));
                             }
                         }
                     });
@@ -161,6 +177,11 @@ public final class GraphQlUtil {
     }
 
     public static Relation buildSchema(String query, String source) {
+        return buildSchema(query, source, DEFAULT_EXCLUDED);
+    }
+
+    public static Relation buildSchema(String query, String source,
+                                        Set<String> excludedFields) {
         for (Definition<?> definition : Parser.parse(query)
                                                    .getDefinitions()) {
             if (definition instanceof OperationDefinition operation) {
@@ -170,7 +191,7 @@ public final class GraphQlUtil {
                                                           .getSelections()) {
                         if (selection instanceof Field field) {
                             if (source.equals(field.getName())) {
-                                return buildSchema(field);
+                                return buildSchema(field, excludedFields);
                             }
                         }
                     }

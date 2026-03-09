@@ -289,7 +289,8 @@ public final class RelationLayout extends SchemaNodeLayout {
                               .orElse(0.0)
                       + labelWidth;
         double tableWidth = calculateTableColumnWidth();
-        if (tableWidth <= columnWidth()) {
+        // Paper §3.3: use table whenever it fits the available width from parent
+        if (tableWidth <= width) {
             return nestTableColumn(Indent.TOP, new Insets(0));
         }
         return columnWidth();
@@ -326,7 +327,7 @@ public final class RelationLayout extends SchemaNodeLayout {
         }
         int effectiveChildren = children.size() - singularChildren;
         averageChildCardinality = Math.max(1,
-                                           Math.min(4,
+                                           Math.min(style.getMaxAverageCardinality(),
                                                     effectiveChildren == 0 ? 1
                                                                            : (int) Math.ceil(sum
                                                                                              / effectiveChildren)));
