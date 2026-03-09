@@ -17,11 +17,15 @@
 package com.chiralbehaviors.layout;
 
 import java.net.URL;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.LayoutContainer;
 import com.chiralbehaviors.layout.cell.control.FocusController;
+import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.style.Style;
@@ -31,6 +35,7 @@ import javafx.application.Platform;
 import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
+import javafx.geometry.Point2D;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 
@@ -183,6 +188,9 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             return;
         }
         LayoutCell<?> old = control;
+        // Clear old keyboard bindings before rebuilding the control tree;
+        // new VirtualFlows will re-register via bindKeyboard in their constructors.
+        controller.unbind();
         control = layout.autoLayout(width, controller, model);
         Region node = control.getNode();
 
@@ -199,6 +207,51 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         node.setPrefWidth(width);
         node.setMaxWidth(width);
         control.updateItem(zeeData);
+
+        // Recover cursor position after layout rebuild.
+        // Find the first VirtualFlow in the new tree for cursor recovery.
+        findVirtualFlow(node).ifPresent(controller::recoverCursor);
+    }
+
+    /**
+     * Root-level hit dispatch using scene coordinates. Walks the current
+     * control tree to find which container (VirtualFlow, OutlineCell, etc.)
+     * contains the given scene point, then delegates to its hitScene().
+     * Returns null if no container contains the point.
+     */
+    public Hit<?> hitSceneRoot(Point2D scenePoint) {
+        if (control == null) return null;
+        Region root = control.getNode();
+        return hitSceneRecursive(root, scenePoint);
+    }
+
+    private Hit<?> hitSceneRecursive(javafx.scene.Node node, Point2D scenePoint) {
+        if (node instanceof LayoutContainer<?, ?, ?> container) {
+            Hit<?> hit = container.hitScene(scenePoint);
+            if (hit != null && hit.isCellHit()) {
+                return hit;
+            }
+        }
+        if (node instanceof javafx.scene.Parent parent) {
+            for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
+                Hit<?> hit = hitSceneRecursive(child, scenePoint);
+                if (hit != null) return hit;
+            }
+        }
+        return null;
+    }
+
+    private Optional<VirtualFlow<?>> findVirtualFlow(javafx.scene.Node node) {
+        if (node instanceof VirtualFlow<?> vf) {
+            return Optional.of(vf);
+        }
+        if (node instanceof javafx.scene.Parent p) {
+            for (javafx.scene.Node child : p.getChildrenUnmodifiable()) {
+                var found = findVirtualFlow(child);
+                if (found.isPresent()) return found;
+            }
+        }
+        return Optional.empty();
     }
 
     private void setContent() {

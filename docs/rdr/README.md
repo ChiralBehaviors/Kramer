@@ -8,9 +8,9 @@ See the [RDR process documentation](https://github.com/cwensel/rdr) for the full
 
 | ID | Title | Status | Type | Priority |
 |----|-------|--------|------|----------|
-| RDR-001 | Java 25 Modernization | accepted | Technical Debt | high |
+| RDR-001 | Java 25 Modernization | closed | Technical Debt | high |
 | RDR-002 | Stylesheet Property System Completion | closed | Feature | P2 |
 | RDR-003 | Vertical Table Headers and Two-Phase Justification | closed | Feature | P2 |
 | RDR-004 | Outline Column Set Correctness | closed | Bug | P1 |
-| RDR-005 | Keyboard Navigation | draft | Feature | P3 |
+| RDR-005 | Keyboard Navigation and Physical Cursor Model | accepted | Feature | P3 |
 | RDR-006 | Table Mode Selection and Cardinality Cap | closed | Bug | P1 |

@@ -16,12 +16,14 @@
 
 package com.chiralbehaviors.layout.outline;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.List;
 
 import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
+import com.chiralbehaviors.layout.cell.LabelCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
@@ -30,7 +32,6 @@ import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import javafx.beans.InvalidationListener;
-import javafx.geometry.Point2D;
 import javafx.scene.control.Label;
 
 /**
@@ -44,6 +45,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement>
     private static final String                  SCHEMA_CLASS_TEMPLATE = "%s-outline-element";
     private static final String                  STYLE_SHEET           = "outline-element.css";
 
+    private final List<LayoutCell<?>>             allCells = new ArrayList<>();
     private final LayoutCell<?>                  cell;
     private int                                  index;
     private final FocusTraversal<OutlineElement> parentTraversal;
@@ -80,8 +82,13 @@ public class OutlineElement extends HorizontalCell<OutlineElement>
             bullet.setMinSize(style.getBulletWidth(), elementHeight);
             bullet.setPrefSize(style.getBulletWidth(), elementHeight);
             bullet.setMaxSize(style.getBulletWidth(), elementHeight);
+            allCells.add(new LabelCell(bullet));
+            allCells.add(new LabelCell(label));
+            allCells.add(cell);
             getChildren().addAll(bullet, label, cell.getNode());
         } else {
+            allCells.add(new LabelCell(label));
+            allCells.add(cell);
             getChildren().addAll(label, cell.getNode());
         }
 
@@ -110,7 +117,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement>
 
     @Override
     public Collection<LayoutCell<?>> getContained() {
-        return Collections.singletonList(cell);
+        return allCells;
     }
 
     @Override
@@ -120,49 +127,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement>
 
     @Override
     public Hit<LayoutCell<?>> hit(double x, double y) {
-        Hit<LayoutCell<?>> hit = new Hit<LayoutCell<?>>() {
-            @Override
-            public LayoutCell<?> getCell() {
-                return cell;
-            }
-
-            @Override
-            public int getCellIndex() {
-                return 0;
-            }
-
-            @Override
-            public Point2D getCellOffset() {
-                return new Point2D(0, 0);
-            }
-
-            @Override
-            public Point2D getOffsetAfterCells() {
-                return new Point2D(0, 0);
-            }
-
-            @Override
-            public Point2D getOffsetBeforeCells() {
-                return new Point2D(0, 0);
-            }
-
-            @Override
-            public boolean isAfterCells() {
-                return false;
-            }
-
-            @Override
-            public boolean isBeforeCells() {
-                return false;
-            }
-
-            @Override
-            public boolean isCellHit() {
-                return true;
-            }
-        };
-        return cell.getNode()
-                   .contains(new Point2D(x, y)) ? hit : null;
+        return hit(x, y, allCells);
     }
 
     @Override

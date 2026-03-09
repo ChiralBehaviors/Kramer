@@ -81,7 +81,7 @@ public class Span extends HorizontalCell<Span>
                                                       Bias.HORIZONTAL) {
 
             @Override
-            protected Span getContainer() {
+            public Span getContainer() {
                 return Span.this;
             }
 

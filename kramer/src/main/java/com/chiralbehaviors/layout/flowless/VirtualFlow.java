@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.BiFunction;
 
 import org.reactfx.collection.MemoizationList;
@@ -267,6 +268,16 @@ public class VirtualFlow<C extends LayoutCell<?>>
         lengthOffsetEstimate = sizeTracker.lengthOffsetEstimateProperty()
                                           .asVar(this::setLengthOffset);
         mouseHandler = bind(selectionModel);
+        if (parentTraversal != null) {
+            parentTraversal.bindKeyboard(this);
+        }
+        final FocusTraversal<?> traversal = parentTraversal;
+        scrollHandler.setAfterPageScroll(() ->
+            getFirstVisibleIndex().ifPresent(idx -> {
+                selectionModel.select(idx);
+                if (traversal != null) traversal.resetCursorState();
+            }));
+
     }
 
     @Override
@@ -341,12 +352,24 @@ public class VirtualFlow<C extends LayoutCell<?>>
         return getClassCssMetaData();
     }
 
+    public OptionalInt getFirstVisibleIndex() {
+        return cellPositioner.getFirstVisibleIndex();
+    }
+
     public FocusTraversal<?> getFocusTraversal() {
         return focus;
     }
 
+    public int getItemCount() {
+        return items.size();
+    }
+
     public ObservableList<JsonNode> getItems() {
         return items;
+    }
+
+    public OptionalInt getLastVisibleIndex() {
+        return cellPositioner.getLastVisibleIndex();
     }
 
     public MultipleCellSelection<JsonNode, C> getSelectionModel() {
@@ -662,7 +685,7 @@ public class VirtualFlow<C extends LayoutCell<?>>
             }
 
             @Override
-            protected VirtualFlow<C> getContainer() {
+            public VirtualFlow<C> getContainer() {
                 return VirtualFlow.this;
             }
         };

@@ -19,6 +19,8 @@ package com.chiralbehaviors.layout.cell.control;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
 
+import javafx.scene.Node;
+
 /**
  * @author halhildebrand
  *
@@ -52,7 +54,13 @@ public interface FocusTraversal<C extends LayoutCell<?>> {
 
     void traversePrevious();
 
+    default void bindKeyboard(Node node) {
+    }
+
     default void unbind() {
+    }
+
+    default void resetCursorState() {
     }
 
 }

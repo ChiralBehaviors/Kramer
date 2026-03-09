@@ -47,12 +47,17 @@ public class ScrollHandler {
                                                      evt) -> handler.scrollDown())));
     }
 
-    private VirtualFlow<?> flow;
+    private VirtualFlow<?>  flow;
+    private Runnable        afterPageScroll;
 
     public ScrollHandler(VirtualFlow<?> flow) {
         assert flow != null;
         this.flow = flow;
         bind();
+    }
+
+    public void setAfterPageScroll(Runnable callback) {
+        this.afterPageScroll = callback;
     }
 
     public void bind() {
@@ -69,10 +74,12 @@ public class ScrollHandler {
 
     public void scrollDown() {
         flow.scrollDown();
+        if (afterPageScroll != null) afterPageScroll.run();
     }
 
     public void scrollUp() {
         flow.scrollUp();
+        if (afterPageScroll != null) afterPageScroll.run();
     }
 
     public void unbind() {
