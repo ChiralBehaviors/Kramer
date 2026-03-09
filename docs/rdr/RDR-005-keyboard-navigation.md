@@ -2,8 +2,10 @@
 title: "Keyboard Navigation and Physical Cursor Model"
 id: RDR-005
 type: Feature
-status: accepted
+status: closed
 accepted_date: 2026-03-09
+closed_date: 2026-03-09
+close_reason: implemented
 priority: P3
 author: Hal Hildebrand
 reviewed-by: self
