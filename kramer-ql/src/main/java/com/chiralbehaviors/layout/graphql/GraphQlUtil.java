@@ -51,10 +51,12 @@ import graphql.parser.Parser;
  * @author halhildebrand
  *
  */
-public interface GraphQlUtil {
-    Logger log = LoggerFactory.getLogger(GraphQlUtil.class);
+public final class GraphQlUtil {
+    private static final Logger log = LoggerFactory.getLogger(GraphQlUtil.class);
 
-    static class QueryException extends Exception {
+    private GraphQlUtil() {}
+
+    public static class QueryException extends Exception {
         private static final long serialVersionUID = 1L;
         private final ArrayNode   errors;
 
@@ -68,7 +70,7 @@ public interface GraphQlUtil {
         }
     }
 
-    record QueryRequest(String operationName, String query, Map<String, Object> variables) {
+    public static record QueryRequest(String operationName, String query, Map<String, Object> variables) {
         public QueryRequest(String query, Map<String, Object> variables) {
             this(null, query, variables);
         }
@@ -78,7 +80,7 @@ public interface GraphQlUtil {
         }
     }
 
-    static Relation buildSchema(Field parentField) {
+    public static Relation buildSchema(Field parentField) {
         Relation parent = new Relation(parentField.getName());
         for (Selection<?> selection : parentField.getSelectionSet()
                                                 .getSelections()) {
@@ -100,7 +102,7 @@ public interface GraphQlUtil {
         return parent;
     }
 
-    static void buildSchema(Relation parent, InlineFragment fragment) {
+    public static void buildSchema(Relation parent, InlineFragment fragment) {
         for (Selection<?> selection : fragment.getSelectionSet()
                                              .getSelections()) {
             if (selection instanceof Field field) {
@@ -120,7 +122,7 @@ public interface GraphQlUtil {
         }
     }
 
-    static Relation buildSchema(String query) {
+    public static Relation buildSchema(String query) {
         List<Relation> children = new ArrayList<>();
         AtomicReference<String> operationName = new AtomicReference<>();
         Parser.parse(query)
@@ -158,7 +160,7 @@ public interface GraphQlUtil {
         return parent;
     }
 
-    static Relation buildSchema(String query, String source) {
+    public static Relation buildSchema(String query, String source) {
         for (Definition<?> definition : Parser.parse(query)
                                                    .getDefinitions()) {
             if (definition instanceof OperationDefinition operation) {
@@ -179,8 +181,8 @@ public interface GraphQlUtil {
                                                       source));
     }
 
-    static ObjectNode evaluate(WebTarget endpoint,
-                               QueryRequest request) throws QueryException {
+    public static ObjectNode evaluate(WebTarget endpoint,
+                                      QueryRequest request) throws QueryException {
         Builder invocationBuilder = endpoint.request(MediaType.APPLICATION_JSON_TYPE);
 
         ObjectNode result = invocationBuilder.post(Entity.entity(request,
@@ -197,8 +199,8 @@ public interface GraphQlUtil {
         return (ObjectNode) data;
     }
 
-    static String evaluate(WebTarget endpoint,
-                           String request) {
+    public static String evaluate(WebTarget endpoint,
+                                  String request) {
         try {
             return endpoint.request(MediaType.APPLICATION_JSON_TYPE)
                            .post(Entity.entity(request,
