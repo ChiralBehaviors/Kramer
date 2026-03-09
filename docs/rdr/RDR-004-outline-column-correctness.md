@@ -2,12 +2,14 @@
 title: "Outline Column Set Correctness"
 id: RDR-004
 type: Bug
-status: accepted
+status: implemented
 priority: P1
 author: Hal Hildebrand
 reviewed-by: self
 created: 2026-03-08
 accepted_date: 2026-03-08
+closed_date: 2026-03-08
+close_reason: implemented
 related_issues: []
 ---
 
