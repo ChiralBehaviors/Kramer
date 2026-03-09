@@ -2,11 +2,12 @@
 title: "Outline Column Set Correctness"
 id: RDR-004
 type: Bug
-status: draft
+status: accepted
 priority: P1
 author: Hal Hildebrand
 reviewed-by: self
 created: 2026-03-08
+accepted_date: 2026-03-08
 related_issues: []
 ---
 
