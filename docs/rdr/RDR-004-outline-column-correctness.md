@@ -2,7 +2,7 @@
 title: "Outline Column Set Correctness"
 id: RDR-004
 type: Bug
-status: implemented
+status: draft
 priority: P1
 author: Hal Hildebrand
 reviewed-by: self
@@ -17,9 +17,9 @@ related_issues: []
 
 ## Problem Statement
 
-The paper (§3.4) mandates that relation fields are excluded from column sets — each relation gets its own single-column column set. Kramer's `RelationLayout.compress()` uses a purely width-based threshold (`childWidth > halfWidth`) with no type check. A narrow relation field could be incorrectly grouped into a column set alongside primitive fields.
+When a child `RelationLayout` is in outline mode and its width is less than `halfWidth`, Kramer's `RelationLayout.compress()` incorrectly groups it with adjacent primitive children in the same column set. The existing width-based check (`childWidth > halfWidth`) correctly handles wide children of any type, but does not handle narrow outline-mode relation children. Per Bakke 2013 §3.4, outline-mode relations must be excluded from multi-field column sets and placed in their own single-column column set.
 
-Additionally, the paper describes dynamic programming for optimal column partitioning to minimize vertical space. Kramer uses a greedy slide-right heuristic that can produce suboptimal results.
+**Note**: The paper also recommends dynamic programming for optimal column partitioning (vs. Kramer's greedy slide-right heuristic). This is a known quality limitation but not a correctness defect — the greedy approach produces acceptable results for typical field counts (3-8 fields, 2-3 columns). DP optimization is out of scope for this RDR.
 
 ## Context
 
@@ -70,7 +70,7 @@ The code uses `childWidth > halfWidth` as the sole criterion for starting a new 
 
 Key observation: `child.layoutWidth()` returns the outline column width for RelationLayout children (computed by `RelationLayout.layout()` which recurses). For a relation child that chose table mode (`useTable == true`), `layoutWidth()` returns `tableColumnWidth()` — which can be quite narrow. Such a narrow table-mode relation COULD fall below `halfWidth` and be grouped into a column set with primitives.
 
-**Impact**: A relation with `useTable=true` and narrow table width gets grouped with primitives. This violates the paper's visual semantics — even a compact table should span the full column set width, not share space with adjacent primitives.
+**Impact**: A narrow outline-mode relation (`useTable == false`) gets grouped with primitives in the same column set instead of being isolated. **Correction (see Finding 5)**: the initial assessment that table-mode relations should also be isolated was incorrect — the paper's exclusion rule applies only to outline-mode relations. Table-mode relations may correctly share column sets.
 
 **Status**: Confirmed via code read. No test coverage exists for `compress()`, `ColumnSet`, or `Column` classes.
 
@@ -108,19 +108,25 @@ The smoke tests (`Smoke`, `PrimArraySmoke`, `SmokeTable`) exercise layout but do
 
 ### Finding 5: Paper's Nuanced Exclusion Rule
 
-Re-reading the paper more carefully: the exclusion is conditional on whether the relation "would be rendered as an outline." This means:
+**Source**: Bakke 2013, §3.4 "Columns in Outline Layouts"
+
+> "any relation field in an outline is excluded from participating in a set of multiple columns **if that would cause it to be rendered as an outline**."
+
+The key phrase is "if that would cause it to be rendered as an outline." The exclusion is conditional on rendering mode, not type:
 - If a relation child has `useTable == true` (fits as table), it is NOT excluded — it can participate in a column set
 - If a relation child has `useTable == false` (rendered as outline), it IS excluded — gets its own column set
 
-This is MORE nuanced than the simple "all relations get own column set" fix proposed in the RDR. The correct fix should check `!child.useTable` rather than `child instanceof RelationLayout`.
+**Retraction of Finding 2 impact statement**: Finding 2 incorrectly stated that "even a compact table should span the full column set width, not share space with adjacent primitives." This was based on an initial reading before the conditional nature of the exclusion rule was understood. The paper explicitly permits table-mode relations to share column sets. Only outline-mode relations are excluded.
 
-However, at the time `compress()` runs, `useTable` has already been set by the prior `layout()` call. So the check is feasible:
+This is MORE nuanced than a simple "all relations get own column set" fix. The correct fix must check `!child.useTable` rather than unconditionally checking `child instanceof RelationLayout`.
+
+The `useTable` flag is reliably set before `compress()` reads it. This ordering is guaranteed by `SchemaNodeLayout.autoLayout()` (lines 155-157), which calls `layout()` — setting `useTable` on all children via recursive `nestTableColumn()` calls — before calling `compress()`.
 
 ```java
 boolean excluded = (child instanceof RelationLayout rl) && !rl.isUseTable();
 ```
 
-**Status**: Verified. This changes the proposed fix — it should be conditional on useTable, not unconditional on type.
+**Status**: Verified against paper text and code ordering.
 
 ## Proposed Solution
 
@@ -148,30 +154,25 @@ for (SchemaNodeLayout child : children) {
 
 Note: Relations with `useTable == true` (compact tables) can still share column sets with primitives. Only outline-mode relations are excluded. This matches the paper's nuanced rule.
 
-### Fix 2: Dynamic Programming Partitioning (Optional)
-
-Replace the slide-right heuristic in `ColumnSet.compress()` with DP:
-
-```java
-// DP over field assignments to columns to minimize max column height
-// State: dp[i][j] = min max-height using fields 0..i-1 across j columns
-// Transition: try all possible split points for the last column
-```
-
-Field counts per column set are typically small (single digits), so DP is fast. However, the greedy approach works well in practice — this is a quality improvement, not a correctness fix.
-
 ## Implementation Plan
 
-1. Add `instanceof RelationLayout` check in `RelationLayout.compress()` — force relation children into their own column sets
-2. Add test: schema with a narrow relation child verifies it gets isolated column set
-3. (Optional) Replace slide-right with DP in `ColumnSet.compress()`
-4. Add test: verify column partitioning optimality for known field height distributions
+1. Add `public boolean isUseTable()` accessor to `RelationLayout` (exposes `useTable` for the conditional check)
+2. Add conditional exclusion in `RelationLayout.compress()`: `(child instanceof RelationLayout rl) && !rl.isUseTable()`
+3. Add unit tests for column set formation covering:
+   - Outline-mode relation gets its own column set
+   - Table-mode relation can share column sets with primitives
+   - Outline relation breaks column set for subsequent children
+   - All-primitives grouping (regression guard)
+   - Wide primitive gets own column set (pre-existing rule)
 
 ## Test Plan
 
-- **Scenario**: Schema with narrow relation + wide primitives → **Verify**: relation gets own column set (not grouped)
-- **Scenario**: Schema with multiple primitives of varying heights → **Verify**: column partitioning minimizes max height
-- **Scenario**: Existing layouts → **Verify**: no regressions (wide relations already get own column sets via width threshold)
+- **Scenario**: Narrow outline-mode relation between primitives → **Verify**: relation gets own column set (not grouped)
+- **Scenario**: Narrow table-mode relation with primitives → **Verify**: table-mode relation shares column set (positive case for Finding 5)
+- **Scenario**: Outline relation between primitives → **Verify**: subsequent children start a new column set
+- **Scenario**: All narrow primitives → **Verify**: all grouped in one column set (regression guard)
+- **Scenario**: Wide primitive between narrow ones → **Verify**: wide gets own column set (pre-existing width rule)
+- **Scenario**: Existing layouts → **Verify**: no regressions
 
 ## References
 
