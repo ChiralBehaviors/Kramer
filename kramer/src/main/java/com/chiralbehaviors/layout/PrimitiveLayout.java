@@ -42,7 +42,10 @@ import javafx.scene.layout.Region;
  *
  */
 public final class PrimitiveLayout extends SchemaNodeLayout {
+    static final double            VARIABLE_LENGTH_THRESHOLD = 2.0;
+
     protected int                  averageCardinality;
+    private boolean                isVariableLength          = true;
     protected double               maxWidth;
     protected final PrimitiveStyle style;
     private double                 cellHeight;
@@ -80,7 +83,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double calculateTableColumnWidth() {
-        return columnWidth();
+        return Math.min(columnWidth(), style.getMaxTablePrimitiveWidth());
     }
 
     @Override
@@ -114,7 +117,13 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public void compress(double available) {
-        justifiedWidth = Style.snap(available);
+        double floor = style.getMinValueWidth();
+        double effective = Math.max(available, floor);
+        if (!isVariableLength && maxWidth > 0) {
+            justifiedWidth = Style.snap(Math.min(effective, maxWidth));
+        } else {
+            justifiedWidth = Style.snap(effective);
+        }
     }
 
     @Override
@@ -183,9 +192,17 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
             averageWidth = summedDataWidth / data.size();
         }
 
+        // Paper §Table 1: IsVariableLength determines width strategy
+        if (averageWidth > 0) {
+            isVariableLength = (maxWidth / averageWidth > VARIABLE_LENGTH_THRESHOLD);
+        } else {
+            isVariableLength = true; // safe fallback for empty data
+        }
+
+        double effectiveWidth = isVariableLength ? averageWidth : maxWidth;
         columnWidth = Math.max(labelWidth,
                                Style.snap(Math.max(getNode().getDefaultWidth(),
-                                                   averageWidth)));
+                                                   effectiveWidth)));
         return columnWidth;
     }
 
@@ -222,7 +239,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double tableColumnWidth() {
-        return columnWidth();
+        return Math.min(columnWidth(), style.getMaxTablePrimitiveWidth());
     }
 
     @Override
@@ -232,9 +249,21 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
                              justifiedWidth);
     }
 
+    public boolean isVariableLength() {
+        return isVariableLength;
+    }
+
     @Override
     protected void calculateRootHeight() {
         cellHeight(averageCardinality, justifiedWidth);
+    }
+
+    @Override
+    protected void clear() {
+        super.clear();
+        // isVariableLength must NOT be reset here — it is set in measure()
+        // and must survive through layout() into compress() in the
+        // autoLayout pipeline: measure → layout → compress.
     }
 
     protected double width(JsonNode row) {

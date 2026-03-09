@@ -33,18 +33,25 @@ import javafx.geometry.Insets;
  */
 public class RelationStyle extends NodeStyle {
 
-    private static final int DEFAULT_MAX_AVERAGE_CARDINALITY = 10;
+    private static final int    DEFAULT_MAX_AVERAGE_CARDINALITY = 10;
+    private static final double DEFAULT_OUTLINE_MAX_LABEL_WIDTH = 200;
+    private static final double DEFAULT_OUTLINE_COLUMN_MIN_WIDTH = 60;
 
-    private final Insets column;
-    private final Insets element;
-    private final int    maxAverageCardinality;
-    private final Insets nestedInsets;
-    private final Insets outline;
-    private final Insets outlineCell;
-    private final Insets row;
-    private final Insets rowCell;
-    private final Insets span;
-    private final Insets table;
+    private final Insets  column;
+    private final Insets  element;
+    private final int     maxAverageCardinality;
+    private final Insets  nestedInsets;
+    private final Insets  outline;
+    private final Insets  outlineCell;
+    private double        outlineMaxLabelWidth  = DEFAULT_OUTLINE_MAX_LABEL_WIDTH;
+    private double        outlineColumnMinWidth = DEFAULT_OUTLINE_COLUMN_MIN_WIDTH;
+    private String        bulletText            = "";
+    private double        bulletWidth           = 0;
+    private double        indentWidth           = 0;
+    private final Insets  row;
+    private final Insets  rowCell;
+    private final Insets  span;
+    private final Insets  table;
 
     public RelationStyle(LabelStyle labelStyle, NestedTable table,
                          NestedRow row, NestedCell rowCell, Outline outline,
@@ -154,6 +161,46 @@ public class RelationStyle extends NodeStyle {
 
     public double getTableVerticalInset() {
         return table.getTop() + table.getBottom();
+    }
+
+    public double getOutlineMaxLabelWidth() {
+        return outlineMaxLabelWidth;
+    }
+
+    public void setOutlineMaxLabelWidth(double outlineMaxLabelWidth) {
+        this.outlineMaxLabelWidth = outlineMaxLabelWidth;
+    }
+
+    public double getOutlineColumnMinWidth() {
+        return outlineColumnMinWidth;
+    }
+
+    public void setOutlineColumnMinWidth(double outlineColumnMinWidth) {
+        this.outlineColumnMinWidth = outlineColumnMinWidth;
+    }
+
+    public String getBulletText() {
+        return bulletText;
+    }
+
+    public void setBulletText(String bulletText) {
+        this.bulletText = bulletText;
+    }
+
+    public double getBulletWidth() {
+        return bulletWidth;
+    }
+
+    public void setBulletWidth(double bulletWidth) {
+        this.bulletWidth = bulletWidth;
+    }
+
+    public double getIndentWidth() {
+        return indentWidth;
+    }
+
+    public void setIndentWidth(double indentWidth) {
+        this.indentWidth = indentWidth;
     }
 
 }

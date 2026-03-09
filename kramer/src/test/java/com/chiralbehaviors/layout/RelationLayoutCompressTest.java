@@ -48,6 +48,11 @@ class RelationLayoutCompressTest {
         when(style.getNestedHorizontalInset()).thenReturn(0.0);
         when(style.getNestedInsets()).thenReturn(new Insets(0));
         when(style.getTableVerticalInset()).thenReturn(0.0);
+        when(style.getOutlineMaxLabelWidth()).thenReturn(200.0);
+        when(style.getOutlineColumnMinWidth()).thenReturn(60.0);
+        when(style.getBulletText()).thenReturn("");
+        when(style.getBulletWidth()).thenReturn(0.0);
+        when(style.getIndentWidth()).thenReturn(0.0);
         return style;
     }
 
@@ -60,6 +65,8 @@ class RelationLayoutCompressTest {
         when(primStyle.getLabelStyle()).thenReturn(labelStyle);
         when(primStyle.getHeight(anyDouble(), anyDouble())).thenReturn(20.0);
         when(primStyle.getListVerticalInset()).thenReturn(0.0);
+        when(primStyle.getMinValueWidth()).thenReturn(30.0);
+        when(primStyle.getMaxTablePrimitiveWidth()).thenReturn(Double.MAX_VALUE);
 
         PrimitiveLayout layout = new PrimitiveLayout(new Primitive(name), primStyle);
         layout.columnWidth = width;
