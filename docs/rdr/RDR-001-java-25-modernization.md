@@ -2,13 +2,19 @@
 title: "Java 25 Modernization"
 id: RDR-001
 type: Technical Debt
-status: accepted
+status: closed
+close_reason: implemented
 priority: high
 author: Hal Hildebrand
 reviewed-by: self
 created: 2026-03-08
 accepted_date: 2026-03-08
-related_issues: []
+closed_date: 2026-03-08
+related_issues:
+  - "PR #42 - Java 25 Modernization (merged)"
+  - "PR #43 - Code review remediation (open)"
+  - "Kramer-6lk - Implementation epic (closed)"
+  - "Kramer-gh1 - Remediation epic (open)"
 ---
 
 # RDR-001: Java 25 Modernization
