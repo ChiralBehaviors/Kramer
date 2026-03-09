@@ -54,17 +54,28 @@ SHIFT+TAB, and ENTER, but is never installed. Two bugs compound this:
 1. **FocusTraversal.java** -- Add `bindKeyboard(Node node)` default method (no-op)
 2. **FocusController.java** -- Implement `bindKeyboard(Node node)`:
    ```java
+   private final List<Node> boundNodes = new ArrayList<>();
+
    public void bindKeyboard(Node vfNode) {
        InputMapTemplate.installFallback(TRAVERSAL_INPUT_MAP, this, c -> vfNode);
+       boundNodes.add(vfNode);
    }
    ```
-   Update `unbind()` to track and uninstall per-node bindings.
-3. **FocusTraversalNode.java** -- Override `bindKeyboard(Node node)` to delegate
+   Update `unbind()` to iterate `boundNodes` and uninstall from each, then clear
+   the list. (Audit Issue 2: current unbind targets AutoLayout node, not VirtualFlow
+   nodes. Multiple VirtualFlows per AutoLayout means multiple bindings to track.)
+3. **FocusController.java** -- Make navigation methods (`down()`, `up()`, `left()`,
+   `right()`, `currentActivate()`, `traverseCurrentNext()`, `traverseCurrentPrevious()`)
+   package-private instead of private, to enable direct testing without reflection.
+   (Audit Issue 4: reflection-based tests are fragile under Java modules.)
+4. **FocusTraversalNode.java** -- Override `bindKeyboard(Node node)` to delegate
    up: `parent.bindKeyboard(node)`. Fix line 63: change `parent.setCurrent()` to
    `parent.setCurrent(this)`.
-4. **VirtualFlow.java** -- In constructor, after `scrollHandler` initialization
-   (line 221), add: `parentTraversal.bindKeyboard(this);`
-5. Write tests verifying the wiring works with mocked components.
+5. **VirtualFlow.java** -- At end of full constructor body (after line ~270), add
+   null-guarded call: `if (parentTraversal != null) parentTraversal.bindKeyboard(this);`
+   (Audit Issue 1: short constructor passes null parentTraversal — unguarded call NPEs.
+   Note: line 221 is a field declaration, not in the constructor body.)
+6. Write tests verifying the wiring works with mocked components.
 
 ### Files Changed
 
@@ -93,8 +104,8 @@ SHIFT+TAB, and ENTER, but is never installed. Two bugs compound this:
 | `testDisabledNodeSuppressesHandlers` | Handlers don't fire when node is disabled |
 
 Tests use Mockito to verify method invocations without needing a running JavaFX
-scene. The FocusController methods are exercised directly (they're private, so
-tests call them via reflection or by directly setting `current` and invoking).
+scene. The FocusController navigation methods are package-private (per audit
+correction), enabling direct invocation from tests in the same package.
 
 ### Success Criteria
 
@@ -156,6 +167,8 @@ in the visual layout.
 5. **VirtualFlow.java** -- Expose `getFirstVisibleIndex()` and
    `getLastVisibleIndex()` as public methods (currently accessed via
    `cellPositioner` which is private). Add `getItemCount()` convenience method.
+   Note (audit): `CellPositioner` returns `OptionalInt`, not `int` — the public
+   wrappers must handle `OptionalInt.empty()` (no visible cells) explicitly.
 
 ### Files Changed
 
@@ -426,6 +439,15 @@ When ready, create a separate RDR covering:
 | Platform.runLater() timing for cursor recovery | Cursor recovery races with layout | Schedule recovery in same runLater block as autoLayout(), or add dedicated callback |
 | VirtualFlow.hit() calls layout() as side effect | Performance at navigation frequency | Profile; extract layout-skip path if hit frequency is too high |
 | Layout rebuild destroys all cell references | Stale cell references in CursorState | Store data identity, not cell reference; re-derive cell from identity after rebuild |
+| Multiple VirtualFlows per AutoLayout (audit) | Multiple bindKeyboard calls install handlers on multiple nodes | Track bound nodes in List; unbind iterates and clears all |
+
+## Plan Audit Notes (2026-03-09)
+
+**Verdict: GO with corrections.** Two issues corrected inline above:
+1. Null parentTraversal NPE in VirtualFlow short constructor — added null guard (Phase 1, step 5)
+2. unbind() node tracking — added boundNodes list (Phase 1, step 2)
+
+Minor items addressed: OptionalInt handling (Phase 2, step 5), package-private methods for testability (Phase 1, step 3), NestedCell LabelCell likely unnecessary (Phase 4).
 
 ## Parallel Execution Opportunities
 
