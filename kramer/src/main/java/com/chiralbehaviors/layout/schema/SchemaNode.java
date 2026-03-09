@@ -29,7 +29,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
  * @author hhildebrand
  *
  */
-abstract public class SchemaNode {
+public abstract sealed class SchemaNode permits Primitive, Relation {
 
     public static ArrayNode asArray(JsonNode node) {
         if (node == null) {

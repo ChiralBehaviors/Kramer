@@ -58,22 +58,10 @@ abstract public class MouseHandler {
             int count = sequentialClickCount.get();
             sequentialClickCount.set(0);
             switch (count) {
-                case 1:
-//                    System.out.println(String.format("Single click: %s",
-//                                                     getNode()));
-                    singleClick(mouseEvent);
-                    break;
-                case 2:
-//                    System.out.println(String.format("Double click: %s",
-//                                                     getNode()));
-                    doubleClick(mouseEvent);
-                    break;
-                case 3:
-//                    System.out.println(String.format("Triple click: %s",
-//                                                     getNode()));
-                    tripleClick(mouseEvent);
-                    break;
-                default:
+                case 1 -> singleClick(mouseEvent);
+                case 2 -> doubleClick(mouseEvent);
+                case 3 -> tripleClick(mouseEvent);
+                default -> {}
             }
         });
     }

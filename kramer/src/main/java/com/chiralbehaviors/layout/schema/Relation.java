@@ -25,7 +25,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @author hhildebrand
  *
  */
-public class Relation extends SchemaNode {
+public non-sealed class Relation extends SchemaNode {
     private boolean                autoFold = true;
     private final List<SchemaNode> children = new ArrayList<>();
     private Relation               fold;
@@ -43,9 +43,9 @@ public class Relation extends SchemaNode {
             return fold;
         }
         return autoFold && children.size() == 1
-               && children.get(children.size() - 1) instanceof Relation
-                                                                        ? (Relation) children.get(0)
-                                                                        : null;
+               && children.get(children.size() - 1) instanceof Relation r
+                                                                          ? r
+                                                                          : null;
     }
 
     public SchemaNode getChild(String field) {
@@ -77,9 +77,9 @@ public class Relation extends SchemaNode {
     }
 
     public void setFold(boolean fold) {
-        this.fold = (fold && children.size() == 1 && children.get(0)
-                                                             .isRelation()) ? (Relation) children.get(0)
-                                                                            : null;
+        this.fold = (fold && children.size() == 1
+                     && children.get(0) instanceof Relation r) ? r
+                                                               : null;
     }
 
     @Override
@@ -89,7 +89,7 @@ public class Relation extends SchemaNode {
 
     @Override
     public String toString(int indent) {
-        StringBuffer buf = new StringBuffer();
+        var buf = new StringBuilder();
         buf.append(String.format("Relation [%s]", label));
         buf.append('\n');
         children.forEach(c -> {

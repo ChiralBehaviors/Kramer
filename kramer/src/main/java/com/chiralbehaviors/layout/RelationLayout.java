@@ -46,7 +46,7 @@ import javafx.scene.layout.Region;
  * @author halhildebrand
  *
  */
-public class RelationLayout extends SchemaNodeLayout {
+public final class RelationLayout extends SchemaNodeLayout {
 
     public static ArrayNode flatten(Relation fold, JsonNode datum) {
         ArrayNode flattened = JsonNodeFactory.instance.arrayNode();
@@ -309,15 +309,15 @@ public class RelationLayout extends SchemaNodeLayout {
         for (SchemaNode child : getNode().getChildren()) {
             Fold fold = model.layout(child)
                              .fold(datum, extractor, model);
-            children.add(fold.getLayout());
-            columnWidth = Style.snap(Math.max(columnWidth, fold.getLayout()
-                                                               .measure(fold.datum,
+            children.add(fold.layout());
+            columnWidth = Style.snap(Math.max(columnWidth, fold.layout()
+                                                               .measure(fold.datum(),
                                                                         n -> n,
                                                                         model)));
-            if (fold.averageCardinality == 1) {
+            if (fold.averageCardinality() == 1) {
                 singularChildren++;
             } else {
-                sum += fold.averageCardinality;
+                sum += fold.averageCardinality();
             }
         }
         int effectiveChildren = children.size() - singularChildren;

@@ -20,7 +20,7 @@ package com.chiralbehaviors.layout.schema;
  * @author hhildebrand
  *
  */
-public class Primitive extends SchemaNode {
+public final class Primitive extends SchemaNode {
 
     private double defaultWidth = 0;
 

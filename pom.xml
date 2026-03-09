@@ -9,8 +9,7 @@
 	<description>Automatic layout of structured data</description>
 	<packaging>pom</packaging>
 	<properties>
-		<jackson.version>2.9.8</jackson.version>
-		<testfx.version>4.0.1-alpha</testfx.version>
+		<jackson.version>2.19.0</jackson.version>
 	</properties>
 	<modules>
 		<module>kramer</module>
@@ -40,55 +39,17 @@
 		<url>https://github.com/ChiralBehaviors/Kramer</url>
 	</scm>
 
-	<repositories>
-		<repository>
-			<id>chiralbehaviors-snapshots</id>
-			<url>http://repository-chiralbehaviors.forge.cloudbees.com/snapshot/</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>chiralbehaviors-release</id>
-			<url>http://repository-chiralbehaviors.forge.cloudbees.com/release/</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>jcenter</id>
-			<url>https://jcenter.bintray.com/</url>
-		</repository>
-	</repositories>
-
-	<dependencyManagement>
+<dependencyManagement>
 		<dependencies>
 			<dependency>
 				<groupId>org.fxmisc.wellbehaved</groupId>
 				<artifactId>wellbehavedfx</artifactId>
-				<version>0.3.1</version>
+				<version>0.3.3</version>
 			</dependency>
 			<dependency>
 				<groupId>org.reactfx</groupId>
 				<artifactId>reactfx</artifactId>
 				<version>2.0-M5</version>
-			</dependency>
-			<dependency>
-				<groupId>org.testfx</groupId>
-				<artifactId>openjfx-monocle</artifactId>
-				<version>1.8.0_20</version>
-			</dependency>
-			<dependency>
-				<groupId>org.testfx</groupId>
-				<artifactId>testfx-core</artifactId>
-				<version>${testfx.version}</version>
-				<scope>test</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.testfx</groupId>
-				<artifactId>testfx-junit</artifactId>
-				<version>${testfx.version}</version>
-				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>com.chiralbehaviors.layout</groupId>
@@ -111,8 +72,8 @@
 				<version>${jackson.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>com.fasterxml.jackson.jaxrs</groupId>
-				<artifactId>jackson-jaxrs-json-provider</artifactId>
+				<groupId>com.fasterxml.jackson.jakarta.rs</groupId>
+				<artifactId>jackson-jakarta-rs-json-provider</artifactId>
 				<version>${jackson.version}</version>
 			</dependency>
 			<dependency>
@@ -121,64 +82,77 @@
 				<version>${jackson.version}</version>
 			</dependency>
 			<dependency>
-				<groupId>junit</groupId>
-				<artifactId>junit</artifactId>
-				<version>4.11</version>
+				<groupId>org.junit.jupiter</groupId>
+				<artifactId>junit-jupiter</artifactId>
+				<version>5.14.2</version>
 				<scope>test</scope>
 			</dependency>
 			<dependency>
 				<groupId>com.graphql-java</groupId>
 				<artifactId>graphql-java</artifactId>
-				<version>2.3.0</version>
+				<version>25.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.controlsfx</groupId>
 				<artifactId>controlsfx</artifactId>
-				<version>8.40.12</version>
+				<version>11.2.3</version>
 			</dependency>
 			<dependency>
 				<groupId>ch.qos.logback</groupId>
 				<artifactId>logback-classic</artifactId>
-				<version>1.1.2</version>
+				<version>1.5.32</version>
 			</dependency>
 			<dependency>
 				<groupId>org.glassfish.jersey.core</groupId>
 				<artifactId>jersey-client</artifactId>
-				<version>2.22.1</version>
+				<version>3.1.11</version>
 			</dependency>
 			<dependency>
 				<groupId>org.glassfish.jersey.media</groupId>
 				<artifactId>jersey-media-json-jackson</artifactId>
-				<version>2.22.1</version>
+				<version>3.1.11</version>
+			</dependency>
+			<dependency>
+				<groupId>org.glassfish.jersey.inject</groupId>
+				<artifactId>jersey-hk2</artifactId>
+				<version>3.1.11</version>
 			</dependency>
 			<dependency>
 				<groupId>org.mockito</groupId>
 				<artifactId>mockito-core</artifactId>
-				<version>1.9.5</version>
+				<version>5.22.0</version>
 			</dependency>
 			<dependency>
 				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-controls</artifactId>
-				<version>14.0.1</version>
+				<version>25.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-fxml</artifactId>
-				<version>14.0.1</version>
+				<version>25.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.openjfx</groupId>
 				<artifactId>javafx-web</artifactId>
-				<version>14.0.1</version>
+				<version>25.0.1</version>
 			</dependency> 
 			<dependency>
 				<groupId>jakarta.xml.bind</groupId>
 				<artifactId>jakarta.xml.bind-api</artifactId>
-				<version>2.3.3</version>
+				<version>4.0.5</version>
 			</dependency>
 
 		</dependencies>
 	</dependencyManagement>
+
+	<distributionManagement>
+		<repository>
+			<id>github</id>
+			<name>GitHub Packages</name>
+			<url>https://maven.pkg.github.com/ChiralBehaviors/Kramer</url>
+		</repository>
+	</distributionManagement>
 
 	<build>
 		<plugins>
@@ -186,20 +160,13 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<release>11</release>
-					<dependencies>
-						<dependency>
-							<groupId>org.ow2.asm</groupId>
-							<artifactId>asm</artifactId>
-							<version>6.2</version>
-						</dependency>
-					</dependencies>
+					<release>25</release>
 				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>2.2.1</version>
+				<version>3.4.0</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -220,7 +187,12 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-compiler-plugin</artifactId>
-					<version>3.7.0</version>
+					<version>3.14.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>3.5.5</version>
 				</plugin>
 			</plugins>
 		</pluginManagement>

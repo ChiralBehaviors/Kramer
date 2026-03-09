@@ -88,7 +88,7 @@ public class RelationStyle extends NodeStyle {
     }
 
     public double getOutlineCellHorizontalInset() {
-        return outlineCell.getTop() + outlineCell.getBottom();
+        return outlineCell.getLeft() + outlineCell.getRight();
     }
 
     public double getOutlineCellVerticalInset() {
