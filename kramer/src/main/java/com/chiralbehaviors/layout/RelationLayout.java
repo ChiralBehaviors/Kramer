@@ -213,11 +213,13 @@ public final class RelationLayout extends SchemaNodeLayout {
                                       - style.getElementHorizontalInset());
         for (SchemaNodeLayout child : children) {
             double childWidth = labelWidth + child.layoutWidth();
-            if (childWidth > halfWidth || current == null) {
+            // Paper §3.4: outline-mode relations are excluded from column sets
+            boolean excluded = (child instanceof RelationLayout rl) && !rl.isUseTable();
+            if (excluded || childWidth > halfWidth || current == null) {
                 current = new ColumnSet();
                 columnSets.add(current);
                 current.add(child);
-                if (childWidth > halfWidth) {
+                if (excluded || childWidth > halfWidth) {
                     current = null;
                 }
             } else {
@@ -258,6 +260,10 @@ public final class RelationLayout extends SchemaNodeLayout {
 
     public String getStyleClass() {
         return node.getField();
+    }
+
+    public boolean isUseTable() {
+        return useTable;
     }
 
     @Override
