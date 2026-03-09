@@ -2,8 +2,10 @@
 title: "Layout Decision Heuristic Improvements"
 id: RDR-006
 type: Enhancement
-status: accepted
+status: implemented
 accepted_date: 2026-03-09
+closed_date: 2026-03-09
+close_reason: implemented
 priority: P3
 author: Hal Hildebrand
 reviewed-by: self
