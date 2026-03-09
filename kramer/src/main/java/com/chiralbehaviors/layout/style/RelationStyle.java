@@ -33,8 +33,11 @@ import javafx.geometry.Insets;
  */
 public class RelationStyle extends NodeStyle {
 
+    private static final int DEFAULT_MAX_AVERAGE_CARDINALITY = 10;
+
     private final Insets column;
     private final Insets element;
+    private final int    maxAverageCardinality;
     private final Insets nestedInsets;
     private final Insets outline;
     private final Insets outlineCell;
@@ -47,6 +50,15 @@ public class RelationStyle extends NodeStyle {
                          NestedRow row, NestedCell rowCell, Outline outline,
                          OutlineCell outlineCell, OutlineColumn column,
                          Span span, OutlineElement element) {
+        this(labelStyle, table, row, rowCell, outline, outlineCell, column,
+             span, element, DEFAULT_MAX_AVERAGE_CARDINALITY);
+    }
+
+    public RelationStyle(LabelStyle labelStyle, NestedTable table,
+                         NestedRow row, NestedCell rowCell, Outline outline,
+                         OutlineCell outlineCell, OutlineColumn column,
+                         Span span, OutlineElement element,
+                         int maxAverageCardinality) {
         super(labelStyle);
         this.table = table.getInsets();
         this.row = row.getInsets();
@@ -57,6 +69,7 @@ public class RelationStyle extends NodeStyle {
         this.span = span.getInsets();
         this.element = element.getInsets();
         nestedInsets = Style.add(this.row, this.rowCell);
+        this.maxAverageCardinality = maxAverageCardinality;
     }
 
     public double getColumnHorizontalInset() {
@@ -65,6 +78,10 @@ public class RelationStyle extends NodeStyle {
 
     public double getColumnVerticalInset() {
         return column.getTop() + column.getBottom();
+    }
+
+    public int getMaxAverageCardinality() {
+        return maxAverageCardinality;
     }
 
     public double getElementHorizontalInset() {
