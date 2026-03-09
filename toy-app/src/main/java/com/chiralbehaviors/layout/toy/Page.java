@@ -43,8 +43,6 @@ public class Page {
     }
 
     @JsonProperty
-    private String             endpoint;
-    @JsonProperty
     private String             query;
     @JsonProperty
     private Map<String, Route> routing;

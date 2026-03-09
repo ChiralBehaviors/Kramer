@@ -46,6 +46,11 @@ import javafx.scene.input.InputEvent;
  */
 public class FocusController<C extends LayoutCell<?>>
         implements FocusTraversal<C> {
+    // NOTE: TRAVERSAL_INPUT_MAP is never installed — FocusController has no bind() method
+    // (unlike MouseHandler, which calls bind() in its constructor). The unbind() method
+    // therefore also has no effect. This keyboard-navigation map is intentionally retained
+    // as future functionality; wire it up by adding a bind() method that calls
+    // InputMapTemplate.installFallback(TRAVERSAL_INPUT_MAP, this, c -> node).
     private final static InputMapTemplate<FocusController<?>, InputEvent> TRAVERSAL_INPUT_MAP;
 
     static {
