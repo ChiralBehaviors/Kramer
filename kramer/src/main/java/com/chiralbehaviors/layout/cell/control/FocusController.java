@@ -159,10 +159,12 @@ public class FocusController<C extends LayoutCell<?>>
     }
 
     private void currentActivate() {
+        if (current == null) return;
         current.activate();
     }
 
     private void down() {
+        if (current == null) return;
         switch (current.bias) {
             case HORIZONTAL -> current.traverseNext();
             case VERTICAL -> current.selectNext();
@@ -171,6 +173,7 @@ public class FocusController<C extends LayoutCell<?>>
     }
 
     private void left() {
+        if (current == null) return;
         switch (current.bias) {
             case HORIZONTAL -> current.selectPrevious();
             case VERTICAL -> current.traversePrevious();
@@ -179,6 +182,7 @@ public class FocusController<C extends LayoutCell<?>>
     }
 
     private void right() {
+        if (current == null) return;
         switch (current.bias) {
             case HORIZONTAL -> current.selectNext();
             case VERTICAL -> current.traverseNext();
@@ -187,14 +191,17 @@ public class FocusController<C extends LayoutCell<?>>
     }
 
     private void traverseCurrentNext() {
+        if (current == null) return;
         current.traverseNext();
     }
 
     private void traverseCurrentPrevious() {
+        if (current == null) return;
         current.traversePrevious();
     }
 
     private void up() {
+        if (current == null) return;
         switch (current.bias) {
             case HORIZONTAL -> current.traversePrevious();
             case VERTICAL -> current.selectPrevious();

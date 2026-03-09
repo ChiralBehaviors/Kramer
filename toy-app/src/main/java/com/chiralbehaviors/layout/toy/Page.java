@@ -56,7 +56,7 @@ public class Page {
     }
 
     public Route getRoute(Relation relation) {
-        return routing.get(relation.getField());
+        return routing == null ? null : routing.get(relation.getField());
     }
 
     public String getTitle() {

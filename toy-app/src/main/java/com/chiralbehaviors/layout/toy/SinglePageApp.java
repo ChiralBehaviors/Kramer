@@ -21,9 +21,11 @@ import static com.chiralbehaviors.layout.cell.control.SelectionEvent.DOUBLE_SELE
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Stack;
+import java.util.Objects;
 import java.util.StringTokenizer;
 
 import jakarta.ws.rs.client.ClientBuilder;
@@ -69,13 +71,13 @@ public class SinglePageApp extends Application implements LayoutObserver {
         launch(args);
     }
 
-    private AnchorPane               anchor;
-    private GraphqlApplication       application;
-    private final Stack<PageContext> back    = new Stack<>();
-    private Button                   backButton;
-    private WebTarget                endpoint;
-    private final Stack<PageContext> forward = new Stack<>();
-    private Button                   forwardButton;
+    private AnchorPane                  anchor;
+    private GraphqlApplication          application;
+    private final Deque<PageContext>    back    = new ArrayDeque<>();
+    private Button                      backButton;
+    private WebTarget                   endpoint;
+    private final Deque<PageContext>    forward = new ArrayDeque<>();
+    private Button                      forwardButton;
     private AutoLayout               layout;
     private Stage                    primaryStage;
     private Button                   reloadButton;
@@ -98,7 +100,7 @@ public class SinglePageApp extends Application implements LayoutObserver {
             try {
                 push(extract(route, item));
             } catch (QueryException ex) {
-                log.error("Unable to push page: %s", route.getPath(), ex);
+                log.error("Unable to push page: {}", route.getPath(), ex);
             }
         }));
     }
@@ -121,7 +123,10 @@ public class SinglePageApp extends Application implements LayoutObserver {
         endpoint = ClientBuilder.newClient()
                                 .target(application.getEndpoint()
                                                    .toURI());
-        push(new PageContext(application.getRoot()));
+        Page root = application.getRoot();
+        Objects.requireNonNull(root,
+                               "No root page found; check that the 'root' key in the YAML matches a defined route");
+        push(new PageContext(root));
         primaryStage.show();
     }
 
@@ -131,11 +136,10 @@ public class SinglePageApp extends Application implements LayoutObserver {
         initRootLayout(primaryStage);
     }
 
-    private JsonNode apply(JsonNode node, String path) {
+    private JsonNode traversePath(JsonNode node, String path) {
         StringTokenizer tokens = new StringTokenizer(path, "/");
-        JsonNode current = node;
         while (tokens.hasMoreTokens()) {
-            node = current.get(tokens.nextToken());
+            node = node.get(tokens.nextToken());
         }
         return node;
     }
@@ -176,7 +180,7 @@ public class SinglePageApp extends Application implements LayoutObserver {
              .entrySet()
              .stream()
              .forEach(entry -> {
-                 variables.put(entry.getKey(), apply(item, entry.getValue()));
+                 variables.put(entry.getKey(), traversePath(item, entry.getValue()));
              });
 
         Page target = application.route(route.getPath());

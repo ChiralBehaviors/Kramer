@@ -330,7 +330,7 @@ public final class RelationLayout extends SchemaNodeLayout {
         labelWidth = children.stream()
                              .mapToDouble(child -> child.calculateLabelWidth())
                              .max()
-                             .getAsDouble();
+                             .orElse(0.0);
         columnWidth = Style.snap(labelWidth + columnWidth);
         return columnWidth + style.getElementHorizontalInset()
                + style.getColumnHorizontalInset()
@@ -412,7 +412,7 @@ public final class RelationLayout extends SchemaNodeLayout {
                                                   .mapToDouble(child -> child.rowHeight(averageChildCardinality,
                                                                                         justifiedWidth))
                                                   .max()
-                                                  .getAsDouble());
+                                                  .orElse(0.0));
         children.forEach(c -> c.normalizeRowHeight(elementHeight));
         return Style.snap(elementHeight + style.getRowCellVerticalInset()
                           + style.getRowVerticalInset());
@@ -473,14 +473,17 @@ public final class RelationLayout extends SchemaNodeLayout {
     }
 
     protected boolean isFirst(SchemaNodeLayout child) {
+        if (children.isEmpty()) return false;
         return child.equals(children.get(0));
     }
 
     protected boolean isLast(SchemaNodeLayout child) {
+        if (children.isEmpty()) return false;
         return child.equals(children.get(children.size() - 1));
     }
 
     protected void justifyColumn(double available) {
+        if (children.isEmpty()) return;
         double[] remaining = new double[] { available };
         SchemaNodeLayout last = children.get(children.size() - 1);
         justifiedWidth = Style.snap(available);

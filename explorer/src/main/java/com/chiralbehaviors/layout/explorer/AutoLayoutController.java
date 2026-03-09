@@ -17,10 +17,9 @@
 package com.chiralbehaviors.layout.explorer;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
+import java.util.Objects;
 
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
@@ -73,9 +72,9 @@ public class AutoLayoutController {
             if (targetURL != null && !targetURL.equals(previous)) {
                 URI uri;
                 try {
-                    uri = new URL(targetURL).toURI();
-                } catch (MalformedURLException | URISyntaxException e) {
-                    e.printStackTrace();
+                    uri = new URI(targetURL);
+                } catch (URISyntaxException e) {
+                    log.error("Invalid target URL: {}", targetURL, e);
                     return;
                 }
                 endpoint = ClientBuilder.newClient()
@@ -162,7 +161,7 @@ public class AutoLayoutController {
             return;
         }
         queryState = state;
-        if (previousDataString == state.getData()) {
+        if (Objects.equals(previousDataString, state.getData())) {
             return;
         }
         JsonNode data;
