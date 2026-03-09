@@ -16,6 +16,8 @@
 
 package com.chiralbehaviors.layout.explorer;
 
+import java.util.Objects;
+
 public class QueryState {
     private String data;
     private String operationName;
@@ -57,44 +59,14 @@ public class QueryState {
 
     @Override
     public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        QueryState other = (QueryState) obj;
-        if (data == null) {
-            if (other.data != null)
-                return false;
-        } else if (!data.equals(other.data))
-            return false;
-        if (operationName == null) {
-            if (other.operationName != null)
-                return false;
-        } else if (!operationName.equals(other.operationName))
-            return false;
-        if (query == null) {
-            if (other.query != null)
-                return false;
-        } else if (!query.equals(other.query))
-            return false;
-        if (selection == null) {
-            if (other.selection != null)
-                return false;
-        } else if (!selection.equals(other.selection))
-            return false;
-        if (targetURL == null) {
-            if (other.targetURL != null)
-                return false;
-        } else if (!targetURL.equals(other.targetURL))
-            return false;
-        if (variables == null) {
-            if (other.variables != null)
-                return false;
-        } else if (!variables.equals(other.variables))
-            return false;
-        return true;
+        if (this == obj) return true;
+        if (!(obj instanceof QueryState other)) return false;
+        return Objects.equals(data, other.data)
+            && Objects.equals(operationName, other.operationName)
+            && Objects.equals(query, other.query)
+            && Objects.equals(selection, other.selection)
+            && Objects.equals(targetURL, other.targetURL)
+            && Objects.equals(variables, other.variables);
     }
 
     public String getData() {
@@ -123,19 +95,7 @@ public class QueryState {
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((data == null) ? 0 : data.hashCode());
-        result = prime * result
-                 + ((operationName == null) ? 0 : operationName.hashCode());
-        result = prime * result + ((query == null) ? 0 : query.hashCode());
-        result = prime * result
-                 + ((selection == null) ? 0 : selection.hashCode());
-        result = prime * result
-                 + ((targetURL == null) ? 0 : targetURL.hashCode());
-        result = prime * result
-                 + ((variables == null) ? 0 : variables.hashCode());
-        return result;
+        return Objects.hash(data, operationName, query, selection, targetURL, variables);
     }
 
     public void initializeFrom(QueryState state) {

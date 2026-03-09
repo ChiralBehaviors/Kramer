@@ -82,12 +82,12 @@ public class NestedTable extends VerticalCell<NestedTable> {
 
     @Override
     public void activate() {
-        rows.activate();
+        if (rows != null) rows.activate();
     }
 
     @Override
     public void setFocus() {
-        rows.setFocus();
+        if (rows != null) rows.setFocus();
     }
 
     @Override

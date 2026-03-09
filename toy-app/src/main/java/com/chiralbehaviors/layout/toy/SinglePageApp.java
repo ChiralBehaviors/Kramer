@@ -21,11 +21,14 @@ import static com.chiralbehaviors.layout.cell.control.SelectionEvent.DOUBLE_SELE
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Stack;
+import java.util.Objects;
 import java.util.StringTokenizer;
 
+import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 
@@ -37,7 +40,6 @@ import org.slf4j.LoggerFactory;
 import com.chiralbehaviors.layout.AutoLayout;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
-import com.chiralbehaviors.layout.graphql.GraphQlUtil.QueryException;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.Style.LayoutObserver;
@@ -45,9 +47,10 @@ import com.chiralbehaviors.layout.toy.Page.Route;
 import com.chiralbehaviors.utils.Utils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory; 
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import javafx.application.Application;
+import javafx.concurrent.Task;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.image.Image;
@@ -69,13 +72,14 @@ public class SinglePageApp extends Application implements LayoutObserver {
         launch(args);
     }
 
-    private AnchorPane               anchor;
-    private GraphqlApplication       application;
-    private final Stack<PageContext> back    = new Stack<>();
-    private Button                   backButton;
-    private WebTarget                endpoint;
-    private final Stack<PageContext> forward = new Stack<>();
-    private Button                   forwardButton;
+    private AnchorPane                  anchor;
+    private GraphqlApplication          application;
+    private final Deque<PageContext>    back    = new ArrayDeque<>();
+    private Button                      backButton;
+    private WebTarget                   endpoint;
+    private Client                      httpClient;
+    private final Deque<PageContext>    forward = new ArrayDeque<>();
+    private Button                      forwardButton;
     private AutoLayout               layout;
     private Stage                    primaryStage;
     private Button                   reloadButton;
@@ -95,16 +99,11 @@ public class SinglePageApp extends Application implements LayoutObserver {
             if (item == null) {
                 return;
             }
-            try {
-                push(extract(route, item));
-            } catch (QueryException ex) {
-                log.error("Unable to push page: %s", route.getPath(), ex);
-            }
+            push(extract(route, item));
         }));
     }
 
-    public void initRootLayout(Stage ps) throws IOException, URISyntaxException,
-                                         QueryException {
+    public void initRootLayout(Stage ps) throws IOException, URISyntaxException {
         primaryStage = ps;
         anchor = new AnchorPane();
         VBox vbox = new VBox(locationBar(), anchor);
@@ -118,24 +117,31 @@ public class SinglePageApp extends Application implements LayoutObserver {
         }
         application = new ObjectMapper(new YAMLFactory()).readValue(url.openStream(),
                                                                     GraphqlApplication.class);
-        endpoint = ClientBuilder.newClient()
-                                .target(application.getEndpoint()
-                                                   .toURI());
-        push(new PageContext(application.getRoot()));
+        httpClient = ClientBuilder.newClient();
+        endpoint = httpClient.target(application.getEndpoint().toURI());
+        Page root = application.getRoot();
+        Objects.requireNonNull(root,
+                               "No root page found; check that the 'root' key in the YAML matches a defined route");
+        push(new PageContext(root));
         primaryStage.show();
     }
 
     @Override
-    public void start(Stage primaryStage) throws IOException,
-                                          URISyntaxException, QueryException {
+    public void start(Stage primaryStage) throws IOException, URISyntaxException {
         initRootLayout(primaryStage);
     }
 
-    private JsonNode apply(JsonNode node, String path) {
+    @Override
+    public void stop() throws Exception {
+        if (httpClient != null) {
+            httpClient.close();
+        }
+    }
+
+    private JsonNode traversePath(JsonNode node, String path) {
         StringTokenizer tokens = new StringTokenizer(path, "/");
-        JsonNode current = node;
         while (tokens.hasMoreTokens()) {
-            node = current.get(tokens.nextToken());
+            node = node.get(tokens.nextToken());
         }
         return node;
     }
@@ -158,16 +164,41 @@ public class SinglePageApp extends Application implements LayoutObserver {
         PageContext pageContext = back.peek();
         primaryStage.setTitle(pageContext.getPage()
                                          .getTitle());
-        anchor.getChildren()
-              .clear();
-        try {
-            layout = layout(pageContext);
-        } catch (QueryException e) {
-            log.error("Unable to display page", e);
-            return;
-        }
-        anchor.getChildren()
-              .add(layout);
+
+        backButton.setDisable(true);
+        forwardButton.setDisable(true);
+        reloadButton.setDisable(true);
+
+        Task<JsonNode> loadTask = new Task<>() {
+            @Override
+            protected JsonNode call() throws Exception {
+                return pageContext.evaluate(endpoint);
+            }
+        };
+
+        loadTask.setOnSucceeded(event -> {
+            JsonNode data = loadTask.getValue();
+            AutoLayout newLayout = new AutoLayout(pageContext.getRoot(), new Style(SinglePageApp.this));
+            newLayout.updateItem(data);
+            newLayout.measure(data);
+            AnchorPane.setTopAnchor(newLayout, 0.0);
+            AnchorPane.setLeftAnchor(newLayout, 0.0);
+            AnchorPane.setBottomAnchor(newLayout, 0.0);
+            AnchorPane.setRightAnchor(newLayout, 0.0);
+            anchor.getChildren().clear();
+            anchor.getChildren().add(newLayout);
+            layout = newLayout;
+            updateLocationBar();
+        });
+
+        loadTask.setOnFailed(event -> {
+            log.error("Failed to load page", loadTask.getException());
+            updateLocationBar();
+        });
+
+        Thread thread = new Thread(loadTask);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     private PageContext extract(Route route, JsonNode item) {
@@ -176,7 +207,7 @@ public class SinglePageApp extends Application implements LayoutObserver {
              .entrySet()
              .stream()
              .forEach(entry -> {
-                 variables.put(entry.getKey(), apply(item, entry.getValue()));
+                 variables.put(entry.getKey(), traversePath(item, entry.getValue()));
              });
 
         Page target = application.route(route.getPath());
@@ -186,19 +217,6 @@ public class SinglePageApp extends Application implements LayoutObserver {
     private void forward() {
         back.push(forward.pop());
         displayCurrentPage();
-    }
-
-    private AutoLayout layout(PageContext pageContext) throws QueryException {
-        AutoLayout layout = new AutoLayout(pageContext.getRoot(),
-                                           new Style(this));
-        JsonNode data = pageContext.evaluate(endpoint);
-        layout.updateItem(data);
-        layout.measure(data);
-        AnchorPane.setTopAnchor(layout, 0.0);
-        AnchorPane.setLeftAnchor(layout, 0.0);
-        AnchorPane.setBottomAnchor(layout, 0.0);
-        AnchorPane.setRightAnchor(layout, 0.0);
-        return layout;
     }
 
     private HBox locationBar() {
@@ -218,7 +236,7 @@ public class SinglePageApp extends Application implements LayoutObserver {
         return hbox;
     }
 
-    private void push(PageContext pageContext) throws QueryException {
+    private void push(PageContext pageContext) {
         back.push(pageContext);
         forward.clear();
         displayCurrentPage();

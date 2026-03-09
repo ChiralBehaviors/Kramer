@@ -43,8 +43,6 @@ public class Page {
     }
 
     @JsonProperty
-    private String             endpoint;
-    @JsonProperty
     private String             query;
     @JsonProperty
     private Map<String, Route> routing;
@@ -56,7 +54,7 @@ public class Page {
     }
 
     public Route getRoute(Relation relation) {
-        return routing.get(relation.getField());
+        return routing == null ? null : routing.get(relation.getField());
     }
 
     public String getTitle() {

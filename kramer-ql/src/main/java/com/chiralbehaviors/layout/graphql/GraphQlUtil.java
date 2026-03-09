@@ -16,7 +16,6 @@
 
 package com.chiralbehaviors.layout.graphql;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,8 +28,12 @@ import jakarta.ws.rs.client.Invocation.Builder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -48,8 +51,12 @@ import graphql.parser.Parser;
  * @author halhildebrand
  *
  */
-public interface GraphQlUtil {
-    static class QueryException extends Exception {
+public final class GraphQlUtil {
+    private static final Logger log = LoggerFactory.getLogger(GraphQlUtil.class);
+
+    private GraphQlUtil() {}
+
+    public static class QueryException extends Exception {
         private static final long serialVersionUID = 1L;
         private final ArrayNode   errors;
 
@@ -63,7 +70,7 @@ public interface GraphQlUtil {
         }
     }
 
-    record QueryRequest(String operationName, String query, Map<String, Object> variables) {
+    public static record QueryRequest(String operationName, String query, Map<String, Object> variables) {
         public QueryRequest(String query, Map<String, Object> variables) {
             this(null, query, variables);
         }
@@ -73,7 +80,7 @@ public interface GraphQlUtil {
         }
     }
 
-    static Relation buildSchema(Field parentField) {
+    public static Relation buildSchema(Field parentField) {
         Relation parent = new Relation(parentField.getName());
         for (Selection<?> selection : parentField.getSelectionSet()
                                                 .getSelections()) {
@@ -89,13 +96,13 @@ public interface GraphQlUtil {
             } else if (selection instanceof InlineFragment inlineFragment) {
                 buildSchema(parent, inlineFragment);
             } else if (selection instanceof FragmentSpread) {
-
+                throw new UnsupportedOperationException("Named fragment spreads are not supported; use inline fragments");
             }
         }
         return parent;
     }
 
-    static void buildSchema(Relation parent, InlineFragment fragment) {
+    public static void buildSchema(Relation parent, InlineFragment fragment) {
         for (Selection<?> selection : fragment.getSelectionSet()
                                              .getSelections()) {
             if (selection instanceof Field field) {
@@ -110,12 +117,12 @@ public interface GraphQlUtil {
             } else if (selection instanceof InlineFragment inlineFragment) {
                 buildSchema(parent, inlineFragment);
             } else if (selection instanceof FragmentSpread) {
-
+                throw new UnsupportedOperationException("Named fragment spreads are not supported; use inline fragments");
             }
         }
     }
 
-    static Relation buildSchema(String query) {
+    public static Relation buildSchema(String query) {
         List<Relation> children = new ArrayList<>();
         AtomicReference<String> operationName = new AtomicReference<>();
         Parser.parse(query)
@@ -153,7 +160,7 @@ public interface GraphQlUtil {
         return parent;
     }
 
-    static Relation buildSchema(String query, String source) {
+    public static Relation buildSchema(String query, String source) {
         for (Definition<?> definition : Parser.parse(query)
                                                    .getDefinitions()) {
             if (definition instanceof OperationDefinition operation) {
@@ -174,8 +181,8 @@ public interface GraphQlUtil {
                                                       source));
     }
 
-    static ObjectNode evaluate(WebTarget endpoint,
-                               QueryRequest request) throws QueryException {
+    public static ObjectNode evaluate(WebTarget endpoint,
+                                      QueryRequest request) throws QueryException {
         Builder invocationBuilder = endpoint.request(MediaType.APPLICATION_JSON_TYPE);
 
         ObjectNode result = invocationBuilder.post(Entity.entity(request,
@@ -185,17 +192,22 @@ public interface GraphQlUtil {
         if (errors.size() > 0) {
             throw new QueryException(errors);
         }
-        return (ObjectNode) result.get("data");
+        JsonNode data = result.get("data");
+        if (data == null || data.isNull()) {
+            throw new QueryException(result.withArray("errors"));
+        }
+        return (ObjectNode) data;
     }
 
-    static String evaluate(WebTarget endpoint,
-                           String request) throws IOException {
+    public static String evaluate(WebTarget endpoint,
+                                  String request) {
         try {
             return endpoint.request(MediaType.APPLICATION_JSON_TYPE)
                            .post(Entity.entity(request,
                                                MediaType.APPLICATION_JSON_TYPE),
                                  String.class);
         } catch (BadRequestException e) {
+            log.warn("GraphQL request returned HTTP 400: {}", e.getMessage());
             return "{}";
         }
     }

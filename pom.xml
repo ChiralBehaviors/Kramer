@@ -13,9 +13,9 @@
 	</properties>
 	<modules>
 		<module>kramer</module>
+		<module>kramer-ql</module>
 		<module>explorer</module>
 		<module>toy-app</module>
-		<module>kramer-ql</module>
 	</modules>
 
 
@@ -152,6 +152,11 @@
 			<name>GitHub Packages</name>
 			<url>https://maven.pkg.github.com/ChiralBehaviors/Kramer</url>
 		</repository>
+		<snapshotRepository>
+			<id>github</id>
+			<name>GitHub Packages Snapshots</name>
+			<url>https://maven.pkg.github.com/ChiralBehaviors/Kramer</url>
+		</snapshotRepository>
 	</distributionManagement>
 
 	<build>
@@ -193,6 +198,11 @@
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>3.5.5</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-deploy-plugin</artifactId>
+					<version>3.1.4</version>
 				</plugin>
 			</plugins>
 		</pluginManagement>

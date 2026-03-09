@@ -511,8 +511,9 @@ public class Utils {
      */
     public static byte[] getBits(File file) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        InputStream fis = new FileInputStream(file);
-        copy(fis, baos);
+        try (InputStream fis = new FileInputStream(file)) {
+            copy(fis, baos);
+        }
         return baos.toByteArray();
     }
 

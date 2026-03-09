@@ -82,12 +82,11 @@ public class SchemaView extends Control {
         return view;
     }
 
-    private Object rebuild(Relation relation) {
+    private void rebuild(Relation relation) {
         if (relation == null) {
             getChildren().clear();
         } else {
-            getChildren().add(buildSchemaTree(relation));
+            getChildren().setAll(buildSchemaTree(relation));
         }
-        return null;
     }
 }

@@ -43,7 +43,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Set release version
-        run: mvn -batch-mode versions:set -DnewVersion="$RELEASE_VERSION" -DgenerateBackupPoms=false
+        run: mvn --no-transfer-progress -batch-mode versions:set -DnewVersion="$RELEASE_VERSION" -DgenerateBackupPoms=false
         env:
           RELEASE_VERSION: ${{ github.event.inputs.releaseVersion }}
 
@@ -66,7 +66,7 @@ jobs:
           EOF
 
       - name: Build and test
-        run: mvn -batch-mode clean install
+        run: mvn --no-transfer-progress -batch-mode clean install
 
       - name: Commit release version
         run: |
@@ -77,12 +77,12 @@ jobs:
           RELEASE_VERSION: ${{ github.event.inputs.releaseVersion }}
 
       - name: Publish to GitHub Packages
-        run: mvn -batch-mode deploy -DskipTests
+        run: mvn --no-transfer-progress -batch-mode deploy -DskipTests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set next development version
-        run: mvn -batch-mode versions:set -DnewVersion="$NEXT_VERSION" -DgenerateBackupPoms=false
+        run: mvn --no-transfer-progress -batch-mode versions:set -DnewVersion="$NEXT_VERSION" -DgenerateBackupPoms=false
         env:
           NEXT_VERSION: ${{ github.event.inputs.nextVersion }}
 

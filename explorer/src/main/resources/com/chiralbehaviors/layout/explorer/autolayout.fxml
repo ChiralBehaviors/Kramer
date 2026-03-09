@@ -7,7 +7,7 @@
 <?import javafx.scene.layout.BorderPane?>
 
 <BorderPane fx:id="root" prefHeight="600.0" prefWidth="600.0"
-	xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1">
+	xmlns="http://javafx.com/javafx/25" xmlns:fx="http://javafx.com/fxml/1">
 	<bottom>
 		<ButtonBar prefHeight="40.0" prefWidth="200.0"
 			BorderPane.alignment="CENTER">
