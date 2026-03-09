@@ -81,7 +81,7 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
                                                                      Bias.HORIZONTAL) {
 
             @Override
-            protected NestedCell getContainer() {
+            public NestedCell getContainer() {
                 return NestedCell.this;
             }
         };

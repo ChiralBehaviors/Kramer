@@ -17,11 +17,13 @@
 package com.chiralbehaviors.layout;
 
 import java.net.URL;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusController;
+import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.style.Style;
@@ -183,6 +185,9 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             return;
         }
         LayoutCell<?> old = control;
+        // Clear old keyboard bindings before rebuilding the control tree;
+        // new VirtualFlows will re-register via bindKeyboard in their constructors.
+        controller.unbind();
         control = layout.autoLayout(width, controller, model);
         Region node = control.getNode();
 
@@ -199,6 +204,24 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         node.setPrefWidth(width);
         node.setMaxWidth(width);
         control.updateItem(zeeData);
+
+        // Recover cursor position after layout rebuild.
+        // Find the first VirtualFlow in the new tree for cursor recovery.
+        findVirtualFlow(node).ifPresent(controller::recoverCursor);
+    }
+
+    private Optional<VirtualFlow<?>> findVirtualFlow(Region root) {
+        if (root instanceof VirtualFlow<?> vf) {
+            return Optional.of(vf);
+        }
+        if (root instanceof javafx.scene.Parent p) {
+            for (javafx.scene.Node child : p.getChildrenUnmodifiable()) {
+                if (child instanceof VirtualFlow<?> vf) {
+                    return Optional.of(vf);
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     private void setContent() {

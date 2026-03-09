@@ -79,7 +79,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
                                              Bias.VERTICAL) {
 
             @Override
-            protected OutlineCell getContainer() {
+            public OutlineCell getContainer() {
                 return OutlineCell.this;
             }
 

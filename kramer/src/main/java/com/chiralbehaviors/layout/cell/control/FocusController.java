@@ -37,9 +37,13 @@ import java.util.List;
 
 import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
 
+import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
+import com.chiralbehaviors.layout.flowless.VirtualFlow;
 
+import javafx.geometry.Bounds;
+import javafx.geometry.Point2D;
 import javafx.scene.Node;
 import javafx.scene.input.InputEvent;
 
@@ -90,6 +94,7 @@ public class FocusController<C extends LayoutCell<?>>
     }
 
     private volatile FocusTraversalNode<?> current;
+    private volatile CursorState           cursorState;
 
     private final List<Node>               boundNodes = new ArrayList<>();
     private final Node                     node;
@@ -166,6 +171,38 @@ public class FocusController<C extends LayoutCell<?>>
             InputMapTemplate.uninstall(TRAVERSAL_INPUT_MAP, this, c -> n);
         }
         boundNodes.clear();
+        cursorState = null;
+    }
+
+    /**
+     * Recover cursor position after a layout rebuild. Called by AutoLayout
+     * after autoLayout() replaces the control tree. Re-derives scene position
+     * from the stored data identity by scanning the new VirtualFlow's items.
+     */
+    public void recoverCursor(VirtualFlow<?> newFlow) {
+        CursorState cs = cursorState;
+        if (cs == null || newFlow == null) {
+            return;
+        }
+        // Find the item by identity in the new flow
+        var items = newFlow.getItems();
+        for (int i = 0; i < items.size(); i++) {
+            if (items.get(i) == cs.dataIdentity()) {
+                newFlow.show(i);
+                selectCellAt(newFlow, i);
+                return;
+            }
+        }
+        // Identity not found — clear cursor
+        cursorState = null;
+    }
+
+    CursorState getCursorState() {
+        return cursorState;
+    }
+
+    void setCursorState(CursorState state) {
+        this.cursorState = state;
     }
 
     FocusTraversalNode<?> getCurrent() {
@@ -183,28 +220,40 @@ public class FocusController<C extends LayoutCell<?>>
 
     void down() {
         if (current == null) return;
-        switch (current.bias) {
-            case HORIZONTAL -> current.traverseNext();
-            case VERTICAL -> current.selectNext();
-            default -> {}
+        if (cursorState != null) {
+            movePhysical(0, cursorState.cellBounds().getHeight());
+        } else {
+            switch (current.bias) {
+                case HORIZONTAL -> current.traverseNext();
+                case VERTICAL -> current.selectNext();
+                default -> {}
+            }
         }
     }
 
     void left() {
         if (current == null) return;
-        switch (current.bias) {
-            case HORIZONTAL -> current.selectPrevious();
-            case VERTICAL -> current.traversePrevious();
-            default -> {}
+        if (cursorState != null) {
+            movePhysical(-cursorState.cellBounds().getWidth(), 0);
+        } else {
+            switch (current.bias) {
+                case HORIZONTAL -> current.selectPrevious();
+                case VERTICAL -> current.traversePrevious();
+                default -> {}
+            }
         }
     }
 
     void right() {
         if (current == null) return;
-        switch (current.bias) {
-            case HORIZONTAL -> current.selectNext();
-            case VERTICAL -> current.traverseNext();
-            default -> {}
+        if (cursorState != null) {
+            movePhysical(cursorState.cellBounds().getWidth(), 0);
+        } else {
+            switch (current.bias) {
+                case HORIZONTAL -> current.selectNext();
+                case VERTICAL -> current.traverseNext();
+                default -> {}
+            }
         }
     }
 
@@ -220,10 +269,91 @@ public class FocusController<C extends LayoutCell<?>>
 
     void up() {
         if (current == null) return;
-        switch (current.bias) {
-            case HORIZONTAL -> current.traversePrevious();
-            case VERTICAL -> current.selectPrevious();
-            default -> {}
+        if (cursorState != null) {
+            movePhysical(0, -cursorState.cellBounds().getHeight());
+        } else {
+            switch (current.bias) {
+                case HORIZONTAL -> current.traversePrevious();
+                case VERTICAL -> current.selectPrevious();
+                default -> {}
+            }
         }
+    }
+
+    /**
+     * Physical cursor movement. Computes a new scene position from the current
+     * cursor state, hit-tests it against the VirtualFlow, and either selects
+     * the hit cell or falls back to index-based advancement for off-screen targets.
+     */
+    private void movePhysical(double dx, double dy) {
+        CursorState cs = cursorState;
+        if (cs == null || current == null) return;
+
+        LayoutContainer<?, ?, ?> container = current.getContainer();
+        if (!(container instanceof VirtualFlow<?> vf)) return;
+
+        double newX = cs.scenePosition().getX() + dx;
+        double newY = cs.scenePosition().getY() + dy;
+
+        // Convert scene coords to VirtualFlow-local coords
+        Point2D local = vf.getNode().sceneToLocal(newX, newY);
+        if (local == null) return;
+
+        Hit<?> hit = vf.hit(local.getX(), local.getY());
+        if (hit.isCellHit()) {
+            selectCellAt(vf, hit.getCellIndex());
+        } else if (hit.isAfterCells()) {
+            // Off-screen below: advance to next item after last visible
+            vf.getLastVisibleIndex().ifPresent(lastIdx -> {
+                int nextIdx = lastIdx + 1;
+                if (nextIdx < vf.getItemCount()) {
+                    vf.show(nextIdx);
+                    selectCellAt(vf, nextIdx);
+                }
+            });
+        } else if (hit.isBeforeCells()) {
+            // Off-screen above: retreat to item before first visible
+            vf.getFirstVisibleIndex().ifPresent(firstIdx -> {
+                int prevIdx = firstIdx - 1;
+                if (prevIdx >= 0) {
+                    vf.show(prevIdx);
+                    selectCellAt(vf, prevIdx);
+                }
+            });
+        }
+    }
+
+    /**
+     * Select a cell at the given index in the VirtualFlow, updating both
+     * the selection model and the cursor state.
+     */
+    private void selectCellAt(VirtualFlow<?> vf, int index) {
+        if (index < 0 || index >= vf.getItemCount()) return;
+
+        var selModel = vf.getSelectionModel();
+        selModel.focus(index);
+
+        // Derive cursor state from the selected cell
+        var items = vf.getItems();
+        Object identity = items.get(index);
+
+        LayoutCell<?> cell = selModel.getCell(index);
+        Node cellNode = cell.getNode();
+        Bounds localBounds = cellNode.getLayoutBounds();
+        // Convert cell center to scene coordinates for cursor position
+        Point2D cellCenter = cellNode.localToScene(
+            localBounds.getWidth() / 2, localBounds.getHeight() / 2);
+        if (cellCenter == null) {
+            // Node not in scene graph yet — use placeholder
+            cellCenter = new Point2D(0, 0);
+        }
+
+        cursorState = new CursorState(
+            identity,
+            null,  // fieldPath — will be set by Phase 3 cross-container navigation
+            index,
+            cellCenter,
+            localBounds
+        );
     }
 }

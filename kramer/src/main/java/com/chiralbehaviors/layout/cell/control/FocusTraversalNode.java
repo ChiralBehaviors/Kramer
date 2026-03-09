@@ -183,5 +183,5 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
         // nothing to do
     }
 
-    abstract protected LayoutContainer<?, ?, ?> getContainer();
+    public abstract LayoutContainer<?, ?, ?> getContainer();
 }
