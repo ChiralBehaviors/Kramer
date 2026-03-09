@@ -267,6 +267,9 @@ public class VirtualFlow<C extends LayoutCell<?>>
         lengthOffsetEstimate = sizeTracker.lengthOffsetEstimateProperty()
                                           .asVar(this::setLengthOffset);
         mouseHandler = bind(selectionModel);
+        if (parentTraversal != null) {
+            parentTraversal.bindKeyboard(this);
+        }
     }
 
     @Override

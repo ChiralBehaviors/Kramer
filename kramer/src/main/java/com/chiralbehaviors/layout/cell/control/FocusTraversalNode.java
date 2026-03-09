@@ -60,7 +60,7 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
         node.focusedProperty()
             .addListener((InvalidationListener) property -> {
                 if (node.isFocused()) {
-                    parent.setCurrent();
+                    parent.setCurrent(this);
                 }
             });
         node.setOnMouseEntered(e -> node.pseudoClassStateChanged(LayoutCell.PSEUDO_CLASS_FOCUSED,
@@ -172,6 +172,11 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
     @Override
     public final void traversePrevious() {
         parent.selectPrevious();
+    }
+
+    @Override
+    public void bindKeyboard(Node node) {
+        parent.bindKeyboard(node);
     }
 
     public void unbind() {

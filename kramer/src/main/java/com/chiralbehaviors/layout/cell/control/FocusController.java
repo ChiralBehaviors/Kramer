@@ -32,6 +32,9 @@ import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.consume;
 import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.sequence;
 import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.unless;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
 
 import com.chiralbehaviors.layout.cell.LayoutCell;
@@ -46,11 +49,6 @@ import javafx.scene.input.InputEvent;
  */
 public class FocusController<C extends LayoutCell<?>>
         implements FocusTraversal<C> {
-    // NOTE: TRAVERSAL_INPUT_MAP is never installed — FocusController has no bind() method
-    // (unlike MouseHandler, which calls bind() in its constructor). The unbind() method
-    // therefore also has no effect. This keyboard-navigation map is intentionally retained
-    // as future functionality; wire it up by adding a bind() method that calls
-    // InputMapTemplate.installFallback(TRAVERSAL_INPUT_MAP, this, c -> node).
     private final static InputMapTemplate<FocusController<?>, InputEvent> TRAVERSAL_INPUT_MAP;
 
     static {
@@ -93,10 +91,17 @@ public class FocusController<C extends LayoutCell<?>>
 
     private volatile FocusTraversalNode<?> current;
 
+    private final List<Node>               boundNodes = new ArrayList<>();
     private final Node                     node;
 
     public FocusController(Node node) {
         this.node = node;
+    }
+
+    @Override
+    public void bindKeyboard(Node vfNode) {
+        InputMapTemplate.installFallback(TRAVERSAL_INPUT_MAP, this, c -> vfNode);
+        boundNodes.add(vfNode);
     }
 
     @Override
@@ -155,20 +160,28 @@ public class FocusController<C extends LayoutCell<?>>
     public void traversePrevious() {
     }
 
+    @Override
     public void unbind() {
-        InputMapTemplate.uninstall(TRAVERSAL_INPUT_MAP, this, c -> node);
+        for (Node n : boundNodes) {
+            InputMapTemplate.uninstall(TRAVERSAL_INPUT_MAP, this, c -> n);
+        }
+        boundNodes.clear();
+    }
+
+    FocusTraversalNode<?> getCurrent() {
+        return current;
     }
 
     protected boolean isDisabled() {
         return node.isDisabled();
     }
 
-    private void currentActivate() {
+    void currentActivate() {
         if (current == null) return;
         current.activate();
     }
 
-    private void down() {
+    void down() {
         if (current == null) return;
         switch (current.bias) {
             case HORIZONTAL -> current.traverseNext();
@@ -177,7 +190,7 @@ public class FocusController<C extends LayoutCell<?>>
         }
     }
 
-    private void left() {
+    void left() {
         if (current == null) return;
         switch (current.bias) {
             case HORIZONTAL -> current.selectPrevious();
@@ -186,7 +199,7 @@ public class FocusController<C extends LayoutCell<?>>
         }
     }
 
-    private void right() {
+    void right() {
         if (current == null) return;
         switch (current.bias) {
             case HORIZONTAL -> current.selectNext();
@@ -195,17 +208,17 @@ public class FocusController<C extends LayoutCell<?>>
         }
     }
 
-    private void traverseCurrentNext() {
+    void traverseCurrentNext() {
         if (current == null) return;
         current.traverseNext();
     }
 
-    private void traverseCurrentPrevious() {
+    void traverseCurrentPrevious() {
         if (current == null) return;
         current.traversePrevious();
     }
 
-    private void up() {
+    void up() {
         if (current == null) return;
         switch (current.bias) {
             case HORIZONTAL -> current.traversePrevious();
