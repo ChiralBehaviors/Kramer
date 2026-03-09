@@ -271,6 +271,10 @@ public class VirtualFlow<C extends LayoutCell<?>>
         if (parentTraversal != null) {
             parentTraversal.bindKeyboard(this);
         }
+        scrollHandler.setAfterPageScroll(() ->
+            getFirstVisibleIndex().ifPresent(idx ->
+                selectionModel.focus(idx)));
+
     }
 
     @Override

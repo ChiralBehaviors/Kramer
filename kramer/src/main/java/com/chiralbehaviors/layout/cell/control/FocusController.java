@@ -17,7 +17,9 @@
 package com.chiralbehaviors.layout.cell.control;
 
 import static javafx.scene.input.KeyCode.DOWN;
+import static javafx.scene.input.KeyCode.END;
 import static javafx.scene.input.KeyCode.ENTER;
+import static javafx.scene.input.KeyCode.HOME;
 import static javafx.scene.input.KeyCode.KP_DOWN;
 import static javafx.scene.input.KeyCode.KP_LEFT;
 import static javafx.scene.input.KeyCode.KP_RIGHT;
@@ -91,7 +93,13 @@ public class FocusController<C extends LayoutCell<?>>
                                                        evt) -> traversal.right()),
                                               consume(keyPressed(ENTER),
                                                       (traversal,
-                                                       evt) -> traversal.currentActivate())));
+                                                       evt) -> traversal.currentActivate()),
+                                              consume(keyPressed(HOME),
+                                                      (traversal,
+                                                       evt) -> traversal.home()),
+                                              consume(keyPressed(END),
+                                                      (traversal,
+                                                       evt) -> traversal.end())));
     }
 
     private volatile FocusTraversalNode<?> current;
@@ -278,6 +286,25 @@ public class FocusController<C extends LayoutCell<?>>
                 case VERTICAL -> current.selectPrevious();
                 default -> {}
             }
+        }
+    }
+
+    void home() {
+        if (current == null) return;
+        LayoutContainer<?, ?, ?> container = current.getContainer();
+        if (container instanceof VirtualFlow<?> vf && vf.getItemCount() > 0) {
+            vf.show(0);
+            selectCellAt(vf, 0);
+        }
+    }
+
+    void end() {
+        if (current == null) return;
+        LayoutContainer<?, ?, ?> container = current.getContainer();
+        if (container instanceof VirtualFlow<?> vf && vf.getItemCount() > 0) {
+            int lastIdx = vf.getItemCount() - 1;
+            vf.show(lastIdx);
+            selectCellAt(vf, lastIdx);
         }
     }
 
