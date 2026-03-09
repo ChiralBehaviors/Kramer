@@ -205,7 +205,6 @@ public final class RelationLayout extends SchemaNodeLayout {
         justifiedWidth = Style.snap(justified
                                     - style.getOutlineHorizontalInset()
                                     - style.getOutlineCellHorizontalInset());
-        columnSets.clear();
         ColumnSet current = null;
         double available = Style.snap(justifiedWidth
                                       - style.getSpanHorizontalInset());
@@ -276,7 +275,6 @@ public final class RelationLayout extends SchemaNodeLayout {
     public double layout(double width) {
         clear();
         double available = (width - labelWidth)
-                           - style.getOutlineCellHorizontalInset()
                            - style.getOutlineCellHorizontalInset();
         assert available > 0;
         columnWidth = children.stream()

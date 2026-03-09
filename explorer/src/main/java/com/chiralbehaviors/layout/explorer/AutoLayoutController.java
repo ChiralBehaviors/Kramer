@@ -54,7 +54,7 @@ public class AutoLayoutController {
             super();
         }
 
-        public String fetch(String query) throws IOException {
+        public String fetch(String query) {
             setData(GraphQlUtil.evaluate(endpoint, query));
             return getData();
         }

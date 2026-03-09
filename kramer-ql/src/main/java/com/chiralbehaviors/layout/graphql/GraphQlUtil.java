@@ -16,7 +16,6 @@
 
 package com.chiralbehaviors.layout.graphql;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,8 +28,12 @@ import jakarta.ws.rs.client.Invocation.Builder;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
@@ -49,6 +52,8 @@ import graphql.parser.Parser;
  *
  */
 public interface GraphQlUtil {
+    Logger log = LoggerFactory.getLogger(GraphQlUtil.class);
+
     static class QueryException extends Exception {
         private static final long serialVersionUID = 1L;
         private final ArrayNode   errors;
@@ -89,7 +94,7 @@ public interface GraphQlUtil {
             } else if (selection instanceof InlineFragment inlineFragment) {
                 buildSchema(parent, inlineFragment);
             } else if (selection instanceof FragmentSpread) {
-
+                throw new UnsupportedOperationException("Named fragment spreads are not supported; use inline fragments");
             }
         }
         return parent;
@@ -110,7 +115,7 @@ public interface GraphQlUtil {
             } else if (selection instanceof InlineFragment inlineFragment) {
                 buildSchema(parent, inlineFragment);
             } else if (selection instanceof FragmentSpread) {
-
+                throw new UnsupportedOperationException("Named fragment spreads are not supported; use inline fragments");
             }
         }
     }
@@ -185,17 +190,22 @@ public interface GraphQlUtil {
         if (errors.size() > 0) {
             throw new QueryException(errors);
         }
-        return (ObjectNode) result.get("data");
+        JsonNode data = result.get("data");
+        if (data == null || data.isNull()) {
+            throw new QueryException(result.withArray("errors"));
+        }
+        return (ObjectNode) data;
     }
 
     static String evaluate(WebTarget endpoint,
-                           String request) throws IOException {
+                           String request) {
         try {
             return endpoint.request(MediaType.APPLICATION_JSON_TYPE)
                            .post(Entity.entity(request,
                                                MediaType.APPLICATION_JSON_TYPE),
                                  String.class);
         } catch (BadRequestException e) {
+            log.warn("GraphQL request returned HTTP 400: {}", e.getMessage());
             return "{}";
         }
     }

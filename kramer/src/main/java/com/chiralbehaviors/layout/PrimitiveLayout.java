@@ -179,7 +179,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         double averageWidth = 0;
         averageCardinality = 1;
         if (data.size() > 0) {
-            averageCardinality = cardSum / data.size();
+            averageCardinality = (int) Math.round((double) cardSum / data.size());
             averageWidth = summedDataWidth / data.size();
         }
 

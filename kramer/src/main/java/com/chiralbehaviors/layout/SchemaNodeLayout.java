@@ -271,8 +271,8 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
         return new Fold(aggregate,
                         (cardSum == 0
                          || data.size() == 0) ? 1
-                                              : Math.round(cardSum
-                                                           / data.size()),
+                                              : (int) Math.round((double) cardSum
+                                                                  / data.size()),
                         this);
     }
 

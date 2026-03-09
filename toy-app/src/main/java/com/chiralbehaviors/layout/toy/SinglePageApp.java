@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.StringTokenizer;
 
+import jakarta.ws.rs.client.Client;
 import jakarta.ws.rs.client.ClientBuilder;
 import jakarta.ws.rs.client.WebTarget;
 
@@ -76,6 +77,7 @@ public class SinglePageApp extends Application implements LayoutObserver {
     private final Deque<PageContext>    back    = new ArrayDeque<>();
     private Button                      backButton;
     private WebTarget                   endpoint;
+    private Client                      httpClient;
     private final Deque<PageContext>    forward = new ArrayDeque<>();
     private Button                      forwardButton;
     private AutoLayout               layout;
@@ -120,9 +122,8 @@ public class SinglePageApp extends Application implements LayoutObserver {
         }
         application = new ObjectMapper(new YAMLFactory()).readValue(url.openStream(),
                                                                     GraphqlApplication.class);
-        endpoint = ClientBuilder.newClient()
-                                .target(application.getEndpoint()
-                                                   .toURI());
+        httpClient = ClientBuilder.newClient();
+        endpoint = httpClient.target(application.getEndpoint().toURI());
         Page root = application.getRoot();
         Objects.requireNonNull(root,
                                "No root page found; check that the 'root' key in the YAML matches a defined route");
@@ -134,6 +135,13 @@ public class SinglePageApp extends Application implements LayoutObserver {
     public void start(Stage primaryStage) throws IOException,
                                           URISyntaxException, QueryException {
         initRootLayout(primaryStage);
+    }
+
+    @Override
+    public void stop() throws Exception {
+        if (httpClient != null) {
+            httpClient.close();
+        }
     }
 
     private JsonNode traversePath(JsonNode node, String path) {
