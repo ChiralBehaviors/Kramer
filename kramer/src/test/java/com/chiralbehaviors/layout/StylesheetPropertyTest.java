@@ -71,6 +71,7 @@ class StylesheetPropertyTest {
         when(primStyle.getListVerticalInset()).thenReturn(0.0);
         when(primStyle.getMinValueWidth()).thenReturn(30.0);
         when(primStyle.getMaxTablePrimitiveWidth()).thenReturn(Double.MAX_VALUE);
+        when(primStyle.getVerticalHeaderThreshold()).thenReturn(1.5);
         // width(JsonNode) returns charWidth * text length
         when(primStyle.width(any(JsonNode.class))).thenAnswer(inv -> {
             JsonNode node = inv.getArgument(0);
@@ -91,9 +92,11 @@ class StylesheetPropertyTest {
         when(primStyle.getListVerticalInset()).thenReturn(0.0);
         when(primStyle.getMinValueWidth()).thenReturn(30.0);
         when(primStyle.getMaxTablePrimitiveWidth()).thenReturn(Double.MAX_VALUE);
+        when(primStyle.getVerticalHeaderThreshold()).thenReturn(1.5);
 
         PrimitiveLayout layout = new PrimitiveLayout(new Primitive(name), primStyle);
         layout.columnWidth = width;
+        layout.dataWidth = width;
         layout.labelWidth = 0;
         return layout;
     }
@@ -336,6 +339,7 @@ class StylesheetPropertyTest {
 
         PrimitiveLayout layout = new PrimitiveLayout(new Primitive("field"), style);
         layout.columnWidth = 50;
+        layout.dataWidth = 50;
         layout.labelWidth = 0;
 
         // Compress with very small available
@@ -356,6 +360,7 @@ class StylesheetPropertyTest {
 
         PrimitiveLayout layout = new PrimitiveLayout(new Primitive("desc"), style);
         layout.columnWidth = 200;
+        layout.dataWidth = 200;
         layout.labelWidth = 0;
 
         // columnWidth() should NOT be capped (used by outline mode)
@@ -382,6 +387,7 @@ class StylesheetPropertyTest {
 
         PrimitiveLayout layout = new PrimitiveLayout(new Primitive("desc"), style);
         layout.columnWidth = 200;
+        layout.dataWidth = 200;
         layout.labelWidth = 0;
 
         assertEquals(200, layout.tableColumnWidth(),

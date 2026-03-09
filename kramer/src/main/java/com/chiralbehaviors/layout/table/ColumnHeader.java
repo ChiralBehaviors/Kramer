@@ -24,7 +24,9 @@ import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.style.Style;
 
 import javafx.geometry.Pos;
+import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 
 /**
@@ -39,7 +41,30 @@ public class ColumnHeader extends VBox {
 
     public ColumnHeader(double width, double height, PrimitiveLayout layout) {
         this();
-        getChildren().add(layout.label(width, height));
+        if (layout.isUseVerticalHeader()) {
+            // Paper Table 1: UseVerticalTableHeader — wrap rotated label
+            // in a fixed-size Pane because setRotate() does not change
+            // JavaFX layout bounds
+            double labelW = layout.getLabelWidth();
+            double labelH = layout.getLabelHeight();
+            Label label = layout.label(labelW, labelH);
+            label.setRotate(-90);
+
+            // Wrapper fills the full column width; height is the label text width
+            // (height parameter is unused — wrapper height comes from labelW)
+            double visualWidth = width;
+            double visualHeight = Style.snap(labelW);
+            Pane wrapper = new Pane(label);
+            wrapper.setMinSize(visualWidth, visualHeight);
+            wrapper.setPrefSize(visualWidth, visualHeight);
+            wrapper.setMaxSize(visualWidth, visualHeight);
+            label.setTranslateX((visualWidth - labelW) / 2.0);
+            label.setTranslateY((visualHeight - labelH) / 2.0);
+
+            getChildren().add(wrapper);
+        } else {
+            getChildren().add(layout.label(width, height));
+        }
     }
 
     public ColumnHeader(double width, double height, RelationLayout layout,

@@ -181,8 +181,9 @@ abstract public class PrimitiveStyle extends NodeStyle {
     }
 
     private final Insets listInsets;
-    private double      minValueWidth          = 30;
-    private double      maxTablePrimitiveWidth = Double.MAX_VALUE;
+    private double      minValueWidth            = 30;
+    private double      maxTablePrimitiveWidth   = Double.MAX_VALUE;
+    private double      verticalHeaderThreshold  = 1.5;
 
     public PrimitiveStyle(LabelStyle labelStyle, Insets listInsets) {
         super(labelStyle);
@@ -212,6 +213,19 @@ abstract public class PrimitiveStyle extends NodeStyle {
 
     public void setMaxTablePrimitiveWidth(double maxTablePrimitiveWidth) {
         this.maxTablePrimitiveWidth = maxTablePrimitiveWidth;
+    }
+
+    public double getVerticalHeaderThreshold() {
+        return verticalHeaderThreshold;
+    }
+
+    public void setVerticalHeaderThreshold(double verticalHeaderThreshold) {
+        if (verticalHeaderThreshold <= 0) {
+            throw new IllegalArgumentException(
+                "verticalHeaderThreshold must be > 0, got: "
+                + verticalHeaderThreshold);
+        }
+        this.verticalHeaderThreshold = verticalHeaderThreshold;
     }
 
     abstract public double width(JsonNode row);
