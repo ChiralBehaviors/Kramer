@@ -35,8 +35,9 @@ public class LabelStyle {
     public static final String LAYOUT_LABEL = "layout-label";
 
     private static double getLineHeight(Font font, TextBoundsType boundsType) {
-        Text text = new Text("WgTy\n a");
+        Text text = new Text("WgTy");
         text.setFont(font);
+        text.setBoundsType(boundsType);
         Bounds tb = text.getBoundsInLocal();
         return Shape.intersect(text,
                                new Rectangle(tb.getMinX(), tb.getMinY(),
@@ -50,7 +51,7 @@ public class LabelStyle {
     private final double lineHeight;
 
     public LabelStyle(Label label) {
-        Insets lInsets = Style.add(label.getInsets() , label.getPadding());
+        Insets lInsets = label.getInsets();
         insets = lInsets;
         lineHeight = getLineHeight(label.getFont(),
                                    TextBoundsType.LOGICAL_VERTICAL_CENTER);

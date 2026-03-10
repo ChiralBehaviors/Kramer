@@ -73,11 +73,6 @@ public class NestedRow extends VirtualFlow<NestedCell> {
     @Override
     public void dispose() {
         super.dispose();
-        mouseHandler.unbind();
-        if (scrollHandler != null) {
-            scrollHandler.unbind();
-        }
-        focus.unbind();
     }
 
     @Override

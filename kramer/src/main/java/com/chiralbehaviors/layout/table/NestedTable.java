@@ -60,9 +60,7 @@ public class NestedTable extends VerticalCell<NestedTable> {
         Region header = layout.buildColumnHeader();
         double width = Style.snap(layout.getJustifiedTableColumnWidth()
                                   + style.getTableHorizontalInset());
-        double height = Style.snap(layout.getHeight()
-                                   + style.getTableVerticalInset()
-                                   + style.getRowVerticalInset());
+        double height = Style.snap(layout.getHeight());
 
         rows = new NestedRow(Style.snap(height - layout.columnHeaderHeight()),
                              layout, childCardinality, parentTraversal, model,

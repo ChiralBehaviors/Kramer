@@ -85,11 +85,9 @@ public final class RelationLayout extends SchemaNodeLayout {
         super.adjustHeight(delta);
         if (useTable) {
             double subDelta = delta / resolvedCardinality;
-            if (delta >= 1.0) {
+            if (subDelta >= 1.0) {
                 cellHeight = Style.snap(cellHeight + subDelta);
-                if (subDelta > 1.0) {
-                    children.forEach(f -> f.adjustHeight(subDelta));
-                }
+                children.forEach(f -> f.adjustHeight(subDelta));
             }
         } else {
             double subDelta = delta / columnSets.size();
@@ -290,7 +288,8 @@ public final class RelationLayout extends SchemaNodeLayout {
                       + labelWidth;
         double tableWidth = calculateTableColumnWidth();
         // Paper §3.3: use table whenever it fits the available width from parent
-        if (tableWidth <= width) {
+        // Include nestedHorizontalInset which nestTableColumn() will add
+        if (tableWidth + style.getNestedHorizontalInset() <= width) {
             return nestTableColumn(Indent.TOP, new Insets(0));
         }
         return columnWidth();
@@ -419,19 +418,15 @@ public final class RelationLayout extends SchemaNodeLayout {
     protected double calculateRowHeight() {
         double elementHeight = Style.snap(children.stream()
                                                   .mapToDouble(child -> child.rowHeight(averageChildCardinality,
-                                                                                        justifiedWidth))
+                                                                                        child.getJustifiedWidth()))
                                                   .max()
                                                   .orElse(0.0));
         children.forEach(c -> c.normalizeRowHeight(elementHeight));
-        return Style.snap(elementHeight + style.getRowCellVerticalInset()
-                          + style.getRowVerticalInset());
+        return Style.snap(elementHeight + style.getRowCellVerticalInset());
     }
 
     protected void calculateTableHeight() {
-        columnHeaderHeight = snap(children.stream()
-                                          .mapToDouble(c -> c.columnHeaderHeight())
-                                          .max()
-                                          .orElse(0.0));
+        columnHeaderHeight();
         cellHeight = calculateRowHeight();
         height = Style.snap((resolvedCardinality * cellHeight)
                             + columnHeaderHeight)

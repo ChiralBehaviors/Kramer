@@ -75,12 +75,13 @@ public class ColumnHeader extends VBox {
         setMaxHeight(height);
         setAlignment(Pos.CENTER);
         HBox nested = new HBox();
-        double half = Style.snap(height / 2.0);
-        getChildren().addAll(layout.label(width, half), nested);
+        double labelHeight = Style.snap(layout.getLabelHeight());
+        double nestedHeight = Style.snap(height - labelHeight);
+        getChildren().addAll(layout.label(width, labelHeight), nested);
 
         nestedHeaders.forEach(n -> {
             nested.getChildren()
-                  .add(n.apply(half));
+                  .add(n.apply(nestedHeight));
         });
     }
 }

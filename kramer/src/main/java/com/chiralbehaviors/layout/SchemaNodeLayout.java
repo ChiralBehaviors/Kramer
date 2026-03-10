@@ -207,6 +207,10 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
         return node.getLabel();
     }
 
+    public double getLabelHeight() {
+        return labelStyle.getHeight();
+    }
+
     public double getLabelWidth() {
         return labelWidth;
     }

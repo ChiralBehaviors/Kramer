@@ -61,10 +61,7 @@ public class PrimitiveList extends VirtualFlow<LayoutCell<?>> {
 
     @Override
     public void dispose() {
-        mouseHandler.unbind();
-        if (scrollHandler != null) {
-            scrollHandler.unbind();
-        }
+        super.dispose();
     }
 
     @Override

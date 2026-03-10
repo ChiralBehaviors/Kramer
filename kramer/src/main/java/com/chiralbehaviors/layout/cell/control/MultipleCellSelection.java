@@ -256,7 +256,9 @@ abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
     public void clearSelection() {
         List<Integer> removed = createListFromBitSet((BitSet) selectedIndices.clone());
 
-        removed.forEach(i -> getCell(i).updateSelection(false));
+        removed.stream()
+               .filter(i -> i >= 0 && i < getItemCount())
+               .forEach(i -> getCell(i).updateSelection(false));
 
         quietClearSelection();
 
@@ -272,7 +274,7 @@ abstract public class MultipleCellSelection<T, C extends Cell<?, ?>>
 
     @Override
     public void clearSelection(int index) {
-        if (index < 0) {
+        if (index < 0 || index >= getItemCount()) {
             return;
         }
 
