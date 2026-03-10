@@ -267,10 +267,6 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         this.useVerticalHeader = useVerticalHeader;
     }
 
-    public double getLabelHeight() {
-        return labelStyle.getHeight();
-    }
-
     @Override
     public double columnHeaderHeight() {
         if (useVerticalHeader) {

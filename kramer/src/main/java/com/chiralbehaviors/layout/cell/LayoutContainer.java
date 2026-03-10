@@ -132,7 +132,8 @@ public interface LayoutContainer<T, R extends Region, C extends LayoutCell<?>>
             final int index = i;
             i++;
             Region node = cell.getNode();
-            if (node.contains(p)) {
+            Point2D localP = node.parentToLocal(p);
+            if (localP != null && node.contains(localP)) {
                 return new Hit<C>() {
                     @Override
                     public C getCell() {

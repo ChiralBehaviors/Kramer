@@ -50,6 +50,9 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
     protected final FocusTraversal<?>            parent;
     protected MultipleCellSelection<JsonNode, C> selectionModel;
 
+    private final InvalidationListener           focusListener;
+    private final ListChangeListener<Integer>    selectionListener;
+
     public FocusTraversalNode(FocusTraversal<?> parent,
                               MultipleCellSelection<JsonNode, C> selectionModel,
                               Bias bias) {
@@ -57,29 +60,32 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
         this.parent = parent;
         this.selectionModel = selectionModel;
         Node node = getContainer().getNode();
+        focusListener = property -> {
+            if (node.isFocused()) {
+                parent.setCurrent(this);
+            }
+        };
         node.focusedProperty()
-            .addListener((InvalidationListener) property -> {
-                if (node.isFocused()) {
-                    parent.setCurrent(this);
-                }
-            });
+            .addListener(focusListener);
         node.setOnMouseEntered(e -> node.pseudoClassStateChanged(LayoutCell.PSEUDO_CLASS_FOCUSED,
                                                                  true));
         node.setOnMouseExited(e -> node.pseudoClassStateChanged(LayoutCell.PSEUDO_CLASS_FOCUSED,
                                                                 false));
-        selectionModel.getSelectedIndices()
-                      .addListener(new ListChangeListener<Integer>() {
+        selectionListener = new ListChangeListener<Integer>() {
 
-                          @Override
-                          public void onChanged(Change<? extends Integer> c) {
-                              c.next();
-                              if (c.wasRemoved()) {
-                                  c.getRemoved()
-                                   .forEach(i -> selectionModel.getCell(i)
-                                                               .unselect());
-                              }
-                          }
-                      });
+            @Override
+            public void onChanged(Change<? extends Integer> c) {
+                while (c.next()) {
+                    if (c.wasRemoved()) {
+                        c.getRemoved()
+                         .forEach(i -> selectionModel.getCell(i)
+                                                     .unselect());
+                    }
+                }
+            }
+        };
+        selectionModel.getSelectedIndices()
+                      .addListener(selectionListener);
     }
 
     @Override
@@ -180,7 +186,11 @@ abstract public class FocusTraversalNode<C extends LayoutCell<?>>
     }
 
     public void unbind() {
-        // nothing to do
+        Node node = getContainer().getNode();
+        node.focusedProperty().removeListener(focusListener);
+        node.setOnMouseEntered(null);
+        node.setOnMouseExited(null);
+        selectionModel.getSelectedIndices().removeListener(selectionListener);
     }
 
     public abstract LayoutContainer<?, ?, ?> getContainer();

@@ -81,6 +81,9 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         getStylesheets().addListener((ListChangeListener<String>) c -> {
             model.setStyleSheets(getStylesheets());
             layout = null;
+            if (getData() != null) {
+                autoLayout();
+            }
         });
         getStylesheets().add(getClass().getResource(DEFAULT_CSS)
                                        .toExternalForm());

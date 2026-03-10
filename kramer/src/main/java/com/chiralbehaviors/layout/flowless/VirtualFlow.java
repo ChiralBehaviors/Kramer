@@ -309,7 +309,9 @@ public class VirtualFlow<C extends LayoutCell<?>>
         navigator.dispose();
         sizeTracker.dispose();
         cellListManager.dispose();
+        mouseHandler.unbind();
         scrollHandler.unbind();
+        focus.unbind();
     }
 
     /**
@@ -467,11 +469,11 @@ public class VirtualFlow<C extends LayoutCell<?>>
     }
 
     public void scrollDown() {
-        scrollYBy(sizeTracker.getCellLength());
+        scrollYBy(sizeTracker.getViewportLength());
     }
 
     public void scrollUp() {
-        scrollYBy(-sizeTracker.getCellLength());
+        scrollYBy(-sizeTracker.getViewportLength());
     }
 
     /**
