@@ -14,4 +14,4 @@ See the [RDR process documentation](https://github.com/cwensel/rdr) for the full
 | RDR-004 | Outline Column Set Correctness | closed | Bug | P1 |
 | RDR-005 | Keyboard Navigation and Physical Cursor Model | closed | Feature | P3 |
 | RDR-006 | Table Mode Selection and Cardinality Cap | closed | Bug | P1 |
-| RDR-007 | Comprehensive Layout Engine Bug Remediation | accepted | Bug | P1 |
+| RDR-007 | Comprehensive Layout Engine Bug Remediation | closed | Bug | P1 |
