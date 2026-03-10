@@ -139,6 +139,7 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
     protected double           labelWidth;
 
     protected final SchemaNode node;
+    protected boolean          rootLevel;
 
     public SchemaNodeLayout(SchemaNode node, LabelStyle labelStyle) {
         this.node = node;
@@ -156,7 +157,11 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
         layout(justified);
         compress(justified);
         calculateRootHeight();
-        return buildControl(parentTraversal, model);
+        rootLevel = true;
+        LayoutCell<? extends Region> control = buildControl(parentTraversal,
+                                                             model);
+        rootLevel = false;
+        return control;
     }
 
     abstract public LayoutCell<? extends Region> buildColumn(double rendered,

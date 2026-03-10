@@ -39,14 +39,14 @@ public class NestedRow extends VirtualFlow<NestedCell> {
 
     public NestedRow(double rendered, RelationLayout layout,
                      int childCardinality, FocusTraversal<?> parentTraversal,
-                     Style model, RelationStyle style) {
+                     Style model, RelationStyle style, boolean rootLevel) {
         this(rendered, layout.getCellHeight(), layout, childCardinality,
-             parentTraversal, model, style);
+             parentTraversal, model, style, rootLevel);
     }
 
     public NestedRow(double rendered, double rowHeight, RelationLayout layout,
                      int childCardinality, FocusTraversal<?> parentTraversal,
-                     Style model, RelationStyle style) {
+                     Style model, RelationStyle style, boolean rootLevel) {
         super(STYLE_SHEET, layout.getJustifiedTableColumnWidth(), rowHeight,
               FXCollections.observableArrayList(), (item, pt) -> {
                   NestedCell cell = new NestedCell(layout, pt, model);
@@ -55,9 +55,12 @@ public class NestedRow extends VirtualFlow<NestedCell> {
               }, parentTraversal,
               Arrays.asList(DEFAULT_STYLE, String.format(SCHEMA_CLASS_TEMPLATE,
                                                          layout.getField())));
-        setMinHeight(rendered);
-        setPrefHeight(rendered);
-        setMaxHeight(rendered);
+        if (!rootLevel) {
+            // Nested row — fixed height for N rows within parent cell
+            setMinHeight(rendered);
+            setPrefHeight(rendered);
+            setMaxHeight(rendered);
+        }
         model.apply(this, layout.getNode());
     }
 

@@ -3,6 +3,9 @@
 **/.settings
 **/.project
 /.DS_Store
+.project
+**/dependency-reduced-pom.xml
+.idea
 
 # Dolt database files (added by bd init)
 .dolt/

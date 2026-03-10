@@ -28,7 +28,9 @@ import com.chiralbehaviors.layout.style.RelationStyle;
 import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
 /**
  * @author halhildebrand
@@ -50,7 +52,7 @@ public class NestedTable extends VerticalCell<NestedTable> {
 
     public NestedTable(int childCardinality, RelationLayout layout,
                        FocusTraversal<?> parentTraversal, Style model,
-                       RelationStyle style) {
+                       RelationStyle style, boolean rootLevel) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE,
@@ -64,13 +66,22 @@ public class NestedTable extends VerticalCell<NestedTable> {
 
         rows = new NestedRow(Style.snap(height - layout.columnHeaderHeight()),
                              layout, childCardinality, parentTraversal, model,
-                             style);
+                             style, rootLevel);
 
         getChildren().addAll(header, rows);
         model.apply(rows, layout.getNode());
-        setMinSize(width, height);
-        setPrefSize(width, height);
-        setMaxSize(width, height);
+        if (rootLevel) {
+            // Root table fills viewport — VirtualFlow grows to fill VBox
+            setMinWidth(width);
+            setPrefWidth(width);
+            setMaxWidth(width);
+            VBox.setVgrow(rows, Priority.ALWAYS);
+        } else {
+            // Nested table — fixed size for N rows within parent
+            setMinSize(width, height);
+            setPrefSize(width, height);
+            setMaxSize(width, height);
+        }
     }
 
     public NestedTable(String field) {

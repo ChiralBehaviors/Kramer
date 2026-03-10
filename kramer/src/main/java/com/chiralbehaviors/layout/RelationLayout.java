@@ -109,7 +109,7 @@ public final class RelationLayout extends SchemaNodeLayout {
                                                     FocusTraversal<?> parentTraversal,
                                                     Style model) {
         return new NestedRow(rendered, this, resolvedCardinality,
-                             parentTraversal, model, style);
+                             parentTraversal, model, style, false);
     }
 
     public TableHeader buildColumnHeader() {
@@ -127,7 +127,7 @@ public final class RelationLayout extends SchemaNodeLayout {
     public LayoutCell<NestedTable> buildNestedTable(FocusTraversal<?> parentTraversal,
                                                     Style model) {
         return new NestedTable(resolvedCardinality, this, parentTraversal,
-                               model, style);
+                               model, style, rootLevel);
     }
 
     public Outline buildOutline(FocusTraversal<?> parentTraversal,
@@ -412,7 +412,7 @@ public final class RelationLayout extends SchemaNodeLayout {
     @Override
     protected void calculateRootHeight() {
         if (useTable) {
-            cellHeight(resolvedCardinality, justifiedWidth);
+            cellHeight(maxCardinality, justifiedWidth);
         }
     }
 
