@@ -18,11 +18,8 @@ package com.chiralbehaviors.layout.style;
 
 import com.chiralbehaviors.layout.LayoutLabel;
 
-import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
-import javafx.scene.shape.Rectangle;
-import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextBoundsType;
@@ -34,16 +31,12 @@ import javafx.scene.text.TextBoundsType;
 public class LabelStyle {
     public static final String LAYOUT_LABEL = "layout-label";
 
-    private static double getLineHeight(Font font, TextBoundsType boundsType) {
+    private static double getLineHeight(Font font) {
         Text text = new Text("WgTy");
         text.setFont(font);
-        text.setBoundsType(boundsType);
-        Bounds tb = text.getBoundsInLocal();
-        return Shape.intersect(text,
-                               new Rectangle(tb.getMinX(), tb.getMinY(),
-                                             tb.getWidth(), tb.getHeight()))
-                    .getBoundsInLocal()
-                    .getHeight();
+        text.setBoundsType(TextBoundsType.LOGICAL);
+        return text.getBoundsInLocal()
+                   .getHeight();
     }
 
     private final Font   font;
@@ -53,8 +46,7 @@ public class LabelStyle {
     public LabelStyle(Label label) {
         Insets lInsets = label.getInsets();
         insets = lInsets;
-        lineHeight = getLineHeight(label.getFont(),
-                                   TextBoundsType.LOGICAL_VERTICAL_CENTER);
+        lineHeight = getLineHeight(label.getFont());
         font = label.getFont();
     }
 

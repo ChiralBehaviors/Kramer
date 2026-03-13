@@ -153,15 +153,31 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
     public LayoutCell<? extends Region> autoLayout(double width,
                                                    FocusTraversal<?> parentTraversal,
                                                    Style model) {
+        return autoLayout(width, 0, parentTraversal, model);
+    }
+
+    public LayoutCell<? extends Region> autoLayout(double width,
+                                                   double availableHeight,
+                                                   FocusTraversal<?> parentTraversal,
+                                                   Style model) {
         double justified = Style.snap(width);
         layout(justified);
         compress(justified);
         calculateRootHeight();
+        distributeExtraHeight(availableHeight);
         rootLevel = true;
         LayoutCell<? extends Region> control = buildControl(parentTraversal,
                                                              model);
         rootLevel = false;
         return control;
+    }
+
+    /**
+     * Distribute extra viewport height among rows. Applies a soft cap
+     * so individual rows don't grow excessively for aberrant inputs.
+     */
+    protected void distributeExtraHeight(double availableHeight) {
+        // default: no distribution for primitives or when height unavailable
     }
 
     abstract public LayoutCell<? extends Region> buildColumn(double rendered,
