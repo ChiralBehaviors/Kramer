@@ -25,6 +25,7 @@ import static org.fxmisc.wellbehaved.event.template.InputMapTemplate.unless;
 
 import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
 
+import javafx.event.EventHandler;
 import javafx.scene.input.InputEvent;
 import javafx.scene.input.ScrollEvent;
 
@@ -36,10 +37,7 @@ public class ScrollHandler {
     private static final InputMapTemplate<ScrollHandler, InputEvent> DEFAULT_INPUT_MAP;
     static {
         DEFAULT_INPUT_MAP = unless(h -> h.isDisabled(),
-                                   sequence(consume(ScrollEvent.SCROLL,
-                                                    (handler,
-                                                     evt) -> handler.scroll(evt)),
-                                            consume(keyPressed(PAGE_UP),
+                                   sequence(consume(keyPressed(PAGE_UP),
                                                     (handler,
                                                      evt) -> handler.scrollUp()),
                                             consume(keyPressed(PAGE_DOWN),
@@ -47,12 +45,14 @@ public class ScrollHandler {
                                                      evt) -> handler.scrollDown())));
     }
 
-    private VirtualFlow<?>  flow;
-    private Runnable        afterPageScroll;
+    private VirtualFlow<?>                    flow;
+    private Runnable                          afterPageScroll;
+    private final EventHandler<ScrollEvent>   scrollEventHandler;
 
     public ScrollHandler(VirtualFlow<?> flow) {
         assert flow != null;
         this.flow = flow;
+        scrollEventHandler = this::handleScroll;
         bind();
     }
 
@@ -62,6 +62,17 @@ public class ScrollHandler {
 
     public void bind() {
         InputMapTemplate.installOverride(DEFAULT_INPUT_MAP, this, c -> flow);
+        flow.addEventHandler(ScrollEvent.SCROLL, scrollEventHandler);
+    }
+
+    private void handleScroll(ScrollEvent evt) {
+        if (flow.isDisabled()) {
+            return;
+        }
+        if (flow.canScrollVertically()) {
+            scroll(evt);
+            evt.consume();
+        }
     }
 
     public boolean isDisabled() {
@@ -84,6 +95,7 @@ public class ScrollHandler {
 
     public void unbind() {
         InputMapTemplate.uninstall(DEFAULT_INPUT_MAP, this, c -> flow);
+        flow.removeEventHandler(ScrollEvent.SCROLL, scrollEventHandler);
     }
 
 }

@@ -98,8 +98,29 @@ public final class RelationLayout extends SchemaNodeLayout {
     }
 
     public double baseRowCellHeight(double extended) {
-        return Style.snap(extended - style.getRowCellVerticalInset()
-                          - style.getRowVerticalInset());
+        return Style.snap(extended - style.getRowCellVerticalInset());
+    }
+
+    private static final double HEIGHT_DISTRIBUTION_CAP = 0.5;
+
+    @Override
+    protected void distributeExtraHeight(double availableHeight) {
+        if (!useTable || availableHeight <= 0 || height <= 0
+            || availableHeight <= height || resolvedCardinality <= 0) {
+            return;
+        }
+        double deficit = availableHeight - height;
+        double perRow = deficit / resolvedCardinality;
+        // Soft cap: don't let any row grow more than 50% beyond its
+        // computed height, preventing a single line swimming in space.
+        double maxExtra = cellHeight * HEIGHT_DISTRIBUTION_CAP;
+        if (perRow > maxExtra) {
+            perRow = maxExtra;
+            deficit = perRow * resolvedCardinality;
+        }
+        if (deficit >= 1.0) {
+            adjustHeight(deficit);
+        }
     }
 
     @Override

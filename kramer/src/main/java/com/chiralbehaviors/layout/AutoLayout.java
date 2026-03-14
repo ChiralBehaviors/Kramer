@@ -194,7 +194,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         // Clear old keyboard bindings before rebuilding the control tree;
         // new VirtualFlows will re-register via bindKeyboard in their constructors.
         controller.unbind();
-        control = layout.autoLayout(width, controller, model);
+        control = layout.autoLayout(width, getHeight(), controller, model);
         Region node = control.getNode();
 
         setTopAnchor(node, 0d);
