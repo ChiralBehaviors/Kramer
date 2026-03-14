@@ -24,4 +24,15 @@ public class Launcher {
     public static void main(String[] argv) {
         AutoLayoutExplorer.main(argv);
     }
+
+
+    /**
+     * This is the main() you want to run from your IDE
+     */
+    public static class Main {
+
+        public static void main(String[] argv) {
+            Launcher.main(argv);
+        }
+    }
 }

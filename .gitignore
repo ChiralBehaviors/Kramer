@@ -3,10 +3,10 @@
 **/.settings
 **/.project
 /.DS_Store
-.project
 **/dependency-reduced-pom.xml
 .idea
-
+**/.serena
+**/.project
 # Dolt database files (added by bd init)
 .dolt/
 *.db
