@@ -50,7 +50,8 @@ final class SizeTracker {
 
     private final Val<Double>                           totalLengthEstimate;
     private final ObservableObjectValue<Bounds>         viewportBounds;
-    private double                                      width, height;
+    private double                                      width;
+    private final Var<Double>                           cellLengthVar;
 
     /**
      * Constructs a SizeTracker
@@ -59,24 +60,24 @@ final class SizeTracker {
                        ObservableObjectValue<Bounds> viewportBounds,
                        MemoizationList<? extends Cell<?, ?>> lazyCells) {
         this.width = breadth;
-        this.height = length;
+        this.cellLengthVar = Var.newSimpleVar(length);
         this.viewportBounds = viewportBounds;
         this.cells = lazyCells;
         this.maxKnownMinBreadth = Var.newSimpleVar(width);
         this.breadthForCells = Val.combine(maxKnownMinBreadth, viewportBounds,
                                            (a, b) -> Math.max(a, b.getWidth()));
 
-        Val<Function<Cell<?, ?>, Double>> lengthFn = avoidFalseInvalidations(breadthForCells).map(m -> cell -> height);
+        Val<Function<Cell<?, ?>, Double>> lengthFn = avoidFalseInvalidations(breadthForCells).map(m -> cell -> cellLengthVar.getValue());
 
         this.lengths = cells.mapDynamic(lengthFn)
                             .memoize();
 
         LiveList<Double> knownLengths = this.lengths.memoizedItems();
 
-        this.averageLengthEstimate = Val.constant(height);
+        this.averageLengthEstimate = cellLengthVar.map(h -> h);
 
-        this.totalLengthEstimate = Val.create(() -> height * cells.size(),
-                                                   cells);
+        this.totalLengthEstimate = Val.create(() -> cellLengthVar.getValue() * cells.size(),
+                                                   cells, cellLengthVar);
 
         Val<Integer> firstVisibleIndex = Val.create(() -> cells.getMemoizedCount() == 0 ? null
                                                                                         : cells.indexOfMemoizedItem(0),
@@ -153,7 +154,11 @@ final class SizeTracker {
     }
 
     public double getCellLength() {
-        return height;
+        return cellLengthVar.getValue();
+    }
+
+    public void setCellLength(double length) {
+        cellLengthVar.setValue(length);
     }
 
     public double getViewportBreadth() {

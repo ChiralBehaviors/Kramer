@@ -614,6 +614,10 @@ public class VirtualFlow<C extends LayoutCell<?>>
         }
     }
 
+    public void setCellLength(double length) {
+        sizeTracker.setCellLength(length);
+    }
+
     public boolean canScrollVertically() {
         double total = totalLengthEstimateProperty().getOrElse(0.0);
         double viewportLength = sizeTracker.getViewportLength();
