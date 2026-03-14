@@ -614,6 +614,12 @@ public class VirtualFlow<C extends LayoutCell<?>>
         }
     }
 
+    public boolean canScrollVertically() {
+        double total = totalLengthEstimateProperty().getOrElse(0.0);
+        double viewportLength = sizeTracker.getViewportLength();
+        return total > viewportLength;
+    }
+
     void scrollLength(double deltaLength) {
         setLengthOffset(lengthOffsetEstimate.getValue() + deltaLength);
     }
@@ -633,7 +639,7 @@ public class VirtualFlow<C extends LayoutCell<?>>
 
         double diff = pixels - current;
         if (diff == 0) {
-            // do nothing
+            // no change
         } else if (Math.abs(diff) < length) { // distance less than one screen
             navigator.scrollCurrentPositionBy(diff);
         } else {

@@ -174,6 +174,11 @@ final class StartOffStart implements TargetPosition {
     }
 
     @Override
+    public String toString() {
+        return String.format("StartOffStart(item=%d, offset=%.1f)", itemIndex, offsetFromStart);
+    }
+
+    @Override
     public void accept(TargetPositionVisitor visitor) {
         visitor.visit(this);
     }

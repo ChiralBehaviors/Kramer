@@ -76,6 +76,10 @@ public class Outline extends VirtualFlow<OutlineCell> {
     public void updateItem(JsonNode item) {
         List<JsonNode> list = SchemaNode.asList(item);
         items.setAll(list);
+        // Reset scroll to top after populating items
+        if (!items.isEmpty()) {
+            showAsFirst(0);
+        }
         pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
         pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);
     }

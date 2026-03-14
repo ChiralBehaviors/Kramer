@@ -75,7 +75,8 @@ final class SizeTracker {
 
         this.averageLengthEstimate = Val.constant(height);
 
-        this.totalLengthEstimate = Val.constant(height * cells.size());
+        this.totalLengthEstimate = Val.create(() -> height * cells.size(),
+                                                   cells);
 
         Val<Integer> firstVisibleIndex = Val.create(() -> cells.getMemoizedCount() == 0 ? null
                                                                                         : cells.indexOfMemoizedItem(0),

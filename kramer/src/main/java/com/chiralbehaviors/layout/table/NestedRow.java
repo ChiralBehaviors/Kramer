@@ -78,6 +78,10 @@ public class NestedRow extends VirtualFlow<NestedCell> {
     @Override
     public void updateItem(JsonNode item) {
         items.setAll(NestedTable.itemsAsArray(item));
+        // Reset scroll to top after populating items
+        if (!items.isEmpty()) {
+            showAsFirst(0);
+        }
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);
     }
