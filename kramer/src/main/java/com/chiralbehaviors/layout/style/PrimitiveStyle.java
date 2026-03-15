@@ -185,6 +185,7 @@ abstract public class PrimitiveStyle extends NodeStyle {
     private double      maxTablePrimitiveWidth   = 350.0;
     private double      verticalHeaderThreshold  = 1.5;
     private double      variableLengthThreshold  = 2.0;
+    private double      outlineSnapValueWidth    = 0.0;
 
     public PrimitiveStyle(LabelStyle labelStyle, Insets listInsets) {
         super(labelStyle);
@@ -222,6 +223,19 @@ abstract public class PrimitiveStyle extends NodeStyle {
 
     public double getVariableLengthThreshold() {
         return variableLengthThreshold;
+    }
+
+    public double getOutlineSnapValueWidth() {
+        return outlineSnapValueWidth;
+    }
+
+    public void setOutlineSnapValueWidth(double outlineSnapValueWidth) {
+        if (outlineSnapValueWidth < 0) {
+            throw new IllegalArgumentException(
+                "outlineSnapValueWidth must be >= 0, got: "
+                + outlineSnapValueWidth);
+        }
+        this.outlineSnapValueWidth = outlineSnapValueWidth;
     }
 
     public void setVariableLengthThreshold(double variableLengthThreshold) {

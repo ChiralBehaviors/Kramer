@@ -73,6 +73,7 @@ class StylesheetPropertyTest {
         when(primStyle.getMaxTablePrimitiveWidth()).thenReturn(Double.MAX_VALUE);
         when(primStyle.getVerticalHeaderThreshold()).thenReturn(1.5);
         when(primStyle.getVariableLengthThreshold()).thenReturn(2.0);
+        when(primStyle.getOutlineSnapValueWidth()).thenReturn(0.0);
         // width(JsonNode) returns charWidth * text length
         when(primStyle.width(any(JsonNode.class))).thenAnswer(inv -> {
             JsonNode node = inv.getArgument(0);
@@ -94,6 +95,7 @@ class StylesheetPropertyTest {
         when(primStyle.getMinValueWidth()).thenReturn(30.0);
         when(primStyle.getMaxTablePrimitiveWidth()).thenReturn(Double.MAX_VALUE);
         when(primStyle.getVerticalHeaderThreshold()).thenReturn(1.5);
+        when(primStyle.getOutlineSnapValueWidth()).thenReturn(0.0);
 
         PrimitiveLayout layout = new PrimitiveLayout(new Primitive(name), primStyle);
         layout.columnWidth = width;
@@ -520,6 +522,7 @@ class StylesheetPropertyTest {
         assertEquals(30.0, style.getMinValueWidth());
         assertEquals(350.0, style.getMaxTablePrimitiveWidth());
         assertEquals(2.0, style.getVariableLengthThreshold());
+        assertEquals(0.0, style.getOutlineSnapValueWidth());
     }
 
     @Test
@@ -563,5 +566,91 @@ class StylesheetPropertyTest {
         // At custom threshold 1.5: ratio 1.71 > 1.5 → variable-length
         assertTrue(layout.isVariableLength(),
                    "With threshold=1.5, ratio 1.71 should be classified as variable-length");
+    }
+
+    // ---- F4: OutlineSnapValueWidth ----
+
+    /**
+     * F4: Non-variable-length fields should snap to grid in compress.
+     * Field with maxWidth=43, snap=10 → justifiedWidth snaps to 50.
+     */
+    @Test
+    void outlineSnapRoundsUpToGrid() {
+        PrimitiveStyle style = mockPrimitiveStyle(7.0);
+        when(style.getOutlineSnapValueWidth()).thenReturn(10.0);
+
+        PrimitiveLayout layout = new PrimitiveLayout(new Primitive("code"), style);
+
+        // Fixed-length data: all same width → ratio 1.0 < 2.0
+        ArrayNode data = JsonNodeFactory.instance.arrayNode();
+        data.add("abcde");  // 5 chars, 35px
+        data.add("fghij");  // 5 chars, 35px
+
+        Style model = mock(Style.class);
+        layout.measure(data, n -> n, model);
+
+        assertFalse(layout.isVariableLength());
+        // maxWidth = 35
+
+        // Compress with plenty of available space
+        layout.compress(500);
+
+        // Without snap: justifiedWidth = snap(min(500, 35)) = 35
+        // With snap=10: target = ceil(35/10)*10 = 40, justifiedWidth = snap(min(500, 40)) = 40
+        assertEquals(Style.snap(40.0), layout.getJustifiedWidth(),
+                     "Fixed-length field should snap to grid: 35 → 40");
+    }
+
+    /**
+     * F4: Variable-length fields should NOT snap to grid.
+     */
+    @Test
+    void outlineSnapDoesNotAffectVariableLength() {
+        PrimitiveStyle style = mockPrimitiveStyle(7.0);
+        when(style.getOutlineSnapValueWidth()).thenReturn(10.0);
+
+        PrimitiveLayout layout = new PrimitiveLayout(new Primitive("desc"), style);
+
+        // Variable-length data: max/avg > 2.0
+        ArrayNode data = JsonNodeFactory.instance.arrayNode();
+        data.add("A");
+        data.add("A");
+        data.add("Very Long Name With Many Many Characters Here");
+
+        Style model = mock(Style.class);
+        layout.measure(data, n -> n, model);
+
+        assertTrue(layout.isVariableLength());
+
+        layout.compress(500);
+
+        // Variable-length stretches to available — snap should NOT apply
+        assertEquals(Style.snap(500), layout.getJustifiedWidth(),
+                     "Variable-length field should not be affected by snap grid");
+    }
+
+    /**
+     * F4: Snap disabled (default 0.0) should behave like before.
+     */
+    @Test
+    void outlineSnapDisabledByDefault() {
+        PrimitiveStyle style = mockPrimitiveStyle(7.0);
+        when(style.getOutlineSnapValueWidth()).thenReturn(0.0);
+
+        PrimitiveLayout layout = new PrimitiveLayout(new Primitive("code"), style);
+
+        ArrayNode data = JsonNodeFactory.instance.arrayNode();
+        data.add("abcde");  // 35px
+        data.add("fghij");  // 35px
+
+        Style model = mock(Style.class);
+        layout.measure(data, n -> n, model);
+
+        assertFalse(layout.isVariableLength());
+        layout.compress(500);
+
+        // No snap: justifiedWidth = snap(35) = 35
+        assertEquals(Style.snap(35.0), layout.getJustifiedWidth(),
+                     "With snap=0 (disabled), width should be exact maxWidth");
     }
 }

@@ -120,7 +120,12 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         double floor = style.getMinValueWidth();
         double effective = Math.max(available, floor);
         if (!isVariableLength && maxWidth > 0) {
-            justifiedWidth = Style.snap(Math.min(effective, maxWidth));
+            double target = maxWidth;
+            double snapWidth = style.getOutlineSnapValueWidth();
+            if (snapWidth > 0) {
+                target = Math.ceil(target / snapWidth) * snapWidth;
+            }
+            justifiedWidth = Style.snap(Math.min(effective, target));
         } else {
             justifiedWidth = Style.snap(effective);
         }

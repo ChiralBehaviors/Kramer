@@ -207,6 +207,7 @@ class ColumnSetEvaluationTest {
         when(primStyle.getMaxTablePrimitiveWidth()).thenReturn(350.0);
         when(primStyle.getVerticalHeaderThreshold()).thenReturn(1.5);
         when(primStyle.getVariableLengthThreshold()).thenReturn(2.0);
+        when(primStyle.getOutlineSnapValueWidth()).thenReturn(0.0);
 
         PrimitiveLayout layout = new PrimitiveLayout(new Primitive(name), primStyle);
         layout.columnWidth = width;
