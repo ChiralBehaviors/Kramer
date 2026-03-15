@@ -394,11 +394,16 @@ public final class RelationLayout extends SchemaNodeLayout {
         int singularChildren = 0;
         maxCardinality = datum.size();
 
+        SchemaPath parentPath = getSchemaPath();
         for (SchemaNode child : getNode().getChildren()) {
             Fold fold = model.layout(child)
                              .fold(datum, extractor, model);
-            children.add(fold.layout());
-            columnWidth = Style.snap(Math.max(columnWidth, fold.layout()
+            SchemaNodeLayout childLayout = fold.layout();
+            if (parentPath != null) {
+                childLayout.setSchemaPath(parentPath.child(child.getField()));
+            }
+            children.add(childLayout);
+            columnWidth = Style.snap(Math.max(columnWidth, childLayout
                                                                .measure(fold.datum(),
                                                                         n -> n,
                                                                         model)));

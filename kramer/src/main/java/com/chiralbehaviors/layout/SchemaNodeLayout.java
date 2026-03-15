@@ -140,6 +140,7 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
 
     protected final SchemaNode node;
     protected boolean          rootLevel;
+    private SchemaPath         schemaPath;
 
     public SchemaNodeLayout(SchemaNode node, LabelStyle labelStyle) {
         this.node = node;
@@ -234,6 +235,14 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
     public abstract SchemaNode getNode();
 
     public abstract MeasureResult getMeasureResult();
+
+    public SchemaPath getSchemaPath() {
+        return schemaPath;
+    }
+
+    public void setSchemaPath(SchemaPath schemaPath) {
+        this.schemaPath = schemaPath;
+    }
 
     abstract public double justify(double justified);
 
