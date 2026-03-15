@@ -2,8 +2,10 @@
 title: "Core Algorithm Reevaluation & Bakke 2013 Alignment"
 id: RDR-008
 type: Architecture
-status: accepted
+status: closed
 accepted_date: 2026-03-14
+closed_date: 2026-03-15
+close_reason: "implemented (6/8 features; F2+F3 deferred per evaluation criterion)"
 priority: P1
 author: Hal Hildebrand
 reviewed-by: self
