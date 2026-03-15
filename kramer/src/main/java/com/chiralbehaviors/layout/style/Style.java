@@ -17,10 +17,8 @@
 package com.chiralbehaviors.layout.style;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.chiralbehaviors.layout.LayoutLabel;
 import com.chiralbehaviors.layout.PrimitiveLayout;
@@ -121,8 +119,8 @@ public class Style {
     private final LayoutObserver              observer;
 
     private final List<String>                styleSheets          = new ArrayList<>();
-    private final Map<String, PrimitiveStyle>          primitiveStyleCache  = new HashMap<>();
-    private final Map<String, RelationStyle>           relationStyleCache   = new HashMap<>();
+    private final IdentityHashMap<Primitive, PrimitiveStyle>  primitiveStyleCache  = new IdentityHashMap<>();
+    private final IdentityHashMap<Relation, RelationStyle>   relationStyleCache   = new IdentityHashMap<>();
     private final IdentityHashMap<SchemaNode, SchemaNodeLayout> layoutCache = new IdentityHashMap<>();
 
     public Style() {
@@ -167,7 +165,7 @@ public class Style {
     }
 
     public PrimitiveStyle style(Primitive p) {
-        return primitiveStyleCache.computeIfAbsent(p.getField(),
+        return primitiveStyleCache.computeIfAbsent(p,
                                                     k -> computePrimitiveStyle(p));
     }
 
@@ -210,7 +208,7 @@ public class Style {
     }
 
     public RelationStyle style(Relation r) {
-        return relationStyleCache.computeIfAbsent(r.getField(),
+        return relationStyleCache.computeIfAbsent(r,
                                                    k -> computeRelationStyle(r));
     }
 

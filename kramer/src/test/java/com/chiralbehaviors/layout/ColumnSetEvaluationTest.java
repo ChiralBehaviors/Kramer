@@ -166,7 +166,7 @@ class ColumnSetEvaluationTest {
         layout.compress(width, useHalfWidthGuard);
         return new CompressResult(
             layout.columnSets.size(),
-            layout.cellHeight,
+            layout.getCellHeight(),
             layout.columnSets.stream()
                 .map(cs -> cs.getColumns().stream()
                     .mapToInt(c -> c.getFields().size()).sum())
