@@ -16,4 +16,4 @@ See the [RDR process documentation](https://github.com/cwensel/rdr) for the full
 | RDR-006 | Table Mode Selection and Cardinality Cap | closed | Bug | P1 |
 | RDR-007 | Comprehensive Layout Engine Bug Remediation | closed | Bug | P1 |
 | RDR-008 | Core Algorithm Reevaluation & Bakke 2013 Alignment | accepted | Architecture | P1 |
-| RDR-009 | Stylesheet Data Structure Design | accepted | Architecture | P2 |
+| RDR-009 | Stylesheet Data Structure Design | closed | Architecture | P2 |

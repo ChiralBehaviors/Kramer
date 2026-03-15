@@ -78,8 +78,9 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public LayoutCell<? extends Region> buildControl(FocusTraversal<?> parentTraversal,
                                                      Style model) {
-        return averageCardinality > 1 ? new PrimitiveList(this, parentTraversal)
-                                      : buildCell(parentTraversal);
+        int avgCard = measureResult != null ? measureResult.averageCardinality() : averageCardinality;
+        return avgCard > 1 ? new PrimitiveList(this, parentTraversal)
+                           : buildCell(parentTraversal);
     }
 
     @Override
@@ -92,15 +93,9 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         if (height > 0) {
             return height;
         }
-        int resolvedCardinality = Math.min(cardinality, averageCardinality);
-        boolean list = resolvedCardinality > 1;
-        cellHeight = snap(style.getHeight(maxWidth, justified));
-        if (list) {
-            height = (cellHeight * resolvedCardinality)
-                     + style.getListVerticalInset();
-        } else {
-            height = cellHeight;
-        }
+        HeightResult result = computeCellHeight(cardinality, justified);
+        cellHeight = result.cellHeight();
+        height = result.height();
         return height;
     }
 
@@ -118,18 +113,8 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public void compress(double available) {
-        double floor = style.getMinValueWidth();
-        double effective = Math.max(available, floor);
-        if (!isVariableLength && maxWidth > 0) {
-            double target = maxWidth;
-            double snapWidth = style.getOutlineSnapValueWidth();
-            if (snapWidth > 0) {
-                target = Math.ceil(target / snapWidth) * snapWidth;
-            }
-            justifiedWidth = Style.snap(Math.min(effective, target));
-        } else {
-            justifiedWidth = Style.snap(effective);
-        }
+        CompressResult result = computeCompress(available);
+        justifiedWidth = result.justifiedWidth();
     }
 
     @Override
@@ -256,7 +241,8 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double tableColumnWidth() {
-        return Math.min(dataWidth, style.getMaxTablePrimitiveWidth());
+        double dw = measureResult != null ? measureResult.dataWidth() : dataWidth;
+        return Math.min(dw, style.getMaxTablePrimitiveWidth());
     }
 
     @Override
@@ -267,7 +253,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public boolean isVariableLength() {
-        return isVariableLength;
+        return measureResult != null ? measureResult.isVariableLength() : isVariableLength;
     }
 
     public boolean isUseVerticalHeader() {
@@ -294,8 +280,10 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         double floor = style.getMinValueWidth();
         double effective = Math.max(available, floor);
         double justified;
-        if (!isVariableLength && maxWidth > 0) {
-            double target = maxWidth;
+        boolean varLen = measureResult != null ? measureResult.isVariableLength() : isVariableLength;
+        double mw = measureResult != null ? measureResult.maxWidth() : maxWidth;
+        if (!varLen && mw > 0) {
+            double target = mw;
             double snapWidth = style.getOutlineSnapValueWidth();
             if (snapWidth > 0) {
                 target = Math.ceil(target / snapWidth) * snapWidth;
@@ -308,9 +296,11 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     public HeightResult computeCellHeight(int cardinality, double justified) {
-        int resolved = Math.min(cardinality, averageCardinality);
+        int avgCard = measureResult != null ? measureResult.averageCardinality() : averageCardinality;
+        double mw = measureResult != null ? measureResult.maxWidth() : maxWidth;
+        int resolved = Math.min(cardinality, avgCard);
         boolean list = resolved > 1;
-        double cell = snap(style.getHeight(maxWidth, justified));
+        double cell = snap(style.getHeight(mw, justified));
         double h;
         if (list) {
             h = (cell * resolved) + style.getListVerticalInset();
@@ -334,17 +324,15 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     protected void calculateRootHeight() {
-        cellHeight(averageCardinality, justifiedWidth);
+        int avgCard = measureResult != null ? measureResult.averageCardinality() : averageCardinality;
+        cellHeight(avgCard, justifiedWidth);
     }
 
     @Override
     protected void clear() {
         super.clear();
-        // isVariableLength must NOT be reset here — it is set in measure()
-        // and must survive through layout() into compress() in the
-        // autoLayout pipeline: measure → layout → compress.
-        // useVerticalHeader MUST reset — it is set in nestTableColumn()
-        // which runs AFTER clear() in the layout() pipeline.
+        // isVariableLength lifecycle is now explicit in MeasureResult (RDR-009 SC-6).
+        // useVerticalHeader resets because nestTableColumn() runs after clear().
         useVerticalHeader = false;
     }
 

@@ -2,7 +2,8 @@
 
 ## Metadata
 - **Type**: Architecture
-- **Status**: accepted
+- **Status**: closed
+- **Close-reason**: implemented
 - **Priority**: P2
 - **Created**: 2026-03-15
 - **Accepted**: 2026-03-15
