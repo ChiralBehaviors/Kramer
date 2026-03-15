@@ -278,6 +278,48 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         return measureResult;
     }
 
+    public LayoutResult computeLayout(double width) {
+        clear();
+        return new LayoutResult(
+            false,              // useTable — primitives never use table mode
+            useVerticalHeader,  // preserved from nestTableColumn if set
+            0,                  // tableColumnWidth — not applicable
+            columnHeaderIndentation,
+            width,              // constrainedColumnWidth
+            List.of()
+        );
+    }
+
+    public CompressResult computeCompress(double available) {
+        double floor = style.getMinValueWidth();
+        double effective = Math.max(available, floor);
+        double justified;
+        if (!isVariableLength && maxWidth > 0) {
+            double target = maxWidth;
+            double snapWidth = style.getOutlineSnapValueWidth();
+            if (snapWidth > 0) {
+                target = Math.ceil(target / snapWidth) * snapWidth;
+            }
+            justified = Style.snap(Math.min(effective, target));
+        } else {
+            justified = Style.snap(effective);
+        }
+        return new CompressResult(justified, List.of(), 0, List.of());
+    }
+
+    public HeightResult computeCellHeight(int cardinality, double justified) {
+        int resolved = Math.min(cardinality, averageCardinality);
+        boolean list = resolved > 1;
+        double cell = snap(style.getHeight(maxWidth, justified));
+        double h;
+        if (list) {
+            h = (cell * resolved) + style.getListVerticalInset();
+        } else {
+            h = cell;
+        }
+        return new HeightResult(h, cell, resolved, 0, List.of());
+    }
+
     void setUseVerticalHeader(boolean useVerticalHeader) {
         this.useVerticalHeader = useVerticalHeader;
     }
