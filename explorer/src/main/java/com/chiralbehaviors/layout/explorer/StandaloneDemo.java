@@ -133,6 +133,33 @@ public class StandaloneDemo extends Application {
                                project("Release Validation", "Active", 90),
                                project("Regression Suite", "Complete", 180)));
 
+        employees.add(employee("Kim Nguyen", "Security Engineer", "Security",
+                               "kim@example.com",
+                               project("Pen Testing", "Active", 150),
+                               project("SOC2 Audit", "Active", 80)));
+
+        employees.add(employee("Leo Santos", "DevOps Engineer", "Platform",
+                               "leo@example.com",
+                               project("CI/CD Overhaul", "Active", 220),
+                               project("Container Registry", "Complete", 60),
+                               project("Terraform Modules", "Active", 130)));
+
+        employees.add(employee("Maya Patel", "ML Engineer", "Data",
+                               "maya@example.com",
+                               project("Recommendation Engine", "Active", 350),
+                               project("Feature Store", "Planning", 0)));
+
+        employees.add(employee("Nils Eriksson", "Tech Lead", "Platform",
+                               "nils@example.com",
+                               project("API Redesign", "Active", 280),
+                               project("SDK Development", "Active", 190),
+                               project("Documentation", "Planning", 10)));
+
+        employees.add(employee("Olivia Zhang", "UX Researcher", "Design",
+                               "olivia@example.com",
+                               project("Usability Study", "Active", 90),
+                               project("Accessibility Audit", "Complete", 40)));
+
         return employees;
     }
 
