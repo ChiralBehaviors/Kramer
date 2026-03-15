@@ -278,15 +278,41 @@ This is structurally identical to the current architecture but makes the data fl
 
 ## Success Criteria
 
-1. MeasureResult record captures all 9 data-dependent fields
-2. LayoutResult record captures all 13 width-dependent + derived fields
+1. MeasureResult record captures all 12 data-dependent fields (including children references)
+2. LayoutResult, CompressResult, HeightResult records capture all width-dependent + derived fields
 3. `clear()` method eliminated or trivial (no mutable state to reset)
 4. Resize path provably doesn't re-measure (same as today, but explicit)
-5. All 142 existing tests pass at each migration phase
+5. All existing tests pass at each migration phase
 6. `isVariableLength` lifecycle is explicit in MeasureResult, not a comment
+7. F7 style cache keys changed from field name to SchemaNode identity (prerequisite fix)
+8. `cellHeight` dual-lifecycle (outline vs table) is explicitly modeled in separate result types
+
+## Research Findings
+
+### RF-1: External Field Access Inventory (Confidence: HIGH)
+Zero production code directly accesses mutable fields from outside the sealed hierarchy. ALL 140+ external direct field accesses are in test code (setup writes). The migration surface is entirely in tests — production consumers already use public accessor methods. Migration requires test-setup factory methods or builders to replace direct field injection.
+
+### RF-2: Cross-Phase Field Dependencies (Confidence: HIGH)
+- Only `RelationLayout.columnWidth` has a genuine dual-write across phases (measure and layout). Cleanly separable as `naturalColumnWidth` vs `constrainedColumnWidth`.
+- **12 fields** (not just `isVariableLength`) survive `clear()` by design — they ARE the implicit MeasureResult.
+- `layout()` calls `clear()` recursively on children, resetting only geometry fields while preserving all measure-phase data. Clean read-measure/write-layout pattern.
+- The children problem is the hardest structural issue. Current design uses one mutable object per SchemaNode across all phases. Records require either recursive record trees (recommended) or a flat registry. This is a significant call-structure refactoring.
+- **Revised classification**: 4 result types needed (MeasureResult, LayoutResult, CompressResult, HeightResult), not the 2 originally proposed. `cellHeight` has dual lifecycle (outline vs table path).
+
+### RF-3: SchemaPath Uniqueness Validation (Confidence: HIGH)
+- Field names are **NOT unique** within schema trees. Test fixture `columns.json` has `name` at 7+ levels, `id` at 6+ levels.
+- **F7 style cache bug found**: `primitiveStyleCache` and `relationStyleCache` use field name as key (`HashMap<String, ...>`). When the same field name appears at different nesting levels, the second lookup returns the first's cached style. The F8 layout cache correctly uses `IdentityHashMap<SchemaNode, ...>`.
+- The bug is **latent** — CSS classes derive from leaf field name alone, so different "name" primitives get the same CSS rules. It only manifests if CSS had context-dependent rules for the same field name.
+- **SchemaPath is necessary** for correctness. The F7 cache key should be changed to SchemaNode identity (matching F8) as a prerequisite fix.
 
 ## Recommendation
 
-Proceed with incremental migration (Phases A → B → C). Phase A (MeasureResult extraction for PrimitiveLayout) is the natural starting point — it affects the simpler class with fewer fields, and the `isVariableLength` lifecycle issue makes the benefit immediately tangible.
+Proceed with incremental migration (Phases A → B → C), with one revision based on research:
 
-Phase C (LayoutStylesheet) should be deferred until after A+B are complete and validated. The per-path override capability is useful but not urgently needed.
+**Pre-requisite fix**: Change F7 style cache keys from field name to SchemaNode identity (matching F8 layout cache). This fixes the latent cache bug from RF-3.
+
+**Phase A revision**: Extract 4 result types (MeasureResult, LayoutResult, CompressResult, HeightResult) rather than the 2 originally proposed. The `cellHeight` dual-lifecycle (RF-2) requires separating compress-phase and height-phase results.
+
+**Phase A starting point**: PrimitiveLayout remains the natural first target — it has fewer fields, no children complexity, and the `isVariableLength` lifecycle makes the benefit tangible.
+
+Phase C (LayoutStylesheet with SchemaPath) should follow A+B. SchemaPath is confirmed necessary (RF-3) but not urgent since the cache bug is latent.
