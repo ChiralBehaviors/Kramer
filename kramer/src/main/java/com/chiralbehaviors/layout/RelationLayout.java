@@ -303,6 +303,51 @@ public final class RelationLayout extends SchemaNodeLayout {
         return measureResult;
     }
 
+    public LayoutResult computeLayout(double width) {
+        layout(width);
+        return new LayoutResult(
+            useTable,
+            false,
+            tableColumnWidth,
+            columnHeaderIndentation,
+            columnWidth,
+            children.stream()
+                .map(c -> {
+                    if (c instanceof PrimitiveLayout pl) return pl.computeLayout(width);
+                    if (c instanceof RelationLayout rl) return rl.computeLayout(width);
+                    return null;
+                })
+                .toList()
+        );
+    }
+
+    public CompressResult computeCompress(double justified) {
+        compress(justified);
+        return new CompressResult(
+            justifiedWidth,
+            List.copyOf(columnSets),
+            cellHeight,
+            children.stream()
+                .map(c -> {
+                    if (c instanceof PrimitiveLayout pl) return pl.computeCompress(justified);
+                    if (c instanceof RelationLayout rl) return rl.computeCompress(justified);
+                    return null;
+                })
+                .toList()
+        );
+    }
+
+    public HeightResult computeCellHeight(int cardinality, double justified) {
+        double h = cellHeight(cardinality, justified);
+        return new HeightResult(
+            h,
+            cellHeight,
+            resolvedCardinality,
+            columnHeaderHeight,
+            List.of()
+        );
+    }
+
     @Override
     public double justify(double justifed) {
         justifyColumn(Style.snap(justifed - columnHeaderIndentation));
