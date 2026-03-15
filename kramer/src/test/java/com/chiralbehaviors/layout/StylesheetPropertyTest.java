@@ -72,6 +72,7 @@ class StylesheetPropertyTest {
         when(primStyle.getMinValueWidth()).thenReturn(30.0);
         when(primStyle.getMaxTablePrimitiveWidth()).thenReturn(Double.MAX_VALUE);
         when(primStyle.getVerticalHeaderThreshold()).thenReturn(1.5);
+        when(primStyle.getVariableLengthThreshold()).thenReturn(2.0);
         // width(JsonNode) returns charWidth * text length
         when(primStyle.width(any(JsonNode.class))).thenAnswer(inv -> {
             JsonNode node = inv.getArgument(0);
@@ -518,6 +519,7 @@ class StylesheetPropertyTest {
 
         assertEquals(30.0, style.getMinValueWidth());
         assertEquals(350.0, style.getMaxTablePrimitiveWidth());
+        assertEquals(2.0, style.getVariableLengthThreshold());
     }
 
     @Test
@@ -528,8 +530,38 @@ class StylesheetPropertyTest {
 
         style.setMinValueWidth(50);
         style.setMaxTablePrimitiveWidth(200);
+        style.setVariableLengthThreshold(3.0);
 
         assertEquals(50.0, style.getMinValueWidth());
         assertEquals(200.0, style.getMaxTablePrimitiveWidth());
+        assertEquals(3.0, style.getVariableLengthThreshold());
+    }
+
+    /**
+     * F5: Custom variableLengthThreshold affects isVariableLength classification.
+     * With threshold=1.5, data that is fixed-length at 2.0 becomes variable-length.
+     */
+    @Test
+    void customVariableLengthThresholdAffectsClassification() {
+        PrimitiveStyle style = mockPrimitiveStyle(7.0);
+
+        // Override threshold to 1.5 (lower than default 2.0)
+        when(style.getVariableLengthThreshold()).thenReturn(1.5);
+
+        PrimitiveLayout layout = new PrimitiveLayout(new Primitive("date"), style);
+
+        // Data with max/avg ratio ≈ 1.8 (below default 2.0 but above 1.5)
+        ArrayNode data = JsonNodeFactory.instance.arrayNode();
+        data.add("short");                       // 5 chars, 35px
+        data.add("a somewhat longer string here"); // 30 chars, 210px
+
+        Style model = mock(Style.class);
+        layout.measure(data, n -> n, model);
+
+        // max=210, avg=(35+210)/2=122.5, ratio=210/122.5≈1.71
+        // At default threshold 2.0: ratio 1.71 < 2.0 → fixed-length
+        // At custom threshold 1.5: ratio 1.71 > 1.5 → variable-length
+        assertTrue(layout.isVariableLength(),
+                   "With threshold=1.5, ratio 1.71 should be classified as variable-length");
     }
 }

@@ -184,6 +184,7 @@ abstract public class PrimitiveStyle extends NodeStyle {
     private double      minValueWidth            = 30;
     private double      maxTablePrimitiveWidth   = 350.0;
     private double      verticalHeaderThreshold  = 1.5;
+    private double      variableLengthThreshold  = 2.0;
 
     public PrimitiveStyle(LabelStyle labelStyle, Insets listInsets) {
         super(labelStyle);
@@ -217,6 +218,19 @@ abstract public class PrimitiveStyle extends NodeStyle {
 
     public double getVerticalHeaderThreshold() {
         return verticalHeaderThreshold;
+    }
+
+    public double getVariableLengthThreshold() {
+        return variableLengthThreshold;
+    }
+
+    public void setVariableLengthThreshold(double variableLengthThreshold) {
+        if (variableLengthThreshold <= 0) {
+            throw new IllegalArgumentException(
+                "variableLengthThreshold must be > 0, got: "
+                + variableLengthThreshold);
+        }
+        this.variableLengthThreshold = variableLengthThreshold;
     }
 
     public void setVerticalHeaderThreshold(double verticalHeaderThreshold) {
