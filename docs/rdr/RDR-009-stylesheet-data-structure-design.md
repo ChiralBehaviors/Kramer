@@ -2,10 +2,12 @@
 
 ## Metadata
 - **Type**: Architecture
-- **Status**: draft
+- **Status**: accepted
 - **Priority**: P2
 - **Created**: 2026-03-15
+- **Accepted**: 2026-03-15
 - **Related**: RDR-008 (F6), Kramer-4k0
+- **Reviewed-by**: self
 
 ## Problem Statement
 
