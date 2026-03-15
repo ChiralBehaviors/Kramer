@@ -18,6 +18,7 @@ package com.chiralbehaviors.layout.style;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -120,8 +121,9 @@ public class Style {
     private final LayoutObserver              observer;
 
     private final List<String>                styleSheets          = new ArrayList<>();
-    private final Map<String, PrimitiveStyle> primitiveStyleCache  = new HashMap<>();
-    private final Map<String, RelationStyle>  relationStyleCache   = new HashMap<>();
+    private final Map<String, PrimitiveStyle>          primitiveStyleCache  = new HashMap<>();
+    private final Map<String, RelationStyle>           relationStyleCache   = new HashMap<>();
+    private final IdentityHashMap<SchemaNode, SchemaNodeLayout> layoutCache = new IdentityHashMap<>();
 
     public Style() {
         this(new LayoutObserver() {
@@ -142,11 +144,13 @@ public class Style {
     }
 
     public PrimitiveLayout layout(Primitive p) {
-        return new PrimitiveLayout(p, style(p));
+        return (PrimitiveLayout) layoutCache.computeIfAbsent(p,
+            k -> new PrimitiveLayout(p, style(p)));
     }
 
     public RelationLayout layout(Relation r) {
-        return new RelationLayout(r, style(r));
+        return (RelationLayout) layoutCache.computeIfAbsent(r,
+            k -> new RelationLayout(r, style(r)));
     }
 
     public SchemaNodeLayout layout(SchemaNode n) {
@@ -159,6 +163,7 @@ public class Style {
         this.styleSheets.addAll(stylesheets);
         primitiveStyleCache.clear();
         relationStyleCache.clear();
+        layoutCache.clear();
     }
 
     public PrimitiveStyle style(Primitive p) {
@@ -278,5 +283,10 @@ public class Style {
     // Visible for testing
     int relationStyleCacheSize() {
         return relationStyleCache.size();
+    }
+
+    // Visible for testing
+    int layoutCacheSize() {
+        return layoutCache.size();
     }
 }

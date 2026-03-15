@@ -7,10 +7,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.chiralbehaviors.layout.style.Style;
-
 /**
- * Tests for F7: Style measurement caching.
+ * Tests for F7+F8: Style measurement and layout object caching.
  * Verifies cache invalidation on setStyleSheets() without requiring
  * JavaFX runtime (tests cache infrastructure, not CSS measurement).
  */
@@ -21,21 +19,21 @@ class StyleCacheTest {
         Style style = new Style();
         assertEquals(0, style.primitiveStyleCacheSize());
         assertEquals(0, style.relationStyleCacheSize());
+        assertEquals(0, style.layoutCacheSize());
     }
 
     @Test
-    void setStyleSheetsClearsCache() {
+    void setStyleSheetsClearsAllCaches() {
         Style style = new Style();
 
-        // Simulate having cached entries by calling setStyleSheets
-        // to prove the clear path works (cache starts empty, set clears,
-        // still empty — but the code path is exercised)
         style.setStyleSheets(List.of("test.css"));
 
         assertEquals(0, style.primitiveStyleCacheSize(),
                      "setStyleSheets must clear primitive style cache");
         assertEquals(0, style.relationStyleCacheSize(),
                      "setStyleSheets must clear relation style cache");
+        assertEquals(0, style.layoutCacheSize(),
+                     "setStyleSheets must clear layout object cache");
     }
 
     @Test
