@@ -233,6 +233,8 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
 
     public abstract SchemaNode getNode();
 
+    public abstract MeasureResult getMeasureResult();
+
     abstract public double justify(double justified);
 
     public Label label(double width, double height) {
