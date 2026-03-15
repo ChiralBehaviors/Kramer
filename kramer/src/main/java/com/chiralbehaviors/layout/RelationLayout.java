@@ -243,8 +243,10 @@ public final class RelationLayout extends SchemaNodeLayout {
         double halfWidth = Style.snap((available / 2.0)
                                       - style.getColumnHorizontalInset()
                                       - style.getElementHorizontalInset());
+        double lw = measureResult != null ? measureResult.labelWidth() : labelWidth;
+        int avgChildCard = measureResult != null ? measureResult.averageChildCardinality() : averageChildCardinality;
         for (SchemaNodeLayout child : children) {
-            double childWidth = labelWidth + child.layoutWidth();
+            double childWidth = lw + child.layoutWidth();
             // Paper §3.4: outline-mode relations are excluded from column sets
             boolean excluded = (child instanceof RelationLayout rl) && !rl.isUseTable();
             boolean wideChild = useHalfWidthGuard && childWidth > halfWidth;
@@ -260,10 +262,10 @@ public final class RelationLayout extends SchemaNodeLayout {
             }
         }
         cellHeight = Style.snap(columnSets.stream()
-                                          .mapToDouble(cs -> Style.snap(cs.compress(averageChildCardinality,
+                                          .mapToDouble(cs -> Style.snap(cs.compress(avgChildCard,
                                                                                     available,
                                                                                     style,
-                                                                                    labelWidth)
+                                                                                    lw)
                                                                         + style.getSpanVerticalInset()))
                                           .sum());
     }
@@ -362,14 +364,15 @@ public final class RelationLayout extends SchemaNodeLayout {
     @Override
     public double layout(double width) {
         clear();
-        double available = (width - labelWidth)
+        double lw = measureResult != null ? measureResult.labelWidth() : labelWidth;
+        double available = (width - lw)
                            - style.getOutlineCellHorizontalInset();
         assert available > 0;
         columnWidth = children.stream()
                               .mapToDouble(c -> c.layout(available))
                               .max()
                               .orElse(0.0)
-                      + labelWidth;
+                      + lw;
         double tableWidth = calculateTableColumnWidth();
         // Paper §3.3: use table whenever it fits the available width from parent
         // Include nestedHorizontalInset which nestTableColumn() will add
@@ -516,7 +519,8 @@ public final class RelationLayout extends SchemaNodeLayout {
     @Override
     protected void calculateRootHeight() {
         if (useTable) {
-            cellHeight(maxCardinality, justifiedWidth);
+            int maxCard = measureResult != null ? measureResult.maxCardinality() : maxCardinality;
+            cellHeight(maxCard, justifiedWidth);
         }
     }
 
@@ -690,7 +694,8 @@ public final class RelationLayout extends SchemaNodeLayout {
     }
 
     protected int resolveCardinality(int cardinality) {
-        return Math.max(1, Math.min(cardinality, maxCardinality));
+        int maxCard = measureResult != null ? measureResult.maxCardinality() : maxCardinality;
+        return Math.max(1, Math.min(cardinality, maxCard));
     }
 
     public double getJustifiedTableColumnWidth() {
