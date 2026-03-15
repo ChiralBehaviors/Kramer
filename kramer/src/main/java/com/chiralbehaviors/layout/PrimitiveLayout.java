@@ -49,6 +49,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     protected final PrimitiveStyle style;
     private double                 cellHeight;
     private boolean                useVerticalHeader         = false;
+    private MeasureResult          measureResult;
 
     public PrimitiveLayout(Primitive p, PrimitiveStyle style) {
         super(p, style.getLabelStyle());
@@ -208,6 +209,13 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         dataWidth = Style.snap(Math.max(getNode().getDefaultWidth(),
                                         effectiveWidth));
         columnWidth = Math.max(labelWidth, dataWidth);
+
+        measureResult = new MeasureResult(
+            labelWidth, columnWidth, dataWidth, maxWidth,
+            averageCardinality, isVariableLength,
+            0, 0, null, List.of()
+        );
+
         return columnWidth;
     }
 
@@ -264,6 +272,10 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     public boolean isUseVerticalHeader() {
         return useVerticalHeader;
+    }
+
+    public MeasureResult getMeasureResult() {
+        return measureResult;
     }
 
     void setUseVerticalHeader(boolean useVerticalHeader) {
