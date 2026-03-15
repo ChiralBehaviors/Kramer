@@ -61,7 +61,7 @@ public record SchemaPath(List<String> segments) {
 
 **Usage**: Built incrementally during `measure()` traversal. Each `SchemaNodeLayout` stores its `SchemaPath`. The stylesheet maps `SchemaPath` → property overrides.
 
-**Backward compatibility**: `cssClass()` returns the leaf field name, preserving existing CSS behavior. The path is additive — old code that uses `getField()` continues to work.
+**Backward compatibility**: `cssClass()` returns the leaf field name, preserving existing CSS behavior. The path is additive — old code that uses `getField()` continues to work. **Caveat**: The prerequisite F7 cache fix (changing style cache keys from field name to SchemaNode identity) means two primitives named "name" at different nesting levels will get separately computed styles. If those styles differ due to CSS specificity, the visual output changes. In practice this is unlikely — current CSS applies the same rules to all nodes with the same field name — but it should be verified when implementing the prerequisite fix.
 
 ---
 
@@ -128,7 +128,7 @@ public interface LayoutStylesheet {
 | `dataWidth` | double | measure | Data-dependent | No |
 | `isVariableLength` | boolean | measure | Data-dependent | **No** (intentional) |
 | `maxWidth` | double | measure | Data-dependent | No |
-| `cellHeight` | double | cellHeight | Derived | No |
+| `cellHeight` | double | cellHeight | Height-phase intermediate | No (but recalculated when `height` is reset) |
 | `useVerticalHeader` | boolean | nestTableColumn | Width-dependent | Yes |
 | `style` | PrimitiveStyle | constructor | Immutable | — |
 
@@ -140,7 +140,7 @@ public interface LayoutStylesheet {
 | `cellHeight` | double | compress, cellHeight | Derived | No |
 | `children` | List\<SNL\> | measure | Schema+Data | No |
 | `columnHeaderHeight` | double | columnHeaderHeight (lazy) | Derived | Yes |
-| `columnSets` | List\<CS\> | compress | Width-dependent | No |
+| `columnSets` | List\<CS\> | compress | Width-dependent (CompressResult) | No* |
 | `extractor` | Function | fold (during measure) | Data-dependent | No |
 | `maxCardinality` | int | measure | Data-dependent | No |
 | `resolvedCardinality` | int | cellHeight | Derived | No |
@@ -148,7 +148,9 @@ public interface LayoutStylesheet {
 | `useTable` | boolean | layout | Width-dependent | Yes |
 | `style` | RelationStyle | constructor | Immutable | — |
 
-**Total: 24 mutable fields** (6 base + 7 primitive + 11 relation), not ~50 as originally estimated.
+*\* `columnSets` is not reset by `clear()` but IS rebuilt at the start of every `compress()` call (line 235: `columnSets.clear()`). It does not survive a resize — it belongs in CompressResult, not MeasureResult.*
+
+**Total: 24 mutable fields** (6 base + 7 primitive + 11 relation). RDR-008 estimated "~50 mutable fields" — the overcount likely included method-local state, the inherited fields counted separately per subclass, and accessor methods conflated with fields.
 
 ### Classification Summary
 
@@ -179,43 +181,66 @@ AutoLayout.resize(width)
 
 The `layout` field persists across resizes. Only the width-dependent fields (7 of 24) are recomputed. The data-dependent fields (9 of 24) survive from the original `measure()` call.
 
-### Immutable Phase Result Model
+### Immutable Phase Result Model (4 types)
 
-An immutable model would formalize this existing pattern:
+An immutable model would formalize this existing pattern. Research finding RF-2 established that `cellHeight` has a dual lifecycle (set by `compress()` in outline mode vs `calculateTableHeight()` in table mode) and `resolvedCardinality` is call-site-specific. This requires 4 result types, not 2:
 
 ```java
-// Phase 1 result — produced by measure(), consumed by layout()/compress()
+// Phase 1 — produced by measure(), cached across resizes
 record MeasureResult(
     double labelWidth,
-    double columnWidth,
+    double columnWidth,        // natural width from data
     double dataWidth,
     double maxWidth,
     int averageCardinality,
     boolean isVariableLength,
-    List<MeasureResult> childResults  // for RelationLayout
+    // RelationLayout-specific:
+    int averageChildCardinality,
+    int maxCardinality,
+    Function<JsonNode, JsonNode> extractor,
+    List<MeasureResult> childResults
 ) {}
 
-// Phase 2 result — produced by layout()+compress(), consumed by buildControl()
+// Phase 2 — produced by layout(), determines table vs outline
 record LayoutResult(
-    double justifiedWidth,
-    double height,
     boolean useTable,
-    List<ColumnSet> columnSets,      // for outline mode
-    double tableColumnWidth,         // for table mode
+    boolean useVerticalHeader,    // PrimitiveLayout
+    double tableColumnWidth,      // table mode
+    double columnHeaderIndentation,
+    double constrainedColumnWidth, // width-constrained (may differ from measure)
     List<LayoutResult> childResults
+) {}
+
+// Phase 3 — produced by compress(), distributes width
+record CompressResult(
+    double justifiedWidth,
+    List<ColumnSet> columnSets,   // outline mode only
+    double cellHeight,            // outline path sets this here
+    List<CompressResult> childResults
+) {}
+
+// Phase 4 — produced by cellHeight()/calculateRootHeight()
+record HeightResult(
+    double height,
+    double cellHeight,            // table path sets this here
+    int resolvedCardinality,
+    double columnHeaderHeight,
+    List<HeightResult> childResults
 ) {}
 ```
 
-**Migration path**: The `MeasureResult` record would replace the 9 data-dependent mutable fields. The `LayoutResult` record would replace the 7 width-dependent + 6 derived fields. The layout methods would return these records instead of mutating `this`.
+**Migration path**: Each result type replaces a specific subset of mutable fields. `MeasureResult` replaces the fields that survive `clear()`. `LayoutResult` replaces the table/outline decision fields. `CompressResult` replaces width-distribution fields (including `columnSets` which is rebuilt per compress, not per measure). `HeightResult` replaces sizing fields.
 
 ### Impact on Resize
 
 With immutable phase results:
 - `measure()` → `MeasureResult` (cached, reused across resizes)
 - `layout(width, measureResult)` → `LayoutResult` (recomputed per width)
-- `buildControl(layoutResult)` → `LayoutCell` (recomputed per width)
+- `compress(justified, layoutResult)` → `CompressResult` (recomputed per width)
+- `calculateHeight(compressResult)` → `HeightResult` (recomputed per width)
+- `buildControl(heightResult)` → `LayoutCell` (recomputed per width)
 
-This is structurally identical to the current architecture but makes the data flow explicit.
+This is structurally identical to the current architecture but makes the data flow explicit. The current `autoLayout()` method on `SchemaNodeLayout` orchestrates these phases — with immutable results, it would return a composite result or `AutoLayout` would orchestrate the phases directly.
 
 ---
 
@@ -223,12 +248,13 @@ This is structurally identical to the current architecture but makes the data fl
 
 ### Recommendation: Incremental (3 phases)
 
-**Phase A: Extract MeasureResult** (LOW risk)
-1. Create `MeasureResult` record for `PrimitiveLayout`
+**Phase A: Extract MeasureResult** (LOW risk for PrimitiveLayout, MEDIUM for RelationLayout)
+1. Create `MeasureResult` record for `PrimitiveLayout` (6 scalar fields — straightforward)
 2. Have `measure()` populate both the record AND existing fields (dual-write)
 3. Gradually migrate readers from fields to record
 4. Remove mutable fields once all readers use the record
-5. Repeat for `RelationLayout`
+5. Repeat for `RelationLayout` — **this is structurally harder**: the `children` list contains mutable `SchemaNodeLayout` objects that are shared with the layout cache. Dual-write for children means building a `List<MeasureResult>` alongside the mutable `children` list. The mutable list is consumed by `layout()`/`compress()` which call methods on the child objects directly. During migration, the mutable `children` list must be retained until Phase B replaces `layout()`/`compress()` with result-returning methods. The dual-write for `RelationLayout` should build `childResults` from children's MeasureResults after all children are measured.
+6. Create test-setup factory methods (e.g., `TestLayouts.primitive(name, dataWidth, ...)`) to replace the ~140 direct field writes in test code
 
 **Phase B: Extract LayoutResult** (MEDIUM risk)
 1. Create `LayoutResult` record
@@ -271,15 +297,15 @@ This is structurally identical to the current architecture but makes the data fl
 | Risk | Severity | Mitigation |
 |------|----------|------------|
 | Dual-write bugs during migration | Medium | Extensive test suite (142 tests) catches regressions |
-| Performance regression from record allocation | Low | Records are value types, allocated on stack in many cases. Profile after Phase A. |
+| Performance regression from record allocation | Low | Java records are heap-allocated objects (not JEP 401 value types). However, schema trees are small (typically 5-20 nodes) and records are created once per measure/layout cycle. Profile after Phase A. |
 | `isVariableLength` lifecycle complexity | Medium | This field intentionally survives `clear()`. MeasureResult makes this explicit — it's part of the measure result, not mutable state. |
 | LayoutStylesheet API design may be premature | Medium | Phase C is optional. Phases A+B deliver the core benefit (immutable results) without the stylesheet API. |
 | Sealed hierarchy constrains refactoring | Low | Only 2 concrete subtypes. Changes are manageable. |
 
 ## Success Criteria
 
-1. MeasureResult record captures all 12 data-dependent fields (including children references)
-2. LayoutResult, CompressResult, HeightResult records capture all width-dependent + derived fields
+1. MeasureResult record captures all fields that survive `clear()`: base (`columnWidth`, `labelWidth`), PrimitiveLayout (`averageCardinality`, `dataWidth`, `isVariableLength`, `maxWidth`), RelationLayout (`averageChildCardinality`, `maxCardinality`, `extractor`, `children`/`childResults`)
+2. LayoutResult, CompressResult, HeightResult records capture all width-dependent + height-phase fields per the Q3 catalog. `columnSets` belongs in CompressResult (rebuilt per compress, not surviving from measure). `cellHeight` split: outline path in CompressResult, table path in HeightResult.
 3. `clear()` method eliminated or trivial (no mutable state to reset)
 4. Resize path provably doesn't re-measure (same as today, but explicit)
 5. All existing tests pass at each migration phase
