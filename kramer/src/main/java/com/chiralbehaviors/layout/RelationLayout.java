@@ -111,6 +111,13 @@ public final class RelationLayout extends SchemaNodeLayout {
         }
         double deficit = availableHeight - height;
         double perRow = deficit / resolvedCardinality;
+        // Skip sub-pixel per-row adjustments: adjustHeight only updates
+        // cellHeight when subDelta >= 1.0, so smaller distributions
+        // create a mismatch where height > cellHeight * count,
+        // which breaks VirtualFlow scroll detection.
+        if (perRow < 1.0) {
+            return;
+        }
         // Soft cap: don't let any row grow more than 50% beyond its
         // computed height, preventing a single line swimming in space.
         double maxExtra = cellHeight * HEIGHT_DISTRIBUTION_CAP;

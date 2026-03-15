@@ -255,7 +255,8 @@ public class VirtualFlow<C extends LayoutCell<?>>
                                                                             focus));
         MemoizationList<C> cells = cellListManager.getLazyCellList();
         this.sizeTracker = new SizeTracker(cellBreadth, cellLength,
-                                           layoutBoundsProperty(), cells);
+                                           layoutBoundsProperty(), cells,
+                                           observableList);
         this.cellPositioner = new CellPositioner<>(cellListManager,
                                                    sizeTracker);
         this.navigator = new Navigator<>(cellListManager, cellPositioner,
@@ -612,6 +613,18 @@ public class VirtualFlow<C extends LayoutCell<?>>
                 break;
             }
         }
+    }
+
+    public void setCellLength(double length) {
+        sizeTracker.setCellLength(length);
+    }
+
+    @Override
+    protected double computeMinHeight(double width) {
+        // Allow parent layouts (VBox, AnchorPane) to constrain our height.
+        // Without this, HBox default sums children's min heights = full
+        // content height, preventing scrolling.
+        return 0;
     }
 
     public boolean canScrollVertically() {
