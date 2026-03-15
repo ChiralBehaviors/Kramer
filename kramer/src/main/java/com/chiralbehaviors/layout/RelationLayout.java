@@ -73,6 +73,7 @@ public final class RelationLayout extends SchemaNodeLayout {
     protected final RelationStyle          style;
     protected double                       tableColumnWidth = 0;
     protected boolean                      useTable         = false;
+    private MeasureResult                  measureResult;
 
     public RelationLayout(Relation r, RelationStyle style) {
         super(r, style.getLabelStyle());
@@ -298,6 +299,10 @@ public final class RelationLayout extends SchemaNodeLayout {
         return useTable;
     }
 
+    public MeasureResult getMeasureResult() {
+        return measureResult;
+    }
+
     @Override
     public double justify(double justifed) {
         justifyColumn(Style.snap(justifed - columnHeaderIndentation));
@@ -374,6 +379,22 @@ public final class RelationLayout extends SchemaNodeLayout {
         // Paper Table 1: Bullet width budget
         labelWidth += style.getBulletWidth();
         columnWidth = Style.snap(labelWidth + columnWidth);
+
+        List<MeasureResult> childResults = children.stream()
+            .map(c -> {
+                if (c instanceof PrimitiveLayout pl) return pl.getMeasureResult();
+                if (c instanceof RelationLayout rl) return rl.getMeasureResult();
+                return null;
+            })
+            .toList();
+
+        measureResult = new MeasureResult(
+            labelWidth, columnWidth, 0, 0,
+            0, false,
+            averageChildCardinality, maxCardinality,
+            extractor, childResults
+        );
+
         return columnWidth + style.getElementHorizontalInset()
                + style.getColumnHorizontalInset()
                + style.getSpanHorizontalInset()
