@@ -56,6 +56,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     private final FocusController<AutoLayout>      controller;
     private SimpleObjectProperty<JsonNode>         data        = new SimpleObjectProperty<>();
     private SchemaNodeLayout                       layout;
+    private MeasureResult                          measureResult;
     private double                                 layoutWidth = 0.0;
     private Style                                 model;
     private final SimpleObjectProperty<SchemaNode> root        = new SimpleObjectProperty<>();
@@ -81,6 +82,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         getStylesheets().addListener((ListChangeListener<String>) c -> {
             model.setStyleSheets(getStylesheets());
             layout = null;
+            measureResult = null;
             if (getData() != null) {
                 autoLayout();
             }
@@ -129,9 +131,14 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         try {
             layout = model.layout(top)
                           .measure(data, model);
+            measureResult = layout.getMeasureResult();
         } catch (Throwable e) {
             log.log(Level.SEVERE, "cannot measure data", e);
         }
+    }
+
+    public MeasureResult getMeasureResult() {
+        return measureResult;
     }
 
     @Override
