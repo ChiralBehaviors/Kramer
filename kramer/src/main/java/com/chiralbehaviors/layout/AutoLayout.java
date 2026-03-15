@@ -129,8 +129,9 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             return;
         }
         try {
-            layout = model.layout(top)
-                          .measure(data, model);
+            layout = model.layout(top);
+            layout.setSchemaPath(new SchemaPath(top.getField()));
+            layout.measure(data, model);
             measureResult = layout.getMeasureResult();
         } catch (Throwable e) {
             log.log(Level.SEVERE, "cannot measure data", e);
