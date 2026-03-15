@@ -2,21 +2,43 @@
 package com.chiralbehaviors.layout;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
 import org.junit.jupiter.api.Test;
 
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
+import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.style.PrimitiveStyle;
 import com.chiralbehaviors.layout.style.RelationStyle;
 import com.chiralbehaviors.layout.style.Style;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 /**
  * Tests for A4: RelationLayout MeasureResult dual-write.
+ * Uses a mock Style to avoid JavaFX Scene creation in CI.
  */
 class RelationMeasureResultTest {
+
+    private Style mockStyleModel(Relation schema) {
+        Style model = mock(Style.class);
+        PrimitiveStyle primStyle = TestLayouts.mockPrimitiveStyle(7.0);
+        for (SchemaNode child : schema.getChildren()) {
+            if (child instanceof Primitive p) {
+                PrimitiveLayout pl = new PrimitiveLayout(p, primStyle);
+                when(model.layout(p)).thenReturn(pl);
+            }
+        }
+        // Delegate layout(SchemaNode) to the typed methods
+        when(model.layout(any(SchemaNode.class))).thenAnswer(inv -> {
+            SchemaNode n = inv.getArgument(0);
+            if (n instanceof Primitive p) return model.layout(p);
+            return model.layout((Relation) n);
+        });
+        return model;
+    }
 
     @Test
     void measureResultPopulatedAfterMeasure() {
@@ -25,7 +47,7 @@ class RelationMeasureResultTest {
         schema.addChild(new Primitive("code"));
 
         RelationStyle relStyle = TestLayouts.mockRelationStyle();
-        Style model = new Style();
+        Style model = mockStyleModel(schema);
         RelationLayout layout = new RelationLayout(schema, relStyle);
 
         ArrayNode data = JsonNodeFactory.instance.arrayNode();
@@ -56,7 +78,7 @@ class RelationMeasureResultTest {
         schema.addChild(new Primitive("code"));
 
         RelationStyle relStyle = TestLayouts.mockRelationStyle();
-        Style model = new Style();
+        Style model = mockStyleModel(schema);
         RelationLayout layout = new RelationLayout(schema, relStyle);
 
         ArrayNode data = JsonNodeFactory.instance.arrayNode();
@@ -71,7 +93,6 @@ class RelationMeasureResultTest {
         assertEquals(2, result.childResults().size(),
                      "childResults should match children count");
 
-        // Each child's MeasureResult should match
         for (int i = 0; i < layout.children.size(); i++) {
             SchemaNodeLayout child = layout.children.get(i);
             MeasureResult childResult = result.childResults().get(i);
@@ -86,7 +107,7 @@ class RelationMeasureResultTest {
         schema.addChild(new Primitive("name"));
 
         RelationStyle relStyle = TestLayouts.mockRelationStyle();
-        Style model = new Style();
+        Style model = mockStyleModel(schema);
         RelationLayout layout = new RelationLayout(schema, relStyle);
 
         ArrayNode data = JsonNodeFactory.instance.arrayNode();

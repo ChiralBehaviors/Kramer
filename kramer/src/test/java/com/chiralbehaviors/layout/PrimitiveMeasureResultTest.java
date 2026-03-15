@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.style.PrimitiveStyle;
+import static org.mockito.Mockito.mock;
+
 import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -28,7 +30,7 @@ class PrimitiveMeasureResultTest {
         data.add("Bob");
         data.add("Charlie");
 
-        Style model = new Style();
+        Style model = mock(Style.class);
         layout.measure(data, n -> n, model);
 
         MeasureResult result = layout.getMeasureResult();
@@ -51,7 +53,7 @@ class PrimitiveMeasureResultTest {
         data.add("2026-01-01");
         data.add("2026-06-15");
 
-        Style model = new Style();
+        Style model = mock(Style.class);
         layout.measure(data, n -> n, model);
 
         MeasureResult before = layout.getMeasureResult();
@@ -72,7 +74,7 @@ class PrimitiveMeasureResultTest {
 
         ArrayNode data = JsonNodeFactory.instance.arrayNode(); // empty
 
-        Style model = new Style();
+        Style model = mock(Style.class);
         layout.measure(data, n -> n, model);
 
         MeasureResult result = layout.getMeasureResult();
