@@ -38,6 +38,8 @@ class VerticalHeaderTest {
         when(primStyle.getMinValueWidth()).thenReturn(30.0);
         when(primStyle.getMaxTablePrimitiveWidth()).thenReturn(Double.MAX_VALUE);
         when(primStyle.getVerticalHeaderThreshold()).thenReturn(1.5);
+        when(primStyle.getVariableLengthThreshold()).thenReturn(2.0);
+        when(primStyle.getOutlineSnapValueWidth()).thenReturn(0.0);
         when(primStyle.width(any(JsonNode.class))).thenAnswer(inv -> {
             JsonNode node = inv.getArgument(0);
             String text = node.isTextual() ? node.textValue() : node.toString();
@@ -60,6 +62,8 @@ class VerticalHeaderTest {
         when(primStyle.getMinValueWidth()).thenReturn(30.0);
         when(primStyle.getMaxTablePrimitiveWidth()).thenReturn(Double.MAX_VALUE);
         when(primStyle.getVerticalHeaderThreshold()).thenReturn(1.5);
+        when(primStyle.getVariableLengthThreshold()).thenReturn(2.0);
+        when(primStyle.getOutlineSnapValueWidth()).thenReturn(0.0);
 
         if (variableLength) {
             // Variable: different widths per value → ratio > 2.0

@@ -42,8 +42,6 @@ import javafx.scene.layout.Region;
  *
  */
 public final class PrimitiveLayout extends SchemaNodeLayout {
-    static final double            VARIABLE_LENGTH_THRESHOLD = 2.0;
-
     protected int                  averageCardinality;
     protected double               dataWidth;
     private boolean                isVariableLength          = true;
@@ -85,7 +83,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double calculateTableColumnWidth() {
-        return Math.min(dataWidth, style.getMaxTablePrimitiveWidth());
+        return tableColumnWidth();
     }
 
     @Override
@@ -122,7 +120,12 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         double floor = style.getMinValueWidth();
         double effective = Math.max(available, floor);
         if (!isVariableLength && maxWidth > 0) {
-            justifiedWidth = Style.snap(Math.min(effective, maxWidth));
+            double target = maxWidth;
+            double snapWidth = style.getOutlineSnapValueWidth();
+            if (snapWidth > 0) {
+                target = Math.ceil(target / snapWidth) * snapWidth;
+            }
+            justifiedWidth = Style.snap(Math.min(effective, target));
         } else {
             justifiedWidth = Style.snap(effective);
         }
@@ -196,7 +199,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
         // Paper §Table 1: IsVariableLength determines width strategy
         if (averageWidth > 0) {
-            isVariableLength = (maxWidth / averageWidth > VARIABLE_LENGTH_THRESHOLD);
+            isVariableLength = (maxWidth / averageWidth > style.getVariableLengthThreshold());
         } else {
             isVariableLength = true; // safe fallback for empty data
         }

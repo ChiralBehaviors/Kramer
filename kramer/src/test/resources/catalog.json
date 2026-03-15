@@ -1,0 +1,44 @@
+[
+  {
+    "courseNumber": "CS101",
+    "title": "Introduction to Computer Science",
+    "description": "Survey.",
+    "credits": "3"
+  },
+  {
+    "courseNumber": "CS201",
+    "title": "Data Structures",
+    "description": "Covers arrays, linked lists, trees, graphs, hash tables, and the algorithmic techniques needed to implement and analyze them efficiently in real-world applications.",
+    "credits": "4"
+  },
+  {
+    "courseNumber": "CS301",
+    "title": "Operating Systems",
+    "description": "Processes.",
+    "credits": "3"
+  },
+  {
+    "courseNumber": "CS310",
+    "title": "Database Systems",
+    "description": "Relational model, SQL, query optimization, transaction processing, concurrency control, and distributed database architectures for modern data-intensive applications.",
+    "credits": "3"
+  },
+  {
+    "courseNumber": "CS401",
+    "title": "Compiler Design",
+    "description": "Lexical analysis, parsing, semantic analysis, intermediate representation, optimization passes, and code generation targeting multiple instruction set architectures with emphasis on correctness proofs.",
+    "credits": "4"
+  },
+  {
+    "courseNumber": "CS450",
+    "title": "Machine Learning",
+    "description": "Supervised and unsupervised learning, neural networks, support vector machines, decision trees, ensemble methods, dimensionality reduction, and practical considerations for deploying models at scale in production environments.",
+    "credits": "3"
+  },
+  {
+    "courseNumber": "CS499",
+    "title": "Senior Capstone",
+    "description": "Capstone.",
+    "credits": "4"
+  }
+]

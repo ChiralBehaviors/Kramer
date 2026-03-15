@@ -68,6 +68,8 @@ class RelationLayoutCompressTest {
         when(primStyle.getMinValueWidth()).thenReturn(30.0);
         when(primStyle.getMaxTablePrimitiveWidth()).thenReturn(Double.MAX_VALUE);
         when(primStyle.getVerticalHeaderThreshold()).thenReturn(1.5);
+        when(primStyle.getVariableLengthThreshold()).thenReturn(2.0);
+        when(primStyle.getOutlineSnapValueWidth()).thenReturn(0.0);
 
         PrimitiveLayout layout = new PrimitiveLayout(new Primitive(name), primStyle);
         layout.columnWidth = width;
@@ -369,5 +371,32 @@ class RelationLayoutCompressTest {
 
         assertFalse(parent.isUseTable(),
                     "Outline should be chosen when table width (150) exceeds available width (100)");
+    }
+
+    /**
+     * Parameterized compress(justified, true) must produce identical results
+     * to the public compress(justified) for uniform-width children.
+     */
+    @Test
+    void parameterizedCompressEquivalentToPublicMethod() {
+        RelationStyle style = mockRelationStyle();
+        Relation parent = new Relation("parent");
+        RelationLayout layout1 = new RelationLayout(parent, style);
+        RelationLayout layout2 = new RelationLayout(parent, style);
+
+        for (RelationLayout layout : List.of(layout1, layout2)) {
+            layout.children.clear();
+            layout.children.add(makePrimitive("name", 30));
+            layout.children.add(makePrimitive("email", 30));
+            layout.children.add(makePrimitive("phone", 30));
+            layout.labelWidth = 10;
+            layout.averageChildCardinality = 2;
+        }
+
+        layout1.compress(500);
+        layout2.compress(500, true);
+
+        assertEquals(layout1.columnSets.size(), layout2.columnSets.size(),
+                     "Parameterized compress(w, true) must match compress(w)");
     }
 }
