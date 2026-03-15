@@ -85,7 +85,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double calculateTableColumnWidth() {
-        return Math.min(dataWidth, style.getMaxTablePrimitiveWidth());
+        return tableColumnWidth();
     }
 
     @Override

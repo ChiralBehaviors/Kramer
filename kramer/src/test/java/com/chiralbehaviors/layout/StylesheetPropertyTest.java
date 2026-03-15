@@ -377,12 +377,11 @@ class StylesheetPropertyTest {
     }
 
     /**
-     * TableMaxPrimitiveWidth default (MAX_VALUE): no cap applied.
+     * Explicit MAX_VALUE override disables the cap.
      */
     @Test
-    void tableMaxPrimitiveWidthDefaultNoCap() {
+    void explicitMaxValueDisablesCap() {
         PrimitiveStyle style = mockPrimitiveStyle(7.0);
-        // default is MAX_VALUE — should not cap
         when(style.getMaxTablePrimitiveWidth()).thenReturn(Double.MAX_VALUE);
 
         PrimitiveLayout layout = new PrimitiveLayout(new Primitive("desc"), style);
@@ -518,7 +517,7 @@ class StylesheetPropertyTest {
             new PrimitiveStyle.PrimitiveTextStyle(labelStyle, new Insets(0), labelStyle);
 
         assertEquals(30.0, style.getMinValueWidth());
-        assertEquals(Double.MAX_VALUE, style.getMaxTablePrimitiveWidth());
+        assertEquals(350.0, style.getMaxTablePrimitiveWidth());
     }
 
     @Test

@@ -182,7 +182,7 @@ abstract public class PrimitiveStyle extends NodeStyle {
 
     private final Insets listInsets;
     private double      minValueWidth            = 30;
-    private double      maxTablePrimitiveWidth   = Double.MAX_VALUE;
+    private double      maxTablePrimitiveWidth   = 350.0;
     private double      verticalHeaderThreshold  = 1.5;
 
     public PrimitiveStyle(LabelStyle labelStyle, Insets listInsets) {
