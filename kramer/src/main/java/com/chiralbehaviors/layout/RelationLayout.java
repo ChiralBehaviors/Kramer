@@ -223,6 +223,11 @@ public final class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public void compress(double justified) {
+        compress(justified, true);
+    }
+
+    // Package-private for evaluation testing (Kramer-avn F2+F3)
+    void compress(double justified, boolean useHalfWidthGuard) {
         if (useTable) {
             justifyTable(justified);
             return;
@@ -241,11 +246,12 @@ public final class RelationLayout extends SchemaNodeLayout {
             double childWidth = labelWidth + child.layoutWidth();
             // Paper §3.4: outline-mode relations are excluded from column sets
             boolean excluded = (child instanceof RelationLayout rl) && !rl.isUseTable();
-            if (excluded || childWidth > halfWidth || current == null) {
+            boolean wideChild = useHalfWidthGuard && childWidth > halfWidth;
+            if (excluded || wideChild || current == null) {
                 current = new ColumnSet();
                 columnSets.add(current);
                 current.add(child);
-                if (excluded || childWidth > halfWidth) {
+                if (excluded || wideChild) {
                     current = null;
                 }
             } else {
