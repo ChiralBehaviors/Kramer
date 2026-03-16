@@ -79,6 +79,29 @@ public class RelationStyle extends NodeStyle {
         this.maxAverageCardinality = maxAverageCardinality;
     }
 
+    /**
+     * Value-based constructor for headless/configured use — no JavaFX nodes required.
+     * All insets are set to the provided uniform inset value.
+     *
+     * @param labelStyle            label metrics
+     * @param uniformInset          inset value applied to all regions
+     * @param maxAverageCardinality cardinality cap
+     */
+    public RelationStyle(LabelStyle labelStyle, Insets uniformInset,
+                         int maxAverageCardinality) {
+        super(labelStyle);
+        this.table = uniformInset;
+        this.row = uniformInset;
+        this.rowCell = uniformInset;
+        this.outline = uniformInset;
+        this.outlineCell = uniformInset;
+        this.column = uniformInset;
+        this.span = uniformInset;
+        this.element = uniformInset;
+        nestedInsets = Style.add(this.row, this.rowCell);
+        this.maxAverageCardinality = maxAverageCardinality;
+    }
+
     public double getColumnHorizontalInset() {
         return column.getLeft() + column.getRight();
     }

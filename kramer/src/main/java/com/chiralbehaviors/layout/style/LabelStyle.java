@@ -50,6 +50,18 @@ public class LabelStyle {
         font = label.getFont();
     }
 
+    /**
+     * Value-based constructor for headless/configured use — no JavaFX Label required.
+     *
+     * @param lineHeight measured or configured line height
+     * @param insets     padding insets
+     */
+    public LabelStyle(double lineHeight, Insets insets) {
+        this.lineHeight = lineHeight;
+        this.insets = insets;
+        this.font = Font.getDefault();
+    }
+
     public double getHeight() {
         return lineHeight + insets.getTop() + insets.getBottom();
     }

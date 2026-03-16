@@ -23,6 +23,7 @@ import java.util.List;
 import javafx.application.Platform;
 
 import com.chiralbehaviors.layout.DefaultLayoutStylesheet;
+import com.chiralbehaviors.layout.MeasurementStrategy;
 import com.chiralbehaviors.layout.LayoutLabel;
 import com.chiralbehaviors.layout.LayoutStylesheet;
 import com.chiralbehaviors.layout.SchemaPath;
@@ -133,6 +134,7 @@ public class Style {
     private final LayoutObserver              observer;
     private Object                            owner;
     private LayoutStylesheet                  stylesheet;
+    private MeasurementStrategy               measurementStrategy;
 
     private final List<String>                styleSheets          = new ArrayList<>();
     private final IdentityHashMap<Primitive, PrimitiveStyle>  primitiveStyleCache  = new IdentityHashMap<>();
@@ -157,6 +159,29 @@ public class Style {
     public Style(LayoutStylesheet stylesheet) {
         this(new LayoutObserver() {
         }, stylesheet);
+    }
+
+    /**
+     * Constructs a headless Style backed by a {@link MeasurementStrategy}.
+     * CSS measurement is skipped; all style metrics come from the strategy.
+     *
+     * @param observer            layout observer
+     * @param measurementStrategy strategy to supply style metrics
+     */
+    public Style(LayoutObserver observer, MeasurementStrategy measurementStrategy) {
+        this.observer = observer;
+        this.measurementStrategy = measurementStrategy;
+        this.stylesheet = new DefaultLayoutStylesheet(this);
+    }
+
+    /**
+     * Constructs a headless Style with default observer and supplied strategy.
+     *
+     * @param measurementStrategy strategy to supply style metrics
+     */
+    public Style(MeasurementStrategy measurementStrategy) {
+        this(new LayoutObserver() {
+        }, measurementStrategy);
     }
 
     public LayoutStylesheet getStylesheet() {
@@ -217,6 +242,9 @@ public class Style {
     }
 
     protected PrimitiveStyle computePrimitiveStyle(Primitive p) {
+        if (measurementStrategy != null) {
+            return measurementStrategy.measurePrimitiveStyle(p, styleSheets);
+        }
         assert Platform.isFxApplicationThread() : "computePrimitiveStyle must run on JAT";
         VBox root = new VBox();
 
@@ -261,6 +289,9 @@ public class Style {
     }
 
     protected RelationStyle computeRelationStyle(Relation r) {
+        if (measurementStrategy != null) {
+            return measurementStrategy.measureRelationStyle(r, styleSheets);
+        }
         assert Platform.isFxApplicationThread() : "computeRelationStyle must run on JAT";
         VBox root = new VBox();
 
