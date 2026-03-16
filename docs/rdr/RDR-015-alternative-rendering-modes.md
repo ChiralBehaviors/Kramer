@@ -37,7 +37,7 @@ public enum PrimitiveRenderMode {
 }
 ```
 
-> **Note**: SPARKLINE (mini line chart for numeric arrays) requires array-valued Primitives, which is a schema-layer extension touching `Primitive`, `measure()`, height computation, and cell factory. This is deferred to a separate future RDR.
+> **Note**: SPARKLINE is intentionally absent from `PrimitiveRenderMode`. SPARKLINE will be added by RDR-019 as a non-breaking enum extension. It requires array-valued Primitives — a schema-layer extension touching `Primitive`, `measure()`, height computation, and cell factory — which is out of scope for this RDR.
 
 Wire through `PrimitiveLayout` (per-instance), NOT `PrimitiveStyle` (per-class). This ensures the same Primitive schema node can render differently in different `AutoLayout` instances. A stylesheet-specified mode takes priority and skips auto-detection entirely.
 
@@ -71,8 +71,8 @@ During `PrimitiveLayout.measure()`, when `renderMode == BAR`, parse numeric valu
 
 ```java
 // In PrimitiveLayout.measure(), when renderMode == BAR:
-double numericMin = Double.MAX_VALUE;
-double numericMax = Double.MIN_VALUE;
+double numericMin = Double.POSITIVE_INFINITY;
+double numericMax = Double.NEGATIVE_INFINITY;
 for (JsonNode row : normalized) {
     double val = Double.parseDouble(SchemaNode.asText(row));
     numericMin = Math.min(numericMin, val);
@@ -83,7 +83,9 @@ NumericStats numericStats = new NumericStats(numericMin, numericMax);
 
 The bar width formula:
 ```
-barWidth = (value - numericStats.numericMin()) / (numericStats.numericMax() - numericStats.numericMin()) * cellWidth
+double range = numericMax - numericMin;
+double barFraction = (range == 0) ? 1.0 : (value - numericStats.numericMin()) / range;
+barWidth = barFraction * cellWidth;
 ```
 
 The sub-record is stored in `MeasureResult` and persists across resize cycles, consistent with the existing measure-once/layout-many architecture.
@@ -159,6 +161,8 @@ String pivot = stylesheet.getString(path, "pivot-field", "");
 String value = stylesheet.getString(path, "value-field", "");
 ```
 
+When `valueField` is empty, CROSSTAB mode degrades to TABLE/OUTLINE with a logged warning. A crosstab without a value field produces headers but no cell data, which is not a valid rendering state.
+
 ### Pivot Values: Collection During Measure
 
 **Problem**: `RelationLayout.layout(double width)` takes ONLY a width parameter — no `JsonNode` data. Distinct pivot values are data-dependent and cannot be computed at layout time.
@@ -186,7 +190,7 @@ Nullable on `MeasureResult` — only populated when `renderMode == CROSSTAB`. Wh
 
 `layoutCrosstab(double width)` reads from `measureResult.pivotStats()`.
 
-**Pipeline ordering requirement**: Pivot value collection MUST run after RDR-014's filter step. The canonical pipeline order is: `sort -> filter (hideIfEmpty) -> collect pivot values -> measure children`. If pivots are collected before filtering, column headers may be generated for rows that hideIfEmpty would exclude — creating column headers with no corresponding data rows.
+**Pipeline ordering requirement**: RDR-014 is implemented. Pivot value collection MUST be placed after the existing `shouldFilter` block. The canonical pipeline order is: `sort -> filter (hideIfEmpty) -> collect pivot values -> measure children`. If pivots are collected before filtering, column headers may be generated for rows that hideIfEmpty would exclude — creating column headers with no corresponding data rows.
 
 Updated `MeasureResult` (using sub-records, not inline fields):
 ```java
@@ -315,7 +319,7 @@ The `PrimitiveRenderMode` and `RelationRenderMode` enums defined in this RDR mus
 ```java
 record LayoutResult(
     RelationRenderMode relationMode,  // TABLE, OUTLINE, CROSSTAB (replaces useTable)
-    PrimitiveRenderMode primitiveMode, // TEXT, BAR, BADGE, SPARKLINE
+    PrimitiveRenderMode primitiveMode, // TEXT, BAR, BADGE
     boolean useVerticalHeader,
     double tableColumnWidth,
     double columnHeaderIndentation,
@@ -350,13 +354,14 @@ record LayoutResult(
 - Add `PrimitiveRenderMode` enum (TEXT, BAR, BADGE)
 - Add `NumericStats` sub-record and nullable `numericStats` field to `MeasureResult` (per RDR-013 extension pattern)
 - Implement `PrimitiveBarStyle` subclass (parallel to `PrimitiveTextStyle`)
-- Bar cell: `StackPane` with colored `Rectangle`, width = `(value - numericStats.numericMin()) / (numericStats.numericMax() - numericStats.numericMin()) * cellWidth`
+- Bar cell: `StackPane` with colored `Rectangle`, width = `barFraction * cellWidth` where `double range = numericStats.numericMax() - numericStats.numericMin(); double barFraction = (range == 0) ? 1.0 : (value - numericStats.numericMin()) / range`
 - Bar height = one label line height (single-line, no wrapping)
 - Auto-detect numeric fields during `measure()`; store detected mode on `PrimitiveLayout` instance
 
 ### Phase 2: PrimitiveRenderMode.BADGE (LOW effort)
-- Colored Label with category-based CSS class
-- Auto-detect low-cardinality fields during `measure()`
+- Colored Label with category-based CSS class using pattern `badge-{sorted-index}` (e.g., `badge-0`, `badge-1`), where `sorted-index` is the value's position in the sorted distinct-values list
+- Add `badge-cardinality-threshold` as a `LayoutStylesheet` property (default: 10). Values beyond the threshold render as TEXT; the threshold applies both to auto-detection and explicit BADGE mode
+- Auto-detect low-cardinality fields during `measure()` (distinct value count < `badge-cardinality-threshold`)
 
 ### Phase 3: Crosstab (MEDIUM effort)
 - Add `RelationRenderMode` enum
@@ -437,6 +442,9 @@ Rather than adding a `PrimitiveBarStyle` subclass parallel to `PrimitiveTextStyl
 
 ### 1. Has the problem been validated with real user scenarios?
 
+**Note on forced TABLE/OUTLINE modes**: `RelationRenderMode.TABLE` and `RelationRenderMode.OUTLINE` are engineering conveniences not present in SIEUFERD — they provide explicit override for stylesheet-driven testing and debugging. SIEUFERD's adaptive algorithm always selects the best mode automatically; forced modes are a Kramer-specific addition to support deterministic test scenarios.
+
+
 **Partially validated.** The SIEUFERD paper (SIGMOD 2016, §3.3, Fig 5) provides the primary external validation — bar chart visualization of numeric fields and crosstab pivot are described as user-facing formatting options in a production system for structured report exploration. The bar chart case (COURSES TAUGHT rendered as bars) is a direct, documented real-world scenario.
 
 Within Kramer, the post-Wave1 research confirmed that `LayoutStylesheet` is now accessible in `measure()` via `model.getStylesheet()`, which validates the stylesheet-driven configuration path. The `NumericStats`/`PivotStats` nullable sub-record pattern has been validated against the `ContentWidthStats` precedent (RDR-013). However, end-user testing of bar rendering at various data ranges and crosstab sparse-matrix edge cases has not yet occurred. Phase 1 (BAR) should be validated in the explorer app before Phase 3 (crosstab) is implemented.
@@ -478,7 +486,7 @@ The `LayoutResult` boolean-to-enum migration (`useTable` → `RelationRenderMode
 
 **RDR-013 (Statistical Content Width)**: Established the nullable sub-record extension pattern for `MeasureResult`. `NumericStats` and `PivotStats` follow this pattern directly. No conflict; the pattern is additive.
 
-**RDR-014 (Conditional Display / Data Filtering)**: Soft dependency for Phase 3. Pivot value collection must run after RDR-014's `hideIfEmpty` filter step (see RF-4: phantom column header risk). If RDR-014 is not implemented, Phase 3 can still proceed — but the pipeline ordering constraint is documented and must be enforced when RDR-014 is added.
+**RDR-014 (Conditional Display / Data Filtering)**: RDR-014 is implemented. Pivot value collection must be placed after the existing `shouldFilter` block (see RF-4: phantom column header risk).
 
 **RDR-016 (Layout Stability / Incremental Update)**: Crosstab's data-dependent pivot column set (computed during `measure()`) is sensitive to data changes. If RDR-016 introduces incremental measure (partial remeasure on data update), it must invalidate `MeasureResult.pivotStats()` when the pivot field's distinct value set changes. This is a forward compatibility concern to document in RDR-016.
 
@@ -513,6 +521,7 @@ If pivot value collection runs before RDR-014's hideIfEmpty filter step, the piv
 | Bar chart with non-numeric data | Low | Auto-detection validates parseability; non-numeric values fall back to TEXT |
 | Auto-detection heuristic picks wrong mode | Low | Manual override via stylesheet; auto is a suggestion, stylesheet takes priority |
 | Forced TABLE mode at insufficient width | Low | Guard falls back to OUTLINE; documented as intentional degradation |
+| All-identical numeric values produce range=0 | Low | Guard with `barFraction=1.0` (full-width bar) |
 | SPARKLINE touches schema layer | N/A | Deferred to separate RDR |
 
 ## Success Criteria

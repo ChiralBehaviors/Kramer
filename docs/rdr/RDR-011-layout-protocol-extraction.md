@@ -50,7 +50,9 @@ Model A is simpler and immediately achievable. Model B requires solving the meas
 
 ### Phase 1: Extract LayoutDecisionNode
 
-The existing pipeline already produces layout decisions captured in four immutable result records. The `compute*()` methods already exist on `PrimitiveLayout` and `RelationLayout` (see `computeLayout()`, `computeCompress()`, `computeCellHeight()`). Extract these into a unified decision tree by composing the existing records:
+The existing pipeline already produces layout decisions captured in four immutable result records. The `compute*()` methods already exist on `PrimitiveLayout` and `RelationLayout` (see `computeCompress()`, `computeCellHeight()`). Extract these into a unified decision tree by composing the existing records via `snapshotLayoutResult()`.
+
+**Note on snapshot point**: `computeLayout()` re-runs `layout()` internally and must not be called as a snapshot point — it has side effects. `snapshotLayoutResult()` is the correct side-effect-free snapshot: it reads already-computed result records after the pipeline has converged without triggering re-computation.
 
 ```java
 /**
@@ -64,6 +66,7 @@ The existing pipeline already produces layout decisions captured in four immutab
  */
 public record LayoutDecisionNode(
     SchemaPath path,
+    String fieldName,      // leaf field name from SchemaPath.leaf(); used for child data extraction
     MeasureResult measure,
     LayoutResult layout,
     CompressResult compress,
@@ -108,29 +111,15 @@ Alternatively, capture post-`compress()` `ColumnSet` state by reading the finali
 1. Run `distributeExtraHeight` before capturing `HeightResult`, so the decision tree reflects final heights.
 2. Capture the unadjusted heights and include `availableHeight` as a field on the root node, letting the renderer apply distribution. Option 1 is simpler for Model A.
 
+**Timing verification**: Verify that `snapshotLayoutResult()` at `AutoLayout.java:401` is invoked after `distributeExtraHeight()` in the `autoLayout()` call chain. If `snapshotLayoutResult()` is called before `distributeExtraHeight()`, `HeightResult` will reflect pre-distribution heights and the snapshot will be incorrect for Model A.
+
 ### Joint Design with RDR-015: Render Mode in LayoutResult
 
 `LayoutResult.useTable` is a boolean — it cannot express CROSSTAB, BAR, BADGE, or SPARKLINE modes. Before Phase 2 (LayoutRenderer) can be implemented, `LayoutResult` must carry explicit render mode enums so that any renderer can dispatch on the full set of layout decisions without back-references to mutable layout objects.
 
-`LayoutResult` must replace `boolean useTable` with `RelationRenderMode relationMode` (TABLE, OUTLINE, CROSSTAB) and add `PrimitiveRenderMode primitiveMode` (TEXT, BAR, BADGE, SPARKLINE). The extended signature:
+**Canonical definition**: RDR-015 is authoritative for the `LayoutResult` extended signature, `RelationRenderMode`, and `PrimitiveRenderMode` enum definitions. Refer to RDR-015 for the record field list and backward-compatibility migration. This RDR depends on those types; it does not redefine them.
 
-```java
-record LayoutResult(
-    RelationRenderMode relationMode,  // TABLE, OUTLINE, CROSSTAB (replaces useTable)
-    PrimitiveRenderMode primitiveMode, // TEXT, BAR, BADGE, SPARKLINE
-    boolean useVerticalHeader,
-    double tableColumnWidth,
-    double columnHeaderIndentation,
-    double constrainedColumnWidth,
-    List<LayoutResult> childResults
-) {}
-```
-
-**Backward compatibility**: `relationMode == TABLE` is equivalent to the old `useTable == true`; `relationMode == OUTLINE` is equivalent to `useTable == false`. Existing callers that checked `useTable` migrate to `relationMode == TABLE`. `primitiveMode` defaults to `TEXT` for all existing Primitive nodes, preserving current behavior.
-
-**Why this belongs in LayoutResult, not on layout objects**: `LayoutDecisionNode` composes the four result records (`MeasureResult`, `LayoutResult`, `CompressResult`, `HeightResult`). If render mode lives only as an instance field on `PrimitiveLayout`/`RelationLayout`, the decision tree cannot carry it — renderers would need access to the mutable layout objects, defeating the purpose of the protocol extraction. The enums must be in `LayoutResult` so that `LayoutDecisionNode` captures the complete rendering decision.
-
-**Dependency**: RDR-015 defines the `PrimitiveRenderMode` and `RelationRenderMode` enums and their semantics. This RDR consumes them as fields in `LayoutResult`. Phase 2 (LayoutRenderer) is blocked until these enums exist in `LayoutResult`.
+**Dependency**: Phase 2 (LayoutRenderer) is blocked until RDR-015 Phase 1 lands `RelationRenderMode` and `PrimitiveRenderMode` in `LayoutResult`.
 
 ### Phase 2: Define Renderer Interface
 
@@ -163,7 +152,10 @@ public <T> T render(LayoutDecisionNode node, JsonNode data,
     }
     List<Map.Entry<LayoutDecisionNode, T>> childResults = new ArrayList<>();
     for (LayoutDecisionNode child : node.children()) {
-        JsonNode childData = extractChildData(child, data);
+        // Serialized (cross-process) scenario: use child.fieldName() for data extraction.
+        // In-process scenario: MeasureResult.extractor() may be used instead (available
+        // server-side where JavaFX measurement runs), but fieldName() is always present.
+        JsonNode childData = data.get(child.fieldName());
         T childResult = render(child, childData, renderer);
         childResults.add(Map.entry(child, childResult));
     }
@@ -209,8 +201,8 @@ Total: **40+ individual inset values** plus font metrics per schema node. This i
 
 - ~~RDR-009 Phase A (MeasureResult extraction)~~ — **implemented** (closed, bead Kramer-53g)
 - ~~RDR-009 Phase B (LayoutResult extraction)~~ — **implemented** (closed, bead Kramer-53g)
-- RDR-010 C3 (LayoutStylesheet wiring for algorithm-tuning parameters) — **prerequisite for Phase 4**. Phase 4 requires algorithm-tuning parameters to be decoupled from cached style objects. RDR-010 C3 moves them to `LayoutStylesheet`; without this, a `MeasurementStrategy` would need to replicate the mutable-setter pattern.
-- RDR-010 S2 (protected measurement methods) — enables headless style implementations for Phase 4
+- ~~RDR-010 C3 (LayoutStylesheet wiring for algorithm-tuning parameters)~~ — **implemented** (RDR-010 closed 2026-03-15). Phase 4 prerequisites from RDR-010 are satisfied.
+- ~~RDR-010 S2 (protected measurement methods)~~ — **implemented** (RDR-010 closed 2026-03-15). Enables headless style implementations for Phase 4.
 - RDR-015 (alternative rendering modes) — **prerequisite for Phase 2**. Defines `RelationRenderMode` and `PrimitiveRenderMode` enums that must be added to `LayoutResult` before `LayoutRenderer` can dispatch on the full set of rendering decisions
 
 ---
@@ -223,6 +215,8 @@ Total: **40+ individual inset values** plus font metrics per schema node. This i
 4. **Phase 4**: Factor measurement into pluggable strategy (**MEDIUM-HIGH** risk — touches Style class, must replicate 40+ inset properties and font metrics. Depends on RDR-010 C3)
 
 **Phase 1 can begin immediately** — RDR-009 is already implemented and the four result records exist. No blockers.
+
+**Sequencing with RDR-015**: Phase 1 captures `LayoutResult` as currently structured (boolean `useTable`). The `RelationRenderMode`/`PrimitiveRenderMode` migration from RDR-015 Phase 1 must complete before Phase 2, not before Phase 1. Phase 1 proceeds with the existing `useTable` field; Phase 2 is blocked until RDR-015 Phase 1 lands.
 
 ---
 
@@ -379,7 +373,9 @@ Phase 4 (headless measurement) is the highest-risk phase and should be treated a
 
 **RDR-015** (alternative rendering modes): Phase 2 is blocked on RDR-015 defining `RelationRenderMode` and `PrimitiveRenderMode` enums. If RDR-015 is revised to use a different representation (e.g., a string tag rather than enums), `LayoutResult` must be updated accordingly. The `LayoutDecisionNode` serialized form is affected. This cross-RDR interface should be locked before Phase 2 begins.
 
-**RDR-012** (reactive semantic constraint layout), **RDR-016** (layout stability / incremental update), **RDR-018** (query-semantic layout stylesheet): These RDRs extend or constrain the layout pipeline. Any pipeline change they introduce must preserve the post-convergence snapshot contract: `snapshotLayoutResult()` must be callable after `isConverged()` returns `true`, and the result must be stable. RDR-016 in particular (incremental update) must ensure that partial pipeline re-runs do not produce partially-updated `LayoutDecisionNode` trees.
+**RDR-012** (reactive semantic constraint layout), **RDR-016** (layout stability / incremental update), **RDR-018** (query-semantic layout stylesheet): These RDRs extend or constrain the layout pipeline. Any pipeline change they introduce must preserve the post-convergence snapshot contract.
+
+**RDR-016 convergence invariant**: `snapshotLayoutResult()` is only callable when `isConverged() == true` for all nodes in the subtree. Partial pipeline re-runs (triggered by incremental update) must suppress snapshot capture until convergence is restored across the full subtree. A `LayoutDecisionNode` produced during a partial re-run is undefined and must not be consumed by renderers or cached.
 
 ---
 
