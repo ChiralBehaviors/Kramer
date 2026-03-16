@@ -2,10 +2,12 @@
 
 ## Metadata
 - **Type**: Feature
-- **Status**: accepted
+- **Status**: closed
 - **Priority**: P2
 - **Created**: 2026-03-15
 - **Accepted**: 2026-03-16
+- **Closed**: 2026-03-16
+- **Close-reason**: implemented (Phases 1-3; Phase 4 HTML sparkline deferred to RDR-011 HtmlLayoutRenderer)
 - **Reviewed-by**: self
 - **Related**: RDR-015 (Alternative Rendering Modes — defers sparkline), RDR-009 (MeasureResult), RDR-011 (Layout Protocol)
 
