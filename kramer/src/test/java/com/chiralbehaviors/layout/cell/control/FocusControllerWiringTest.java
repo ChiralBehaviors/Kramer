@@ -248,6 +248,19 @@ class FocusControllerWiringTest {
         assertTrue(controller.isDisabled());
     }
 
+    // --- navigateTo() public API ---
+
+    @Test
+    void testNavigateTo_isPublicApi() throws NoSuchMethodException {
+        // Verify navigateTo(VirtualFlow<?>, int) is declared public on FocusController
+        var method = FocusController.class.getMethod("navigateTo",
+                                                     com.chiralbehaviors.layout.flowless.VirtualFlow.class,
+                                                     int.class);
+        assertNotNull(method, "navigateTo(VirtualFlow<?>, int) must be a public method");
+        assertTrue(java.lang.reflect.Modifier.isPublic(method.getModifiers()),
+                   "navigateTo must be public");
+    }
+
     // --- Helper ---
 
     private FocusTraversalNode<?> mockFTN(Bias bias) {

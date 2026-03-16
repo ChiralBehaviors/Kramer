@@ -26,9 +26,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  */
 public non-sealed class Relation extends SchemaNode {
-    private boolean                autoFold = true;
-    private final List<SchemaNode> children = new ArrayList<>();
+    private boolean                autoFold   = true;
+    private boolean                autoSort   = false;
+    private final List<SchemaNode> children   = new ArrayList<>();
     private Relation               fold;
+    private List<String>           sortFields = List.of();
 
     public Relation(String label) {
         super(label);
@@ -80,6 +82,22 @@ public non-sealed class Relation extends SchemaNode {
         this.fold = (fold && children.size() == 1
                      && children.get(0) instanceof Relation r) ? r
                                                                : null;
+    }
+
+    public List<String> getSortFields() {
+        return sortFields;
+    }
+
+    public boolean isAutoSort() {
+        return autoSort;
+    }
+
+    public void setAutoSort(boolean autoSort) {
+        this.autoSort = autoSort;
+    }
+
+    public void setSortFields(List<String> sortFields) {
+        this.sortFields = sortFields == null ? List.of() : List.copyOf(sortFields);
     }
 
     @Override

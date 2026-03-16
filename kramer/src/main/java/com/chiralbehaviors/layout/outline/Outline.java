@@ -19,6 +19,7 @@ package com.chiralbehaviors.layout.outline;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.OptionalInt;
 
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.RelationLayout;
@@ -75,11 +76,14 @@ public class Outline extends VirtualFlow<OutlineCell> {
 
     @Override
     public void updateItem(JsonNode item) {
+        OptionalInt savedIndex = getFirstVisibleIndex();
         List<JsonNode> list = SchemaNode.asList(item);
         items.setAll(list);
-        // Reset scroll to top after populating items
         if (!items.isEmpty()) {
-            showAsFirst(0);
+            savedIndex.ifPresentOrElse(
+                idx -> showAsFirst(Math.min(idx, items.size() - 1)),
+                () -> showAsFirst(0)
+            );
         }
         pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
         pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);

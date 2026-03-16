@@ -13,6 +13,8 @@ import com.chiralbehaviors.layout.style.RelationStyle;
  */
 public interface LayoutStylesheet {
 
+    long getVersion();
+
     double getDouble(SchemaPath path, String property, double defaultValue);
 
     int getInt(SchemaPath path, String property, int defaultValue);

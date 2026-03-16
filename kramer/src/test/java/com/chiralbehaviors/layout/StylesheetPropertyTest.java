@@ -744,6 +744,58 @@ class StylesheetPropertyTest {
         assertTrue(sheet.getBoolean(path, "hide-if-empty", false));
     }
 
+    // ---- Kramer-63n: Version counter ----
+
+    @Test
+    void versionStartsAtZero() {
+        DefaultLayoutStylesheet sheet = new DefaultLayoutStylesheet(null);
+        assertEquals(0L, sheet.getVersion(), "Initial version should be 0");
+    }
+
+    @Test
+    void setOverrideIncrementsVersion() {
+        DefaultLayoutStylesheet sheet = new DefaultLayoutStylesheet(null);
+        SchemaPath path = new SchemaPath("root");
+
+        sheet.setOverride(path, "minValueWidth", 50.0);
+        assertEquals(1L, sheet.getVersion(), "setOverride should increment version to 1");
+
+        sheet.setOverride(path, "bulletText", "•");
+        assertEquals(2L, sheet.getVersion(), "Second setOverride should increment version to 2");
+    }
+
+    @Test
+    void clearOverridesIncrementsVersion() {
+        DefaultLayoutStylesheet sheet = new DefaultLayoutStylesheet(null);
+        SchemaPath path = new SchemaPath("root");
+
+        sheet.setOverride(path, "minValueWidth", 50.0);
+        long versionBefore = sheet.getVersion();
+
+        sheet.clearOverrides();
+        assertEquals(versionBefore + 1, sheet.getVersion(),
+                     "clearOverrides should increment version");
+    }
+
+    @Test
+    void multipleSetOverrideCallsIncrementMonotonically() {
+        DefaultLayoutStylesheet sheet = new DefaultLayoutStylesheet(null);
+        SchemaPath pathA = new SchemaPath("a");
+        SchemaPath pathB = new SchemaPath("b");
+
+        long prev = sheet.getVersion();
+        for (int i = 0; i < 5; i++) {
+            sheet.setOverride(pathA, "prop", i);
+            long curr = sheet.getVersion();
+            assertTrue(curr > prev, "Version must increase monotonically at step " + i);
+            prev = curr;
+        }
+
+        sheet.setOverride(pathB, "other", "val");
+        assertTrue(sheet.getVersion() > prev,
+                   "Version must increase for override on different path");
+    }
+
     /**
      * F4: Snap disabled (default 0.0) should behave like before.
      */

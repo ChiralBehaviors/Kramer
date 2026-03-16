@@ -17,6 +17,7 @@
 package com.chiralbehaviors.layout.table;
 
 import java.util.Arrays;
+import java.util.OptionalInt;
 
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.SchemaPath;
@@ -78,10 +79,13 @@ public class NestedRow extends VirtualFlow<NestedCell> {
 
     @Override
     public void updateItem(JsonNode item) {
+        OptionalInt savedIndex = getFirstVisibleIndex();
         items.setAll(NestedTable.itemsAsArray(item));
-        // Reset scroll to top after populating items
         if (!items.isEmpty()) {
-            showAsFirst(0);
+            savedIndex.ifPresentOrElse(
+                idx -> showAsFirst(Math.min(idx, items.size() - 1)),
+                () -> showAsFirst(0)
+            );
         }
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);

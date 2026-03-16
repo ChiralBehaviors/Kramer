@@ -18,17 +18,25 @@ public class DefaultLayoutStylesheet implements LayoutStylesheet {
 
     private final Style style;
     private final Map<SchemaPath, Map<String, Object>> overrides = new HashMap<>();
+    private long version = 0;
 
     public DefaultLayoutStylesheet(Style style) {
         this.style = style;
     }
 
+    @Override
+    public long getVersion() {
+        return version;
+    }
+
     public void setOverride(SchemaPath path, String property, Object value) {
         overrides.computeIfAbsent(path, k -> new HashMap<>()).put(property, value);
+        version++;
     }
 
     public void clearOverrides() {
         overrides.clear();
+        version++;
     }
 
     @Override

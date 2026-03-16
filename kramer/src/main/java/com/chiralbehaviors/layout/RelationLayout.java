@@ -445,7 +445,7 @@ public final class RelationLayout extends SchemaNodeLayout {
             labelWidth, columnWidth, 0, 0,
             0, false,
             averageChildCardinality, maxCardinality,
-            extractor, childResults
+            extractor, childResults, null
         );
 
         return columnWidth + style.getElementHorizontalInset()
