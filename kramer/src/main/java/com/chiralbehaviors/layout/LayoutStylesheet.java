@@ -19,6 +19,8 @@ public interface LayoutStylesheet {
 
     String getString(SchemaPath path, String property, String defaultValue);
 
+    boolean getBoolean(SchemaPath path, String property, boolean defaultValue);
+
     PrimitiveStyle primitiveStyle(SchemaPath path);
 
     RelationStyle relationStyle(SchemaPath path);

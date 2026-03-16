@@ -201,6 +201,8 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             return;
         }
         LayoutCell<?> old = control;
+        // Save cursor state before unbind (which nulls it)
+        var savedCursor = controller.getCursorState();
         // Clear old keyboard bindings before rebuilding the control tree;
         // new VirtualFlows will re-register via bindKeyboard in their constructors.
         controller.unbind();
@@ -223,7 +225,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
 
         // Recover cursor position after layout rebuild.
         // Find the first VirtualFlow in the new tree for cursor recovery.
-        findVirtualFlow(node).ifPresent(controller::recoverCursor);
+        findVirtualFlow(node).ifPresent(vf -> controller.recoverCursor(savedCursor, vf));
     }
 
     /**

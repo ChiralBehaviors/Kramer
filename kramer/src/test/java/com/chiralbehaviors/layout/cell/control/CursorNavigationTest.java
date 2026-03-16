@@ -213,22 +213,21 @@ class CursorNavigationTest {
     void testRecoverCursorWithNullState_noOp() {
         assertNull(controller.getCursorState());
         VirtualFlow<?> vf = mock(VirtualFlow.class);
-        assertDoesNotThrow(() -> controller.recoverCursor(vf));
+        assertDoesNotThrow(() -> controller.recoverCursor(null, vf));
     }
 
     @Test
     void testRecoverCursorWithNullFlow_noOp() {
-        controller.setCursorState(new CursorState("data", null, 0,
-            new Point2D(100, 100), new BoundingBox(0, 0, 80, 30)));
-        assertDoesNotThrow(() -> controller.recoverCursor(null));
-        assertNotNull(controller.getCursorState(), "State should be preserved");
+        var saved = new CursorState("data", null, 0,
+            new Point2D(100, 100), new BoundingBox(0, 0, 80, 30));
+        assertDoesNotThrow(() -> controller.recoverCursor(saved, null));
     }
 
     @Test
     void testRecoverCursorClearsStateWhenIdentityNotFound() {
         JsonNode identity = TextNode.valueOf("missing");
-        controller.setCursorState(new CursorState(identity, null, 0,
-            new Point2D(100, 100), new BoundingBox(0, 0, 80, 30)));
+        var saved = new CursorState(identity, null, 0,
+            new Point2D(100, 100), new BoundingBox(0, 0, 80, 30));
 
         VirtualFlow<LayoutCell<?>> vf = mock(VirtualFlow.class);
         ObservableList<JsonNode> items = FXCollections.observableArrayList(
@@ -236,7 +235,7 @@ class CursorNavigationTest {
         when(vf.getItems()).thenReturn(items);
         when(vf.getItemCount()).thenReturn(2);
 
-        controller.recoverCursor(vf);
+        controller.recoverCursor(saved, vf);
         assertNull(controller.getCursorState(),
                    "cursorState should be cleared when identity is not found");
     }

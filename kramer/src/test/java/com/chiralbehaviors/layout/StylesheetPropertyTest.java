@@ -728,6 +728,22 @@ class StylesheetPropertyTest {
                      "After clear, getString should return default");
     }
 
+    @Test
+    void defaultLayoutStylesheetGetBooleanDefault() {
+        DefaultLayoutStylesheet sheet = new DefaultLayoutStylesheet(null);
+        SchemaPath path = new SchemaPath("root");
+        assertFalse(sheet.getBoolean(path, "hide-if-empty", false));
+        assertTrue(sheet.getBoolean(path, "visible", true));
+    }
+
+    @Test
+    void defaultLayoutStylesheetGetBooleanOverride() {
+        DefaultLayoutStylesheet sheet = new DefaultLayoutStylesheet(null);
+        SchemaPath path = new SchemaPath("root");
+        sheet.setOverride(path, "hide-if-empty", true);
+        assertTrue(sheet.getBoolean(path, "hide-if-empty", false));
+    }
+
     /**
      * F4: Snap disabled (default 0.0) should behave like before.
      */

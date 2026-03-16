@@ -61,6 +61,16 @@ public class DefaultLayoutStylesheet implements LayoutStylesheet {
     }
 
     @Override
+    public boolean getBoolean(SchemaPath path, String property,
+                              boolean defaultValue) {
+        var pathOverrides = overrides.get(path);
+        if (pathOverrides != null && pathOverrides.containsKey(property)) {
+            return (Boolean) pathOverrides.get(property);
+        }
+        return defaultValue;
+    }
+
+    @Override
     public PrimitiveStyle primitiveStyle(SchemaPath path) {
         return style.style(new Primitive(path.leaf()));
     }
