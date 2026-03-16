@@ -5,7 +5,7 @@
 - **Status**: proposed
 - **Priority**: P2
 - **Created**: 2026-03-15
-- **Related**: RDR-005 (keyboard navigation), RDR-009 (stylesheet data structure / SchemaPath), Related Worksheets (CHI 2011)
+- **Related**: RDR-005 (keyboard navigation), RDR-009 (stylesheet data structure / SchemaPath), RDR-018 (query semantic layout stylesheet), Related Worksheets (CHI 2011)
 
 ## Problem Statement
 
@@ -63,17 +63,21 @@ public class LayoutSearch {
     private boolean caseSensitive = false;
     private boolean wrapAround = true;
 
+    // LayoutSearch is constructed with AutoLayout reference and accesses data/root internally.
+
     public void setQuery(String query) { this.query = query; }
     public String getQuery() { return query; }
 
-    /** Find next cell matching current query, starting from current focus */
+    /** Find next cell matching current query, starting from current focus.
+     *  Returns Optional.empty() immediately if query is blank (null or empty). */
     public Optional<SearchResult> findNext() { ... }
 
-    /** Find previous cell matching current query */
+    /** Find previous cell matching current query.
+     *  Returns Optional.empty() immediately if query is blank (null or empty). */
     public Optional<SearchResult> findPrevious() { ... }
 
     /** Count total matches for current query (for "3 of 17" display) */
-    public int countMatches(JsonNode data) { ... }
+    public int countMatches() { ... }
 }
 
 record SearchResult(
@@ -107,6 +111,8 @@ For each data row (depth-first over schema tree):
             Return SearchResult(path, rowIndex, value, offset, length)
 ```
 
+Text extraction uses `SchemaNode.asText(JsonNode)`, which handles both scalar and array nodes.
+
 **Key insight**: Search operates on DATA (`JsonNode`), not on rendered cells. This means:
 - Search finds matches in non-visible (virtualized) rows
 - Search works identically regardless of table/outline rendering mode
@@ -130,14 +136,19 @@ void navigateToMatch(NavigationPath path) {
 }
 
 void navigateStep(NavigationPath path, int depth) {
-    if (depth >= path.steps().size()) return;
+    if (depth >= path.steps().size() || navigationCancelled) return;
     NavigationStep step = path.steps().get(depth);
-    VirtualFlow<?> vf = resolveFlowForDepth(depth);
+    VirtualFlow<?> vf = resolveFlowForDepth(depth);  // fresh from scene graph
+    if (vf == null) return;  // layout rebuild invalidated the chain
     vf.show(step.rowIndex());
     // Inner VirtualFlow materializes on next pulse
     Platform.runLater(() -> navigateStep(path, depth + 1));
 }
 ```
+
+**Crash guard**: VirtualFlow references must be resolved fresh on each hop from the live scene graph (not captured at chain start). AutoLayout.autoLayout() destroys and recreates all VirtualFlow instances on resize. Add a cancellation flag set when autoLayout() fires; check at the start of each navigateStep hop. If cancelled, abort the chain.
+
+**Concurrent navigation**: A boolean `navigationInProgress` guard prevents overlapping async chains. New F3 presses during an active chain replace the pending target (cancelling the current chain).
 
 Each level of nesting requires one `Platform.runLater()` hop. A 3-level nested layout requires 3 pulses to fully navigate.
 
@@ -179,6 +190,8 @@ Before Phase 2 can begin, the following must be in place:
 
 2. **Use `show(int)` not `showAsFirst(int)`** — `show(int)` (line 525 of VirtualFlow) uses `MinDistanceTo` which scrolls minimally. `showAsFirst(int)` uses `StartOffStart` which forces the target to the viewport top. Search navigation should use `show(int)` to avoid disorienting jumps.
 
+3. **Expose `AutoLayout.findVirtualFlow` or provide a depth-indexed VirtualFlow resolution mechanism** — Currently `findVirtualFlow` is private. `resolveFlowForDepth(int)` in the Phase 2b async chain must obtain a fresh reference on each hop from the live scene graph. Required for Phase 2b.
+
 ---
 
 ## Implementation
@@ -211,6 +224,8 @@ Before Phase 2 can begin, the following must be in place:
 - Requires converting `Primitive` cell content from plain `Label` to `TextFlow` with styled `Text` runs
 - This is more involved than a CSS pseudo-class approach because the match position is substring-level — TextFlow must split the cell text into pre-match, match, and post-match `Text` nodes
 - `Style.LayoutObserver` could apply highlighting without core layout changes, but the `TextFlow` conversion itself touches the cell rendering pipeline
+
+**Note**: Phase 4 (TextFlow cell conversion) is a follow-on deliverable. It modifies shared cell rendering infrastructure and should be scoped as a separate task or RDR-017b after Phases 1–3 are stable.
 
 ---
 
@@ -312,6 +327,7 @@ SchemaPath exists in the codebase (implemented as part of RDR-009) but is curren
 | ENTER key consumed by FocusController TRAVERSAL_INPUT_MAP | Medium | Use F3 exclusively for find-next outside search bar. Enter within TextField is consumed by its own onAction handler before reaching the fallback input map. |
 | Focus model may not support focusing into nested tables | Medium | FocusTraversal handles nested groups, but CursorState.fieldPath is always null ("not yet implemented"). Phase 2b depends on this being completed. |
 | TextFlow conversion for match highlighting | Medium | Phase 4 requires converting Primitive cells from Label to TextFlow, touching the cell rendering pipeline. Flag as MEDIUM effort, not LOW. |
+| Layout rebuild during Phase 2b async chain invalidates captured VirtualFlow references | High | Resolve VirtualFlow fresh on each hop; cancellation flag set by autoLayout() |
 
 ## Success Criteria
 

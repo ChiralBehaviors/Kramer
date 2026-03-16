@@ -5,7 +5,7 @@
 - **Status**: proposed
 - **Priority**: P2
 - **Created**: 2026-03-15
-- **Related**: RDR-009 (MeasureResult immutability), RDR-011 (LayoutDecisionTree), RDR-012 (streaming invalidation), SIEUFERD (SIGMOD 2016 §3.4)
+- **Related**: RDR-009 (MeasureResult immutability), RDR-010 (CSS integration remediation), RDR-011 (LayoutDecisionTree), RDR-012 (streaming invalidation), SIEUFERD (SIGMOD 2016 §3.4)
 
 ## Problem Statement
 
@@ -13,7 +13,7 @@ Kramer has three distinct code paths that trigger layout work, but the current a
 
 1. **Scroll position loss**: `Outline.updateItem()` calls `showAsFirst(0)` unconditionally, resetting scroll to top on every data update (this is Outline-specific; `NestedTable.updateItem()` does not reset scroll)
 2. **Resize rebuilds the entire control tree**: `resize()` calls `autoLayout(data, width)` which calls `layout.autoLayout()` -> `layout()` + `compress()` + `calculateRootHeight()` + `buildControl()`, discarding and recreating all VirtualFlow instances
-3. **Stylesheet changes null the layout**: The stylesheet listener nulls both `layout` and `measureResult`, then calls `autoLayout()` — a full remeasure + relayout even when only visual properties changed
+3. **Stylesheet changes null the layout**: The stylesheet listener nulls both `layout` and `measureResult`, then calls `autoLayout()` — a full remeasure + relayout even when only visual properties changed (Optimizing stylesheet-change handling requires classifying CSS properties as visual-only vs layout-affecting; deferred to RDR-010 resolution. This RDR addresses Problems 1 and 2.)
 
 ---
 
@@ -128,7 +128,7 @@ if (incoming.size() == items.size()) {
 
 This avoids:
 - Bulk `ObservableList.setAll()` triggering a full list-change event
-- `SchemaNode.asList()` allocations for unchanged rows (VirtualFlow cell recycling handles the rest)
+- Bulk `ObservableList.LIST_UPDATED` event and per-cell cellFactory reinvocations for unchanged rows
 - Unnecessary cell factory invocations in VirtualFlow for rows that haven't changed
 
 ### Phase 3: Layout Decision Caching for Resize (MEDIUM effort)
@@ -136,9 +136,9 @@ This avoids:
 Cache the `LayoutResult` (not just a boolean) per Relation node, keyed by `(SchemaPath, widthBucket)`:
 
 ```java
-record LayoutDecisionKey(SchemaPath path, int widthBucket) {
-    static LayoutDecisionKey of(SchemaPath path, double width) {
-        return new LayoutDecisionKey(path, (int)(width / 10));
+record LayoutDecisionKey(SchemaPath path, int widthBucket, int dataCardinality) {
+    static LayoutDecisionKey of(SchemaPath path, double width, int itemCount) {
+        return new LayoutDecisionKey(path, (int)(width / 10), itemCount);
     }
 }
 
@@ -148,9 +148,11 @@ Map<LayoutDecisionKey, LayoutResult> decisionCache = new HashMap<>();
 
 `LayoutResult` already captures the full sub-tree layout state: `relationMode`, `primitiveMode`, `useVerticalHeader`, `tableColumnWidth`, `columnHeaderIndentation`, `constrainedColumnWidth`, and recursive `childResults`. Caching only a boolean would miss child layout state (e.g., `useVerticalHeader` changes, `columnHeaderIndentation` shifts).
 
+Cache is invalidated when data cardinality changes. Phase 3 alone provides resize-only caching; full data-change caching requires Phase 4 (RDR-013 convergence).
+
 **SchemaPath reliability**: SchemaPath is currently set only during `measure()` (see `RelationLayout.measure()` line 400-407 and `AutoLayout.measure()` line 135). If measure is bypassed by cache hit, SchemaPath may be null. SchemaPath derivation must be separated from the measure phase — derive statically from `SchemaNode` tree topology at construction time, not as a measure side-effect. This requirement is elevated to a standalone deliverable tracked in the RDR-ROADMAP.md execution plan (Wave 3, Step 9). It is a prerequisite for the LayoutResult caching strategy in Phase 3 and benefits all RDRs that use SchemaPath-addressed LayoutStylesheet lookups (RDR-013, 014, 015, 017, 018, 019).
 
-On resize: if schema and width bucket are unchanged, restore `LayoutResult` state and skip `layout()` + `compress()`. The `buildControl()` phase still runs (since the control tree is width-dependent), but the expensive decision-making is eliminated.
+On resize: if schema, width bucket, and data cardinality are unchanged, restore `LayoutResult` state and skip `layout()` + `compress()`. The `buildControl()` phase still runs (since the control tree is width-dependent), but the expensive decision-making is eliminated.
 
 ### Phase 4: Convergent Width (Statistical Integration)
 
@@ -161,16 +163,7 @@ First N data updates: widths may adjust (statistical convergence)
 After convergence: widths frozen, only cell content updates
 ```
 
-### Phase 5: Decoupled Header Rendering (SIEUFERD §3.4)
-
-Render table headers immediately after layout decisions, before data arrives:
-- Show column structure from schema
-- Placeholder cells for pending data
-- Data fills in progressively as it arrives (streaming/pagination)
-
-SIEUFERD quote: "for fields not present in the old result, we show a placeholder icon."
-
-**Forward dependency**: This phase depends on RDR-011 (LayoutDecisionTree, proposed) for schema-only header construction. It also requires a queuing/batching mechanism for streaming data arrival (see thread-safety risk below).
+Decoupled header rendering (streaming data fill) is out of scope; tracked as a dependency on RDR-011 resolution.
 
 ---
 
@@ -214,23 +207,19 @@ Currently, `root` property changes do NOT null `layout` — only the stylesheet 
 - When all ContentWidthStats converged, mark layout as "settled"
 - Settled layout skips layout+compress on resize, goes straight to buildControl
 
-### Phase 5: Decoupled headers (MEDIUM effort, after RDR-011)
-- Separate header rendering from data rendering
-- Headers built from LayoutDecisionTree (RDR-011)
-- Data fills cells asynchronously via queuing mechanism
-
 ---
 
 ## Risks and Considerations
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| Stale `LayoutResult` cache produces wrong layout | Medium | Invalidate cache when schema changes, stylesheet changes, or width changes by > 1 bucket |
+| Stale `LayoutResult` cache produces wrong layout | Medium | Invalidate cache when schema changes, stylesheet changes, width changes by > 1 bucket, or data cardinality changes |
 | SchemaPath null when measure bypassed by cache | High | Derive SchemaPath from SchemaNode tree topology at construction, not during measure |
 | `autoLayout()` public method resets `layoutWidth=0.0` | Medium | Cache invalidation must clear decision cache when `autoLayout()` is called |
 | Thread-safety: `data.set()` from background thread | High | `data` is a JavaFX property — `setContent()` listener fires on calling thread. All `data.set()` calls must be on the JavaFX Application Thread (`Platform.runLater()`). Phase 5 streaming requires a dedicated batching queue that drains on the FX thread |
 | Structural data changes (added/removed fields) with list diff | Medium | Detect structural change (size mismatch), fall back to `items.setAll()` |
 | Scroll position restoration when item count decreases | Low | Clamp to valid range via `Math.min(idx, items.size() - 1)` |
+| root property change without layout invalidation causes stale layout for new schema | High | Add root.addListener() that nulls layout and measureResult, mirroring stylesheet listener. Must precede RDR-018 Phase 3. |
 
 ## Alternatives Considered
 
@@ -360,6 +349,9 @@ The existing VirtualFlow implementation recycles cells on `items.setAll()`. It d
 
 ### RF-4: NestedTable Is Already Scroll-Stable (Confidence: HIGH)
 `NestedTable.updateItem()` calls `rows.getItems().setAll(SchemaNode.asList(item))` without any scroll manipulation. The scroll bug is Outline-specific.
+
+### RF-5: Cursor Recovery Bug Fixed (Confidence: HIGH)
+The unbind()-before-recoverCursor() bug (016-research-3) was fixed prior to this RDR. AutoLayout.java now saves cursorState before unbind().
 
 ## Recommendation
 

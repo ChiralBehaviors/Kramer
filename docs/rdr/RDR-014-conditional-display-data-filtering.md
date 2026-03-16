@@ -107,6 +107,7 @@ private boolean hasNonEmptyChildren(JsonNode item, Relation relation) {
 - autoFold guard
 - Filter applied in both measure() and build data paths
 - Shallow empty check
+- Add `boolean getBoolean(SchemaPath, String, boolean)` to `LayoutStylesheet` interface and `DefaultLayoutStylesheet` (already implemented — Kramer-4sg)
 
 ---
 
@@ -128,10 +129,12 @@ public List<String> getSortFields() { return sortFields; }
 public void setSortFields(List<String> fields) { this.sortFields = fields; }
 ```
 
-**Auto-detection**: When `sortFields` is empty and `autoSort` is true (default), identify tuple-identifying fields heuristically:
+**Auto-detection**: When `sortFields` is empty and `autoSort` is true, identify tuple-identifying fields heuristically:
 1. Fields named "id", "key", "name" (common primary identifiers)
 2. First Primitive child (if no heuristic match)
 3. Sort ascending by the identified field(s)
+
+`autoSort` defaults to **false** (opt-in). Opt-in default preserves backward compatibility (SC-6). Users enable via LayoutStylesheet or `Relation.setSortFields()`.
 
 In `RelationLayout.measure()`, sort items before measurement. The `datum` parameter is already the extracted `ArrayNode`:
 
@@ -170,6 +173,8 @@ private Comparator<JsonNode> buildComparator(List<String> fields) {
 }
 ```
 
+Sort operates on `datum` before extractor application and is therefore compatible with autoFold — no guard needed (unlike Feature 1's filter which requires intact parent-child structure). autoFold flattens the hierarchy after sort has already produced a stable ordering.
+
 **LayoutStylesheet integration**:
 ```java
 String sortSpec = stylesheet.getString(path, "sort-fields", "auto");
@@ -183,12 +188,30 @@ All property keys defined in this RDR are registered in the central LayoutStyles
 - Sort fields property on `Relation`
 - Sort step in `RelationLayout.measure()` operating on `datum` ArrayNode directly
 - Type-aware comparator with null-last semantics
+- Sort predicate stored on `RelationLayout` and applied in build-phase `extractFrom()` path, parallel to Feature 1's filter composition
+
+The sort composes with the extractor in `extractFrom()` analogously to Feature 1's filter:
+
+```java
+// In RelationLayout.extractFrom(datum):
+ArrayNode extracted = (ArrayNode) extractor.apply(datum);
+if (!sortFields.isEmpty() || autoSort) {
+    List<JsonNode> sorted = StreamSupport
+        .stream(extracted.spliterator(), false)
+        .sorted(buildComparator(resolvedSortFields))
+        .toList();
+    extracted = JsonNodeFactory.instance.arrayNode().addAll(sorted);
+}
+return extracted;
+```
+
+This ensures `extractFrom()` returns the same item order that `measure()` computed dimensions for.
 
 ---
 
 ### Integration Test Fixture
 
-This RDR introduces the first data pre-processing step in `measure()`. As subsequent RDRs (013, 015, 016, 019) add statistical accumulation, pivot collection, and caching to the same pipeline, a canonical reference JSON fixture should be created exercising: empty relations, numeric fields, variable-length text, mixed types, deep nesting (3+ levels), and array-valued primitives. This fixture serves as a golden test for verifying the composed pipeline across all RDR implementations. See RDR-ROADMAP.md for the full integration test strategy.
+A canonical integration test fixture for the combined pipeline is specified in RDR-ROADMAP.md.
 
 ---
 
@@ -293,6 +316,7 @@ The `Relation` schema is a tree (children are `SchemaNode` instances in a `List`
 | Performance of filter + sort on large arrays | Very Low | JSON arrays in Kramer are typically < 1000 items; sort + filter is sub-millisecond |
 | Build path bypasses filtering | Medium | Design requirement: filter predicate stored on `RelationLayout` alongside `extractor`, applied in both `measure()` and `extractFrom()` |
 | hideIfEmpty with autoFold | Medium | Explicit guard prevents application when autoFoldable != null; documented as structural constraint |
+| resolveCardinality phantom row when all items filtered | Medium | When `hideIfEmpty` filters ALL items, `maxCardinality=0`; `resolveCardinality` clamps to 1 producing one phantom row. Mitigation: suppress Relation rendering when `maxCardinality==0` after filtering with `shouldFilter==true`. Deferred to Phase 2. |
 
 ## Success Criteria
 
@@ -314,7 +338,7 @@ Partially. The problem is sourced from a published academic system (SIEUFERD, Ba
 
 The stable sort problem is similarly concrete: GraphQL resolvers frequently return rows in non-deterministic order (dependent on backend query planner), causing visible row reordering between identical queries with no data change. This is directly observable in the `explorer` app.
 
-Assumption acknowledged: no formal user study has been conducted for the Kramer-specific implementation. Confidence is HIGH that the problem class is real; confidence is MEDIUM that the proposed defaults (`hideIfEmpty=false`, `autoSort=true`) are the right out-of-box behavior. Validation will be possible once the `explorer` app can exercise the feature interactively.
+Assumption acknowledged: no formal user study has been conducted for the Kramer-specific implementation. Confidence is HIGH that the problem class is real; confidence is MEDIUM that the proposed defaults (`hideIfEmpty=false`, `autoSort=false`) are the right out-of-box behavior. Validation will be possible once the `explorer` app can exercise the feature interactively.
 
 ### 2. Is the solution the simplest that could work?
 
