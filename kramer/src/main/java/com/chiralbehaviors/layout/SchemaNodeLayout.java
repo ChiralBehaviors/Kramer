@@ -243,6 +243,15 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
     /** Returns true when this node and all descendants have converged (frozen result cached). */
     public abstract boolean isConverged();
 
+    /**
+     * Compose a {@link LayoutDecisionNode} tree from the current layout state.
+     * Must be called after {@code autoLayout()} completes. Reads existing field
+     * state without triggering any layout side effects (no {@code clear()} calls).
+     *
+     * @return the decision tree rooted at this node
+     */
+    public abstract LayoutDecisionNode snapshotDecisionTree();
+
     public SchemaPath getSchemaPath() {
         return schemaPath;
     }

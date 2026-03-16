@@ -28,8 +28,9 @@ import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.PrimitiveList;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.schema.Primitive;
-import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.PrimitiveStyle;
+import com.chiralbehaviors.layout.style.PrimitiveStyle.PrimitiveBarStyle;
+import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -94,8 +95,16 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     public LayoutCell<? extends Region> buildControl(FocusTraversal<?> parentTraversal,
                                                      Style model) {
         int avgCard = measureResult != null ? measureResult.averageCardinality() : averageCardinality;
-        return avgCard > 1 ? new PrimitiveList(this, parentTraversal)
-                           : buildCell(parentTraversal);
+        if (avgCard > 1) {
+            return new PrimitiveList(this, parentTraversal);
+        }
+        if (renderMode == PrimitiveRenderMode.BAR) {
+            PrimitiveBarStyle barStyle = new PrimitiveBarStyle(style.getLabelStyle(),
+                                                               javafx.geometry.Insets.EMPTY,
+                                                               style.getLabelStyle());
+            return barStyle.build(parentTraversal, this);
+        }
+        return buildCell(parentTraversal);
     }
 
     @Override
@@ -424,6 +433,46 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
             columnHeaderIndentation,
             width,                         // constrainedColumnWidth
             List.of()
+        );
+    }
+
+    /**
+     * Snapshot the current layout state WITHOUT calling {@code clear()}.
+     * Safe to call after {@code autoLayout()} completes; reads fields directly.
+     * Unlike {@link #computeLayout(double)}, this does not reset useVerticalHeader
+     * or any other mutable state.
+     */
+    public LayoutResult snapshotLayoutResult() {
+        return new LayoutResult(
+            RelationRenderMode.OUTLINE,    // primitives never use table mode
+            renderMode,
+            useVerticalHeader,
+            0,                             // tableColumnWidth — not applicable
+            columnHeaderIndentation,
+            justifiedWidth,               // use post-compress justifiedWidth
+            List.of()
+        );
+    }
+
+    /**
+     * Compose a leaf {@link LayoutDecisionNode} from current field state.
+     * No layout side effects.
+     */
+    @Override
+    public LayoutDecisionNode snapshotDecisionTree() {
+        SchemaPath path = getSchemaPath();
+        String field = path != null ? path.leaf() : getField();
+        CompressResult compressSnap = new CompressResult(justifiedWidth, List.of(), cellHeight, List.of());
+        HeightResult heightSnap = new HeightResult(height, cellHeight, averageCardinality, columnHeaderIndentation, List.of());
+        return new LayoutDecisionNode(
+            path,
+            field,
+            measureResult,
+            snapshotLayoutResult(),
+            compressSnap,
+            heightSnap,
+            List.of(),   // primitives have no column sets
+            List.of()    // leaf — no child nodes
         );
     }
 
