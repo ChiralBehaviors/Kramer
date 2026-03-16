@@ -211,6 +211,14 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
             return frozenResult.columnWidth();
         }
 
+        // Invisible primitives produce no width contribution.
+        SchemaPath path = getSchemaPath();
+        if (stylesheet != null && path != null
+                && !stylesheet.getBoolean(path, LayoutPropertyKeys.VISIBLE, true)) {
+            measureResult = new MeasureResult(0, 0, 0, 0, 0, false, 0, 0, null, List.of(), null, null, null, null);
+            return 0;
+        }
+
         clear();
         labelWidth = labelWidth(node.getLabel());
         double summedDataWidth = 0;
@@ -261,7 +269,6 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         int minSamples = MIN_SAMPLES;
         double epsilon = 1.0;
         int k = 3;
-        SchemaPath path = getSchemaPath();
         if (stylesheet != null && path != null) {
             minSamples = stylesheet.getInt(path, "stat-min-samples", MIN_SAMPLES);
             epsilon    = stylesheet.getDouble(path, "stat-convergence-epsilon", 1.0);
@@ -294,13 +301,19 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         }
 
         // Numeric auto-detection: scan all raw values to determine if the field is entirely numeric.
+        // Tracks isArrayValued separately from allNumeric to distinguish:
+        //   scalar numeric values → BAR
+        //   array-of-numbers      → SPARKLINE
         // This is independent of the MIN_SAMPLES requirement for percentile stats.
         NumericStats numericStats = null;
+        SparklineStats sparklineStats = null;
         String renderModeOverride = (stylesheet != null && path != null)
                                     ? stylesheet.getString(path, "render-mode", "auto")
                                     : "auto";
         if ("auto".equals(renderModeOverride)) {
             boolean allNumeric = !normalized.isEmpty();
+            boolean isArrayValued = false;
+            boolean hasScalar = false;
             double nMin = Double.POSITIVE_INFINITY;
             double nMax = Double.NEGATIVE_INFINITY;
             outer:
@@ -311,6 +324,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
                         allNumeric = false;
                         break;
                     }
+                    isArrayValued = true;
                     for (JsonNode row : prim) {
                         if (!row.isNumber()) {
                             allNumeric = false;
@@ -321,6 +335,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
                         if (v > nMax) nMax = v;
                     }
                 } else {
+                    hasScalar = true;
                     if (!prim.isNumber()) {
                         allNumeric = false;
                         break;
@@ -330,17 +345,37 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
                     if (v > nMax) nMax = v;
                 }
             }
-            if (allNumeric && !normalized.isEmpty()) {
-                numericStats = new NumericStats(nMin, nMax);
-                renderMode = PrimitiveRenderMode.BAR;
+            // Mixed scalar+array → not purely one type → fall through to TEXT
+            if (allNumeric && !normalized.isEmpty() && !(isArrayValued && hasScalar)) {
+                if (isArrayValued) {
+                    // Compute SparklineStats: flatten all array values, sort for quartiles
+                    List<Double> allValues = new ArrayList<>();
+                    for (JsonNode prim : normalized) {
+                        if (prim.isArray()) {
+                            for (JsonNode row : prim) {
+                                allValues.add(row.doubleValue());
+                            }
+                        }
+                    }
+                    Collections.sort(allValues);
+                    int n = allValues.size();
+                    double q1 = n > 0 ? allValues.get(n / 4) : 0.0;
+                    double q3 = n > 0 ? allValues.get(n * 3 / 4) : 0.0;
+                    sparklineStats = new SparklineStats(nMin, nMax, q1, q3, n);
+                    renderMode = PrimitiveRenderMode.SPARKLINE;
+                } else {
+                    numericStats = new NumericStats(nMin, nMax);
+                    renderMode = PrimitiveRenderMode.BAR;
+                }
             } else {
                 renderMode = PrimitiveRenderMode.TEXT;
             }
         } else {
             renderMode = switch (renderModeOverride.toUpperCase()) {
-                case "BAR"   -> PrimitiveRenderMode.BAR;
-                case "BADGE" -> PrimitiveRenderMode.BADGE;
-                default      -> PrimitiveRenderMode.TEXT;
+                case "BAR"       -> PrimitiveRenderMode.BAR;
+                case "BADGE"     -> PrimitiveRenderMode.BADGE;
+                case "SPARKLINE" -> PrimitiveRenderMode.SPARKLINE;
+                default          -> PrimitiveRenderMode.TEXT;
             };
         }
 
@@ -384,7 +419,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         measureResult = new MeasureResult(
             labelWidth, columnWidth, dataWidth, maxWidth,
             averageCardinality, isVariableLength,
-            0, 0, null, List.of(), contentStats, numericStats, null, null
+            0, 0, null, List.of(), contentStats, numericStats, null, sparklineStats
         );
 
         // Freeze result when convergence is achieved.
