@@ -339,6 +339,23 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         return layout != null && layout.isConverged();
     }
 
+    /**
+     * Returns the current layout decision tree as an {@link Optional}.
+     *
+     * <p>Returns {@link Optional#empty()} if no layout has been measured yet,
+     * or if the layout has not yet converged (i.e., primitive widths are still
+     * stabilizing across resize cycles).
+     *
+     * <p>When present, the returned tree reflects all four layout phases
+     * (measure, layout, compress, height) at the time of the last resize.
+     *
+     * @return the decision tree rooted at the top-level schema node, or empty
+     */
+    public Optional<LayoutDecisionNode> getLayoutDecisionTree() {
+        if (layout == null || !layout.isConverged()) return Optional.empty();
+        return Optional.of(layout.snapshotDecisionTree());
+    }
+
     private void autoLayout(JsonNode zeeData, double width) {
         if (width < 10.0) {
             return;

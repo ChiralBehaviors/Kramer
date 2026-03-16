@@ -131,19 +131,21 @@ class PrimitiveBarStyleTest {
 
     @Test
     void buildControlUsesTextStyleWhenRenderModeTEXT() {
-        // measure() with text data → renderMode=TEXT
+        // measure() with high-cardinality text data (>= 10 distinct) → renderMode=TEXT
         PrimitiveStyle primStyle = TestLayouts.mockPrimitiveStyle(7.0);
         PrimitiveLayout layout = new PrimitiveLayout(new Primitive("name"), primStyle);
 
         ArrayNode data = JsonNodeFactory.instance.arrayNode();
-        data.add("Alice");
-        data.add("Bob");
+        // 10 distinct values — at the default badge threshold, stays TEXT
+        for (int i = 1; i <= 10; i++) {
+            data.add("name-" + i);
+        }
 
         com.chiralbehaviors.layout.style.Style model = mock(com.chiralbehaviors.layout.style.Style.class);
         layout.measure(data, n -> n, model);
 
         assertEquals(PrimitiveRenderMode.TEXT, layout.getRenderMode(),
-                     "Precondition: renderMode must be TEXT for text data");
+                     "High-cardinality text data (10 distinct) must remain TEXT (not BAR or BADGE)");
     }
 
     @Test

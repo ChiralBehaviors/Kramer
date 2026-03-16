@@ -251,6 +251,78 @@ abstract public class PrimitiveStyle extends NodeStyle {
 
     }
 
+    public static class PrimitiveBadgeStyle extends PrimitiveStyle {
+
+        public static final String PRIMITIVE_BADGE_CLASS = "primitive-badge";
+
+        private final LabelStyle primitiveStyle;
+
+        public PrimitiveBadgeStyle(LabelStyle labelStyle, Insets listInsets,
+                                   LabelStyle primitiveStyle) {
+            super(labelStyle, listInsets);
+            this.primitiveStyle = primitiveStyle;
+        }
+
+        @Override
+        public LayoutCell<?> build(FocusTraversal<?> pt, PrimitiveLayout p) {
+            Label label = new Label();
+            label.getStyleClass().clear();
+            label.setMinSize(p.getJustifiedWidth(), p.getCellHeight());
+            label.setPrefSize(p.getJustifiedWidth(), p.getCellHeight());
+            label.setMaxSize(p.getJustifiedWidth(), p.getCellHeight());
+            label.focusedProperty()
+                 .addListener((javafx.beans.InvalidationListener) property -> {
+                     if (label.isFocused()) {
+                         pt.setCurrent();
+                     }
+                 });
+
+            return new PrimitiveLayoutCell<Region>(p, PRIMITIVE_BADGE_CLASS, pt) {
+                /** Track the last assigned badge CSS class to remove it on update. */
+                private String lastBadgeClass = null;
+
+                @Override
+                public Label getNode() {
+                    return label;
+                }
+
+                @Override
+                public boolean isReusable() {
+                    return true;
+                }
+
+                @Override
+                public void updateItem(com.fasterxml.jackson.databind.JsonNode item) {
+                    super.updateItem(item);
+                    // Remove previous badge index class before applying new one
+                    if (lastBadgeClass != null) {
+                        label.getStyleClass().remove(lastBadgeClass);
+                        lastBadgeClass = null;
+                    }
+                    String text = com.chiralbehaviors.layout.schema.SchemaNode.asText(item);
+                    label.setText(text);
+                    int idx = p.badgeIndex(text);
+                    if (idx >= 0) {
+                        lastBadgeClass = "badge-" + idx;
+                        label.getStyleClass().add(lastBadgeClass);
+                    }
+                }
+            };
+        }
+
+        @Override
+        public double getHeight(double maxWidth, double justified) {
+            return primitiveStyle.getHeight(1);
+        }
+
+        @Override
+        public double width(com.fasterxml.jackson.databind.JsonNode row) {
+            return primitiveStyle.width(Style.toString(row))
+                   + primitiveStyle.getHorizontalInset();
+        }
+
+    }
+
     private final Insets listInsets;
     private final double minValueWidth            = 30;
     private final double maxTablePrimitiveWidth   = 350.0;

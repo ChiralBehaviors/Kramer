@@ -4,6 +4,7 @@ package com.chiralbehaviors.layout;
 import java.util.List;
 import java.util.function.Function;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
 
 /**
@@ -29,5 +30,11 @@ public record MeasureResult(
 ) {
     public MeasureResult {
         childResults = childResults == null ? List.of() : List.copyOf(childResults);
+    }
+
+    @JsonIgnore
+    @Override
+    public Function<JsonNode, JsonNode> extractor() {
+        return extractor;
     }
 }
