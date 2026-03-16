@@ -2,10 +2,12 @@
 
 ## Metadata
 - **Type**: Architecture
-- **Status**: accepted
+- **Status**: closed
 - **Priority**: P1
 - **Created**: 2026-03-15
 - **Accepted**: 2026-03-16
+- **Closed**: 2026-03-16
+- **Close-reason**: implemented (Phase 1 complete; Phases 2-4 blocked on RDR-015 enum migration — now also complete)
 - **Reviewed-by**: self
 - **Revised**: 2026-03-15 (gate findings addressed)
 - **Related**: RDR-009 (MeasureResult immutability — implemented), RDR-008 (pipeline phases — implemented), RDR-010 (CSS integration remediation), RDR-015 (alternative rendering modes — Phase 2 dependency)

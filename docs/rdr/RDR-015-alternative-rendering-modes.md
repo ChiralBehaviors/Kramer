@@ -2,10 +2,12 @@
 
 ## Metadata
 - **Type**: Feature
-- **Status**: accepted
+- **Status**: closed
 - **Priority**: P2
 - **Created**: 2026-03-15
 - **Accepted**: 2026-03-16
+- **Closed**: 2026-03-16
+- **Close-reason**: implemented (Phases 1-3; Phase 4 SPARKLINE deferred to RDR-019)
 - **Reviewed-by**: self
 - **Related**: SIEUFERD (SIGMOD 2016 §3.3, Fig 5), RDR-009 (LayoutStylesheet), RDR-011 (layout protocol extraction), RDR-014 (hideIfEmpty/sort — soft dependency for Phase 3 crosstab pipeline ordering)
 
