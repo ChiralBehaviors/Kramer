@@ -632,7 +632,31 @@ public final class RelationLayout extends SchemaNodeLayout {
             this.extractor = extractor;
         }
         // Compute sort comparator once per measure phase; stored for extractFrom().
-        sortComparator = buildSortComparator(getNode());
+        // Check stylesheet for sort-fields override; Relation is the fallback.
+        {
+            LayoutStylesheet _ss = (model != null) ? model.getStylesheet() : null;
+            SchemaPath _path = getSchemaPath();
+            Relation _relation = getNode();
+            List<String> _relFields = _relation.getSortFields();
+            if (!_relFields.isEmpty()) {
+                // Relation has explicit sortFields — use them directly (highest priority)
+                sortComparator = buildSortComparator(_relation);
+            } else {
+                // Check stylesheet for sort-fields
+                String _stylesheetSort = (_ss != null && _path != null)
+                    ? _ss.getString(_path, LayoutPropertyKeys.SORT_FIELDS, "") : "";
+                if (!_stylesheetSort.isEmpty()) {
+                    List<String> _fields = List.of(_stylesheetSort.split(","));
+                    Comparator<JsonNode> _cmp = fieldComparator(_fields.get(0));
+                    for (int _i = 1; _i < _fields.size(); _i++) {
+                        _cmp = _cmp.thenComparing(fieldComparator(_fields.get(_i)));
+                    }
+                    sortComparator = _cmp;
+                } else {
+                    sortComparator = buildSortComparator(_relation);
+                }
+            }
+        }
         // Sort the datum array before measuring children so that measurement
         // reflects data order consistent with the build phase.
         // Copy before sorting to avoid mutating the caller's datum in-place.
@@ -643,9 +667,18 @@ public final class RelationLayout extends SchemaNodeLayout {
         }
         // Resolve hide-if-empty filter: only active when hideIfEmpty=true and
         // autoFoldable is null (filtering is incompatible with autoFold).
+        // Priority: Relation.getHideIfEmpty() (when non-null) > stylesheet > false.
         Boolean hideOverride = getNode().getHideIfEmpty();
-        boolean shouldFilter = Boolean.TRUE.equals(hideOverride)
-                               && getNode().getAutoFoldable() == null;
+        boolean shouldHide;
+        if (hideOverride != null) {
+            shouldHide = hideOverride;
+        } else {
+            LayoutStylesheet _hideSheet = (model != null) ? model.getStylesheet() : null;
+            SchemaPath _hidePath = getSchemaPath();
+            shouldHide = (_hideSheet != null && _hidePath != null)
+                && _hideSheet.getBoolean(_hidePath, LayoutPropertyKeys.HIDE_IF_EMPTY, false);
+        }
+        boolean shouldFilter = shouldHide && getNode().getAutoFoldable() == null;
         if (shouldFilter) {
             hideIfEmptyFilter = item -> hasNonEmptyChildren(item, getNode());
             datum = filterArrayNode(datum, hideIfEmptyFilter);
@@ -683,8 +716,15 @@ public final class RelationLayout extends SchemaNodeLayout {
             Fold fold = model.layout(child)
                              .fold(datum, extractor, model);
             SchemaNodeLayout childLayout = fold.layout();
-            if (parentPath != null) {
-                childLayout.setSchemaPath(parentPath.child(child.getField()));
+            SchemaPath childPath = (parentPath != null)
+                ? parentPath.child(child.getField()) : null;
+            if (childPath != null) {
+                childLayout.setSchemaPath(childPath);
+            }
+            // Skip invisible children — visible defaults to true.
+            if (stylesheet != null && childPath != null
+                    && !stylesheet.getBoolean(childPath, LayoutPropertyKeys.VISIBLE, true)) {
+                continue;
             }
             children.add(childLayout);
             columnWidth = Style.snap(Math.max(columnWidth, childLayout
