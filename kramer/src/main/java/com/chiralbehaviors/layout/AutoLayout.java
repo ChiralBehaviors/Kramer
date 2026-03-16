@@ -615,6 +615,10 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     }
 
     private void setContent() {
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(this::setContent);
+            return;
+        }
         JsonNode datum = data.get();
         try {
             if (control == null) {
