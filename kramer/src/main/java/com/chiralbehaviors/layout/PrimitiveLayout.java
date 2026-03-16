@@ -53,6 +53,12 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     private boolean                useVerticalHeader         = false;
     private MeasureResult          measureResult;
 
+    // Convergence detection state (Kramer-16k)
+    private MeasureResult          frozenResult;
+    private long                   frozenStylesheetVersion   = -1;
+    private double                 lastP90Width              = Double.NaN;
+    private int                    consecutiveStableCount    = 0;
+
     public PrimitiveLayout(Primitive p, PrimitiveStyle style) {
         super(p, style.getLabelStyle());
         this.style = style;
@@ -161,6 +167,19 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public double measure(JsonNode data, Function<JsonNode, JsonNode> extractor,
                           Style model) {
+        // Convergence short-circuit: return frozen result if stylesheet unchanged.
+        if (frozenResult != null && model != null) {
+            LayoutStylesheet stylesheet = model.getStylesheet();
+            if (stylesheet != null && frozenStylesheetVersion == stylesheet.getVersion()) {
+                return frozenResult.columnWidth();
+            }
+            // Stylesheet version changed — invalidate frozen state.
+            frozenResult = null;
+            frozenStylesheetVersion = -1;
+            lastP90Width = Double.NaN;
+            consecutiveStableCount = 0;
+        }
+
         clear();
         labelWidth = labelWidth(node.getLabel());
         double summedDataWidth = 0;
@@ -206,14 +225,42 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
             isVariableLength = true; // safe fallback for empty data
         }
 
-        // Compute percentile stats when sample count is sufficient (Phase 1: minSamples=30).
+        // Compute percentile stats when sample count is sufficient.
+        // Read minSamples from stylesheet if available; fall back to compile-time default.
+        int minSamples = MIN_SAMPLES;
+        double epsilon = 1.0;
+        int k = 3;
+        LayoutStylesheet stylesheet = (model != null) ? model.getStylesheet() : null;
+        SchemaPath path = getSchemaPath();
+        if (stylesheet != null && path != null) {
+            minSamples = stylesheet.getInt(path, "stat-min-samples", MIN_SAMPLES);
+            epsilon    = stylesheet.getDouble(path, "stat-convergence-epsilon", 1.0);
+            k          = stylesheet.getInt(path, "stat-convergence-k", 3);
+        }
+
         ContentWidthStats contentStats = null;
         int sampleCount = allWidths.size();
-        if (sampleCount >= MIN_SAMPLES) {
+        if (sampleCount >= minSamples) {
             Collections.sort(allWidths);
             double p50 = allWidths.get(sampleCount / 2);
             double p90 = allWidths.get(sampleCount * 9 / 10);
-            contentStats = new ContentWidthStats(p50, p90, sampleCount, false);
+
+            // Convergence detection: track consecutive calls where p90 is stable.
+            // The first qualifying call (lastP90Width == NaN) starts the stable run at 1.
+            boolean converged = false;
+            if (Double.isNaN(lastP90Width)) {
+                consecutiveStableCount = 1;
+            } else if (Math.abs(p90 - lastP90Width) < epsilon) {
+                consecutiveStableCount++;
+            } else {
+                consecutiveStableCount = 1;
+            }
+            lastP90Width = p90;
+
+            if (consecutiveStableCount >= k) {
+                converged = true;
+            }
+            contentStats = new ContentWidthStats(p50, p90, sampleCount, converged);
         }
 
         // RF-3: p90 replaces averageWidth ONLY in isVariableLength==true branch,
@@ -233,6 +280,12 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
             averageCardinality, isVariableLength,
             0, 0, null, List.of(), contentStats
         );
+
+        // Freeze result when convergence is achieved.
+        if (contentStats != null && contentStats.converged()) {
+            frozenResult = measureResult;
+            frozenStylesheetVersion = (stylesheet != null) ? stylesheet.getVersion() : -1;
+        }
 
         return columnWidth;
     }
@@ -295,6 +348,11 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     public MeasureResult getMeasureResult() {
         return measureResult;
+    }
+
+    /** Returns true when a frozen (converged) result is cached and valid. */
+    public boolean isConverged() {
+        return frozenResult != null;
     }
 
     public LayoutResult computeLayout(double width) {
