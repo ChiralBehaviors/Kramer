@@ -545,6 +545,20 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         return frozenResult != null;
     }
 
+    /**
+     * Clears the frozen (converged) result and resets all convergence tracking
+     * state so that the next {@link #measure} call performs a full re-measurement.
+     *
+     * <p>Called by {@link AutoLayout} when data changes are detected at this
+     * primitive's path so that new data content is reflected in width calculations.
+     */
+    public void clearFrozenResult() {
+        frozenResult = null;
+        frozenStylesheetVersion = -1;
+        lastP90Width = Double.NaN;
+        consecutiveStableCount = 0;
+    }
+
     public LayoutResult computeLayout(double width) {
         clear();
         return new LayoutResult(

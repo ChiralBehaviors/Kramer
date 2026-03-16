@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -70,6 +71,11 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     private final SimpleObjectProperty<SchemaNode>        root         = new SimpleObjectProperty<>();
     private final String                                  stylesheet;
 
+    // Data snapshot state (Kramer-eyr): tracks primitive values across setContent() calls
+    // to invalidate frozenResult on PrimitiveLayouts whose data has changed.
+    private Map<SchemaPath, List<String>>                 dataSnapshot = DataSnapshot.EMPTY;
+    private Map<SchemaPath, Double>                       p90Snapshot  = Map.of();
+
     // Search
     private SearchBar                                     searchBar;
     private LayoutSearch                                  layoutSearch;
@@ -94,6 +100,8 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             measureResult = null;
             decisionCache.clear();
             control = null;
+            dataSnapshot = DataSnapshot.EMPTY;
+            p90Snapshot  = Map.of();
         });
         data.addListener((o, p, c) -> setContent());
         controller = new FocusController<>(this);
@@ -621,14 +629,77 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         }
         JsonNode datum = data.get();
         try {
+            // Detect which primitive paths have changed values and clear their
+            // frozenResult so the next measure() call re-computes widths.
+            if (layout != null && datum != null) {
+                Set<SchemaPath> changedPaths = detectChangedPaths(datum);
+                clearFrozenResultForPaths(changedPaths);
+            }
             if (control == null) {
                 Platform.runLater(() -> autoLayout(datum, getWidth()));
             } else {
                 control.updateItem(datum);
             }
             layout();
+            // Update snapshot after successful pipeline
+            if (layout != null && datum != null) {
+                dataSnapshot = DataSnapshot.buildSnapshot(layout, datum);
+            }
         } catch (Throwable e) {
             log.log(Level.SEVERE, "cannot set content", e);
+            // Exception during pipeline: clear both snapshots so the next call starts fresh
+            dataSnapshot = DataSnapshot.EMPTY;
+            p90Snapshot  = Map.of();
+        }
+    }
+
+    /**
+     * Compares {@code data} against the last captured {@link #dataSnapshot} and
+     * returns the set of {@link SchemaPath}s whose primitive values have changed.
+     *
+     * <p>On cold start (empty snapshot) or row-count change, all known paths are
+     * returned. On an identical repeat, an empty set is returned.
+     */
+    private Set<SchemaPath> detectChangedPaths(JsonNode data) {
+        return DataSnapshot.detectChangedPaths(layout, data, dataSnapshot);
+    }
+
+    /**
+     * For each path in {@code paths}, locates the corresponding
+     * {@link PrimitiveLayout} via {@link Style#layout(SchemaNode)} and calls
+     * {@link PrimitiveLayout#clearFrozenResult()}, saving the p90Width into
+     * {@link #p90Snapshot} before clearing.
+     *
+     * <p>PrimitiveLayouts with no frozen result are silently skipped.
+     */
+    private void clearFrozenResultForPaths(Set<SchemaPath> paths) {
+        if (paths.isEmpty() || layout == null) return;
+        Map<SchemaPath, Double> newP90 = new HashMap<>(p90Snapshot);
+        clearFrozenResultInTree(layout, paths, newP90);
+        p90Snapshot = Map.copyOf(newP90);
+    }
+
+    /**
+     * Recursively walk the layout tree, clearing frozenResult on any
+     * {@link PrimitiveLayout} whose path is in {@code paths}.
+     */
+    private static void clearFrozenResultInTree(SchemaNodeLayout snl,
+                                                Set<SchemaPath> paths,
+                                                Map<SchemaPath, Double> p90Out) {
+        if (snl instanceof PrimitiveLayout pl) {
+            SchemaPath path = pl.getSchemaPath();
+            if (path != null && paths.contains(path)) {
+                // Capture p90Width before clearing
+                MeasureResult mr = pl.getMeasureResult();
+                if (mr != null && mr.contentStats() != null) {
+                    p90Out.put(path, mr.contentStats().p90Width());
+                }
+                pl.clearFrozenResult();
+            }
+        } else if (snl instanceof RelationLayout rl) {
+            for (SchemaNodeLayout child : rl.getChildren()) {
+                clearFrozenResultInTree(child, paths, p90Out);
+            }
         }
     }
 }
