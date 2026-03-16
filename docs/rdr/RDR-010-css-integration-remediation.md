@@ -2,11 +2,13 @@
 
 ## Metadata
 - **Type**: Bug/Architecture
-- **Status**: accepted
+- **Status**: closed
 - **Priority**: P1
 - **Created**: 2026-03-15
 - **Revised**: 2026-03-15 (gate findings addressed)
 - **Accepted**: 2026-03-15
+- **Closed**: 2026-03-15
+- **Close-reason**: implemented
 - **Related**: RDR-009 (stylesheet data structure), RDR-007 (bug remediation)
 - **Reviewed-by**: self
 
