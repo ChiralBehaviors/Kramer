@@ -220,6 +220,65 @@ The `explorer` module (`AutoLayoutExplorer`) is the primary beneficiary. Add sea
 
 ---
 
+## Alternatives Considered
+
+### Alt A: Cell-Level Search (Search Rendered Text via VirtualFlow Visible Cells)
+
+Search by iterating over currently-materialized cells in each VirtualFlow and inspecting their rendered text content.
+
+**Pros:**
+- No need to traverse JSON data structure — works against whatever is visible
+- Naturally produces a cell reference that can immediately be focused without navigation logic
+
+**Cons:**
+- Only searches visible cells; virtualized (non-rendered) rows are invisible to search
+- Results depend on current scroll position and viewport size — non-deterministic
+- Different results in table vs outline mode for identical data
+- Requires reaching into JavaFX node internals (e.g., `Label.getText()`) rather than the data model
+
+**Rejection:** Violates the core requirement of finding values in non-visible rows. A user who has 10,000 rows and searches for a value that happens to be off-screen would get no results. This is a fundamental capability gap, not a performance tradeoff.
+
+---
+
+### Alt B: External Search Dialog (Separate Window, Not Integrated in Layout)
+
+Open a modal or non-modal OS-level dialog window with a search field. Results displayed as a list of `SchemaPath` + row-index pairs. User clicks a result to navigate.
+
+**Pros:**
+- Zero changes to `AutoLayout` or cell rendering pipeline
+- Separation of concerns: search logic is entirely decoupled from layout
+- Familiar pattern from IDE "Find in Files" dialogs
+
+**Cons:**
+- Breaks the "Firefox-style search" model described in the Related Worksheets paper (CHI 2011), which specifically describes inline, in-context search
+- Two-window interaction model is slower: user must switch between search window and data window
+- No live "N of M" feedback integrated with the layout
+- Keyboard focus management becomes complex when focus must transfer between two windows
+
+**Rejection:** The CHI 2011 reference explicitly motivates inline, layout-integrated search. A separate dialog would satisfy the data-finding requirement but at the cost of the user interaction model that motivates this feature. The layout integration is the point.
+
+---
+
+### Alt C: Filter-Based Search (Hide Non-Matching Rows Instead of Navigating to Matches)
+
+Instead of navigating to matches, filter the displayed data to show only rows whose primitive fields contain the query string. Non-matching rows are hidden; matching rows remain visible.
+
+**Pros:**
+- No need for async `Platform.runLater()` chaining for nested navigation — all visible rows match
+- Simpler focus model: user can read all matches at once without pressing F3 repeatedly
+- Works well for "show me all orders for customer X" use cases
+
+**Cons:**
+- Destructive to layout context: hiding rows collapses nested structures, losing the hierarchical view that makes Kramer useful
+- Count display changes meaning: "showing 7 matches" vs "3 of 17 matches"
+- Does not satisfy the "move cursor to next matching cell" semantics from the Related Worksheets paper
+- VirtualFlow does not support sparse row visibility — hiding rows requires rebuilding the data slice fed to each VirtualFlow, not just CSS visibility toggling. This is substantially more complex than it appears.
+- Match highlighting within a cell is still required for the user to know which field matched
+
+**Rejection:** The filtering approach changes the layout model rather than navigating within it. It conflicts with the paper's cursor-navigation semantics and imposes VirtualFlow restructuring complexity that exceeds the async-navigation cost of the chosen approach. Filter-based search is a distinct and complementary feature (closer to RDR-014 Conditional Display / Data Filtering), not a replacement for in-layout search navigation.
+
+---
+
 ## Research Findings
 
 ### RF-1: Data-Level Search Is Mode-Independent (Confidence: HIGH)
@@ -265,6 +324,55 @@ SchemaPath exists in the codebase (implemented as part of RDR-009) but is curren
 7. Escape closes search and returns focus to last match
 8. All existing tests pass (search is additive)
 9. (Phase 2b) Nested VirtualFlow chain navigation reaches correct cell within 1 pulse per nesting depth
+
+## Finalization Gate
+
+### 1. Has the problem been validated with real user scenarios?
+
+Partially. The problem is well-grounded in prior work: the Related Worksheets paper (CHI 2011) specifically describes Firefox-style in-layout search as a validated interaction pattern for structured hierarchical data. The `explorer` module provides a concrete application where users browse GraphQL query results — a real scenario where datasets of hundreds or thousands of rows require search. However, no user testing has been conducted with Kramer-specific layouts. The assumption that "Ctrl+F / F3 / Escape" conventions transfer from browser to desktop JavaFX application is reasonable but unverified. This is acknowledged technical risk, not a blocker for Phase 1 implementation.
+
+### 2. Is the solution the simplest that could work?
+
+Yes for Phases 1, 2a, and 3. Data-level search on `JsonNode` is O(rows × fields) string matching — no indexing, no query parsing, no state beyond the current match position. The `SearchBar` is a plain `HBox` with a `TextField`, `Label`, and two `Button` controls. The `FocusController` prerequisite is a 5-line API surface change. The async `Platform.runLater()` chain for nested navigation (Phase 2b) is the minimum coordination mechanism available in JavaFX for cross-pulse VirtualFlow materialization — there is no simpler alternative.
+
+Phase 4 (TextFlow match highlighting) is not the simplest approach for highlighting, but it is the architecturally correct one. A CSS pseudo-class approach cannot express substring-level highlighting. The Label-to-TextFlow conversion is the minimum change needed. The complexity is real but justified.
+
+### 3. Are all assumptions verified or explicitly acknowledged?
+
+Verified:
+- `SchemaPath` exists as `record SchemaPath(List<String> segments)` in the codebase (RF-4, HIGH confidence).
+- `FocusController.selectCellAt` is private and requires exposure (RF-2, HIGH confidence).
+- `VirtualFlow.show(int)` uses `MinDistanceTo` semantics (RF-3, HIGH confidence; line 525 citation).
+- Search on data is mode-independent (RF-1, HIGH confidence — follows from the architecture).
+
+Explicitly acknowledged but unverified:
+- `CursorState.fieldPath` is always `null` ("not yet implemented" comment in codebase). Phase 2b depends on this being completed; it is deferred.
+- `SchemaPath` is currently set only during `measure()`. Search requires construction-time derivation; tracked as a standalone deliverable.
+- The ENTER key conflict is documented and the workaround (F3 + TextField `onAction`) is specified, but not yet tested against the actual `TRAVERSAL_INPUT_MAP` installation order.
+
+### 4. What is the rollback strategy if this fails?
+
+`LayoutSearch` and `SearchBar` are additive — they introduce new classes (`LayoutSearch`, `SearchBar`, `SearchResult`, `NavigationPath`, `NavigationStep`) without modifying existing layout, rendering, or data classes. The only invasive change is the `FocusController` API extension (exposing `navigateTo`). If the search feature is removed, that method can be re-privatized without affecting callers, since no other existing code depends on it.
+
+The `explorer` module integration is a single wiring point in `AutoLayoutExplorer`. Reverting that integration removes the UI entry point while leaving `LayoutSearch` in place for future use.
+
+There is no data migration, no schema change, and no persistent state. Rollback is a revert of the additive files plus the single `FocusController` method change.
+
+### 5. Are there cross-cutting concerns with other RDRs?
+
+Yes, with direct dependencies:
+
+- **RDR-005 (Keyboard Navigation)**: Phase 2b depends on `CursorState.fieldPath` work that is tracked in RDR-005. Until `fieldPath` is implemented, nested VirtualFlow chain navigation cannot complete — the cursor cannot be placed at the correct cell within a nested table. Phase 2b is explicitly deferred until RDR-005 addresses this.
+
+- **RDR-009 (Stylesheet Data Structure / SchemaPath)**: `SchemaPath` is already implemented (RF-4). The lifecycle change (construction-time vs measure-time derivation) is an outstanding item tracked against RDR-009's roadmap entry. This affects Phase 2b, not Phase 1.
+
+- **RDR-014 (Conditional Display / Data Filtering)**: Alt C (filter-based search) was considered and rejected as a replacement for this RDR, but filter-based search is a natural complement. If RDR-014 implements data-level row filtering, `LayoutSearch.countMatches()` should respect the active filter. This is a future integration concern, not a blocker.
+
+- **RDR-016 (Layout Stability / Incremental Update)**: Search navigation calls `VirtualFlow.show(index)`, which triggers a layout pass. If RDR-016 introduces incremental update semantics that change when layout passes fire, the async navigation chain (Phase 2b) may require revisiting its pulse-count assumptions.
+
+- **RDR-015 (Alternative Rendering Modes)**: RF-1 confirms data-level search is mode-independent, so RDR-015 rendering mode additions do not affect search correctness. Match highlighting (Phase 4) may need per-mode adaptation if alternative modes use different cell types than the standard `Label`/`TextFlow` pipeline.
+
+---
 
 ## Recommendation
 

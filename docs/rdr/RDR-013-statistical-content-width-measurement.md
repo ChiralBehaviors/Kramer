@@ -202,6 +202,69 @@ The `Style.LayoutObserver.apply(cell, Primitive)` hook exists in the code but ha
 
 ---
 
+## Alternatives Considered
+
+### Alt A: Viewport-Biased Sampling via VirtualFlow LayoutObserver
+
+Use the existing `Style.LayoutObserver.apply(cell, Primitive)` hook to collect width samples only from cells that VirtualFlow has materialized and rendered in the viewport.
+
+**Pros:**
+- Matches SIEUFERD's original approach — SIGMOD 2016 S3.4 describes sampling from rendered database rows as a natural byproduct of display
+- No additional iteration over the full dataset; samples arrive "for free" as cells are created
+- Could converge quickly for large datasets where only a small fraction is ever viewed
+
+**Cons:**
+- `Style.LayoutObserver.apply(cell, Primitive)` has zero production callers — all production call sites invoke the `apply(VirtualFlow, Relation)` overload. Wiring this up requires non-trivial plumbing
+- Viewport-biased samples produce a biased distribution: if the user never scrolls, only the first N rows are sampled, systematically underrepresenting tail content (long values that appear late in sorted order)
+- SIEUFERD's sampling rationale is to avoid full database scans; in Kramer, all data is already in-memory and `measure()` iterates the entire dataset on every call. The "free sampling" benefit does not transfer
+- Non-deterministic: column width depends on scroll history, making layout tests fragile and reproducibility impossible
+
+**Rejected because:** Full-dataset iteration is already performed; viewport sampling produces a strictly worse distribution at no savings. The LayoutObserver wiring cost is unnecessary overhead for an inferior result. (See RF-2.)
+
+---
+
+### Alt B: Fixed CSS-Based Width Hints per Field Type
+
+Add CSS properties (e.g., `-kramer-content-type: integer | date | url | text`) to `PrimitiveStyle`. Layout reads these annotations and maps them to fixed width constants (e.g., `integer` → 40px, `date` → 80px, `url` → 200px).
+
+**Pros:**
+- Zero runtime cost: widths are resolved at stylesheet load time, no data iteration
+- Fully deterministic and easy to test
+- User has explicit control over column widths via CSS without touching Java code
+- No convergence complexity; layout is stable from the first render
+
+**Cons:**
+- Requires users to annotate every field type in CSS — this is manual configuration, not automatic layout
+- Width constants are application-specific and viewport-size-dependent; a 40px integer column is too narrow on HiDPI displays and too wide on compact views
+- Does not adapt to actual data: a field declared as `integer` but containing 10-digit account numbers will be truncated
+- Defeats the core Kramer premise: layout should be automatic and data-driven, not manually specified
+- No mechanism for mixed-type fields (a "description" column that sometimes contains short IDs and sometimes free text)
+
+**Rejected because:** Violates the fundamental requirement for adaptive, data-driven layout. This is the current state (CSS constants via `style.getMinValueWidth()`), which the RDR explicitly identifies as insufficient.
+
+---
+
+### Alt C: Streaming Quantile Algorithms (t-digest, P² Algorithm)
+
+Replace the sorted-array percentile computation with a streaming algorithm (t-digest or the P² algorithm) that maintains approximate quantile estimates in O(1) space using only a single pass.
+
+**Pros:**
+- O(1) memory regardless of dataset size — no need to store all observed widths
+- P² algorithm in particular is trivially implementable with no external dependency (5 marker variables)
+- Well-suited for truly streaming data sources where the full dataset is never available at once
+- t-digest provides better tail accuracy than P² for extreme quantiles (p99, p999)
+
+**Cons:**
+- Kramer's data is fully in-memory at measure time; the full dataset is always available. Streaming algorithms sacrifice accuracy for a memory constraint that does not exist here
+- P² produces approximate quantiles with non-trivial error at small sample sizes (n < 100); for Kramer's typical dataset sizes this approximation error can exceed the convergence epsilon
+- t-digest requires an external dependency (a ~20KB JAR); adding a library for a feature achievable with `Arrays.sort()` on an in-memory array violates Spartan design principles
+- Streaming algorithms do not support re-computation on stylesheet change (the entire history of observations would need to be replayed) — cache invalidation becomes architecturally complex
+- The convergence detection in Phase 2 compares successive p90Width values across `measure()` calls; streaming algorithms produce estimates that can oscillate between calls in ways that confound stability detection
+
+**Rejected because:** The in-memory full-dataset assumption makes streaming quantiles a solution without a problem. A simple sorted sample on the data array already in memory produces exact quantiles at negligible cost. Streaming algorithms introduce approximation error and dependency weight for no practical benefit at Kramer's scale.
+
+---
+
 ## Research Findings
 
 ### RF-1: CSS and Statistical Measurement Are Complementary (Confidence: HIGH)
@@ -237,6 +300,46 @@ Average width is skewed by outliers (one long URL in 100 short IDs produces an a
 5. Zero performance regression on measure() for the existing test suite
 6. All 142+ existing tests pass (statistical sizing is additive, not replacement)
 7. Fixed-length columns (timestamps, UUIDs) display without truncation
+
+## Finalization Gate
+
+**1. Has the problem been validated with real user scenarios?**
+
+Partially. The problem is validated by code inspection: `PrimitiveLayout.measure()` demonstrably recomputes from CSS constants and simple average/max on every call with no content-awareness. The pathological cases (integer columns as wide as URL columns; average skewed by a single outlier) are reproducible from the existing test data. However, no end-user feedback has been collected on whether column width variance is perceived as a usability problem in practice. The explorer and toy-app applications exist and can be used to validate improvement against real GraphQL endpoints, but this testing has not been documented as a formal acceptance scenario. The risk is low — narrower integer columns and wider URL columns are strictly better — but formal user-facing validation against a representative GraphQL schema is recommended before Phase 2 (convergence/freezing) is marked complete.
+
+**2. Is the solution the simplest that could work?**
+
+Yes, for Phase 1. Computing percentiles via `Arrays.sort()` on the data already iterated in `measure()` is the minimal change: no new dependencies, no architectural changes, no new call sites. The `ContentWidthStats` sub-record is added to `MeasureResult` as a nullable field following the established RDR-009 pattern. Phase 2 (convergence caching) adds the `frozenResult` field and a version-keyed short-circuit, which is also minimal. The only non-trivial complexity is the `stylesheetVersion` invalidation mechanism, which is required for correctness given the LayoutStylesheet properties catalogued in the Cache Invalidation Contract section. Simpler invalidation strategies (e.g., always recompute) were considered and rejected because they defeat the layout-stability goal. Alt C (streaming quantiles) and Alt A (viewport sampling) were both simpler in some dimensions but inferior in correctness; this design is the simplest correct solution.
+
+**3. Are all assumptions verified or explicitly acknowledged?**
+
+The following assumptions are explicitly acknowledged:
+
+- *Data is fully in-memory at measure time* — verified by inspection of `PrimitiveLayout.measure()` and the Jackson `ArrayNode` data model. If a future data source streams lazily, Phase 1 percentile computation would need revision.
+- *`isVariableLength` classification is reliable* — the threshold (`maxWidth / averageWidth > 2.0`) is an existing heuristic. RF-3 documents the risk: P90 is only safe in the variable-length branch. If the heuristic misclassifies a fixed-length column as variable-length, P90 may truncate values. This is inherited behavior, not introduced by this RDR.
+- *SchemaPath is available at `measure()` time for Phase 2* — the RDR explicitly flags this as unverified: "SchemaPath is currently set during `measure()` (see RDR-ROADMAP.md). For Phase 2 convergence caching keyed by SchemaPath, SchemaPath must be available at construction time." This is tracked as a standalone roadmap deliverable.
+- *`minSamples = 30` is sufficient for stable p90 estimation* — a standard statistical rule of thumb (central limit theorem); no domain-specific validation has been performed against Kramer's actual field distributions. Exposed as a configurable LayoutStylesheet property to allow tuning per field.
+- *Width oscillation can be prevented by monotonic-width + convergence* — assumed but not yet empirically tested. Success Criterion 3 (no oscillation after convergence) validates this assumption.
+
+**4. What is the rollback strategy if this fails?**
+
+Phase 1 is purely additive: `ContentWidthStats` is a new nullable field on `MeasureResult`, and `p90Width` is used only in the `isVariableLength == true` branch. Rollback is a one-line revert: replace `p90Width` with `averageWidth` and remove the `ContentWidthStats` computation from `measure()`. The `ContentWidthStats` field on `MeasureResult` can be left as null-returning dead code until the next cleanup cycle.
+
+Phase 2 (convergence caching) introduces the `frozenResult` short-circuit. If this produces layout regressions (e.g., stale widths after stylesheet changes), the entire Phase 2 block can be disabled by removing the early-return guard. The `stylesheetVersion` mechanism on `LayoutStylesheet` is independently useful (it is referenced in future RDRs) and does not need to be reverted even if the freeze logic is disabled.
+
+Feature flag via LayoutStylesheet: if a `stat-enabled` property is added (defaulting to `true`), the statistical path can be toggled off per schema path without a code change. This is not specified in the current design but would be a low-cost addition if production rollback must be non-deployment.
+
+**5. Are there cross-cutting concerns with other RDRs?**
+
+Yes, several:
+
+- **RDR-009 (MeasureResult)**: `ContentWidthStats` extends `MeasureResult` as a nullable sub-record. This RDR establishes the canonical nullable sub-record extension pattern, which RDR-015 and a future RDR-019 are required to follow. Any change to `MeasureResult`'s record definition requires coordinating all callers; the null-check contract must be enforced across all consumers.
+- **RDR-014 (Conditional Display & Data Filtering)**: The `hide-if-empty` and `sort-fields` properties defined in RDR-014 affect the effective dataset seen by `measure()`, requiring `frozenResult` invalidation. This cross-cutting dependency is explicitly documented in the Cache Invalidation Contract table. RDR-014 implementation must ensure these properties trigger `LayoutStylesheet.version++` via `setOverride()`.
+- **RDR-015 (Alternative Rendering Modes)**: The `render-mode` property switches Primitive rendering semantics (TEXT vs BAR), which changes what "width" means. A BAR rendering mode would use `NumericStats.max` for scaling, not `p90Width`. The nullable sub-record pattern established here (`contentStats`) is the template for `numericStats` in RDR-015. The Cache Invalidation Contract table must be updated when RDR-015 is implemented to include `render-mode`.
+- **RDR-016 (Layout Stability & Incremental Update)**: RDR-016 addresses layout stability under incremental data updates. The convergence/freezing mechanism in Phase 2 of this RDR is complementary but independent: Phase 2 freezes on statistical convergence; RDR-016 addresses stability under structural data changes. If both are active, their invalidation paths must not conflict.
+- **RDR-018 (Query Semantic Layout Stylesheet)**: The `stat-min-samples`, `stat-convergence-epsilon`, and `stat-convergence-k` properties introduced here are registered in the LayoutStylesheet Property Registry managed by the roadmap. RDR-018's stylesheet query integration must handle these numeric properties consistently with other LayoutStylesheet properties. The `filter` property listed in the Cache Invalidation Contract table is a future RDR-018 Phase 2 item.
+
+---
 
 ## Recommendation
 
