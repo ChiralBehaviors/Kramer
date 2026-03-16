@@ -2,10 +2,12 @@
 
 ## Metadata
 - **Type**: Feature
-- **Status**: accepted
+- **Status**: closed
 - **Priority**: P1
 - **Created**: 2026-03-15
 - **Accepted**: 2026-03-15
+- **Closed**: 2026-03-16
+- **Close-reason**: implemented
 - **Reviewed-by**: self
 - **Related**: SIEUFERD (Bakke et al., SIGMOD 2016), RDR-009 (LayoutStylesheet), RDR-013 (ContentWidthStats cache invalidation), Bakke InfoVis 2013 (core layout algorithm)
 
