@@ -22,7 +22,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.LayoutCell;
@@ -133,6 +135,37 @@ public final class RelationLayout extends SchemaNodeLayout {
         return array;
     }
 
+    /**
+     * Returns true if the item has at least one child Relation field that is a
+     * non-empty array, or if the relation has no Relation children at all.
+     */
+    static boolean hasNonEmptyChildren(JsonNode item, Relation relation) {
+        boolean hasRelationChild = false;
+        for (SchemaNode child : relation.getChildren()) {
+            if (child.isRelation()) {
+                hasRelationChild = true;
+                JsonNode childData = item.get(child.getField());
+                if (childData != null && childData.isArray() && childData.size() > 0) {
+                    return true;
+                }
+            }
+        }
+        // If no Relation children exist, the row is always kept
+        return !hasRelationChild;
+    }
+
+    /**
+     * Filter an ArrayNode, keeping only items that pass the given predicate.
+     * Returns a new ArrayNode containing the survivors.
+     */
+    static ArrayNode filterArrayNode(JsonNode datum, Predicate<JsonNode> pred) {
+        ArrayNode result = JsonNodeFactory.instance.arrayNode();
+        StreamSupport.stream(datum.spliterator(), false)
+                     .filter(pred)
+                     .forEach(result::add);
+        return result;
+    }
+
     protected int                          averageChildCardinality;
     protected double                       cellHeight       = -1;
     protected final List<SchemaNodeLayout> children         = new ArrayList<>();
@@ -147,6 +180,8 @@ public final class RelationLayout extends SchemaNodeLayout {
     private MeasureResult                  measureResult;
     /** Comparator derived from sortFields / autoSort; null when no sort is needed. */
     private Comparator<JsonNode>           sortComparator;
+    /** Filter predicate for hide-if-empty; null when filtering is disabled. */
+    private Predicate<JsonNode>            hideIfEmptyFilter;
 
     public RelationLayout(Relation r, RelationStyle style) {
         super(r, style.getLabelStyle());
@@ -360,6 +395,9 @@ public final class RelationLayout extends SchemaNodeLayout {
         if (sortComparator != null && result instanceof ArrayNode arr) {
             sortArrayNode(arr, sortComparator);
         }
+        if (hideIfEmptyFilter != null && result instanceof ArrayNode arr) {
+            result = filterArrayNode(arr, hideIfEmptyFilter);
+        }
         return result;
     }
 
@@ -490,6 +528,17 @@ public final class RelationLayout extends SchemaNodeLayout {
         // reflects data order consistent with the build phase.
         if (sortComparator != null && datum instanceof ArrayNode datumArray) {
             sortArrayNode(datumArray, sortComparator);
+        }
+        // Resolve hide-if-empty filter: only active when hideIfEmpty=true and
+        // autoFoldable is null (filtering is incompatible with autoFold).
+        Boolean hideOverride = getNode().getHideIfEmpty();
+        boolean shouldFilter = Boolean.TRUE.equals(hideOverride)
+                               && getNode().getAutoFoldable() == null;
+        if (shouldFilter) {
+            hideIfEmptyFilter = item -> hasNonEmptyChildren(item, getNode());
+            datum = filterArrayNode(datum, hideIfEmptyFilter);
+        } else {
+            hideIfEmptyFilter = null;
         }
         double sum = 0;
         columnWidth = 0;
