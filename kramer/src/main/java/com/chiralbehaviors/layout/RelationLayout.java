@@ -19,6 +19,7 @@ package com.chiralbehaviors.layout;
 import static com.chiralbehaviors.layout.style.Style.*;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -591,12 +592,33 @@ public final class RelationLayout extends SchemaNodeLayout {
         } else {
             hideIfEmptyFilter = null;
         }
+        // Collect pivot values AFTER sort+filter, BEFORE child iteration.
+        // Reads pivot-field from stylesheet; if non-empty, scans datum for distinct values.
+        PivotStats pivotStats = null;
+        SchemaPath myPath = getSchemaPath();
+        LayoutStylesheet stylesheet = (model != null) ? model.getStylesheet() : null;
+        if (stylesheet != null && myPath != null) {
+            String pivotField = stylesheet.getString(myPath, "pivot-field", "");
+            if (!pivotField.isEmpty()) {
+                LinkedHashSet<String> seen = new LinkedHashSet<>();
+                if (datum instanceof ArrayNode pivotArray) {
+                    for (JsonNode item : pivotArray) {
+                        JsonNode fieldNode = item.get(pivotField);
+                        if (fieldNode != null && !fieldNode.isNull()) {
+                            seen.add(fieldNode.asText());
+                        }
+                    }
+                }
+                pivotStats = new PivotStats(new ArrayList<>(seen), seen.size());
+            }
+        }
+
         double sum = 0;
         columnWidth = 0;
         int singularChildren = 0;
         maxCardinality = datum.size();
 
-        SchemaPath parentPath = getSchemaPath();
+        SchemaPath parentPath = myPath;
         for (SchemaNode child : getNode().getChildren()) {
             Fold fold = model.layout(child)
                              .fold(datum, extractor, model);
@@ -644,7 +666,7 @@ public final class RelationLayout extends SchemaNodeLayout {
             labelWidth, columnWidth, 0, 0,
             0, false,
             averageChildCardinality, maxCardinality,
-            extractor, childResults, null
+            extractor, childResults, null, null, pivotStats
         );
 
         return columnWidth + style.getElementHorizontalInset()

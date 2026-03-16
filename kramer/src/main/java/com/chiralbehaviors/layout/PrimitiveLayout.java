@@ -52,6 +52,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     private double                 cellHeight;
     private boolean                useVerticalHeader         = false;
     private MeasureResult          measureResult;
+    private PrimitiveRenderMode    renderMode                = PrimitiveRenderMode.TEXT;
 
     // Convergence detection state (Kramer-16k)
     private MeasureResult          frozenResult;
@@ -265,6 +266,57 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
             contentStats = new ContentWidthStats(p50, p90, sampleCount, converged);
         }
 
+        // Numeric auto-detection: scan all raw values to determine if the field is entirely numeric.
+        // This is independent of the MIN_SAMPLES requirement for percentile stats.
+        NumericStats numericStats = null;
+        String renderModeOverride = (stylesheet != null && path != null)
+                                    ? stylesheet.getString(path, "render-mode", "auto")
+                                    : "auto";
+        if ("auto".equals(renderModeOverride)) {
+            boolean allNumeric = !normalized.isEmpty();
+            double nMin = Double.POSITIVE_INFINITY;
+            double nMax = Double.NEGATIVE_INFINITY;
+            outer:
+            for (JsonNode prim : normalized) {
+                if (prim.isArray()) {
+                    if (prim.isEmpty()) {
+                        // treat empty arrays as non-numeric
+                        allNumeric = false;
+                        break;
+                    }
+                    for (JsonNode row : prim) {
+                        if (!row.isNumber()) {
+                            allNumeric = false;
+                            break outer;
+                        }
+                        double v = row.doubleValue();
+                        if (v < nMin) nMin = v;
+                        if (v > nMax) nMax = v;
+                    }
+                } else {
+                    if (!prim.isNumber()) {
+                        allNumeric = false;
+                        break;
+                    }
+                    double v = prim.doubleValue();
+                    if (v < nMin) nMin = v;
+                    if (v > nMax) nMax = v;
+                }
+            }
+            if (allNumeric && !normalized.isEmpty()) {
+                numericStats = new NumericStats(nMin, nMax);
+                renderMode = PrimitiveRenderMode.BAR;
+            } else {
+                renderMode = PrimitiveRenderMode.TEXT;
+            }
+        } else {
+            renderMode = switch (renderModeOverride.toUpperCase()) {
+                case "BAR"   -> PrimitiveRenderMode.BAR;
+                case "BADGE" -> PrimitiveRenderMode.BADGE;
+                default      -> PrimitiveRenderMode.TEXT;
+            };
+        }
+
         // RF-3: p90 replaces averageWidth ONLY in isVariableLength==true branch,
         // and only when we have sufficient samples. Fixed-length always uses maxWidth.
         double effectiveWidth;
@@ -280,7 +332,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         measureResult = new MeasureResult(
             labelWidth, columnWidth, dataWidth, maxWidth,
             averageCardinality, isVariableLength,
-            0, 0, null, List.of(), contentStats
+            0, 0, null, List.of(), contentStats, numericStats, null
         );
 
         // Freeze result when convergence is achieved.
@@ -350,6 +402,10 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     public MeasureResult getMeasureResult() {
         return measureResult;
+    }
+
+    public PrimitiveRenderMode getRenderMode() {
+        return renderMode;
     }
 
     /** Returns true when a frozen (converged) result is cached and valid. */
