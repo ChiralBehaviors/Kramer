@@ -26,7 +26,8 @@ public record MeasureResult(
     List<MeasureResult> childResults,
     ContentWidthStats contentStats,
     NumericStats numericStats,
-    PivotStats pivotStats
+    PivotStats pivotStats,
+    SparklineStats sparklineStats
 ) {
     public MeasureResult {
         childResults = childResults == null ? List.of() : List.copyOf(childResults);

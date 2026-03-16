@@ -45,7 +45,7 @@ class NumericStatsTest {
             1, false,
             0, 0,
             null, List.of(),
-            null, ns, null
+            null, ns, null, null
         );
         assertNotNull(result.numericStats());
         assertEquals(5.0, result.numericStats().numericMin(), 1e-9);
@@ -59,7 +59,7 @@ class NumericStatsTest {
             1, false,
             0, 0,
             null, List.of(),
-            null, null, null
+            null, null, null, null
         );
         assertNull(result.numericStats());
     }

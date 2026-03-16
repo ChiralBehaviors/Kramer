@@ -28,14 +28,14 @@ class LayoutDecisionNodeSerializationTest {
 
     private static MeasureResult measureResult() {
         return new MeasureResult(10.0, 100.0, 90.0, 120.0, 3, false, 1, 5,
-                                 node -> node, List.of(), null, null, null);
+                                 node -> node, List.of(), null, null, null, null);
     }
 
     private static MeasureResult measureResultWithChildren() {
         MeasureResult child = new MeasureResult(5.0, 50.0, 45.0, 60.0, 1, false, 0, 2,
-                                                node -> node, List.of(), null, null, null);
+                                                node -> node, List.of(), null, null, null, null);
         return new MeasureResult(10.0, 100.0, 90.0, 120.0, 3, false, 1, 5,
-                                 node -> node, List.of(child), null, null, null);
+                                 node -> node, List.of(child), null, null, null, null);
     }
 
     private static LayoutResult layoutResult() {

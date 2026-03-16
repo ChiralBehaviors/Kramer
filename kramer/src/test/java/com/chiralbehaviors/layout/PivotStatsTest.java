@@ -60,7 +60,7 @@ class PivotStatsTest {
             1, false,
             0, 0,
             null, List.of(),
-            null, null, ps
+            null, null, ps, null
         );
         assertNotNull(result.pivotStats());
         assertEquals(2, result.pivotStats().pivotCount());
@@ -74,7 +74,7 @@ class PivotStatsTest {
             1, false,
             0, 0,
             null, List.of(),
-            null, null, null
+            null, null, null, null
         );
         assertNull(result.pivotStats());
     }

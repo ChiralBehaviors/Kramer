@@ -12,7 +12,7 @@ class LayoutDecisionNodeTest {
 
     private static MeasureResult measureResult() {
         return new MeasureResult(10.0, 100.0, 90.0, 120.0, 1, false, 0, 5,
-                                 node -> node, List.of(), null, null, null);
+                                 node -> node, List.of(), null, null, null, null);
     }
 
     private static LayoutResult layoutResult() {

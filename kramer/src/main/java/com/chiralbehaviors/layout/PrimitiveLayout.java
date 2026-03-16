@@ -384,7 +384,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         measureResult = new MeasureResult(
             labelWidth, columnWidth, dataWidth, maxWidth,
             averageCardinality, isVariableLength,
-            0, 0, null, List.of(), contentStats, numericStats, null
+            0, 0, null, List.of(), contentStats, numericStats, null, null
         );
 
         // Freeze result when convergence is achieved.
