@@ -205,6 +205,67 @@ This RDR bundles four concerns that overlap with other RDRs:
 
 ---
 
+## Alternatives Considered
+
+### Alt A: Greedy Threshold with Backtracking
+
+Keep the existing greedy bottom-up decision pass but add a second pass that retries nodes in OUTLINE mode if TABLE caused overflow or density degradation above the node.
+
+**Pros**
+- Near-zero implementation risk — builds on well-understood code path.
+- No external solver dependency.
+- Straightforward to test: compare density before and after retry.
+
+**Cons**
+- Still locally greedy; backtracking is reactive rather than anticipatory.
+- Two-pass worst case is O(N²) without memoization — the retry may cascade.
+- Does not enable soft constraints or importance weights; still binary and heuristic.
+- Does not generalize to more than two modes (no path to Phase 4 multi-mode).
+
+**Rejected because**: Backtracking patches the symptom (overflow after the fact) rather than addressing the root cause (greedy decisions ignoring global context). It cannot support semantic weights (Component 2) or partial re-solve (Component 3) without further architectural surgery that would converge on the constraint model anyway. The implementation complexity of correct backtracking approaches that of Phase 1 exhaustive enumeration with fewer benefits.
+
+---
+
+### Alt B: Linear Programming Solver for Binary Mode Decisions
+
+Model table/outline choice as a binary integer program (BIP) from the start, using an off-the-shelf ILP solver (GLPK, Gurobi, ojAlgo) to solve all mode decisions simultaneously.
+
+**Pros**
+- Principled global optimum for the full constraint set including soft costs.
+- Clean formulation: one objective function, one solver call per layout pass.
+- Directly accommodates importance weights as objective coefficients — no separate Phase 2 integration step.
+
+**Cons**
+- BIP is NP-hard in general; solver overhead is unpredictable for adversarial inputs.
+- All evaluated solvers with free/open licenses (GLPK via JNA, ojAlgo) add 5–15 MB to the dependency graph.
+- Binary integer variables require branch-and-bound internally — for N ≤ 15 this offers no practical advantage over exhaustive enumeration, while adding setup overhead.
+- Soft constraints (importance weights) require continuous relaxation, which removes the binary guarantee and produces fractional mode assignments that must be rounded — introducing approximation error.
+- Solver black-box makes it harder to prove or explain layout decisions to users.
+
+**Rejected for Phase 1 because**: For the binary table/outline case with N ≤ 15, exhaustive enumeration with hard-constraint pruning is provably faster and simpler than ILP with no loss of optimality. The LP formulation is retained as the **Phase 2 solver strategy** for soft constraints with continuous cost functions, where it is the appropriate tool — ojAlgo (pure Java, Apache 2.0) is already named as the Phase 2 candidate. Introducing full ILP in Phase 1 would add an external dependency and solver complexity before the constraint model is validated.
+
+---
+
+### Alt C: User-Specified Mode Overrides per Node via LayoutStylesheet
+
+Skip the solver entirely. Extend `LayoutStylesheet` with a `RelationRenderMode` override property per node path, giving users direct control over table vs. outline per node. No algorithmic change to the greedy pass.
+
+**Pros**
+- Zero algorithmic risk — existing greedy path is untouched.
+- Immediately useful for power users who know the data and want deterministic layouts.
+- No solver dependency of any kind.
+- Complements rather than competes with the constraint solver; overrides can coexist as hard constraints in the Phase 1 model.
+
+**Cons**
+- Offers no improvement for users who do not manually configure overrides.
+- Manual tuning does not scale to schemas with many nodes or frequently changing schemas.
+- Does not address the global optimality problem; just makes the greedy decision user-controllable.
+- Requires a `RelationRenderMode` stylesheet property that does not yet exist (noted as a gap in post-Wave3 research).
+
+**Rejected as the primary solution** because it shifts the optimization burden to the user rather than solving it algorithmically. It is, however, being adopted as a **complementary feature**: the Phase 1 constraint model treats LayoutStylesheet mode overrides as hard constraint anchors — a node with an explicit override is excluded from the solver search space, which is strictly additive. The missing `RelationRenderMode` stylesheet property is a prerequisite gap that must be closed before Phase 1 validation is complete.
+
+---
+
 ## Research Findings
 
 ### RF-1: ORCSolver Feasibility (Confidence: HIGH)
@@ -243,6 +304,58 @@ Modern layout research (ORC, diffusion, LLM generative) all work on flat widget 
 3. Phase 2: LLM annotations produce consistent results across 3 runs for same schema
 4. Phase 3: Streaming data update with <16ms relayout for 20-node schema (point updates within existing statistical range)
 5. Combined: Layout system has all four properties (structurally grounded, semantically aware, globally optimal, reactive) simultaneously
+
+---
+
+## Finalization Gate
+
+### 1. Has the problem been validated with real user scenarios?
+
+Partially. The greedy threshold limitation is analytically demonstrable — the single `if (tableWidth <= width)` at `RelationLayout.layout():613` is the exact decision point, and its locality is structural, not a matter of interpretation. Post-Wave3 research confirmed that `LayoutDecisionKey`, `isConverged`, `snapshotDecisionTree`, `MeasurementStrategy`, and `SchemaPath` infrastructure are already present in the codebase, which validates that the architecture can support a constraint model without large-scale restructuring.
+
+What is not yet validated: a user study or production workload demonstrating that globally optimal layouts are perceptibly better on realistic schemas. The two test cases required by Phase 1 Success Criterion 2 will serve as the first concrete validation. Formal user validation is deferred to Phase 2 (annotation pipeline), where the annotation-to-layout quality improvement is inherently user-perceptible.
+
+### 2. Is the solution the simplest that could work?
+
+Phase 1 is near-surgical by design. It replaces one if-statement with an exhaustive enumeration loop over 2^N binary assignments, pruned by hard constraints. There is no external solver dependency; the enumeration is implemented directly in the layout engine. Post-Wave3 analysis confirmed that exhaustive enumeration for N=15 nodes runs in under 100 microseconds — well within interactive budget without any algorithmic sophistication.
+
+The constraint model's additional concepts (`ConstraintSet`, `LayoutDecisionKey`) are minimal: they name what the current code does implicitly and make the decision auditable. Alt A (backtracking) and Alt B (ILP) would both require more code and more complexity for Phase 1 than the enumeration approach. Phase 1 is the simplest solver that is also provably globally optimal for the binary case.
+
+### 3. Are all assumptions verified or explicitly acknowledged?
+
+Verified:
+- The single-decision-point assumption is confirmed: one `if` at `RelationLayout.layout():613` controls all table/outline decisions.
+- Infrastructure prerequisites (`LayoutDecisionKey`, `isConverged`, `snapshotDecisionTree`, `MeasurementStrategy`, `SchemaPath`) are present in the codebase.
+- Exhaustive enumeration for N ≤ 15 is sub-100µs — verified by post-Wave3 timing analysis.
+- ojAlgo (pure Java, Apache 2.0) is confirmed as the Phase 2 LP solver candidate.
+
+Explicitly acknowledged gaps:
+- `RelationRenderMode` stylesheet override property does not yet exist. Phase 1 treats stylesheet overrides as hard constraint anchors; this property must be added before that feature is exercisable (tracked as a Phase 1 prerequisite gap).
+- `frozenResult` data-path invalidation (Phase 3) currently clears only on stylesheet version change, not on data change. Phase 3 must extend this invalidation trigger; the gap is documented in the Component 3 section and the Risks table.
+- The O(log N) invalidation bound (RF-2) holds only for point updates within existing statistical range. Max-value removal and outline lateral dependencies have higher complexity — this is explicitly documented in the Invalidation Complexity subsection.
+- LLM annotation quality (RF-3) is medium-high confidence based on informal testing; formal evaluation is a Phase 2 validation requirement.
+
+### 4. What is the rollback strategy if this fails?
+
+Phase 1 is backward-compatible by construction. The constraint solver is introduced as a replacement for the greedy `if` statement, and the first validation criterion requires that it never produces worse results than greedy. The greedy decision is the floor, not a fallback to be abandoned.
+
+If Phase 1 validation fails — i.e., the constraint model produces layouts that violate the greedy-or-better criterion — the rollback is to revert the single changed call site in `RelationLayout.layout()`. No other code path is affected; the constraint infrastructure (`ConstraintSet` records, enumeration loop) can remain in the codebase inert until the regression is diagnosed.
+
+If Phase 2 (LLM annotation) is abandoned, Phase 1 remains fully functional without it. If Phase 3 (reactive invalidation) is abandoned, RDR-016's decision cache is the fallback and is implemented independently. Phases 1–4 are staged precisely so that each phase is independently retractable without undoing prior work.
+
+The one irreversible commitment is the introduction of `ConstraintSet` as the internal representation of mode decisions. This is a low-risk structural change; its impact on callers is additive.
+
+### 5. Are there cross-cutting concerns with other RDRs?
+
+Yes, four active cross-cutting relationships:
+
+**RDR-011 (Layout Protocol Extraction)** — Phase 1 depends on RDR-011 Phase 1 (LayoutDecisionTree extraction) being complete. `LayoutDecisionKey` and `snapshotDecisionTree` are RDR-011 deliverables that Phase 1 consumes. Do not start Phase 1 implementation until RDR-011 Phase 1 is merged.
+
+**RDR-015 (Alternative Rendering Modes)** — Phase 1 explicitly excludes CROSSTAB from the solver search space (CROSSTAB is a hard constraint override, not a solver variable). Phase 4 of this RDR expands the search space to include CROSSTAB and other modes introduced by RDR-015. The two RDRs must coordinate on the mode enum definition and on when CROSSTAB transitions from hard-override to solver-variable.
+
+**RDR-016 (Layout Stability / Incremental Update)** — RDR-016 delivers streaming via decision caching and `rebindData()` independently of this RDR. Phase 3 of this RDR replaces the decision cache with constraint-aware partial re-solve. The sequencing is fixed: RDR-016 ships first; Phase 3 enhances. The `frozenResult` invalidation gap (clears on stylesheet version change only, not data change) affects both RDRs and must be resolved before Phase 3.
+
+**RDR-018 (Query-Semantic Layout Stylesheet)** — Phase 2 annotation properties (importance weights, `@prefer`, `@canHide`) are stored in LayoutStylesheet and must be coordinated with RDR-018's property namespace. A shared annotation property schema should be agreed on before either Phase 2 or RDR-018 defines its property keys, to avoid collisions or redundant encoding.
 
 ---
 
