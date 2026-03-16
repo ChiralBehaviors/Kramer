@@ -33,7 +33,7 @@ Three logical steps are inserted into the `setContent()` hot path between receiv
 
 If Step B returns an empty set (no p90 widths shifted), skip the solver entirely and let RDR-016's `updateItem()` path handle the update as it does today.
 
-If `ContentWidthStats.converged` is true and the new value falls within `[min, max]` of the frozen stats, skip clearing `frozenResult` entirely and proceed directly to `updateItem()` (case (a) fast path — no re-measure needed).
+If `ContentWidthStats.converged` is true and `new_value <= p90Snapshot[path]` (guaranteeing that the p90 cannot increase), skip clearing `frozenResult` entirely and proceed directly to `updateItem()` (case (a) fast path — no re-measure needed). See RDR-013 §Convergence for the definition of `converged`.
 
 ### Data snapshot
 
@@ -46,15 +46,17 @@ Both maps are keyed by `SchemaPath` (not field name) to handle schemas where the
 
 `p90Snapshot` is populated during `detectChangedPaths()`: before clearing any `frozenResult`, read `frozenResult.p90Width()` and record it in `p90Snapshot` for that path. This ensures the old p90 is available for the bucket-change comparison in Step B.
 
-Both snapshots are updated atomically at the end of each successful hot-path execution. Snapshot updates (both `dataSnapshot` and `p90Snapshot`) must be treated as a transaction: use try/finally to reset state on exception, preventing a partial update from leaving snapshots inconsistent with the live layout state.
+Both snapshots are updated as a unit at the end of each successful hot-path execution. Snapshot updates (both `dataSnapshot` and `p90Snapshot`) must be treated as a transaction: use try/finally to reset state on exception — the finally block clears both snapshots (cheaper than rollback, safe because the first call after clearing handles empty snapshots correctly), preventing a partial update from leaving snapshots inconsistent with the live layout state.
 
-**Schema change:** if the schema root changes (new `SchemaNode` assigned to `AutoLayout`), both `dataSnapshot` and `p90Snapshot` must be cleared in full before the first `setContent()` call under the new schema.
+**Schema change:** if the schema root changes (new `SchemaNode` assigned to `AutoLayout`), both `dataSnapshot`, `p90Snapshot`, and `decisionCache` must be cleared in full before the first `setContent()` call under the new schema.
 
 **Row deletion:** when the incoming data has fewer rows than `dataSnapshot` for a given path, treat all affected paths as changed. Remove the excess entries from `dataSnapshot` and clear `frozenResult` for the corresponding `PrimitiveLayout` nodes before proceeding to Step B.
 
 ### Outline sibling-lateral expansion
 
 Outline column balancing creates lateral dependencies: when one field's width changes, sibling columns at the same outline tier may need rebalancing. Detection rule: if the changed `PrimitiveLayout`'s parent `RelationLayout` is in OUTLINE mode, expand the re-measure set to all sibling `PrimitiveLayout` nodes at the same level before running Step B. The LCA computation naturally captures the parent in Step C.
+
+**Mid-sibling frozenResult inconsistency:** if a sibling `PrimitiveLayout` has a cleared `frozenResult` but no corresponding `p90Snapshot` entry (e.g., because it was cleared mid-update before its snapshot was written), treat it as a full miss on the next call — re-measure from scratch. This is safe and self-healing: the next successful pipeline execution will write the snapshot entry, and subsequent calls will use the normal fast path.
 
 ### Three complexity regimes
 
@@ -124,7 +126,7 @@ Bump the stylesheet version counter on every `setContent()` call. The existing `
 - Add `Set<SchemaPath> detectChangedPaths(JsonNode newData)` to `AutoLayout`
 - Invalidate on mismatch; update both snapshots at end of successful pipeline execution, wrapped in try/finally to reset on exception
 - Handle row deletion: if incoming data has fewer rows than snapshot for a path, treat as changed and trim snapshot entries
-- Clear both `dataSnapshot` and `p90Snapshot` in full on schema root change
+- Clear `dataSnapshot`, `p90Snapshot`, and `decisionCache` in full on schema root change
 - TDD: single-field update; multi-field update; same-value no-op; new row appended (full rebuild); row deleted; schema change clears snapshots
 
 > **Note:** Phases 3a and 3b can be delivered independently of Phase 3c. After Phase 3b, a lightweight Step C alternative is available: compare `new_p90` against the cached `LayoutResult.tableColumnWidth()` to detect a mode flip without invoking the full constraint solver. This lightweight check is sufficient to ship the invalidation fix while Phase 3c (full partial re-solve) waits for RDR-012 Phase 1 to be available.
