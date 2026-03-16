@@ -2,9 +2,11 @@
 
 ## Metadata
 - **Type**: Architecture
-- **Status**: proposed
+- **Status**: accepted
 - **Priority**: P2
 - **Created**: 2026-03-15
+- **Accepted**: 2026-03-16
+- **Reviewed-by**: self
 - **Related**: RDR-009 (LayoutStylesheet), RDR-014 (hideIfEmpty, sort), RDR-015 (renderMode), RDR-019 (Tufte Sparkline Rendering), SIEUFERD (SIGMOD 2016 Table 2)
 
 ## Problem Statement

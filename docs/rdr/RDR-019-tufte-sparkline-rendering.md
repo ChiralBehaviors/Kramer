@@ -2,9 +2,11 @@
 
 ## Metadata
 - **Type**: Feature
-- **Status**: proposed
+- **Status**: accepted
 - **Priority**: P2
 - **Created**: 2026-03-15
+- **Accepted**: 2026-03-16
+- **Reviewed-by**: self
 - **Related**: RDR-015 (Alternative Rendering Modes — defers sparkline), RDR-009 (MeasureResult), RDR-011 (Layout Protocol)
 
 ## Background: Tufte Sparklines
