@@ -230,6 +230,103 @@ class HtmlLayoutRendererTest {
         assertFalse(result.contains("<table"), "Outline mode should not produce <table> in: " + result);
     }
 
+    // --- sparkline tests ---
+
+    private static LayoutDecisionNode sparklineLeaf(String name, SparklineStats stats) {
+        var path = new SchemaPath(name);
+        var layoutResult = new LayoutResult(
+            RelationRenderMode.OUTLINE,
+            PrimitiveRenderMode.SPARKLINE,
+            false, 0.0, 0.0, 0.0,
+            List.of()
+        );
+        var measureResult = new MeasureResult(
+            0.0, 0.0, 0.0, 0.0, 0, false, 0, 0, null, List.of(),
+            null, null, null, stats
+        );
+        return new LayoutDecisionNode(path, path.leaf(), measureResult, layoutResult, null, null, null, List.of());
+    }
+
+    private static ArrayNode numericArray(double... values) {
+        ArrayNode arr = MAPPER.createArrayNode();
+        for (double v : values) {
+            arr.add(v);
+        }
+        return arr;
+    }
+
+    @Test
+    void sparklineRendersAsSvgNotSpan() {
+        var stats = new SparklineStats(0.0, 10.0, 2.5, 7.5, 5);
+        var node = sparklineLeaf("trend", stats);
+        var data = numericArray(1.0, 3.0, 5.0, 7.0, 9.0);
+
+        var result = new HtmlLayoutRenderer().render(node, data);
+
+        assertTrue(result.contains("<svg"), "Expected <svg> element, got: " + result);
+        assertFalse(result.contains("<span"), "Should not contain <span> for sparkline: " + result);
+    }
+
+    @Test
+    void sparklineSvgContainsPolyline() {
+        var stats = new SparklineStats(0.0, 10.0, 2.5, 7.5, 5);
+        var node = sparklineLeaf("trend", stats);
+        var data = numericArray(1.0, 3.0, 5.0, 7.0, 9.0);
+
+        var result = new HtmlLayoutRenderer().render(node, data);
+
+        assertTrue(result.contains("<polyline"), "Expected <polyline> in sparkline SVG: " + result);
+        assertTrue(result.contains("points="), "Expected points attribute in polyline: " + result);
+    }
+
+    @Test
+    void sparklineSvgContainsIqrBand() {
+        var stats = new SparklineStats(0.0, 10.0, 2.5, 7.5, 5);
+        var node = sparklineLeaf("trend", stats);
+        var data = numericArray(1.0, 3.0, 5.0, 7.0, 9.0);
+
+        var result = new HtmlLayoutRenderer().render(node, data);
+
+        assertTrue(result.contains("<rect"), "Expected <rect> for IQR band in sparkline SVG: " + result);
+        assertTrue(result.contains("sparkline-band"), "Expected sparkline-band class on rect: " + result);
+    }
+
+    @Test
+    void sparklineSvgContainsEndMarkerCircle() {
+        var stats = new SparklineStats(0.0, 10.0, 2.5, 7.5, 5);
+        var node = sparklineLeaf("trend", stats);
+        var data = numericArray(1.0, 3.0, 5.0, 7.0, 9.0);
+
+        var result = new HtmlLayoutRenderer().render(node, data);
+
+        assertTrue(result.contains("<circle"), "Expected <circle> end marker in sparkline SVG: " + result);
+        assertTrue(result.contains("sparkline-end"), "Expected sparkline-end class on circle: " + result);
+    }
+
+    @Test
+    void nonSparklineStillRendersAsSpan() {
+        var node = leaf("score");
+        var data = MAPPER.getNodeFactory().textNode("42");
+
+        var result = new HtmlLayoutRenderer().render(node, data);
+
+        assertTrue(result.contains("<span"), "Non-sparkline should render as <span>: " + result);
+        assertFalse(result.contains("<svg"), "Non-sparkline should not render as <svg>: " + result);
+    }
+
+    @Test
+    void sparklineNullStatsFallsBackToSpan() {
+        var node = sparklineLeaf("trend", null);
+        var data = numericArray(1.0, 2.0, 3.0);
+
+        var result = new HtmlLayoutRenderer().render(node, data);
+
+        assertTrue(result.contains("<span") || result.contains("<ul"),
+                   "Null stats sparkline should fall back to default rendering: " + result);
+        assertFalse(result.contains("<svg"),
+                    "Null stats sparkline should not produce <svg>: " + result);
+    }
+
     private static int countOccurrences(String haystack, String needle) {
         int count = 0;
         int idx = 0;
