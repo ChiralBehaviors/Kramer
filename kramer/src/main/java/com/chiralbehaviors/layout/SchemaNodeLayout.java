@@ -258,6 +258,17 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
         return Style.snap(labelStyle.width(label));
     }
 
+    /**
+     * Derives and sets {@link SchemaPath} for this layout and all child layouts,
+     * walking the schema tree topology. Must be called after the layout is
+     * obtained from {@link com.chiralbehaviors.layout.style.Style#layout(com.chiralbehaviors.layout.schema.SchemaNode)}
+     * and before {@link #measure(com.fasterxml.jackson.databind.JsonNode, com.chiralbehaviors.layout.style.Style)}.
+     *
+     * @param path  the path for this node
+     * @param model factory used to obtain child layouts
+     */
+    public abstract void buildPaths(SchemaPath path, Style model);
+
     abstract public double layout(double width);
 
     abstract public double layoutWidth();
