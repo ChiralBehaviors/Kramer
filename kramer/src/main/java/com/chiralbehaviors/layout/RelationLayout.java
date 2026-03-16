@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -197,6 +198,13 @@ public final class RelationLayout extends SchemaNodeLayout {
     private Comparator<JsonNode>           sortComparator;
     /** Filter predicate for hide-if-empty; null when filtering is disabled. */
     private Predicate<JsonNode>            hideIfEmptyFilter;
+    /**
+     * Solver-driven render-mode assignments. When non-null, layout() consults
+     * this map instead of the greedy width check. Set by AutoLayout before the
+     * layout pass and cleared to null afterward so standalone calls fall back to
+     * greedy behavior.
+     */
+    private Map<SchemaPath, RelationRenderMode> solverResults;
 
     public RelationLayout(Relation r, RelationStyle style) {
         super(r, style.getLabelStyle());
@@ -454,6 +462,11 @@ public final class RelationLayout extends SchemaNodeLayout {
         return node.getField();
     }
 
+    /** Returns the {@link RelationStyle} governing this layout's insets and metrics. */
+    public RelationStyle getStyle() {
+        return style;
+    }
+
     public boolean isUseTable() {
         return useTable;
     }
@@ -608,6 +621,20 @@ public final class RelationLayout extends SchemaNodeLayout {
                               .orElse(0.0)
                       + lw;
         double tableWidth = calculateTableColumnWidth();
+
+        // Solver-driven decision: if a pre-computed render-mode map is present,
+        // use it; otherwise fall back to the greedy width check (Paper §3.3).
+        SchemaPath myPath = getSchemaPath();
+        if (solverResults != null && myPath != null) {
+            RelationRenderMode mode = solverResults.get(myPath);
+            if (mode == RelationRenderMode.TABLE) {
+                return nestTableColumn(Indent.TOP, new Insets(0));
+            }
+            // OUTLINE or CROSSTAB: CROSSTAB is handled separately in measure/buildControl;
+            // for layout purposes treat anything non-TABLE as outline.
+            return columnWidth();
+        }
+
         // Paper §3.3: use table whenever it fits the available width from parent
         // Include nestedHorizontalInset which nestTableColumn() will add
         if (tableWidth + style.getNestedHorizontalInset() <= width) {
@@ -1080,6 +1107,20 @@ public final class RelationLayout extends SchemaNodeLayout {
     /** @return true when this layout is in CROSSTAB rendering mode */
     public boolean isCrosstab() {
         return useCrosstab;
+    }
+
+    /**
+     * Sets the solver-driven render-mode map for this subtree.
+     * Propagated to all RelationLayout children so each node can consult it
+     * during its own layout() call.  Pass {@code null} to restore greedy behavior.
+     */
+    public void setSolverResults(Map<SchemaPath, RelationRenderMode> results) {
+        this.solverResults = results;
+        for (SchemaNodeLayout child : children) {
+            if (child instanceof RelationLayout rl) {
+                rl.setSolverResults(results);
+            }
+        }
     }
 
     /**
