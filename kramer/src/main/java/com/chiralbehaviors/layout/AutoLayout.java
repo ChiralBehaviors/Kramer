@@ -18,6 +18,7 @@ package com.chiralbehaviors.layout;
 
 import java.net.URL;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -629,13 +630,39 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         }
         JsonNode datum = data.get();
         try {
-            // Detect which primitive paths have changed values and clear their
-            // frozenResult so the next measure() call re-computes widths.
+            // Phase 3b: selective re-measure with bucket comparison
             if (layout != null && datum != null) {
                 Set<SchemaPath> changedPaths = detectChangedPaths(datum);
+
+                if (changedPaths.isEmpty()) {
+                    // Case (a): no data changes — just rebind and update snapshot
+                    if (control != null) {
+                        control.updateItem(datum);
+                    }
+                    if (layout != null) {
+                        dataSnapshot = DataSnapshot.buildSnapshot(layout, datum);
+                    }
+                    return;
+                }
+
                 clearFrozenResultForPaths(changedPaths);
-            }
-            if (control == null) {
+
+                // Re-measure only affected primitives and compare p90 buckets
+                Set<SchemaPath> bucketChangedPaths = remeasureChanged(changedPaths, datum);
+
+                if (bucketChangedPaths.isEmpty()) {
+                    // P90 shifted but stayed in same bucket — just rebind, no re-layout
+                    if (control != null) {
+                        control.updateItem(datum);
+                    }
+                    dataSnapshot = DataSnapshot.buildSnapshot(layout, datum);
+                    return;
+                }
+
+                // Bucket changed — need re-layout for affected subtree
+                // Phase 3c will optimize to partial re-layout; for now: full re-layout
+                Platform.runLater(() -> autoLayout(datum, getWidth()));
+            } else if (control == null) {
                 Platform.runLater(() -> autoLayout(datum, getWidth()));
             } else {
                 control.updateItem(datum);
@@ -666,31 +693,54 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
 
     /**
      * For each path in {@code paths}, locates the corresponding
-     * {@link PrimitiveLayout} via {@link Style#layout(SchemaNode)} and calls
+     * {@link PrimitiveLayout} via the layout tree and calls
      * {@link PrimitiveLayout#clearFrozenResult()}, saving the p90Width into
      * {@link #p90Snapshot} before clearing.
+     *
+     * <p><b>Convergence fast-path</b>: if the PrimitiveLayout at a given path is
+     * already converged and the new data's maximum value width does not exceed the
+     * snapshot p90, clearing is skipped entirely — the frozen result remains valid.
      *
      * <p>PrimitiveLayouts with no frozen result are silently skipped.
      */
     private void clearFrozenResultForPaths(Set<SchemaPath> paths) {
         if (paths.isEmpty() || layout == null) return;
         Map<SchemaPath, Double> newP90 = new HashMap<>(p90Snapshot);
-        clearFrozenResultInTree(layout, paths, newP90);
+        clearFrozenResultInTree(layout, paths, newP90, data.get(), model);
         p90Snapshot = Map.copyOf(newP90);
     }
 
     /**
      * Recursively walk the layout tree, clearing frozenResult on any
      * {@link PrimitiveLayout} whose path is in {@code paths}.
+     *
+     * <p><b>Convergence fast-path</b>: if the layout is converged and the new data
+     * produces a max value width {@code <= p90Snapshot[path]}, skip clearing so
+     * the frozen result stays valid.  The fast-path only fires when {@code datum}
+     * is non-null and a snapshot value exists for the path.
      */
     private static void clearFrozenResultInTree(SchemaNodeLayout snl,
                                                 Set<SchemaPath> paths,
-                                                Map<SchemaPath, Double> p90Out) {
+                                                Map<SchemaPath, Double> p90Out,
+                                                JsonNode datum,
+                                                Style model) {
         if (snl instanceof PrimitiveLayout pl) {
             SchemaPath path = pl.getSchemaPath();
             if (path != null && paths.contains(path)) {
-                // Capture p90Width before clearing
+                // Convergence fast-path: if converged and new data fits within snapshot p90, skip
                 MeasureResult mr = pl.getMeasureResult();
+                if (mr != null && mr.contentStats() != null && mr.contentStats().converged()
+                        && datum != null) {
+                    Double snapshotP90 = p90Out.get(path);
+                    if (snapshotP90 != null) {
+                        double newMaxWidth = computeMaxWidthForPath(pl, datum, model);
+                        if (newMaxWidth <= snapshotP90) {
+                            // New data fits within previous p90 — frozen result stays valid
+                            return;
+                        }
+                    }
+                }
+                // Capture p90Width before clearing
                 if (mr != null && mr.contentStats() != null) {
                     p90Out.put(path, mr.contentStats().p90Width());
                 }
@@ -698,8 +748,199 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             }
         } else if (snl instanceof RelationLayout rl) {
             for (SchemaNodeLayout child : rl.getChildren()) {
-                clearFrozenResultInTree(child, paths, p90Out);
+                clearFrozenResultInTree(child, paths, p90Out, datum, model);
             }
         }
+    }
+
+    /**
+     * Compute the maximum rendered width for {@code pl}'s field values in
+     * {@code datum} by extracting the field from each data row.  Returns 0.0
+     * when the data is null or contains no rows with this field.
+     *
+     * <p>This is a lightweight scan used only for the convergence fast-path —
+     * it does NOT call {@code measure()} and has no side-effects on the layout.
+     */
+    private static double computeMaxWidthForPath(PrimitiveLayout pl,
+                                                  JsonNode datum,
+                                                  Style model) {
+        if (datum == null) return 0.0;
+        double max = 0.0;
+        List<JsonNode> rows = SchemaNode.asList(datum);
+        for (JsonNode row : rows) {
+            JsonNode value = pl.extractFrom(row);
+            if (value == null || value.isNull() || value.isMissingNode()) continue;
+            if (value.isArray()) {
+                for (JsonNode elem : value) {
+                    double w = pl.width(elem);
+                    if (w > max) max = w;
+                }
+            } else {
+                double w = pl.width(value);
+                if (w > max) max = w;
+            }
+        }
+        return max;
+    }
+
+    /**
+     * Re-measures only the {@link PrimitiveLayout}s whose paths are in
+     * {@code changedPaths}, then compares each new p90 against the value in
+     * {@link #p90Snapshot} using 10-unit bucket identity:
+     * {@code (int)(p90/10)}.
+     *
+     * <p><b>OUTLINE sibling expansion</b>: if a changed primitive's direct parent
+     * {@link RelationLayout} is in OUTLINE mode ({@code !useTable}), all sibling
+     * primitives are also re-measured, because OUTLINE column widths are shared
+     * across siblings.
+     *
+     * @param changedPaths paths whose frozen results have already been cleared
+     * @param datum        the new JSON data
+     * @return set of paths where the p90 bucket actually changed; empty when all
+     *         p90s stayed within the same bucket
+     */
+    private Set<SchemaPath> remeasureChanged(Set<SchemaPath> changedPaths,
+                                              JsonNode datum) {
+        return remeasureChangedImpl(changedPaths, layout, datum, model, p90Snapshot);
+    }
+
+    /**
+     * Core implementation of {@link #remeasureChanged} extracted as a static
+     * helper so tests can exercise it without a live {@link AutoLayout} instance.
+     */
+    private static Set<SchemaPath> remeasureChangedImpl(Set<SchemaPath> changedPaths,
+                                                         SchemaNodeLayout rootLayout,
+                                                         JsonNode datum,
+                                                         Style model,
+                                                         Map<SchemaPath, Double> p90Snapshot) {
+        if (changedPaths.isEmpty() || rootLayout == null || datum == null) {
+            return Set.of();
+        }
+
+        // Expand changedPaths with OUTLINE siblings, collecting (pl, parentRl) pairs
+        Set<SchemaPath> toMeasure = expandWithOutlineSiblings(changedPaths, rootLayout);
+
+        // Re-measure each primitive in toMeasure and collect bucket changes
+        Set<SchemaPath> bucketChanged = new HashSet<>();
+        remeasureInTree(rootLayout, toMeasure, changedPaths, datum, model, p90Snapshot,
+                        bucketChanged);
+        return bucketChanged;
+    }
+
+    /**
+     * Expand {@code changedPaths} to include OUTLINE siblings: for each path in
+     * {@code changedPaths}, if the parent {@link RelationLayout} is OUTLINE mode
+     * ({@code !useTable}), add all sibling primitive paths to the result set.
+     */
+    private static Set<SchemaPath> expandWithOutlineSiblings(Set<SchemaPath> changedPaths,
+                                                              SchemaNodeLayout rootLayout) {
+        Set<SchemaPath> expanded = new HashSet<>(changedPaths);
+        expandSiblingsInTree(rootLayout, changedPaths, expanded);
+        return expanded;
+    }
+
+    private static void expandSiblingsInTree(SchemaNodeLayout snl,
+                                              Set<SchemaPath> changedPaths,
+                                              Set<SchemaPath> expanded) {
+        if (snl instanceof RelationLayout rl) {
+            // Check if any child is in changedPaths AND this relation is OUTLINE mode
+            boolean anyChildChanged = false;
+            for (SchemaNodeLayout child : rl.getChildren()) {
+                if (child instanceof PrimitiveLayout pl && pl.getSchemaPath() != null
+                        && changedPaths.contains(pl.getSchemaPath())) {
+                    anyChildChanged = true;
+                    break;
+                }
+            }
+            if (anyChildChanged && !rl.isUseTable()) {
+                // OUTLINE: add all sibling primitive paths
+                for (SchemaNodeLayout child : rl.getChildren()) {
+                    if (child instanceof PrimitiveLayout pl && pl.getSchemaPath() != null) {
+                        expanded.add(pl.getSchemaPath());
+                    }
+                }
+            }
+            // Recurse into children
+            for (SchemaNodeLayout child : rl.getChildren()) {
+                expandSiblingsInTree(child, changedPaths, expanded);
+            }
+        }
+    }
+
+    /**
+     * Recursively walk the layout tree, re-measuring each {@link PrimitiveLayout}
+     * whose path is in {@code toMeasure}.  For each re-measured primitive,
+     * compare the new p90 bucket against {@code p90Snapshot}; if the bucket
+     * changed, add the path to {@code bucketChangedOut}.
+     *
+     * <p>Only paths also present in {@code originalChanged} can be added to
+     * {@code bucketChangedOut} — siblings added by OUTLINE expansion do not
+     * trigger bucket-change notifications on their own.
+     */
+    private static void remeasureInTree(SchemaNodeLayout snl,
+                                         Set<SchemaPath> toMeasure,
+                                         Set<SchemaPath> originalChanged,
+                                         JsonNode datum,
+                                         Style model,
+                                         Map<SchemaPath, Double> p90Snapshot,
+                                         Set<SchemaPath> bucketChangedOut) {
+        if (snl instanceof PrimitiveLayout pl) {
+            SchemaPath path = pl.getSchemaPath();
+            if (path != null && toMeasure.contains(path)) {
+                pl.measure(datum, n -> n, model);
+                // Only report bucket changes for originally-changed paths
+                if (originalChanged.contains(path)) {
+                    MeasureResult newMr = pl.getMeasureResult();
+                    Double oldP90 = p90Snapshot.get(path);
+                    if (newMr != null && newMr.contentStats() != null) {
+                        double newP90 = newMr.contentStats().p90Width();
+                        if (oldP90 == null || (int)(newP90 / 10) != (int)(oldP90 / 10)) {
+                            bucketChangedOut.add(path);
+                        }
+                    } else if (oldP90 == null) {
+                        // No stats available yet — treat as changed to be safe
+                        bucketChangedOut.add(path);
+                    }
+                }
+            }
+        } else if (snl instanceof RelationLayout rl) {
+            for (SchemaNodeLayout child : rl.getChildren()) {
+                remeasureInTree(child, toMeasure, originalChanged, datum, model,
+                                p90Snapshot, bucketChangedOut);
+            }
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Package-private test hooks (no-JavaFX headless tests)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Test-visible entry-point for {@link #remeasureChangedImpl}.
+     * Allows headless unit tests to exercise the bucket-comparison logic without
+     * a live {@link AutoLayout} instance.
+     */
+    static Set<SchemaPath> remeasureChangedForTest(Set<SchemaPath> changedPaths,
+                                                    SchemaNodeLayout rootLayout,
+                                                    JsonNode datum,
+                                                    Style model,
+                                                    Map<SchemaPath, Double> p90Snapshot) {
+        return remeasureChangedImpl(changedPaths, rootLayout, datum, model, p90Snapshot);
+    }
+
+    /**
+     * Test-visible entry-point for the convergence fast-path in
+     * {@link #clearFrozenResultInTree}.  Drives the same logic used by
+     * {@link #clearFrozenResultForPaths} without requiring a live AutoLayout.
+     */
+    static void clearFrozenResultForPathsForTest(Set<SchemaPath> paths,
+                                                  SchemaNodeLayout rootLayout,
+                                                  JsonNode datum,
+                                                  Style model,
+                                                  Map<SchemaPath, Double> p90Snapshot) {
+        if (paths.isEmpty() || rootLayout == null) return;
+        Map<SchemaPath, Double> p90Out = new HashMap<>(p90Snapshot);
+        clearFrozenResultInTree(rootLayout, paths, p90Out, datum, model);
+        p90Snapshot.putAll(p90Out);
     }
 }
