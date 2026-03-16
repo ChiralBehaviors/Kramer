@@ -32,6 +32,7 @@ import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.style.PrimitiveStyle;
 import com.chiralbehaviors.layout.style.PrimitiveStyle.PrimitiveBarStyle;
 import com.chiralbehaviors.layout.style.PrimitiveStyle.PrimitiveBadgeStyle;
+import com.chiralbehaviors.layout.style.PrimitiveStyle.PrimitiveSparklineStyle;
 import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -60,8 +61,9 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     private List<String>           badgeValues               = null;
 
     // Cached style instances — re-used across buildControl() calls to avoid per-call allocation
-    private PrimitiveBarStyle      cachedBarStyle;
-    private PrimitiveBadgeStyle    cachedBadgeStyle;
+    private PrimitiveBarStyle        cachedBarStyle;
+    private PrimitiveBadgeStyle      cachedBadgeStyle;
+    private PrimitiveSparklineStyle  cachedSparklineStyle;
 
     // Convergence detection state (Kramer-16k)
     private MeasureResult          frozenResult;
@@ -102,6 +104,15 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public LayoutCell<? extends Region> buildControl(FocusTraversal<?> parentTraversal,
                                                      Style model) {
+        // SPARKLINE must preempt avgCard>1 guard: array-valued data has avgCard>1 by nature
+        if (renderMode == PrimitiveRenderMode.SPARKLINE) {
+            if (cachedSparklineStyle == null) {
+                cachedSparklineStyle = new PrimitiveSparklineStyle(style.getLabelStyle(),
+                                                                    javafx.geometry.Insets.EMPTY,
+                                                                    style.getLabelStyle());
+            }
+            return cachedSparklineStyle.build(parentTraversal, this);
+        }
         int avgCard = measureResult != null ? measureResult.averageCardinality() : averageCardinality;
         if (avgCard > 1) {
             return new PrimitiveList(this, parentTraversal);
@@ -638,6 +649,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         // Invalidate cached style objects so they are rebuilt after a layout cycle.
         cachedBarStyle = null;
         cachedBadgeStyle = null;
+        cachedSparklineStyle = null;
     }
 
     protected double width(JsonNode row) {

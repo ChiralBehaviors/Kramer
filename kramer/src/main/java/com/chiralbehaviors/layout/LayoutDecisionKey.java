@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.chiralbehaviors.layout;
 
-/**
- * Cache key for the layout decision cache in {@link AutoLayout}.
- * Bucketing width to the nearest 10px prevents thrashing on sub-pixel resize
- * events while still producing distinct keys across meaningful width changes.
- *
- * <p>The record's generated {@code equals} and {@code hashCode} make it safe
- * to use directly as a {@link java.util.HashMap} key.
- */
-public record LayoutDecisionKey(SchemaPath path, int widthBucket, int dataCardinality) {
+public record LayoutDecisionKey(SchemaPath path, int widthBucket, int dataCardinality, long stylesheetVersion) {
 
     /**
-     * Creates a key from a schema path, a raw pixel width, and an item count.
+     * Creates a key from a schema path, a raw pixel width, an item count, and a stylesheet version.
      * Width is bucketed by truncating {@code width / 10} to an integer.
      */
-    public static LayoutDecisionKey of(SchemaPath path, double width, int itemCount) {
+    public static LayoutDecisionKey of(SchemaPath path, double width, int itemCount, long stylesheetVersion) {
         assert width >= 0 : "width must be non-negative";
-        return new LayoutDecisionKey(path, (int) (width / 10), itemCount);
+        return new LayoutDecisionKey(path, (int) (width / 10), itemCount, stylesheetVersion);
+    }
+
+    /**
+     * Convenience overload that uses stylesheet version 0 (no stylesheet discrimination).
+     * Preserved for callers that pre-date stylesheet versioning.
+     */
+    public static LayoutDecisionKey of(SchemaPath path, double width, int itemCount) {
+        return of(path, width, itemCount, 0L);
     }
 }
