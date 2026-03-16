@@ -20,8 +20,11 @@ import static com.chiralbehaviors.layout.cell.control.SelectionEvent.DOUBLE_SELE
 import static com.chiralbehaviors.layout.cell.control.SelectionEvent.SINGLE_SELECT;
 import static com.chiralbehaviors.layout.cell.control.SelectionEvent.TRIPLE_SELECT;
 
+import com.chiralbehaviors.layout.LayoutPropertyKeys;
+import com.chiralbehaviors.layout.LayoutStylesheet;
 import com.chiralbehaviors.layout.MeasureResult;
 import com.chiralbehaviors.layout.NumericStats;
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.SparklineStats;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.cell.LayoutCell;
@@ -370,9 +373,29 @@ abstract public class PrimitiveStyle extends NodeStyle {
                 @Override
                 public void updateItem(JsonNode item) {
                     super.updateItem(item);
+                    // Read stylesheet properties (Kramer-7c4)
+                    LayoutStylesheet ss = p.getStylesheet();
+                    SchemaPath path = p.getSchemaPath();
+                    boolean bandVisible = (ss != null && path != null)
+                        ? ss.getBoolean(path, LayoutPropertyKeys.SPARKLINE_BAND_VISIBLE, true)
+                        : true;
+                    boolean endMarkerVisible = (ss != null && path != null)
+                        ? ss.getBoolean(path, LayoutPropertyKeys.SPARKLINE_END_MARKER, true)
+                        : true;
+                    double lineWidth = (ss != null && path != null)
+                        ? ss.getDouble(path, LayoutPropertyKeys.SPARKLINE_LINE_WIDTH, 1.0)
+                        : 1.0;
+                    double bandOpacity = (ss != null && path != null)
+                        ? ss.getDouble(path, LayoutPropertyKeys.SPARKLINE_BAND_OPACITY, 0.15)
+                        : 0.15;
+
+                    line.setStrokeWidth(lineWidth);
+                    band.setOpacity(bandOpacity);
+
                     line.getPoints().clear();
                     band.setWidth(0);
                     band.setHeight(0);
+                    band.setVisible(bandVisible);
                     endMarker.setVisible(false);
 
                     if (item == null || item.isNull() || !item.isArray() || item.size() == 0) {
@@ -438,7 +461,7 @@ abstract public class PrimitiveStyle extends NodeStyle {
                     double markerY   = cellH - (lastFrac * cellH);
                     endMarker.setCenterX(markerX);
                     endMarker.setCenterY(markerY);
-                    endMarker.setVisible(true);
+                    endMarker.setVisible(endMarkerVisible);
                 }
             };
         }
