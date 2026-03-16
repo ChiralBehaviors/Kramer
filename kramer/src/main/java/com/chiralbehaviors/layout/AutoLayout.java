@@ -385,29 +385,43 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
      * Builds a {@link RelationConstraint} tree from the already-measured layout
      * tree so the solver can determine render modes globally before layout().
      *
-     * <p>The {@code availableWidth} stored in each constraint mirrors the width
-     * that {@link RelationLayout#layout(double)} would see for that node:
-     * the root sees {@code width}; a child of a relation sees
-     * {@code (parentWidth - labelWidth) - outlineCellHorizontalInset}.
+     * <p>Each constraint records two available-width estimates:
+     * <ul>
+     *   <li>{@code availableWidthAsOutline}: the width seen when the parent renders
+     *       as OUTLINE — {@code (parentWidth - labelWidth) - outlineCellHorizontalInset}
+     *       at root this equals {@code width}.</li>
+     *   <li>{@code availableWidthAsTable}: the approximate width per column when the
+     *       parent renders as TABLE — {@code parentTableWidth / numRelationChildren};
+     *       {@code Double.MAX_VALUE} at the root where there is no TABLE parent.</li>
+     * </ul>
      *
-     * @param snl   the layout node to analyse; may be null or a PrimitiveLayout
-     * @param width the available width for this node
+     * @param snl                  the layout node to analyse; may be null or a PrimitiveLayout
+     * @param width                the outline-mode available width for this node
+     * @param availableWidthAsTable the table-mode available width for this node
+     *                             ({@code Double.MAX_VALUE} at root)
      * @return a {@link RelationConstraint} for this node, or {@code null} if the
      *         node is not a RelationLayout
      */
-    private RelationConstraint buildConstraintTree(SchemaNodeLayout snl, double width) {
+    private RelationConstraint buildConstraintTree(SchemaNodeLayout snl, double width,
+                                                    double availableWidthAsTable) {
         if (!(snl instanceof RelationLayout rl)) {
             return null;
         }
         double tableWidth = rl.calculateTableColumnWidth();
         double nestedInset = rl.getStyle().getNestedHorizontalInset();
-        // Compute the width that each Relation child would receive in layout()
+        // Outline-mode child width: (parentWidth - labelWidth) - outlineCellHorizontalInset
         double lw = rl.getLabelWidth();
-        double childAvailable = (width - lw) - rl.getStyle().getOutlineCellHorizontalInset();
+        double childAvailableOutline = (width - lw) - rl.getStyle().getOutlineCellHorizontalInset();
+        // Table-mode child width approximation: parent tableWidth / number of Relation children
+        long numRelChildren = rl.getChildren().stream()
+                .filter(c -> c instanceof RelationLayout)
+                .count();
+        double childAvailableTable = numRelChildren > 0 ? tableWidth / numRelChildren
+                                                        : Double.MAX_VALUE;
         List<RelationConstraint> childConstraints = rl.getChildren()
                 .stream()
                 .filter(c -> c instanceof RelationLayout)
-                .map(c -> buildConstraintTree(c, childAvailable))
+                .map(c -> buildConstraintTree(c, childAvailableOutline, childAvailableTable))
                 .filter(Objects::nonNull)
                 .toList();
         return new RelationConstraint(
@@ -415,6 +429,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
                 tableWidth,
                 nestedInset,
                 width,
+                availableWidthAsTable,
                 childConstraints,
                 rl.isCrosstab()
         );
@@ -458,7 +473,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         // inject render-mode assignments into the RelationLayout tree so that
         // layout() uses global decisions instead of the greedy per-node check.
         if (layout instanceof RelationLayout rootRl) {
-            RelationConstraint constraintRoot = buildConstraintTree(rootRl, width);
+            RelationConstraint constraintRoot = buildConstraintTree(rootRl, width, Double.MAX_VALUE);
             if (constraintRoot != null) {
                 Map<SchemaPath, RelationRenderMode> solverMap = constraintSolver.solve(constraintRoot);
                 rootRl.setSolverResults(solverMap);

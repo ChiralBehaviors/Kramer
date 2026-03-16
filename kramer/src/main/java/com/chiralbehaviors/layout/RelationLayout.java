@@ -627,12 +627,18 @@ public final class RelationLayout extends SchemaNodeLayout {
         SchemaPath myPath = getSchemaPath();
         if (solverResults != null && myPath != null) {
             RelationRenderMode mode = solverResults.get(myPath);
-            if (mode == RelationRenderMode.TABLE) {
+            if (mode == null) {
+                // Path mismatch: solver map has no entry for this node's path.
+                // This indicates a stale or mismatched constraint tree; fall through to greedy.
+                LOG.warning(() -> "Solver results present but no entry for path: " + myPath
+                        + "; falling back to greedy layout decision");
+            } else if (mode == RelationRenderMode.TABLE) {
                 return nestTableColumn(Indent.TOP, new Insets(0));
+            } else {
+                // OUTLINE or CROSSTAB: CROSSTAB is handled separately in measure/buildControl;
+                // for layout purposes treat anything non-TABLE as outline.
+                return columnWidth();
             }
-            // OUTLINE or CROSSTAB: CROSSTAB is handled separately in measure/buildControl;
-            // for layout purposes treat anything non-TABLE as outline.
-            return columnWidth();
         }
 
         // Paper §3.3: use table whenever it fits the available width from parent

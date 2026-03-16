@@ -55,7 +55,14 @@ public final class ExhaustiveConstraintSolver implements ConstraintSolver {
 
         int n = variable.size();
 
-        // 2. Greedy fallback when N > threshold
+        // Build index lookup once; reused by every feasibility check in the 2^N loop
+        Map<SchemaPath, Integer> indexMap = new LinkedHashMap<>(n * 2);
+        for (int i = 0; i < n; i++) {
+            indexMap.put(variable.get(i).path(), i);
+        }
+
+        // 2. Greedy fallback when N > threshold (> EXHAUSTIVE_THRESHOLD nodes makes
+        //    full enumeration prohibitively expensive: 2^N evaluations)
         if (n > EXHAUSTIVE_THRESHOLD) {
             LOG.info(() -> String.format(
                     "ExhaustiveConstraintSolver: %d nodes exceeds threshold %d; using greedy",
@@ -69,16 +76,19 @@ public final class ExhaustiveConstraintSolver implements ConstraintSolver {
             return Map.copyOf(result);
         }
 
-        // 3. Enumerate all 2^N assignments (bit i=1 means TABLE for variable[i])
-        //    Prefer higher TABLE count; among equal counts the first feasible
-        //    mask encountered wins (DFS ordering means bit 0 = root, so lower
-        //    masks bias TABLE toward shallower / earlier nodes).
+        // 3. Enumerate all 2^N assignments (bit i=1 means TABLE for variable[i]).
+        //    Prefer higher TABLE count; first feasible mask with the best count wins
+        //    (DFS ordering: bit 0 = root, biasing TABLE toward shallower nodes).
         int total = 1 << n;
         int bestTableCount = -1;
         int bestMask = 0;
 
+        // mask=0 is all-OUTLINE: always feasible since no TABLE constraints apply
+        assert checkFeasible(root, 0, variable, indexMap, fixed, Double.MAX_VALUE)
+                : "all-OUTLINE assignment must always be feasible";
+
         for (int mask = 0; mask < total; mask++) {
-            if (isFeasible(mask, variable, fixed, root)) {
+            if (checkFeasible(root, mask, variable, indexMap, fixed, Double.MAX_VALUE)) {
                 int tableCount = Integer.bitCount(mask);
                 if (tableCount > bestTableCount) {
                     bestTableCount = tableCount;
@@ -110,37 +120,20 @@ public final class ExhaustiveConstraintSolver implements ConstraintSolver {
     }
 
     /**
-     * Returns {@code true} when every TABLE assignment in {@code mask} passes
-     * its feasibility check.
+     * Recursively checks feasibility for {@code node}.
      *
      * <p>Two constraints are checked for each TABLE node:
      * <ol>
      *   <li><em>Own fit</em>: {@link RelationConstraint#fitsTable()} against
      *       the node's stored {@code availableWidth}.</li>
-     *   <li><em>Parent-column fit</em>: if the node's parent is also TABLE,
-     *       the node must additionally fit within the parent's {@code tableWidth},
-     *       since TABLE-mode nesting allocates exactly that much column space.</li>
+     *   <li><em>Parent-column fit</em>: if the parent is also TABLE, the node
+     *       must additionally fit within the parent's {@code tableWidth}, since
+     *       TABLE-mode nesting allocates exactly that much column space.</li>
      * </ol>
-     */
-    private static boolean isFeasible(int mask,
-                                       List<RelationConstraint> variable,
-                                       Map<SchemaPath, RelationRenderMode> fixed,
-                                       RelationConstraint root) {
-        // Build index lookup for variable nodes
-        Map<SchemaPath, Integer> indexMap = new LinkedHashMap<>(variable.size() * 2);
-        for (int i = 0; i < variable.size(); i++) {
-            indexMap.put(variable.get(i).path(), i);
-        }
-        return checkFeasible(root, mask, variable, indexMap, fixed, Double.MAX_VALUE);
-    }
-
-    /**
-     * Recursively checks feasibility for {@code node}.
      *
      * @param parentTableWidth the parent's {@code tableWidth} when the parent
-     *                         was assigned TABLE (used as an additional upper
-     *                         bound on available width); {@code Double.MAX_VALUE}
-     *                         at the root or when the parent is OUTLINE.
+     *                         was assigned TABLE; {@code Double.MAX_VALUE} at
+     *                         the root or when the parent is OUTLINE/CROSSTAB.
      */
     private static boolean checkFeasible(RelationConstraint node,
                                           int mask,
@@ -158,8 +151,10 @@ public final class ExhaustiveConstraintSolver implements ConstraintSolver {
         }
 
         if (isTable) {
-            // Own-fit check against stored availableWidth
-            if (!node.fitsTable()) {
+            // Own-fit check: use table-mode width when parent is TABLE, outline width otherwise
+            boolean fits = (parentTableWidth < Double.MAX_VALUE) ? node.fitsTableInParentTable()
+                                                                 : node.fitsTable();
+            if (!fits) {
                 return false;
             }
             // Parent-column fit: TABLE parent allocates tableWidth to this column
@@ -174,7 +169,9 @@ public final class ExhaustiveConstraintSolver implements ConstraintSolver {
                 }
             }
         } else {
-            // OUTLINE or CROSSTAB: children see unbounded parent (use their own availableWidth)
+            // OUTLINE or CROSSTAB: children see unbounded parent width.
+            // CROSSTAB column width is data-dependent and not modeled in Phase 1;
+            // children see unbounded width as a safe approximation.
             for (RelationConstraint child : node.children()) {
                 if (!checkFeasible(child, mask, variable, indexMap, fixed,
                                    Double.MAX_VALUE)) {
