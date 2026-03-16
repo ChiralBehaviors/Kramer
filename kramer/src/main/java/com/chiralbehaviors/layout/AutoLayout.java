@@ -375,7 +375,8 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         int dataCardinality = zeeData != null ? zeeData.size() : 0;
         SchemaPath rootPath = layout.getSchemaPath();
         if (allConverged() && rootPath != null && layout instanceof RelationLayout) {
-            LayoutDecisionKey key = LayoutDecisionKey.of(rootPath, width, dataCardinality);
+            LayoutDecisionKey key = LayoutDecisionKey.of(rootPath, width, dataCardinality,
+                                                         model.getStylesheet().getVersion());
             if (decisionCache.containsKey(key)) {
                 buildAndInstallControl(zeeData, width);
                 return;
@@ -413,7 +414,8 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         // Cache the layout decision for this width bucket.
         // Use snapshotLayoutResult() to read existing state without re-running layout().
         if (rootPath != null) {
-            LayoutDecisionKey key = LayoutDecisionKey.of(rootPath, width, dataCardinality);
+            LayoutDecisionKey key = LayoutDecisionKey.of(rootPath, width, dataCardinality,
+                                                         model.getStylesheet().getVersion());
             if (!decisionCache.containsKey(key) && layout instanceof RelationLayout rl) {
                 decisionCache.put(key, rl.snapshotLayoutResult());
             }

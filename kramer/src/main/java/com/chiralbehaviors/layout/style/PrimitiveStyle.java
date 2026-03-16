@@ -22,6 +22,7 @@ import static com.chiralbehaviors.layout.cell.control.SelectionEvent.TRIPLE_SELE
 
 import com.chiralbehaviors.layout.MeasureResult;
 import com.chiralbehaviors.layout.NumericStats;
+import com.chiralbehaviors.layout.SparklineStats;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
@@ -38,6 +39,8 @@ import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Polyline;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
@@ -321,6 +324,134 @@ abstract public class PrimitiveStyle extends NodeStyle {
                    + primitiveStyle.getHorizontalInset();
         }
 
+    }
+
+    public static class PrimitiveSparklineStyle extends PrimitiveStyle {
+
+        public static final String PRIMITIVE_SPARKLINE_CLASS = "primitive-sparkline";
+
+        private final LabelStyle primitiveStyle;
+
+        public PrimitiveSparklineStyle(LabelStyle labelStyle, Insets listInsets,
+                                       LabelStyle primitiveStyle) {
+            super(labelStyle, listInsets);
+            this.primitiveStyle = primitiveStyle;
+        }
+
+        @Override
+        public LayoutCell<?> build(FocusTraversal<?> pt, PrimitiveLayout p) {
+            StackPane pane = new StackPane();
+            pane.setMinSize(p.getJustifiedWidth(), p.getCellHeight());
+            pane.setPrefSize(p.getJustifiedWidth(), p.getCellHeight());
+            pane.setMaxSize(p.getJustifiedWidth(), p.getCellHeight());
+
+            Polyline line = new Polyline();
+            line.getStyleClass().add("sparkline-line");
+
+            Rectangle band = new Rectangle(0, 0, 0, 0);
+            band.getStyleClass().add("sparkline-band");
+
+            Circle endMarker = new Circle(3);
+            endMarker.getStyleClass().add("sparkline-end-marker");
+
+            pane.getChildren().addAll(band, line, endMarker);
+
+            return new PrimitiveLayoutCell<Region>(p, PRIMITIVE_SPARKLINE_CLASS, pt) {
+                @Override
+                public StackPane getNode() {
+                    return pane;
+                }
+
+                @Override
+                public boolean isReusable() {
+                    return true;
+                }
+
+                @Override
+                public void updateItem(JsonNode item) {
+                    super.updateItem(item);
+                    line.getPoints().clear();
+                    band.setWidth(0);
+                    band.setHeight(0);
+                    endMarker.setVisible(false);
+
+                    if (item == null || item.isNull() || !item.isArray() || item.size() == 0) {
+                        // Fallback: show nothing (or could render text)
+                        return;
+                    }
+
+                    int n = item.size();
+                    double[] values = new double[n];
+                    for (int i = 0; i < n; i++) {
+                        values[i] = item.get(i).asDouble();
+                    }
+
+                    MeasureResult mr = p.getMeasureResult();
+                    SparklineStats stats = (mr != null) ? mr.sparklineStats() : null;
+
+                    double sMin = (stats != null) ? stats.seriesMin() : values[0];
+                    double sMax = (stats != null) ? stats.seriesMax() : values[0];
+                    double q1   = (stats != null) ? stats.q1()        : sMin;
+                    double q3   = (stats != null) ? stats.q3()        : sMax;
+
+                    // Recalculate bounds from cell if no stats
+                    if (stats == null) {
+                        for (double v : values) {
+                            if (v < sMin) sMin = v;
+                            if (v > sMax) sMax = v;
+                        }
+                        q1 = sMin;
+                        q3 = sMax;
+                    }
+
+                    double cellW = p.getJustifiedWidth();
+                    double cellH = p.getCellHeight();
+                    double range = sMax - sMin;
+
+                    // Build polyline points
+                    double[] pts = new double[n * 2];
+                    for (int i = 0; i < n; i++) {
+                        double x = (n == 1) ? cellW / 2.0 : (cellW * i / (n - 1));
+                        double yFrac = (range == 0.0) ? 0.5 : (values[i] - sMin) / range;
+                        double y = cellH - (yFrac * cellH); // invert: high value → low y
+                        pts[i * 2]     = x;
+                        pts[i * 2 + 1] = y;
+                    }
+                    for (double pt2 : pts) {
+                        line.getPoints().add(pt2);
+                    }
+
+                    // IQR band
+                    double q1Frac = (range == 0.0) ? 0.5 : (q1 - sMin) / range;
+                    double q3Frac = (range == 0.0) ? 0.5 : (q3 - sMin) / range;
+                    double bandTop = cellH - (q3Frac * cellH);
+                    double bandBot = cellH - (q1Frac * cellH);
+                    band.setX(0);
+                    band.setY(bandTop);
+                    band.setWidth(cellW);
+                    band.setHeight(Math.max(0, bandBot - bandTop));
+
+                    // End marker at last value
+                    double lastValue = values[n - 1];
+                    double lastFrac  = (range == 0.0) ? 0.5 : (lastValue - sMin) / range;
+                    double markerX   = (n == 1) ? cellW / 2.0 : cellW;
+                    double markerY   = cellH - (lastFrac * cellH);
+                    endMarker.setCenterX(markerX);
+                    endMarker.setCenterY(markerY);
+                    endMarker.setVisible(true);
+                }
+            };
+        }
+
+        @Override
+        public double getHeight(double maxWidth, double justified) {
+            return primitiveStyle.getHeight(1);
+        }
+
+        @Override
+        public double width(JsonNode value) {
+            return 0.0;
+        }
     }
 
     private final Insets listInsets;

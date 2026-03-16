@@ -121,6 +121,30 @@ class LayoutDecisionCacheTest {
                    "A key with different cardinality must not hit the old cache entry");
     }
 
+    // ---- stylesheetVersion discrimination ----
+
+    @Test
+    void differentStylesheetVersionProducesDifferentKey() {
+        var path = new SchemaPath("root").child("items");
+        var k1 = LayoutDecisionKey.of(path, 250.0, 5, 1L);
+        var k2 = LayoutDecisionKey.of(path, 250.0, 5, 2L);
+        assertNotEquals(k1, k2, "Different stylesheet versions must produce different keys");
+    }
+
+    @Test
+    void cacheMissWhenStylesheetVersionChanges() {
+        Map<LayoutDecisionKey, LayoutResult> cache = new HashMap<>();
+
+        var path = new SchemaPath("root");
+        var result = new LayoutResult(RelationRenderMode.TABLE, PrimitiveRenderMode.TEXT, false, 120.0, 0.0, 100.0, List.of());
+
+        cache.put(LayoutDecisionKey.of(path, 300.0, 4, 1L), result);
+
+        // Same path/width/cardinality but incremented stylesheet version → miss
+        var newKey = LayoutDecisionKey.of(path, 300.0, 4, 2L);
+        assertNull(cache.get(newKey), "Incremented stylesheet version must miss the old cache entry");
+    }
+
     // ---- widthBucket boundary conditions ----
 
     @Test
