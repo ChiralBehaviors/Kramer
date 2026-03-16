@@ -71,6 +71,8 @@ The solver chooses modes simultaneously across the entire schema tree (globally 
 
 **Phase 1 — Exhaustive Enumeration**: For binary-only constraints (table/outline per Relation node), the problem is 2^N for N relation nodes. With typical schema sizes of N=5–20, exhaustive enumeration is tractable: 2^5=32 to 2^20≈1M combinations. Prune via hard constraint propagation to keep solve time <1ms for N≤15. No external solver dependency required.
 
+**N > 15 behavior**: For N > 15, fall back to the greedy threshold (current behavior) and log a diagnostic. N > 15 is the Phase 4 domain for LP-based solving.
+
 **Scope of Phase 1 constraint search space**: Phase 1 covers TABLE and OUTLINE modes only (2^N enumeration for N relation nodes). CROSSTAB (introduced by RDR-015 Phase 3) is NOT part of the Phase 1 search space. When a Relation has `renderMode == CROSSTAB` via LayoutStylesheet, this is treated as a **hard constraint override** — the solver skips that node entirely and uses the stylesheet-forced mode. Phase 4 is intended to expand the constraint search space to include CROSSTAB and additional modes. This means Phase 1 is backward-compatible with the existing binary decision while coexisting with RDR-015's crosstab feature.
 
 **Phase 2 — LP Solver for Soft Constraints**: When soft constraints with continuous cost functions are introduced, evaluate:
@@ -105,9 +107,15 @@ Importance annotations map to soft constraint violation costs:
 | `medium`      | 5                         |
 | `low`         | 1                         |
 
+These multipliers are **initial estimates to be calibrated in Phase 2 validation**. Worked examples demonstrating that these ratios produce visually preferable layouts are required before implementation. The multipliers should not be treated as settled until that calibration is complete.
+
 These multipliers scale the cost incurred when a field is compressed, hidden, or placed in a suboptimal rendering mode. For example, hiding a `high` importance field costs 10× more than hiding a `low` importance field in the objective function.
 
 **`@prefer` semantics**: `@prefer` is a **soft constraint**. It adds a cost penalty (equal to the field's importance multiplier) when the solver selects a different mode than preferred. If `@prefer` disagrees with the global optimum, the solver overrides the preference — the cost is simply factored into the global objective alongside all other constraints.
+
+**Phase 2 annotation key namespace**: Annotation keys use the `@` prefix namespace (e.g., `@importance`, `@prefer`, `@canHide`, `@format`, `@group`). All Phase 2 annotation property keys must be namespaced with `@` to avoid collision with LayoutStylesheet structural properties.
+
+**LLM failure handling**: On LLM failure, proceed with uniform weights (all fields treated as `@importance=medium`). Log a warning. LLM annotations are advisory — the solver remains fully functional without them. The constraint model is never blocked by LLM unavailability.
 
 ### Annotation Lifecycle
 
@@ -167,10 +175,10 @@ This RDR bundles four concerns that overlap with other RDRs:
 
 | Phase | Overlaps with | Coordination |
 |-------|---------------|--------------|
-| Phase 1 | — | Standalone deliverable. No external dependencies beyond RDR-011. |
-| Phase 2 | RDR-018 | Annotation properties coordinate with RDR-018's query-semantic stylesheet. |
-| Phase 3 | RDR-016 | RDR-016 delivers streaming via decision caching first. Phase 3 enhances with constraint-aware partial re-solve. |
-| Phase 4 | RDR-015 | Multi-mode rendering coordinates with RDR-015's alternative rendering modes. |
+| Phase 1 | — | Standalone deliverable. RDR-011 closed 2026-03-16 — Phase 1 unblocked. |
+| Phase 2 | RDR-018 | RDR-018 closed — Phase 2 implements against existing LayoutPropertyKeys. |
+| Phase 3 | RDR-016 | RDR-016 closed — Phase 3 builds on live LayoutDecisionKey cache. |
+| Phase 4 | RDR-015 | RDR-015 closed — BADGE/CROSSTAB already in RelationRenderMode; Phase 4 expands solver search space. |
 
 **Recommendation**: Deliver Phase 1 as a standalone contribution. Phases 2–4 are additive enhancements with explicit cross-references to their coordinating RDRs. Do not block Phase 1 on any other phase.
 
@@ -182,6 +190,7 @@ This RDR bundles four concerns that overlap with other RDRs:
 - Define `ConstraintSet` record per schema node
 - Generate constraints from schema structure (replicate current behavior as floor, then improve)
 - Implement constraint solver via exhaustive enumeration for binary table/outline choices (no external solver dependency)
+- **Phase 1 objective**: among all feasible binary assignments, maximize the number of TABLE assignments (density proxy). Tie-break: prefer more TABLE assignments at deeper levels (depth-first lexicographic order). This produces deterministic results consistent with Bakke's density-maximization intent.
 - **Validation**: Constraint-based layouts are never worse (in pixel density or visual completeness) than greedy for all existing test cases. At least 2 documented cases where constraint-based layout produces strictly better results than greedy with measurable density improvement.
 
 ### Phase 2: LLM Annotation Pipeline
@@ -198,10 +207,19 @@ This RDR bundles four concerns that overlap with other RDRs:
 - RDR-016's decision cache serves as the baseline; Phase 3 replaces it with constraint-aware invalidation
 - **Validation**: Streaming data updates with <16ms relayout latency for typical schemas (5-20 nodes) for point updates (complexity case (a))
 
-### Phase 4: Integration & Multi-Mode (coordinate with RDR-015)
-- Add new mode options beyond table/outline (sparkline, badge, summary) — coordinate with RDR-015
-- Wire soft/hard constraint UI for user customization
-- Animated transitions between modes on data change
+### Phase 4a: Additional Modes in Solver Search Space (coordinate with RDR-015)
+- Expand solver search space to include CROSSTAB and other modes already in RelationRenderMode (RDR-015 closed)
+- Add BADGE and any new modes as solver variables rather than hard-constraint overrides
+- Validate that expanded search space does not degrade performance for N ≤ 15
+
+### Phase 4b: Animated Transitions
+- Implement animated mode transitions on data change using known delta from constraint re-solve
+- Limit to transitions with deterministic before/after states (not continuous layout morphing)
+
+### Phase 4c: Constraint UI — Deferred to Separate RDR
+- User-facing constraint configuration (pin mode, force visible, exclude from solver) is deferred to a separate RDR
+- Rationale: UI design requires user research independent of the solver implementation; premature UI design risks locking in poor interaction patterns before the solver behavior is understood
+- Do not implement carousel or collapsed-summary modes until separately researched and RDR'd
 
 ---
 
@@ -313,7 +331,9 @@ Modern layout research (ORC, diffusion, LLM generative) all work on flat widget 
 
 Partially. The greedy threshold limitation is analytically demonstrable — the single `if (tableWidth <= width)` at `RelationLayout.layout():613` is the exact decision point, and its locality is structural, not a matter of interpretation. Post-Wave3 research confirmed that `LayoutDecisionKey`, `isConverged`, `snapshotDecisionTree`, `MeasurementStrategy`, and `SchemaPath` infrastructure are already present in the codebase, which validates that the architecture can support a constraint model without large-scale restructuring.
 
-What is not yet validated: a user study or production workload demonstrating that globally optimal layouts are perceptibly better on realistic schemas. The two test cases required by Phase 1 Success Criterion 2 will serve as the first concrete validation. Formal user validation is deferred to Phase 2 (annotation pipeline), where the annotation-to-layout quality improvement is inherently user-perceptible.
+**Research type classification**: This RDR is classified as Research type. Analytical demonstration of greedy suboptimality (showing that the single-pass greedy algorithm provably misses globally better assignments for specific schema configurations) is appropriate Phase 1 validation. User perceptibility studies are Phase 2 responsibility, not Phase 1. The two test cases required by Phase 1 Success Criterion 2 constitute research validation, not product validation.
+
+What is not yet validated: a user study or production workload demonstrating that globally optimal layouts are perceptibly better on realistic schemas. Formal user validation is deferred to Phase 2 (annotation pipeline), where the annotation-to-layout quality improvement is inherently user-perceptible.
 
 ### 2. Is the solution the simplest that could work?
 
@@ -347,15 +367,15 @@ The one irreversible commitment is the introduction of `ConstraintSet` as the in
 
 ### 5. Are there cross-cutting concerns with other RDRs?
 
-Yes, four active cross-cutting relationships:
+Four cross-cutting relationships — all coordinating RDRs are now closed:
 
-**RDR-011 (Layout Protocol Extraction)** — Phase 1 depends on RDR-011 Phase 1 (LayoutDecisionTree extraction) being complete. `LayoutDecisionKey` and `snapshotDecisionTree` are RDR-011 deliverables that Phase 1 consumes. Do not start Phase 1 implementation until RDR-011 Phase 1 is merged.
+**RDR-011 (Layout Protocol Extraction)** — closed 2026-03-16. Phase 1 is unblocked. `LayoutDecisionKey` and `snapshotDecisionTree` are delivered and available for the constraint solver to consume.
 
-**RDR-015 (Alternative Rendering Modes)** — Phase 1 explicitly excludes CROSSTAB from the solver search space (CROSSTAB is a hard constraint override, not a solver variable). Phase 4 of this RDR expands the search space to include CROSSTAB and other modes introduced by RDR-015. The two RDRs must coordinate on the mode enum definition and on when CROSSTAB transitions from hard-override to solver-variable.
+**RDR-015 (Alternative Rendering Modes)** — closed. BADGE and CROSSTAB are already present in `RelationRenderMode`. Phase 1 continues to treat CROSSTAB as a hard constraint override (not a solver variable). Phase 4a expands the solver search space to include these modes. No further coordination required before Phase 1.
 
-**RDR-016 (Layout Stability / Incremental Update)** — RDR-016 delivers streaming via decision caching and `rebindData()` independently of this RDR. Phase 3 of this RDR replaces the decision cache with constraint-aware partial re-solve. The sequencing is fixed: RDR-016 ships first; Phase 3 enhances. The `frozenResult` invalidation gap (clears on stylesheet version change only, not data change) affects both RDRs and must be resolved before Phase 3.
+**RDR-016 (Layout Stability / Incremental Update)** — closed. The live `LayoutDecisionKey` cache is delivered. Phase 3 builds on this cache with constraint-aware partial re-solve. The `frozenResult` invalidation gap (clears on stylesheet version change only, not data change) must still be resolved before Phase 3 implementation begins.
 
-**RDR-018 (Query-Semantic Layout Stylesheet)** — Phase 2 annotation properties (importance weights, `@prefer`, `@canHide`) are stored in LayoutStylesheet and must be coordinated with RDR-018's property namespace. A shared annotation property schema should be agreed on before either Phase 2 or RDR-018 defines its property keys, to avoid collisions or redundant encoding.
+**RDR-018 (Query-Semantic Layout Stylesheet)** — closed. Phase 2 implements annotation properties against the existing `LayoutPropertyKeys`. The `@` prefix namespace established in the LLM Annotation section above ensures no collision with existing keys.
 
 ---
 
