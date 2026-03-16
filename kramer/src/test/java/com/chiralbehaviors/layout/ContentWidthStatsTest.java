@@ -70,7 +70,7 @@ class ContentWidthStatsTest {
             1, false,
             0, 0,
             null, List.of(),
-            null
+            null, null, null
         );
 
         assertNull(result.contentStats(),
@@ -87,7 +87,7 @@ class ContentWidthStatsTest {
             1, false,
             0, 0,
             null, List.of(),
-            stats
+            stats, null, null
         );
 
         assertNotNull(result.contentStats());
@@ -127,7 +127,7 @@ class ContentWidthStatsTest {
             0, false,
             2, 5,
             Function.identity(), List.of(),
-            null
+            null, null, null
         );
 
         assertNull(result.contentStats(),

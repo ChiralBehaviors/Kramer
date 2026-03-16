@@ -23,7 +23,9 @@ public record MeasureResult(
     int maxCardinality,
     Function<JsonNode, JsonNode> extractor,
     List<MeasureResult> childResults,
-    ContentWidthStats contentStats
+    ContentWidthStats contentStats,
+    NumericStats numericStats,
+    PivotStats pivotStats
 ) {
     public MeasureResult {
         childResults = childResults == null ? List.of() : List.copyOf(childResults);
