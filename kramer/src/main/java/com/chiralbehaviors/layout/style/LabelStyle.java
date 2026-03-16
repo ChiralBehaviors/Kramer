@@ -50,6 +50,18 @@ public class LabelStyle {
         font = label.getFont();
     }
 
+    /**
+     * Value-based constructor for headless/configured use — no JavaFX Label required.
+     *
+     * @param lineHeight measured or configured line height
+     * @param insets     padding insets
+     */
+    public LabelStyle(double lineHeight, Insets insets) {
+        this.lineHeight = lineHeight;
+        this.insets = insets;
+        this.font = null;  // width() unavailable headless
+    }
+
     public double getHeight() {
         return lineHeight + insets.getTop() + insets.getBottom();
     }
@@ -71,6 +83,9 @@ public class LabelStyle {
     }
 
     public double width(String text) {
+        if (font == null) {
+            throw new UnsupportedOperationException("LabelStyle.width() requires a live JavaFX toolkit");
+        }
         return Style.textWidth(text, font) + insets.getLeft()
                + insets.getRight();
     }
