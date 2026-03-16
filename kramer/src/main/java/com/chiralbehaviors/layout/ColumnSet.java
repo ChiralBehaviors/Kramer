@@ -20,6 +20,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -42,6 +43,11 @@ public class ColumnSet {
     public void add(SchemaNodeLayout node) {
         columns.get(0)
                .add(node);
+    }
+
+    /** Package-private: append a pre-built Column. Used by compress() and tests. */
+    void addColumn(Column column) {
+        columns.add(column);
     }
 
     public void adjustHeight(double delta) {
@@ -97,7 +103,7 @@ public class ColumnSet {
     }
 
     public List<Column> getColumns() {
-        return columns;
+        return Collections.unmodifiableList(columns);
     }
 
     public ColumnSetSnapshot toSnapshot(double height) {

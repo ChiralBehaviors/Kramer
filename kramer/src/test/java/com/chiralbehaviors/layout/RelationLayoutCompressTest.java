@@ -399,4 +399,33 @@ class RelationLayoutCompressTest {
         assertEquals(layout1.columnSets.size(), layout2.columnSets.size(),
                      "Parameterized compress(w, true) must match compress(w)");
     }
+
+    // -----------------------------------------------------------------------
+    // S4: CompressResult snapshot immutability (covers C2: ColumnSetSnapshot)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void compressResultSnapshotIsImmutableAfterSubsequentCompress() {
+        RelationStyle style = mockRelationStyle();
+        Relation parent = new Relation("parent");
+        RelationLayout layout = new RelationLayout(parent, style);
+        layout.children.clear();
+        layout.children.add(makePrimitive("a", 30));
+        layout.children.add(makePrimitive("b", 30));
+        layout.labelWidth = 10;
+        layout.averageChildCardinality = 1;
+
+        // Take snapshot at width=400
+        CompressResult snapshot = layout.computeCompress(400);
+        List<ColumnSetSnapshot> snapshotsBefore = List.copyOf(snapshot.columnSetSnapshots());
+        int countBefore = snapshotsBefore.size();
+
+        // Compress again at a very different width — should not alter first snapshot
+        layout.computeCompress(100);
+
+        assertEquals(countBefore, snapshot.columnSetSnapshots().size(),
+                     "CompressResult snapshot must not be mutated by subsequent compress calls");
+        assertEquals(snapshotsBefore, snapshot.columnSetSnapshots(),
+                     "CompressResult columnSetSnapshots must be immutable across compress calls");
+    }
 }

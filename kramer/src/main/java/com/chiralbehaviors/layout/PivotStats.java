@@ -18,5 +18,6 @@ import java.util.List;
 public record PivotStats(List<String> pivotValues, int pivotCount) {
     public PivotStats {
         pivotValues = List.copyOf(pivotValues);
+        assert pivotCount == pivotValues.size() : "pivotCount mismatch";
     }
 }

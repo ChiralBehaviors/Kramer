@@ -22,6 +22,7 @@ import static com.chiralbehaviors.layout.style.Style.snap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.TreeSet;
 import java.util.function.Function;
 
 import com.chiralbehaviors.layout.cell.LayoutCell;
@@ -30,6 +31,7 @@ import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.style.PrimitiveStyle;
 import com.chiralbehaviors.layout.style.PrimitiveStyle.PrimitiveBarStyle;
+import com.chiralbehaviors.layout.style.PrimitiveStyle.PrimitiveBadgeStyle;
 import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.table.ColumnHeader;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -54,6 +56,12 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     private boolean                useVerticalHeader         = false;
     private MeasureResult          measureResult;
     private PrimitiveRenderMode    renderMode                = PrimitiveRenderMode.TEXT;
+    /** Sorted distinct string values for BADGE CSS class assignment; null when not BADGE. */
+    private List<String>           badgeValues               = null;
+
+    // Cached style instances — re-used across buildControl() calls to avoid per-call allocation
+    private PrimitiveBarStyle      cachedBarStyle;
+    private PrimitiveBadgeStyle    cachedBadgeStyle;
 
     // Convergence detection state (Kramer-16k)
     private MeasureResult          frozenResult;
@@ -99,10 +107,20 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
             return new PrimitiveList(this, parentTraversal);
         }
         if (renderMode == PrimitiveRenderMode.BAR) {
-            PrimitiveBarStyle barStyle = new PrimitiveBarStyle(style.getLabelStyle(),
-                                                               javafx.geometry.Insets.EMPTY,
-                                                               style.getLabelStyle());
-            return barStyle.build(parentTraversal, this);
+            if (cachedBarStyle == null) {
+                cachedBarStyle = new PrimitiveBarStyle(style.getLabelStyle(),
+                                                       javafx.geometry.Insets.EMPTY,
+                                                       style.getLabelStyle());
+            }
+            return cachedBarStyle.build(parentTraversal, this);
+        }
+        if (renderMode == PrimitiveRenderMode.BADGE) {
+            if (cachedBadgeStyle == null) {
+                cachedBadgeStyle = new PrimitiveBadgeStyle(style.getLabelStyle(),
+                                                           javafx.geometry.Insets.EMPTY,
+                                                           style.getLabelStyle());
+            }
+            return cachedBadgeStyle.build(parentTraversal, this);
         }
         return buildCell(parentTraversal);
     }
@@ -326,6 +344,31 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
             };
         }
 
+        // Badge auto-detection: when renderMode is still TEXT after numeric check,
+        // count distinct string values and promote to BADGE if below cardinality threshold.
+        // Two-pass approach is intentional: numeric width computation (pass 1) is independent
+        // of badge cardinality detection (pass 2), so merging them would not reduce complexity.
+        badgeValues = null;
+        if (renderMode == PrimitiveRenderMode.TEXT) {
+            int badgeThreshold = (stylesheet != null && path != null)
+                                 ? stylesheet.getInt(path, "badge-cardinality-threshold", 10)
+                                 : 10;
+            TreeSet<String> distinct = new TreeSet<>();
+            for (JsonNode prim : normalized) {
+                if (prim.isArray()) {
+                    for (JsonNode row : prim) {
+                        distinct.add(row.asText());
+                    }
+                } else if (!prim.isNull() && !prim.isMissingNode()) {
+                    distinct.add(prim.asText());
+                }
+            }
+            if (!distinct.isEmpty() && distinct.size() < badgeThreshold) {
+                renderMode = PrimitiveRenderMode.BADGE;
+                badgeValues = List.copyOf(distinct); // TreeSet is already sorted
+            }
+        }
+
         // RF-3: p90 replaces averageWidth ONLY in isVariableLength==true branch,
         // and only when we have sufficient samples. Fixed-length always uses maxWidth.
         double effectiveWidth;
@@ -415,6 +458,26 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     public PrimitiveRenderMode getRenderMode() {
         return renderMode;
+    }
+
+    /**
+     * Returns the sorted list of distinct string values used for BADGE CSS class assignment,
+     * or {@code null} if the current render mode is not BADGE.
+     */
+    public List<String> getBadgeValues() {
+        return badgeValues;
+    }
+
+    /**
+     * Returns the sorted index of {@code value} in the badge value set, or {@code -1}
+     * if the value is not present (unknown value — TEXT fallback applies).
+     */
+    public int badgeIndex(String value) {
+        if (badgeValues == null || value == null) {
+            return -1;
+        }
+        int idx = Collections.binarySearch(badgeValues, value);
+        return idx >= 0 ? idx : -1;
     }
 
     /** Returns true when a frozen (converged) result is cached and valid. */
@@ -537,6 +600,9 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         // isVariableLength lifecycle is now explicit in MeasureResult (RDR-009 SC-6).
         // useVerticalHeader resets because nestTableColumn() runs after clear().
         useVerticalHeader = false;
+        // Invalidate cached style objects so they are rebuilt after a layout cycle.
+        cachedBarStyle = null;
+        cachedBadgeStyle = null;
     }
 
     protected double width(JsonNode row) {

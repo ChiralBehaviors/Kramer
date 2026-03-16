@@ -94,10 +94,10 @@ class ColumnSetSnapshotTest {
         PrimitiveLayout p1 = makePrimitive("description", 300.0);
         PrimitiveLayout p2 = makePrimitive("credits", 50.0);
         cs.add(p1);
-        // Second column added by compress; simulate by accessing columns list
+        // Second column added by compress; simulate via package-private addColumn
         Column col2 = new Column(100.0);
         col2.add(p2);
-        cs.getColumns().add(col2);
+        cs.addColumn(col2);
         cs.getColumns().get(0).setWidth(300.0);
 
         ColumnSetSnapshot snap = cs.toSnapshot(60.0);

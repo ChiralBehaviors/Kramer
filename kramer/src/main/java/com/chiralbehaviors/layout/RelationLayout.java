@@ -479,8 +479,11 @@ public final class RelationLayout extends SchemaNodeLayout {
 
     public LayoutResult computeLayout(double width) {
         layout(width);
+        // primitiveMode is not applicable to relation nodes; TEXT is a sentinel value
         return new LayoutResult(
-            useTable ? RelationRenderMode.TABLE : RelationRenderMode.OUTLINE,
+            useCrosstab ? RelationRenderMode.CROSSTAB
+                        : useTable ? RelationRenderMode.TABLE
+                        : RelationRenderMode.OUTLINE,
             PrimitiveRenderMode.TEXT,
             false,
             tableColumnWidth,
@@ -505,17 +508,13 @@ public final class RelationLayout extends SchemaNodeLayout {
     public LayoutResult snapshotLayoutResult() {
         return new LayoutResult(
             useTable ? RelationRenderMode.TABLE : RelationRenderMode.OUTLINE,
-            PrimitiveRenderMode.TEXT,
-            false,
+            PrimitiveRenderMode.TEXT,  // primitiveMode is not applicable to relations; TEXT is a sentinel
+            false,                     // useVerticalHeader: not applicable at relation level
             tableColumnWidth,
             columnHeaderIndentation,
             columnWidth,
             children.stream()
-                .map(c -> {
-                    if (c instanceof PrimitiveLayout pl) return pl.snapshotLayoutResult();
-                    if (c instanceof RelationLayout rl) return rl.snapshotLayoutResult();
-                    return null;
-                })
+                .map(SchemaNodeLayout::snapshotLayoutResult)
                 .toList()
         );
     }
@@ -534,7 +533,7 @@ public final class RelationLayout extends SchemaNodeLayout {
             .toList();
 
         CompressResult compressSnap = new CompressResult(
-            justifiedWidth, List.copyOf(columnSets), cellHeight, List.of());
+            justifiedWidth, colSetSnaps, cellHeight, List.of());
 
         HeightResult heightSnap = new HeightResult(
             height, cellHeight, resolvedCardinality, columnHeaderHeight, List.of());
@@ -557,9 +556,12 @@ public final class RelationLayout extends SchemaNodeLayout {
 
     public CompressResult computeCompress(double justified) {
         compress(justified);
+        List<ColumnSetSnapshot> snaps = columnSets.stream()
+            .map(cs -> cs.toSnapshot(cellHeight))
+            .toList();
         return new CompressResult(
             justifiedWidth,
-            List.copyOf(columnSets),
+            snaps,
             cellHeight,
             children.stream()
                 .map(c -> {
@@ -1023,8 +1025,7 @@ public final class RelationLayout extends SchemaNodeLayout {
 
         // Distribute remaining width equally across pivot columns
         double remaining = availableWidth - rowHeaderWidth;
-        crosstabColumnWidth = pivotValues.isEmpty() ? 0.0
-                                                     : Style.snap(remaining / pivotValues.size());
+        crosstabColumnWidth = Style.snap(remaining / pivotValues.size());
 
         // Overall width = rowHeader + all pivot columns
         double totalWidth = Style.snap(rowHeaderWidth + crosstabColumnWidth * pivotValues.size());
