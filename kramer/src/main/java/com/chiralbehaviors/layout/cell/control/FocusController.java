@@ -105,6 +105,10 @@ public class FocusController<C extends LayoutCell<?>>
     private volatile FocusTraversalNode<?> current;
     private volatile CursorState           cursorState;
 
+    public CursorState getCursorState() {
+        return cursorState;
+    }
+
     private final List<Node>               boundNodes = new ArrayList<>();
     private final Node                     node;
 
@@ -192,16 +196,18 @@ public class FocusController<C extends LayoutCell<?>>
      * Recover cursor position after a layout rebuild. Called by AutoLayout
      * after autoLayout() replaces the control tree. Re-derives scene position
      * from the stored data identity by scanning the new VirtualFlow's items.
+     *
+     * @param saved the cursor state captured before unbind(); may be null
+     * @param newFlow the new VirtualFlow to recover into
      */
-    public void recoverCursor(VirtualFlow<?> newFlow) {
-        CursorState cs = cursorState;
-        if (cs == null || newFlow == null) {
+    public void recoverCursor(CursorState saved, VirtualFlow<?> newFlow) {
+        if (saved == null || newFlow == null) {
             return;
         }
         // Find the item by identity in the new flow
         var items = newFlow.getItems();
         for (int i = 0; i < items.size(); i++) {
-            if (items.get(i) == cs.dataIdentity()) {
+            if (items.get(i) == saved.dataIdentity()) {
                 newFlow.show(i);
                 selectCellAt(newFlow, i);
                 return;
@@ -211,9 +217,6 @@ public class FocusController<C extends LayoutCell<?>>
         cursorState = null;
     }
 
-    CursorState getCursorState() {
-        return cursorState;
-    }
 
     void setCursorState(CursorState state) {
         this.cursorState = state;

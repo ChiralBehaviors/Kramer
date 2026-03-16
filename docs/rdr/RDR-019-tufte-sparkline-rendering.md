@@ -87,28 +87,30 @@ public class PrimitiveSparklineStyle extends PrimitiveStyle {
     // "sparkline-line-width" — double, stroke width in pixels (default: 1.0)
     // "sparkline-band-opacity" — double, IQR band fill opacity (default: 0.15)
 
+    // NOTE: Real signature is build(FocusTraversal<?> pt, PrimitiveLayout p).
+    // Data arrives later via updateItem(JsonNode). The cell must render the
+    // sparkline inside updateItem(), not build(). Pseudocode below shows the
+    // rendering logic that goes in the cell's updateItem() method.
+
     @Override
-    public Node build(JsonNode data, PrimitiveLayout layout) {
-        if (!data.isArray()) return fallbackToText(data, layout);
-
-        double[] values = extractNumericSeries(data);
-        SparklineStats stats = layout.getMeasureResult().sparklineStats();
-
-        // Create Polyline scaled to cell dimensions:
-        // x: evenly spaced across justifiedWidth
-        // y: scaled between seriesMin -> seriesMax within cellHeight
-        Polyline line = new Polyline();
-        // ... scale and populate points
-
-        // Tufte band (IQR reference):
-        Rectangle band = new Rectangle(0, yQ3, width, yQ1 - yQ3);
-        band.setOpacity(bandOpacity);
-
-        // End marker:
-        Circle endDot = new Circle(xLast, yLast, 1.5);
-
-        return new StackPane(band, line, endDot);
+    public LayoutCell<?> build(FocusTraversal<?> pt, PrimitiveLayout layout) {
+        return new SparklineCell(layout, pt);
     }
+
+    // Inside SparklineCell.updateItem(JsonNode item):
+    //   if (!item.isArray()) { fallbackToText(item); return; }
+    //   double[] values = extractNumericSeries(item);
+    //   SparklineStats stats = layout.getMeasureResult().sparklineStats();
+    //
+    //   Polyline line = new Polyline();
+    //   // x: evenly spaced across justifiedWidth
+    //   // y: scaled between seriesMin -> seriesMax within cellHeight
+    //
+    //   Rectangle band = new Rectangle(0, yQ3, width, yQ1 - yQ3);
+    //   band.setOpacity(bandOpacity);
+    //
+    //   Circle endDot = new Circle(xLast, yLast, 1.5);
+    //   getChildren().setAll(band, line, endDot);
 }
 ```
 
