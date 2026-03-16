@@ -99,7 +99,8 @@ class ContentWidthStatsTest {
     }
 
     @Test
-    void primitiveLayoutMeasureResultHasNullContentStats() {
+    void primitiveLayoutContentStatsNullWhenBelowMinSamples() {
+        // 2 elements < MIN_SAMPLES=30, so contentStats is not computed
         PrimitiveStyle style = TestLayouts.mockPrimitiveStyle(7.0);
         PrimitiveLayout layout = new PrimitiveLayout(new Primitive("value"), style);
 
@@ -113,7 +114,7 @@ class ContentWidthStatsTest {
         MeasureResult result = layout.getMeasureResult();
         assertNotNull(result);
         assertNull(result.contentStats(),
-                   "PrimitiveLayout should pass null contentStats (not yet implemented)");
+                   "contentStats must be null when sampleCount < MIN_SAMPLES=30");
     }
 
     @Test

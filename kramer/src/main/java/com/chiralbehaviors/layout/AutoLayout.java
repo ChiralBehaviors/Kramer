@@ -70,7 +70,6 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     // Search
     private SearchBar                                     searchBar;
     private LayoutSearch                                  layoutSearch;
-    private int                                           searchCursor = -1;
 
     public AutoLayout() {
         this(null);
@@ -91,6 +90,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             layout = null;
             measureResult = null;
             decisionCache.clear();
+            control = null;
         });
         data.addListener((o, p, c) -> setContent());
         controller = new FocusController<>(this);
@@ -101,6 +101,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             layout = null;
             measureResult = null;
             decisionCache.clear();
+            control = null;
             if (getData() != null) {
                 autoLayout();
             }
@@ -242,7 +243,6 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             searchBar.setVisible(false);
         }
         layoutSearch = null;
-        searchCursor = -1;
         requestFocus();
     }
 
@@ -292,7 +292,6 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         JsonNode currentData  = data.get();
         if (schemaRoot == null || currentData == null) {
             layoutSearch = null;
-            searchCursor = -1;
             updateMatchDisplay(0, 0);
             return;
         }
@@ -300,7 +299,6 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
                                         getOutermostVirtualFlow().orElse(null),
                                         null);
         layoutSearch.setQuery(query);
-        searchCursor = -1;
         updateMatchDisplay(0, layoutSearch.countMatches());
     }
 
@@ -309,11 +307,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         ensureSearch();
         if (layoutSearch == null) return;
         layoutSearch.findNext().ifPresentOrElse(
-            r -> {
-                searchCursor++;
-                if (searchCursor >= layoutSearch.countMatches()) searchCursor = 0;
-                updateMatchDisplay(searchCursor + 1, layoutSearch.countMatches());
-            },
+            r -> updateMatchDisplay(layoutSearch.getCursorIndex() + 1, layoutSearch.countMatches()),
             () -> updateMatchDisplay(0, 0)
         );
     }
@@ -323,12 +317,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         ensureSearch();
         if (layoutSearch == null) return;
         layoutSearch.findPrevious().ifPresentOrElse(
-            r -> {
-                searchCursor--;
-                int total = layoutSearch.countMatches();
-                if (searchCursor < 0) searchCursor = total - 1;
-                updateMatchDisplay(searchCursor + 1, total);
-            },
+            r -> updateMatchDisplay(layoutSearch.getCursorIndex() + 1, layoutSearch.countMatches()),
             () -> updateMatchDisplay(0, 0)
         );
     }
@@ -345,6 +334,11 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         }
     }
 
+    /** Returns true when a layout has been measured and all primitives have converged. */
+    public boolean allConverged() {
+        return layout != null && layout.isConverged();
+    }
+
     private void autoLayout(JsonNode zeeData, double width) {
         if (width < 10.0) {
             return;
@@ -355,6 +349,22 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         if (layout == null) {
             return;
         }
+
+        // Convergence short-circuit: if all primitives have stable widths AND
+        // the decision cache has a result for this width bucket, skip layout+compress
+        // and go straight to buildControl using the existing layout tree state.
+        // Cache entries are only written for RelationLayout roots (see below), so
+        // restrict the read to that case as well to avoid a spurious cache miss branch.
+        int dataCardinality = zeeData != null ? zeeData.size() : 0;
+        SchemaPath rootPath = layout.getSchemaPath();
+        if (allConverged() && rootPath != null && layout instanceof RelationLayout) {
+            LayoutDecisionKey key = LayoutDecisionKey.of(rootPath, width, dataCardinality);
+            if (decisionCache.containsKey(key)) {
+                buildAndInstallControl(zeeData, width);
+                return;
+            }
+        }
+
         LayoutCell<?> old = control;
         // Save cursor state before unbind (which nulls it)
         var savedCursor = controller.getCursorState();
@@ -370,6 +380,11 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         setLeftAnchor(node, 0d);
 
         getChildren().setAll(node);
+        if (searchBar != null && searchBar.isVisible()) {
+            if (!getChildren().contains(searchBar)) {
+                getChildren().add(searchBar);
+            }
+        }
         if (old != null) {
             old.dispose();
         }
@@ -378,8 +393,56 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         node.setMaxWidth(width);
         control.updateItem(zeeData);
 
+        // Cache the layout decision for this width bucket.
+        // Use snapshotLayoutResult() to read existing state without re-running layout().
+        if (rootPath != null) {
+            LayoutDecisionKey key = LayoutDecisionKey.of(rootPath, width, dataCardinality);
+            if (!decisionCache.containsKey(key) && layout instanceof RelationLayout rl) {
+                decisionCache.put(key, rl.snapshotLayoutResult());
+            }
+        }
+
         // Recover cursor position after layout rebuild.
         // Find the first VirtualFlow in the new tree for cursor recovery.
+        findVirtualFlow(node).ifPresent(vf -> controller.recoverCursor(savedCursor, vf));
+    }
+
+    /**
+     * Build and install a new control using the current (cached) layout tree state.
+     * Called when convergence + cache hit allow skipping layout+compress.
+     */
+    private void buildAndInstallControl(JsonNode zeeData, double width) {
+        LayoutCell<?> old = control;
+        var savedCursor = controller.getCursorState();
+        controller.unbind();
+        // buildControl uses the already-computed justifiedWidth/useTable from last run.
+        layout.rootLevel = true;
+        try {
+            control = layout.buildControl(controller, model);
+        } finally {
+            layout.rootLevel = false;
+        }
+        Region node = control.getNode();
+
+        setTopAnchor(node, 0d);
+        setRightAnchor(node, 0d);
+        setBottomAnchor(node, 0d);
+        setLeftAnchor(node, 0d);
+
+        getChildren().setAll(node);
+        if (searchBar != null && searchBar.isVisible()) {
+            if (!getChildren().contains(searchBar)) {
+                getChildren().add(searchBar);
+            }
+        }
+        if (old != null) {
+            old.dispose();
+        }
+        node.setMinWidth(width);
+        node.setPrefWidth(width);
+        node.setMaxWidth(width);
+        control.updateItem(zeeData);
+
         findVirtualFlow(node).ifPresent(vf -> controller.recoverCursor(savedCursor, vf));
     }
 

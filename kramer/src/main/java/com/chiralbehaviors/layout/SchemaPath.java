@@ -22,6 +22,19 @@ public record SchemaPath(List<String> segments) {
         this(List.of(root));
     }
 
+    public SchemaPath(String first, String... rest) {
+        this(buildSegments(first, rest));
+    }
+
+    private static List<String> buildSegments(String first, String[] rest) {
+        var list = new ArrayList<String>(1 + rest.length);
+        list.add(first);
+        for (String s : rest) {
+            list.add(s);
+        }
+        return list;
+    }
+
     public SchemaPath child(String field) {
         var extended = new ArrayList<>(segments);
         extended.add(field);

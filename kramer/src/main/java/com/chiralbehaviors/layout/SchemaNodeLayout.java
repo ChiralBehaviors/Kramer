@@ -240,6 +240,9 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
 
     public abstract MeasureResult getMeasureResult();
 
+    /** Returns true when this node and all descendants have converged (frozen result cached). */
+    public abstract boolean isConverged();
+
     public SchemaPath getSchemaPath() {
         return schemaPath;
     }

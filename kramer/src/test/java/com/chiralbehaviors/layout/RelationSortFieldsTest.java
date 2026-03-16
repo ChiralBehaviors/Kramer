@@ -3,6 +3,7 @@ package com.chiralbehaviors.layout;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -55,9 +56,13 @@ class RelationSortFieldsTest {
     @Test
     void sortFieldsListIsDefensiveCopy() {
         var r = new Relation("items");
-        var fields = List.of("x", "y");
-        r.setSortFields(fields);
-        // Returned list is equal but independent (List.copyOf or similar)
-        assertEquals(fields, r.getSortFields());
+        var mutable = new ArrayList<>(List.of("x", "y"));
+        r.setSortFields(mutable);
+        List<String> stored = r.getSortFields();
+        assertEquals(List.of("x", "y"), stored);
+        // Mutate the original list after setting — stored copy must be unaffected
+        mutable.add("z");
+        assertEquals(List.of("x", "y"), r.getSortFields(),
+                     "setSortFields must store a defensive copy, not a reference to the passed list");
     }
 }

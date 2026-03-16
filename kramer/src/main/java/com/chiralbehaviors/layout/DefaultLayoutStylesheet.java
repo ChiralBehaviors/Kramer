@@ -30,6 +30,9 @@ public class DefaultLayoutStylesheet implements LayoutStylesheet {
     }
 
     public void setOverride(SchemaPath path, String property, Object value) {
+        if (!(value instanceof Number || value instanceof Boolean || value instanceof String)) {
+            throw new IllegalArgumentException("Override value must be Number, Boolean, or String");
+        }
         overrides.computeIfAbsent(path, k -> new HashMap<>()).put(property, value);
         version++;
     }

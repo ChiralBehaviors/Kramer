@@ -16,6 +16,7 @@ public record LayoutDecisionKey(SchemaPath path, int widthBucket, int dataCardin
      * Width is bucketed by truncating {@code width / 10} to an integer.
      */
     public static LayoutDecisionKey of(SchemaPath path, double width, int itemCount) {
+        assert width >= 0 : "width must be non-negative";
         return new LayoutDecisionKey(path, (int) (width / 10), itemCount);
     }
 }
