@@ -67,7 +67,7 @@ class LayoutDecisionCacheTest {
 
         var path = new SchemaPath("root");
         var key = LayoutDecisionKey.of(path, 400.0, 7);
-        var result = new LayoutResult(true, false, 120.0, 0.0, 100.0, List.of());
+        var result = new LayoutResult(RelationRenderMode.TABLE, PrimitiveRenderMode.TEXT, false, 120.0, 0.0, 100.0, List.of());
 
         cache.put(key, result);
 
@@ -92,9 +92,9 @@ class LayoutDecisionCacheTest {
 
         var path = new SchemaPath("root");
         cache.put(LayoutDecisionKey.of(path, 100.0, 2),
-                  new LayoutResult(false, false, 50.0, 0.0, 40.0, List.of()));
+                  new LayoutResult(RelationRenderMode.OUTLINE, PrimitiveRenderMode.TEXT, false, 50.0, 0.0, 40.0, List.of()));
         cache.put(LayoutDecisionKey.of(path, 200.0, 3),
-                  new LayoutResult(true, false, 80.0, 0.0, 70.0, List.of()));
+                  new LayoutResult(RelationRenderMode.TABLE, PrimitiveRenderMode.TEXT, false, 80.0, 0.0, 70.0, List.of()));
         assertEquals(2, cache.size());
 
         // Simulates stylesheet change or autoLayout() reset
@@ -113,7 +113,7 @@ class LayoutDecisionCacheTest {
         int newCardinality = 10;
 
         var oldKey = LayoutDecisionKey.of(path, width, oldCardinality);
-        cache.put(oldKey, new LayoutResult(false, false, 60.0, 0.0, 50.0, List.of()));
+        cache.put(oldKey, new LayoutResult(RelationRenderMode.OUTLINE, PrimitiveRenderMode.TEXT, false, 60.0, 0.0, 50.0, List.of()));
 
         // When data changes cardinality the caller must re-measure; old key is stale.
         var newKey = LayoutDecisionKey.of(path, width, newCardinality);

@@ -11,7 +11,8 @@ import java.util.List;
  * @see SchemaNodeLayout#layout(double)
  */
 public record LayoutResult(
-    boolean useTable,
+    RelationRenderMode relationMode,
+    PrimitiveRenderMode primitiveMode,
     boolean useVerticalHeader,
     double tableColumnWidth,
     double columnHeaderIndentation,
@@ -20,5 +21,10 @@ public record LayoutResult(
 ) {
     public LayoutResult {
         childResults = childResults == null ? List.of() : List.copyOf(childResults);
+    }
+
+    /** Backward-compatible accessor: returns true when relationMode is TABLE. */
+    public boolean useTable() {
+        return relationMode == RelationRenderMode.TABLE;
     }
 }

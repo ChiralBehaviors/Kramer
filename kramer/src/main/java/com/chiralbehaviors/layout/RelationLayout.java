@@ -456,7 +456,8 @@ public final class RelationLayout extends SchemaNodeLayout {
     public LayoutResult computeLayout(double width) {
         layout(width);
         return new LayoutResult(
-            useTable,
+            useTable ? RelationRenderMode.TABLE : RelationRenderMode.OUTLINE,
+            PrimitiveRenderMode.TEXT,
             false,
             tableColumnWidth,
             columnHeaderIndentation,
@@ -479,7 +480,8 @@ public final class RelationLayout extends SchemaNodeLayout {
      */
     public LayoutResult snapshotLayoutResult() {
         return new LayoutResult(
-            useTable,
+            useTable ? RelationRenderMode.TABLE : RelationRenderMode.OUTLINE,
+            PrimitiveRenderMode.TEXT,
             false,
             tableColumnWidth,
             columnHeaderIndentation,

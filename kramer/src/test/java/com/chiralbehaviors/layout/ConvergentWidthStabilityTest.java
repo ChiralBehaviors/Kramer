@@ -153,7 +153,7 @@ class ConvergentWidthStabilityTest {
         double width2 = 258.7; // bucket 25 — same bucket
 
         LayoutDecisionKey key1 = LayoutDecisionKey.of(path, width1, cardinality);
-        LayoutResult result = new LayoutResult(false, false, 0.0, 0.0, 250.0, List.of());
+        LayoutResult result = new LayoutResult(RelationRenderMode.OUTLINE, PrimitiveRenderMode.TEXT, false, 0.0, 0.0, 250.0, List.of());
         cache.put(key1, result);
 
         // Same-bucket width should hit the same cache entry
@@ -176,7 +176,7 @@ class ConvergentWidthStabilityTest {
         double width2 = 260.0; // bucket 26 — different bucket
 
         LayoutDecisionKey key1 = LayoutDecisionKey.of(path, width1, cardinality);
-        cache.put(key1, new LayoutResult(false, false, 0.0, 0.0, 250.0, List.of()));
+        cache.put(key1, new LayoutResult(RelationRenderMode.OUTLINE, PrimitiveRenderMode.TEXT, false, 0.0, 0.0, 250.0, List.of()));
 
         LayoutDecisionKey key2 = LayoutDecisionKey.of(path, width2, cardinality);
         assertNull(cache.get(key2),
@@ -258,7 +258,7 @@ class ConvergentWidthStabilityTest {
         double width = 300.0;
         int cardinality = data.size();
         LayoutDecisionKey key = LayoutDecisionKey.of(rootPath, width, cardinality);
-        cache.put(key, new LayoutResult(false, false, 0.0, 0.0, 295.0, List.of()));
+        cache.put(key, new LayoutResult(RelationRenderMode.OUTLINE, PrimitiveRenderMode.TEXT, false, 0.0, 0.0, 295.0, List.of()));
 
         // Both conditions met: converged + cache hit
         assertTrue(rl.isConverged(), "allConverged() precondition met");
@@ -284,7 +284,7 @@ class ConvergentWidthStabilityTest {
         for (int bucket = 20; bucket < 30; bucket++) {
             double w = bucket * 10.0;
             cache.put(LayoutDecisionKey.of(path, w, 5),
-                      new LayoutResult(false, false, 0, 0, w, List.of()));
+                      new LayoutResult(RelationRenderMode.OUTLINE, PrimitiveRenderMode.TEXT, false, 0, 0, w, List.of()));
         }
         assertEquals(10, cache.size(), "Cache populated with 10 entries");
 
