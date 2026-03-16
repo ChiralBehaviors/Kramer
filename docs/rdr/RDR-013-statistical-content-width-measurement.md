@@ -2,9 +2,11 @@
 
 ## Metadata
 - **Type**: Feature
-- **Status**: proposed
+- **Status**: accepted
 - **Priority**: P1
 - **Created**: 2026-03-15
+- **Accepted**: 2026-03-15
+- **Reviewed-by**: self
 - **Related**: RDR-009 (MeasureResult), RDR-014 (Conditional Display & Data Filtering), SIEUFERD (SIGMOD 2016 S3.4)
 
 ## Problem Statement

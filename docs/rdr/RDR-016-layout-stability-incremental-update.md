@@ -2,9 +2,11 @@
 
 ## Metadata
 - **Type**: Feature
-- **Status**: proposed
+- **Status**: accepted
 - **Priority**: P2
 - **Created**: 2026-03-15
+- **Accepted**: 2026-03-15
+- **Reviewed-by**: self
 - **Related**: RDR-009 (MeasureResult immutability), RDR-010 (CSS integration remediation), RDR-011 (LayoutDecisionTree), RDR-012 (streaming invalidation), SIEUFERD (SIGMOD 2016 §3.4)
 
 ## Problem Statement

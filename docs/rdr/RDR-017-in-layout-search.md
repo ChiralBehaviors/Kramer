@@ -2,9 +2,11 @@
 
 ## Metadata
 - **Type**: Feature
-- **Status**: proposed
+- **Status**: accepted
 - **Priority**: P2
 - **Created**: 2026-03-15
+- **Accepted**: 2026-03-15
+- **Reviewed-by**: self
 - **Related**: RDR-005 (keyboard navigation), RDR-009 (stylesheet data structure / SchemaPath), RDR-018 (query semantic layout stylesheet), Related Worksheets (CHI 2011)
 
 ## Problem Statement
