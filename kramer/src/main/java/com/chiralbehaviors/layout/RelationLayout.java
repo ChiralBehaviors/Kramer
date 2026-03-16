@@ -18,11 +18,13 @@ package com.chiralbehaviors.layout;
 
 import static com.chiralbehaviors.layout.style.Style.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.outline.Outline;
@@ -62,23 +64,103 @@ public final class RelationLayout extends SchemaNodeLayout {
         return flattened;
     }
 
+    /**
+     * Build a stable comparator for a single sort field. Numeric JSON nodes are
+     * compared numerically; all other values are compared lexicographically on
+     * their text representation. Null/missing values sort last.
+     */
+    static Comparator<JsonNode> fieldComparator(String field) {
+        return (a, b) -> {
+            JsonNode va = a == null ? null : a.get(field);
+            JsonNode vb = b == null ? null : b.get(field);
+            boolean missingA = va == null || va.isNull();
+            boolean missingB = vb == null || vb.isNull();
+            if (missingA && missingB) return 0;
+            if (missingA)             return 1;   // nulls last
+            if (missingB)             return -1;
+            if (va.isNumber() && vb.isNumber()) {
+                return Double.compare(va.asDouble(), vb.asDouble());
+            }
+            return va.asText().compareTo(vb.asText());
+        };
+    }
+
+    /**
+     * Derive a comparator from the relation's sortFields / autoSort configuration.
+     * Returns null when no sort is needed (autoSort=false, sortFields empty).
+     *
+     * Heuristic for autoSort with no sortFields: id > key > name > first primitive field.
+     */
+    static Comparator<JsonNode> buildSortComparator(Relation relation) {
+        List<String> fields = relation.getSortFields();
+        if (!fields.isEmpty()) {
+            Comparator<JsonNode> cmp = fieldComparator(fields.get(0));
+            for (int i = 1; i < fields.size(); i++) {
+                cmp = cmp.thenComparing(fieldComparator(fields.get(i)));
+            }
+            return cmp;
+        }
+        if (!relation.isAutoSort()) {
+            return null;
+        }
+        // Heuristic: pick first child primitive matching id > key > name
+        List<String> candidates = List.of("id", "key", "name");
+        for (String candidate : candidates) {
+            if (relation.getChild(candidate) != null) {
+                return fieldComparator(candidate);
+            }
+        }
+        // Fallback: first primitive child
+        return relation.getChildren().stream()
+                       .filter(c -> c instanceof com.chiralbehaviors.layout.schema.Primitive)
+                       .map(c -> fieldComparator(c.getField()))
+                       .findFirst()
+                       .orElse(null);
+    }
+
+    /**
+     * Sort an ArrayNode in-place using a stable sort. Returns the same instance.
+     */
+    static ArrayNode sortArrayNode(ArrayNode array, Comparator<JsonNode> cmp) {
+        if (cmp == null || array == null || array.size() <= 1) {
+            return array;
+        }
+        List<JsonNode> list = new ArrayList<>(array.size());
+        array.forEach(list::add);
+        list.sort(cmp);   // List.sort is stable
+        array.removeAll();
+        list.forEach(array::add);
+        return array;
+    }
+
     protected int                          averageChildCardinality;
     protected double                       cellHeight       = -1;
     protected final List<SchemaNodeLayout> children         = new ArrayList<>();
     protected double                       columnHeaderHeight;
     protected final List<ColumnSet>        columnSets       = new ArrayList<>();
-    protected Function<JsonNode, JsonNode> extractor;
+    protected Function<JsonNode, JsonNode>  extractor;
     protected int                          maxCardinality;
     protected int                          resolvedCardinality;
     protected final RelationStyle          style;
     protected double                       tableColumnWidth = 0;
     protected boolean                      useTable         = false;
     private MeasureResult                  measureResult;
+    /** Comparator derived from sortFields / autoSort; null when no sort is needed. */
+    private Comparator<JsonNode>           sortComparator;
 
     public RelationLayout(Relation r, RelationStyle style) {
         super(r, style.getLabelStyle());
         assert r != null && style != null;
         this.style = style;
+    }
+
+    @Override
+    public void buildPaths(SchemaPath path, Style model) {
+        setSchemaPath(path);
+        for (SchemaNode child : getNode().getChildren()) {
+            SchemaNodeLayout childLayout = model.layout(child);
+            childLayout.buildPaths(path.child(child.getField()), model);
+        }
     }
 
     @Override
@@ -272,8 +354,13 @@ public final class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public JsonNode extractFrom(JsonNode datum) {
-        JsonNode extracted = extractor.apply(datum);
-        return node.extractFrom(extracted);
+        Function<JsonNode, JsonNode> ex = extractor != null ? extractor : n -> n;
+        JsonNode extracted = ex.apply(datum);
+        JsonNode result = node.extractFrom(extracted);
+        if (sortComparator != null && result instanceof ArrayNode arr) {
+            sortArrayNode(arr, sortComparator);
+        }
+        return result;
     }
 
     public void forEach(Consumer<? super SchemaNodeLayout> action) {
@@ -392,6 +479,18 @@ public final class RelationLayout extends SchemaNodeLayout {
                           Function<JsonNode, JsonNode> extractor, Style model) {
         clear();
         children.clear();
+        // Store extractor for build-phase extractFrom() calls that arrive
+        // when measure() is invoked outside the normal fold() pipeline.
+        if (this.extractor == null) {
+            this.extractor = extractor;
+        }
+        // Compute sort comparator once per measure phase; stored for extractFrom().
+        sortComparator = buildSortComparator(getNode());
+        // Sort the datum array before measuring children so that measurement
+        // reflects data order consistent with the build phase.
+        if (sortComparator != null && datum instanceof ArrayNode datumArray) {
+            sortArrayNode(datumArray, sortComparator);
+        }
         double sum = 0;
         columnWidth = 0;
         int singularChildren = 0;

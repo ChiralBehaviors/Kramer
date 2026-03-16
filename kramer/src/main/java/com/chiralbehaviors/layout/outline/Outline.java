@@ -78,7 +78,15 @@ public class Outline extends VirtualFlow<OutlineCell> {
     public void updateItem(JsonNode item) {
         OptionalInt savedIndex = getFirstVisibleIndex();
         List<JsonNode> list = SchemaNode.asList(item);
-        items.setAll(list);
+        if (list.size() == items.size()) {
+            for (int i = 0; i < list.size(); i++) {
+                if (!list.get(i).equals(items.get(i))) {
+                    items.set(i, list.get(i));
+                }
+            }
+        } else {
+            items.setAll(list);
+        }
         if (!items.isEmpty()) {
             savedIndex.ifPresentOrElse(
                 idx -> showAsFirst(Math.min(idx, items.size() - 1)),

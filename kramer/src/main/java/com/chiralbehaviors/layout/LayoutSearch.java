@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.chiralbehaviors.layout.cell.LayoutCell;
+import com.chiralbehaviors.layout.cell.control.FocusController;
+import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -22,11 +25,19 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
  *   <li>{@code caseSensitive} — default {@code false} (case-insensitive)</li>
  *   <li>{@code wrapAround}    — default {@code true}  (wraps at end/start)</li>
  * </ul>
+ *
+ * <p>When constructed with a {@link VirtualFlow} and {@link FocusController},
+ * {@link #findNext()}, {@link #findPrevious()}, and
+ * {@link #navigateToResult(SearchResult)} will scroll the outermost flow to
+ * the matched row using {@link VirtualFlow#show(int)} (MinDistanceTo semantics)
+ * and update selection via {@link FocusController#navigateTo}.
  */
 public class LayoutSearch {
 
-    private final SchemaNode root;
-    private final JsonNode   data;
+    private final SchemaNode                  root;
+    private final JsonNode                    data;
+    private final VirtualFlow<LayoutCell<?>>  virtualFlow;
+    private final FocusController<LayoutCell<?>> focusController;
 
     private String  query;
     private boolean caseSensitive = false;
@@ -38,9 +49,30 @@ public class LayoutSearch {
     /** Cached list of all matches for the current query. Invalidated on query change. */
     private List<SearchResult> matchCache;
 
+    /**
+     * Creates a search without navigation capability.
+     * {@link #navigateToResult(SearchResult)} is a no-op.
+     */
     public LayoutSearch(SchemaNode root, JsonNode data) {
+        this(root, data, null, null);
+    }
+
+    /**
+     * Creates a search with navigation capability.
+     *
+     * @param root            schema root
+     * @param data            array data to search
+     * @param virtualFlow     outermost VirtualFlow for scrolling; may be {@code null}
+     * @param focusController focus/selection controller; may be {@code null}
+     */
+    @SuppressWarnings("unchecked")
+    public LayoutSearch(SchemaNode root, JsonNode data,
+                        VirtualFlow<? extends LayoutCell<?>> virtualFlow,
+                        FocusController<? extends LayoutCell<?>> focusController) {
         this.root = root;
         this.data = data;
+        this.virtualFlow = (VirtualFlow<LayoutCell<?>>) virtualFlow;
+        this.focusController = (FocusController<LayoutCell<?>>) focusController;
     }
 
     // -------------------------------------------------------------------------
@@ -78,9 +110,10 @@ public class LayoutSearch {
     // -------------------------------------------------------------------------
 
     /**
-     * Advances to the next match and returns it. Returns {@link Optional#empty()}
-     * when the query is blank, there are no matches, or wrap-around is disabled
-     * and the end has been reached.
+     * Advances to the next match, auto-navigates the VirtualFlow if one is
+     * configured, and returns the result.
+     *
+     * @return the next {@link SearchResult}, or empty when no match is found
      */
     public Optional<SearchResult> findNext() {
         if (isBlankQuery()) {
@@ -98,12 +131,16 @@ public class LayoutSearch {
             next = 0;
         }
         cursor = next;
-        return Optional.of(matches.get(cursor));
+        SearchResult result = matches.get(cursor);
+        navigateToResult(result);
+        return Optional.of(result);
     }
 
     /**
-     * Moves to the previous match and returns it. Returns {@link Optional#empty()}
-     * when the query is blank or there are no matches.
+     * Moves to the previous match, auto-navigates the VirtualFlow if one is
+     * configured, and returns the result.
+     *
+     * @return the previous {@link SearchResult}, or empty when no match is found
      */
     public Optional<SearchResult> findPrevious() {
         if (isBlankQuery()) {
@@ -121,7 +158,9 @@ public class LayoutSearch {
             prev = matches.size() - 1;
         }
         cursor = prev;
-        return Optional.of(matches.get(cursor));
+        SearchResult result = matches.get(cursor);
+        navigateToResult(result);
+        return Optional.of(result);
     }
 
     /**
@@ -133,6 +172,27 @@ public class LayoutSearch {
             return 0;
         }
         return getMatches().size();
+    }
+
+    /**
+     * Scrolls the outermost VirtualFlow to the row identified by
+     * {@code result.rowIndex()} using {@link VirtualFlow#show(int)}
+     * (MinDistanceTo semantics — minimal scroll) and selects the row via the
+     * FocusController.
+     *
+     * <p>This is a no-op when no VirtualFlow was supplied at construction time.
+     *
+     * @param result the search result to navigate to
+     */
+    public void navigateToResult(SearchResult result) {
+        if (virtualFlow == null) {
+            return;
+        }
+        int rowIndex = result.rowIndex();
+        virtualFlow.show(rowIndex);
+        if (focusController != null) {
+            focusController.navigateTo(virtualFlow, rowIndex);
+        }
     }
 
     // -------------------------------------------------------------------------

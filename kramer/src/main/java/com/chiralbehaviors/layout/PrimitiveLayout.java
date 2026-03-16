@@ -19,6 +19,8 @@ package com.chiralbehaviors.layout;
 import static com.chiralbehaviors.layout.schema.SchemaNode.asList;
 import static com.chiralbehaviors.layout.style.Style.snap;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 
@@ -54,6 +56,11 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     public PrimitiveLayout(Primitive p, PrimitiveStyle style) {
         super(p, style.getLabelStyle());
         this.style = style;
+    }
+
+    @Override
+    public void buildPaths(SchemaPath path, Style model) {
+        setSchemaPath(path);
     }
 
     public LayoutCell<?> buildCell(FocusTraversal<?> pt) {
@@ -148,6 +155,9 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         return columnWidth();
     }
 
+    /** Phase 1: minimum sample count required to compute percentile stats. */
+    private static final int MIN_SAMPLES = 30;
+
     @Override
     public double measure(JsonNode data, Function<JsonNode, JsonNode> extractor,
                           Style model) {
@@ -158,12 +168,17 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         columnWidth = 0;
         List<JsonNode> normalized = asList(data);
         int cardSum = 0;
+
+        // Collect all individual widths for percentile computation.
+        List<Double> allWidths = new ArrayList<>();
+
         for (JsonNode prim : normalized) {
             if (prim.isArray()) {
                 cardSum += prim.size();
                 double summedWidth = 0;
                 for (JsonNode row : prim) {
                     double w = width(row);
+                    allWidths.add(w);
                     summedWidth += w;
                     maxWidth = Math.max(maxWidth, w);
                 }
@@ -172,6 +187,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
             } else {
                 cardSum += 1;
                 double w = width(prim);
+                allWidths.add(w);
                 summedDataWidth += w;
                 maxWidth = Math.max(maxWidth, w);
             }
@@ -190,15 +206,32 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
             isVariableLength = true; // safe fallback for empty data
         }
 
-        double effectiveWidth = isVariableLength ? averageWidth : maxWidth;
-        dataWidth = Style.snap(Math.max(getNode().getDefaultWidth(),
-                                        effectiveWidth));
+        // Compute percentile stats when sample count is sufficient (Phase 1: minSamples=30).
+        ContentWidthStats contentStats = null;
+        int sampleCount = allWidths.size();
+        if (sampleCount >= MIN_SAMPLES) {
+            Collections.sort(allWidths);
+            double p50 = allWidths.get(sampleCount / 2);
+            double p90 = allWidths.get(sampleCount * 9 / 10);
+            contentStats = new ContentWidthStats(p50, p90, sampleCount, false);
+        }
+
+        // RF-3: p90 replaces averageWidth ONLY in isVariableLength==true branch,
+        // and only when we have sufficient samples. Fixed-length always uses maxWidth.
+        double effectiveWidth;
+        if (isVariableLength) {
+            effectiveWidth = (contentStats != null) ? contentStats.p90Width() : averageWidth;
+        } else {
+            effectiveWidth = maxWidth;
+        }
+
+        dataWidth = Style.snap(Math.max(getNode().getDefaultWidth(), effectiveWidth));
         columnWidth = Math.max(labelWidth, dataWidth);
 
         measureResult = new MeasureResult(
             labelWidth, columnWidth, dataWidth, maxWidth,
             averageCardinality, isVariableLength,
-            0, 0, null, List.of(), null
+            0, 0, null, List.of(), contentStats
         );
 
         return columnWidth;
