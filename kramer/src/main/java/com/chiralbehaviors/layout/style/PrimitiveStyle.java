@@ -20,6 +20,8 @@ import static com.chiralbehaviors.layout.cell.control.SelectionEvent.DOUBLE_SELE
 import static com.chiralbehaviors.layout.cell.control.SelectionEvent.SINGLE_SELECT;
 import static com.chiralbehaviors.layout.cell.control.SelectionEvent.TRIPLE_SELECT;
 
+import com.chiralbehaviors.layout.MeasureResult;
+import com.chiralbehaviors.layout.NumericStats;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
@@ -35,6 +37,8 @@ import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 
 /**
@@ -175,6 +179,74 @@ abstract public class PrimitiveStyle extends NodeStyle {
         public double width(JsonNode row) {
             return primitiveStyle.width(Style.toString(row))
                    + primitiveStyle.getHorizontalInset();
+        }
+
+    }
+
+    public static class PrimitiveBarStyle extends PrimitiveStyle {
+
+        public static final String PRIMITIVE_BAR_CLASS = "primitive-bar";
+
+        private final LabelStyle primitiveStyle;
+
+        public PrimitiveBarStyle(LabelStyle labelStyle, Insets listInsets,
+                                 LabelStyle primitiveStyle) {
+            super(labelStyle, listInsets);
+            this.primitiveStyle = primitiveStyle;
+        }
+
+        @Override
+        public LayoutCell<?> build(FocusTraversal<?> pt, PrimitiveLayout p) {
+            StackPane pane = new StackPane();
+            pane.setMinSize(p.getJustifiedWidth(), p.getCellHeight());
+            pane.setPrefSize(p.getJustifiedWidth(), p.getCellHeight());
+            pane.setMaxSize(p.getJustifiedWidth(), p.getCellHeight());
+
+            Rectangle bar = new Rectangle(0, p.getCellHeight());
+            bar.getStyleClass().add(PRIMITIVE_BAR_CLASS);
+            pane.getChildren().add(bar);
+            // Align the bar to the left inside the StackPane
+            javafx.scene.layout.StackPane.setAlignment(bar, javafx.geometry.Pos.CENTER_LEFT);
+
+            return new PrimitiveLayoutCell<Region>(p, PRIMITIVE_BAR_CLASS, pt) {
+                @Override
+                public StackPane getNode() {
+                    return pane;
+                }
+
+                @Override
+                public boolean isReusable() {
+                    return true;
+                }
+
+                @Override
+                public void updateItem(com.fasterxml.jackson.databind.JsonNode item) {
+                    super.updateItem(item);
+                    if (item == null || item.isNull()) {
+                        bar.setWidth(0);
+                        return;
+                    }
+                    double value = item.asDouble();
+                    double justifiedWidth = p.getJustifiedWidth();
+                    MeasureResult mr = p.getMeasureResult();
+                    NumericStats ns = (mr != null) ? mr.numericStats() : null;
+                    double min = (ns != null) ? ns.numericMin() : 0.0;
+                    double max = (ns != null) ? ns.numericMax() : 0.0;
+                    double range = max - min;
+                    double fraction = (range == 0.0) ? 1.0 : (value - min) / range;
+                    bar.setWidth(fraction * justifiedWidth);
+                }
+            };
+        }
+
+        @Override
+        public double getHeight(double maxWidth, double justified) {
+            return primitiveStyle.getHeight(1);
+        }
+
+        @Override
+        public double width(com.fasterxml.jackson.databind.JsonNode row) {
+            return 0.0;
         }
 
     }

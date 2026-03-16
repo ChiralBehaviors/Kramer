@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -36,6 +37,7 @@ import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.style.Style;
 import com.chiralbehaviors.layout.style.RelationStyle;
 import com.chiralbehaviors.layout.table.ColumnHeader;
+import com.chiralbehaviors.layout.table.CrosstabHeader;
 import com.chiralbehaviors.layout.table.NestedRow;
 import com.chiralbehaviors.layout.table.NestedTable;
 import com.chiralbehaviors.layout.table.TableHeader;
@@ -170,7 +172,8 @@ public final class RelationLayout extends SchemaNodeLayout {
         return result;
     }
 
-    private static final List<String> AUTO_SORT_CANDIDATES = List.of("id", "key", "name");
+    private static final List<String>  AUTO_SORT_CANDIDATES = List.of("id", "key", "name");
+    private static final Logger        LOG                  = Logger.getLogger(RelationLayout.class.getName());
 
     protected int                          averageChildCardinality;
     protected double                       cellHeight       = -1;
@@ -181,8 +184,14 @@ public final class RelationLayout extends SchemaNodeLayout {
     protected int                          maxCardinality;
     protected int                          resolvedCardinality;
     protected final RelationStyle          style;
-    protected double                       tableColumnWidth = 0;
-    protected boolean                      useTable         = false;
+    protected double                       tableColumnWidth  = 0;
+    protected boolean                      useTable          = false;
+    /** True when layoutCrosstab() has been called with non-empty pivot values. */
+    protected boolean                      useCrosstab       = false;
+    /** Pivot column values set by layoutCrosstab(); empty when not in crosstab mode. */
+    protected List<String>                 crosstabPivotValues = List.of();
+    /** Width of each pivot data column in crosstab mode. */
+    protected double                       crosstabColumnWidth = 0.0;
     private MeasureResult                  measureResult;
     /** Comparator derived from sortFields / autoSort; null when no sort is needed. */
     private Comparator<JsonNode>           sortComparator;
@@ -210,7 +219,15 @@ public final class RelationLayout extends SchemaNodeLayout {
     @Override
     public void adjustHeight(double delta) {
         super.adjustHeight(delta);
-        if (useTable) {
+        if (useCrosstab) {
+            // CROSSTAB rows behave like table rows: distribute delta per row
+            if (resolvedCardinality > 0) {
+                double subDelta = delta / resolvedCardinality;
+                if (subDelta >= 1.0) {
+                    cellHeight = Style.snap(cellHeight + subDelta);
+                }
+            }
+        } else if (useTable) {
             double subDelta = delta / resolvedCardinality;
             if (subDelta >= 1.0) {
                 cellHeight = Style.snap(cellHeight + subDelta);
@@ -232,7 +249,8 @@ public final class RelationLayout extends SchemaNodeLayout {
 
     @Override
     protected void distributeExtraHeight(double availableHeight) {
-        if (!useTable || availableHeight <= 0 || height <= 0
+        boolean tableLike = useTable || useCrosstab;
+        if (!tableLike || availableHeight <= 0 || height <= 0
             || availableHeight <= height || resolvedCardinality <= 0) {
             return;
         }
@@ -273,6 +291,9 @@ public final class RelationLayout extends SchemaNodeLayout {
     @Override
     public LayoutCell<?> buildControl(FocusTraversal<?> parentTraversal,
                                       Style model) {
+        if (useCrosstab) {
+            return buildCrosstab(parentTraversal, model);
+        }
         return useTable ? buildNestedTable(parentTraversal, model)
                         : buildOutline(parentTraversal, model);
     }
@@ -312,7 +333,9 @@ public final class RelationLayout extends SchemaNodeLayout {
             return height;
         }
         resolvedCardinality = resolveCardinality(cardinality);
-        if (useTable) {
+        if (useCrosstab) {
+            calculateCrosstabHeight();
+        } else if (useTable) {
             calculateTableHeight();
         } else {
             calculateOutlineHeight();
@@ -489,11 +512,46 @@ public final class RelationLayout extends SchemaNodeLayout {
             columnWidth,
             children.stream()
                 .map(c -> {
-                    if (c instanceof PrimitiveLayout pl) return pl.computeLayout(pl.getJustifiedWidth());
+                    if (c instanceof PrimitiveLayout pl) return pl.snapshotLayoutResult();
                     if (c instanceof RelationLayout rl) return rl.snapshotLayoutResult();
                     return null;
                 })
                 .toList()
+        );
+    }
+
+    /**
+     * Compose a {@link LayoutDecisionNode} tree from the current layout state.
+     * Recursively snapshots all children. No layout side effects.
+     */
+    @Override
+    public LayoutDecisionNode snapshotDecisionTree() {
+        SchemaPath path = getSchemaPath();
+        String field = path != null ? path.leaf() : getField();
+
+        List<ColumnSetSnapshot> colSetSnaps = columnSets.stream()
+            .map(cs -> cs.toSnapshot(cellHeight))
+            .toList();
+
+        CompressResult compressSnap = new CompressResult(
+            justifiedWidth, List.copyOf(columnSets), cellHeight, List.of());
+
+        HeightResult heightSnap = new HeightResult(
+            height, cellHeight, resolvedCardinality, columnHeaderHeight, List.of());
+
+        List<LayoutDecisionNode> childNodes = children.stream()
+            .map(SchemaNodeLayout::snapshotDecisionTree)
+            .toList();
+
+        return new LayoutDecisionNode(
+            path,
+            field,
+            measureResult,
+            snapshotLayoutResult(),
+            compressSnap,
+            heightSnap,
+            colSetSnaps,
+            childNodes
         );
     }
 
@@ -767,6 +825,9 @@ public final class RelationLayout extends SchemaNodeLayout {
     protected void clear() {
         super.clear();
         useTable = false;
+        useCrosstab = false;
+        crosstabPivotValues = List.of();
+        crosstabColumnWidth = 0.0;
         tableColumnWidth = -1.0;
         columnHeaderHeight = -1.0;
     }
@@ -921,5 +982,116 @@ public final class RelationLayout extends SchemaNodeLayout {
 
     public double getJustifiedTableColumnWidth() {
         return snap(justifiedWidth + columnHeaderIndentation);
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Crosstab API                                                        //
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Compute crosstab layout for the given pivot values and available width.
+     *
+     * <p>When {@code pivotValues} is empty the layout degrades to TABLE (or
+     * OUTLINE if table does not fit) and a warning is logged. This prevents
+     * a crash when no data exists for the pivot field.
+     *
+     * <p>The method sets {@link #useCrosstab} and caches the pivot column width
+     * so that {@link #buildControl}, {@link #adjustHeight}, and
+     * {@link #distributeExtraHeight} all branch into the CROSSTAB path.
+     *
+     * @param availableWidth total available width for this relation
+     * @param pivotValues    ordered distinct values of the pivot field
+     * @return total computed width used by the crosstab (row-header + all pivot columns)
+     */
+    public double layoutCrosstab(double availableWidth, List<String> pivotValues) {
+        if (pivotValues == null || pivotValues.isEmpty()) {
+            LOG.warning(() -> "layoutCrosstab called with empty pivotValues for "
+                              + getNode().getField() + "; degrading to TABLE/OUTLINE");
+            useCrosstab = false;
+            crosstabPivotValues = List.of();
+            crosstabColumnWidth = 0.0;
+            // Re-run normal layout to ensure useTable is set appropriately
+            layout(availableWidth);
+            return layoutWidth();
+        }
+
+        useCrosstab = true;
+        crosstabPivotValues = List.copyOf(pivotValues);
+
+        // Row-header width = outline column width for non-pivot children
+        double rowHeaderWidth = Style.snap(columnWidth > 0 ? columnWidth : availableWidth * 0.3);
+
+        // Distribute remaining width equally across pivot columns
+        double remaining = availableWidth - rowHeaderWidth;
+        crosstabColumnWidth = pivotValues.isEmpty() ? 0.0
+                                                     : Style.snap(remaining / pivotValues.size());
+
+        // Overall width = rowHeader + all pivot columns
+        double totalWidth = Style.snap(rowHeaderWidth + crosstabColumnWidth * pivotValues.size());
+
+        // Ensure height state is reset so cellHeight() recalculates
+        height = -1.0;
+        cellHeight = -1.0;
+
+        return totalWidth;
+    }
+
+    /** @return true when this layout is in CROSSTAB rendering mode */
+    public boolean isCrosstab() {
+        return useCrosstab;
+    }
+
+    /**
+     * Build the fixed column-header bar for the crosstab.
+     *
+     * @return a {@link CrosstabHeader} placed outside the VirtualFlow
+     */
+    public CrosstabHeader buildCrosstabHeader() {
+        return new CrosstabHeader(crosstabPivotValues, crosstabColumnWidth,
+                                  columnHeaderHeight > 0 ? columnHeaderHeight
+                                                         : Style.snap(labelStyle.getHeight()),
+                                  style);
+    }
+
+    /**
+     * Build the crosstab control. Falls back to a NestedTable placeholder until
+     * a full VirtualFlow-based crosstab implementation exists.
+     *
+     * <p>The crosstab header is built here via {@link #buildCrosstabHeader()}.
+     */
+    public LayoutCell<?> buildCrosstab(FocusTraversal<?> parentTraversal,
+                                        Style model) {
+        // Build the stationary header
+        buildCrosstabHeader();
+        // For this bead, fall back to NestedTable as the scrollable body.
+        // A full VirtualFlow<CrosstabRow> implementation is a follow-on bead.
+        return buildNestedTable(parentTraversal, model);
+    }
+
+    /**
+     * Calculate height for crosstab mode. Mirrors {@link #calculateTableHeight()}
+     * but uses per-row height based solely on the child row height (pivot cells
+     * are peers of the row header, not nested relations).
+     */
+    protected void calculateCrosstabHeight() {
+        columnHeaderHeight();
+        cellHeight = calculateRowHeight();
+        height = Style.snap((resolvedCardinality * cellHeight) + columnHeaderHeight)
+                 + style.getRowVerticalInset() + style.getTableVerticalInset();
+    }
+
+    /**
+     * Test helper: resets measure-derived state so a second measure+layout
+     * cycle can be run in the same test.
+     */
+    void clearForTest() {
+        clear();
+        children.clear();
+        extractor = null;
+        measureResult = null;
+        averageChildCardinality = 0;
+        maxCardinality = 0;
+        labelWidth = 0;
+        columnWidth = 0;
     }
 }
