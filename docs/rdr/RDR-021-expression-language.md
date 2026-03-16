@@ -84,7 +84,7 @@ Aggregate evaluation: map the argument expression over all rows, reduce by the a
 
 ### Expression Compilation and Caching
 
-Expressions are parsed to AST once per unique string per `SchemaPath`, at first use. Compiled ASTs are cached in `ExpressionEvaluator`. Cache invalidation follows `LayoutStylesheet.getVersion()` — when the stylesheet version increments, expression caches are cleared, consistent with `AutoLayout.decisionCache` invalidation.
+Expressions are parsed to AST once per unique string per `SchemaPath`, at first use. Compiled ASTs are cached in `ExpressionEvaluator`. Cache invalidation follows `LayoutStylesheet.getVersion()` — when the stylesheet version increments, expression caches are cleared, consistent with `AutoLayout.decisionCache` invalidation. `LayoutStylesheet.getVersion()` confirmed present (research-3, verified against LayoutStylesheet.java interface). `DefaultLayoutStylesheet` increments version on `setOverride`/`clearOverrides`.
 
 ### Pipeline Integration
 
@@ -92,7 +92,7 @@ Expressions are parsed to AST once per unique string per `SchemaPath`, at first 
 
 1. Read `filter-expression` for the current `SchemaPath`. Compile (or retrieve from cache). Evaluate per row; exclude rows where result is false or null.
 2. Read `formula-expression` for each child `Primitive` path. Evaluate formulas in topological order over the filtered row set. Materialize results as `ObjectNode` field overrides.
-3. Read `aggregate-expression` for any child `Primitive` marked as aggregate. Evaluate aggregate over post-formula rows; hold result for rendering once the `aggregate-position` property is defined (see Open Question 3). Step C delivers computation, not rendering.
+3. Read `aggregate-expression` for any child `Primitive` marked as aggregate. Presence of aggregate-expression on a SchemaPath is sufficient to mark that Primitive as aggregate-mode. No separate marker property needed. Evaluate aggregate over post-formula rows; hold result for rendering once the `aggregate-position` property is defined (see Open Question 3). Step C delivers computation, not rendering.
 4. Read `sort-expression` per row (if present) to derive sort keys. Apply sort.
 
 `ExpressionEvaluator` is injected via the `Style` factory, which already receives `LayoutStylesheet`. It is stateless per expression; all state is in the cached AST and the per-row `JsonNode` context.
@@ -124,7 +124,7 @@ No implementation cost, but filter predicates, formula columns, and aggregates a
 
 **Risk**: expressions are evaluated per-row during `RelationLayout.measure()`, which is invoked on JavaFX layout passes.
 
-**Mitigations**: AST compilation is cached per expression string (parsing happens once). Per-row evaluation is O(1) allocation — no new collections per row, no re-parsing. The dominant cost is the existing sort (O(k log k)); expression evaluation adds a constant factor per row. `MeasureResult` caching in `RelationLayout` absorbs repeated measure calls at the same width; expression evaluation is embedded in `MeasureResult` and is not re-executed at the same width. Datasets exceeding ~10,000 rows will be perceptibly slow on client-side evaluation; this is a known Phase 2 limitation. Very large datasets are a Phase 3 (server-side push) concern.
+**Mitigations**: AST compilation is cached per expression string (parsing happens once). Per-row evaluation is O(1) per expression evaluation; row-level allocation cost depends on formula overlay strategy (see Open Question 2). If deepCopy per row is required, cost is O(rows × formulas). The dominant cost is the existing sort (O(k log k)); expression evaluation adds a constant factor per row. `MeasureResult` caching in `RelationLayout` absorbs repeated measure calls at the same width; expression evaluation is embedded in `MeasureResult` and is not re-executed at the same width. Datasets exceeding ~10,000 rows will be perceptibly slow on client-side evaluation; this is a known Phase 2 limitation. Very large datasets are a Phase 3 (server-side push) concern.
 
 ### Circular Formula References
 
@@ -146,9 +146,11 @@ No implementation cost, but filter predicates, formula columns, and aggregates a
 
 ### Cross-Cutting Behavioral Notes
 
-**`hideIfEmpty` and `filter-expression` ordering**: `filter-expression` runs after `hideIfEmpty`. A filter that excludes all rows does NOT trigger `hideIfEmpty` re-evaluation. This is expected behavior: `hideIfEmpty` reflects the pre-filter presence of data; `filter-expression` is a view-level exclusion applied on top.
+**`hideIfEmpty` and `filter-expression` ordering**: `filter-expression` runs after `hideIfEmpty`. A filter that excludes all rows does NOT trigger `hideIfEmpty` re-evaluation. This is expected behavior: `hideIfEmpty` reflects the pre-filter presence of data; `filter-expression` is a view-level exclusion applied on top. `hideIfEmpty` is evaluated inside `RelationLayout.measure()` at line ~701, before the filter-expression insertion point at line ~720. The ordering is intra-measure, not pre-measure.
 
 **RDR-016 compatibility**: Any `MeasureResult` schema changes introduced by RDR-016 (layout stability / incremental update) must be reviewed for compatibility with expression result embedding. Expression evaluation results (filtered row sets, formula overlays, aggregate values) are stored alongside `MeasureResult`; a structural change to that record requires a coordinated update here.
+
+**Data-change invalidation**: RDR-023 (Reactive Layout Invalidation, implemented) clears `frozenResult` on data change via `DataSnapshot` comparison. Expression results cached in `MeasureResult` are invalidated through the same path — when data changes, `frozenResult` is cleared, `measure()` re-runs, and expressions re-evaluate against fresh data.
 
 ### Open Questions (Deferred to Implementation)
 
@@ -215,4 +217,4 @@ Before closing this RDR as implemented:
 - [ ] Aggregate expressions (`aggregate-expression`) produce summary values across all rows in the current group.
 - [ ] No external runtime dependencies are added (no ANTLR, MVEL, SpEL, JEXL, GraalVM, Nashorn).
 - [ ] Expression parse errors produce a `ParseException` with a char offset and human-readable message; malformed expressions are treated as absent (pipeline stage skipped) without crashing layout.
-- [ ] All existing tests pass with Phase 3 wiring in place.
+- [ ] All existing tests pass with Step C wiring in place.
