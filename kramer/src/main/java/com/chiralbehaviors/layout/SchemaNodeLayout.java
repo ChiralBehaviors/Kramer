@@ -252,6 +252,15 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
      */
     public abstract LayoutDecisionNode snapshotDecisionTree();
 
+    /**
+     * Snapshot the layout result from the current in-memory state without
+     * triggering any layout side effects (no {@code clear()} calls).
+     * Must be called after {@code layout()} has run.
+     *
+     * @return a point-in-time immutable snapshot of the layout result
+     */
+    public abstract LayoutResult snapshotLayoutResult();
+
     public SchemaPath getSchemaPath() {
         return schemaPath;
     }

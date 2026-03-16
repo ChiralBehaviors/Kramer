@@ -17,6 +17,10 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 /**
  * TDD tests for AutoLayout.getLayoutDecisionTree() (Kramer-73j).
+ *
+ * Tests guard logic directly (AutoLayout requires JavaFX toolkit for full integration test).
+ * The helper method {@link #getLayoutDecisionTree} mirrors AutoLayout's guard logic so that
+ * the null / unconverged / converged state transitions can be exercised without a live scene.
  */
 class AutoLayoutDecisionTreeTest {
 

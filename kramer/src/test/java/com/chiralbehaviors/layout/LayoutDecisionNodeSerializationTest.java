@@ -20,7 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 class LayoutDecisionNodeSerializationTest {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
 
     // -----------------------------------------------------------------------
     // Helpers

@@ -23,3 +23,8 @@
     -fx-background-insets: -0.2, 1, -1.4, 3;
     -fx-background-radius: 3, 2, 4, 0;
 }
+
+.crosstab-header { /* inherits from .kramer-container */ }
+.crosstab-header-label { -fx-font-weight: bold; }
+.crosstab-row { /* inherits from .kramer-container */ }
+.crosstab-cell { /* inherits from .kramer-container */ }
