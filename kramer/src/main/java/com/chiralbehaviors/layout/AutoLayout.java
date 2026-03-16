@@ -256,6 +256,16 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         return null;
     }
 
+    /**
+     * Returns the outermost VirtualFlow in the current control tree, if any.
+     * Useful for programmatic navigation via {@link FocusController#navigateTo}.
+     *
+     * @return the first VirtualFlow found by depth-first search, or empty
+     */
+    public Optional<VirtualFlow<?>> getOutermostVirtualFlow() {
+        return control == null ? Optional.empty() : findVirtualFlow(control.getNode());
+    }
+
     private Optional<VirtualFlow<?>> findVirtualFlow(javafx.scene.Node node) {
         if (node instanceof VirtualFlow<?> vf) {
             return Optional.of(vf);

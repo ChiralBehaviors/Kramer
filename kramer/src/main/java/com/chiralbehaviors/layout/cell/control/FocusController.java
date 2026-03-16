@@ -386,6 +386,18 @@ public class FocusController<C extends LayoutCell<?>>
     }
 
     /**
+     * Navigate to the cell at the given index in the VirtualFlow, updating
+     * both the selection model and the cursor state. Public entry point for
+     * programmatic navigation.
+     *
+     * @param vf    the VirtualFlow to navigate within
+     * @param index the zero-based cell index to select
+     */
+    public void navigateTo(VirtualFlow<?> vf, int index) {
+        selectCellAt(vf, index);
+    }
+
+    /**
      * Select a cell at the given index in the VirtualFlow, updating both
      * the selection model and the cursor state.
      */

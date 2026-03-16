@@ -198,7 +198,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         measureResult = new MeasureResult(
             labelWidth, columnWidth, dataWidth, maxWidth,
             averageCardinality, isVariableLength,
-            0, 0, null, List.of()
+            0, 0, null, List.of(), null
         );
 
         return columnWidth;
