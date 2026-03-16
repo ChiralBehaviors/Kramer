@@ -659,9 +659,19 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
                     return;
                 }
 
-                // Bucket changed — need re-layout for affected subtree
-                // Phase 3c will optimize to partial re-layout; for now: full re-layout
-                Platform.runLater(() -> autoLayout(datum, getWidth()));
+                // Phase 3c: check whether the bucket change actually flips a TABLE/OUTLINE decision.
+                // This is O(changed_paths) — no solver re-run needed.
+                if (detectModeFlip(bucketChangedPaths)) {
+                    // Mode assignment changed — full re-layout required
+                    autoLayout(datum, getWidth());
+                } else {
+                    // Width shifted but mode unchanged — rebind only
+                    if (control != null) {
+                        control.updateItem(datum);
+                    }
+                }
+                updateSnapshots(datum);
+                return;
             } else if (control == null) {
                 Platform.runLater(() -> autoLayout(datum, getWidth()));
             } else {
@@ -708,6 +718,17 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         Map<SchemaPath, Double> newP90 = new HashMap<>(p90Snapshot);
         clearFrozenResultInTree(layout, paths, newP90, data.get(), model);
         p90Snapshot = Map.copyOf(newP90);
+    }
+
+    /**
+     * Updates {@link #dataSnapshot} from the current layout tree and datum.
+     * Called after the Phase 3c fast-path (rebind without full re-layout) to
+     * keep the snapshot current for the next {@link #setContent()} comparison.
+     */
+    private void updateSnapshots(JsonNode datum) {
+        if (layout != null && datum != null) {
+            dataSnapshot = DataSnapshot.buildSnapshot(layout, datum);
+        }
     }
 
     /**
@@ -802,6 +823,92 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     private Set<SchemaPath> remeasureChanged(Set<SchemaPath> changedPaths,
                                               JsonNode datum) {
         return remeasureChangedImpl(changedPaths, layout, datum, model, p90Snapshot);
+    }
+
+    /**
+     * Phase 3c: Lightweight mode-flip detection.
+     *
+     * <p>After {@link #remeasureChanged} identifies bucket-changed paths, this
+     * method checks whether any affected {@link RelationLayout} ancestor would
+     * actually flip its TABLE/OUTLINE decision.  Uses a direct threshold
+     * comparison — {@code calculateTableColumnWidth() + nestedHorizontalInset <= availableWidth}
+     * — against each RelationLayout ancestor of the changed paths, without
+     * running the full constraint solver.
+     *
+     * @param bucketChangedPaths paths whose p90 bucket changed after re-measure
+     * @return {@code true} if any ancestor RelationLayout would change its
+     *         TABLE/OUTLINE mode, requiring a full re-layout; {@code false} if
+     *         the mode is stable and a rebind suffices
+     */
+    private boolean detectModeFlip(Set<SchemaPath> bucketChangedPaths) {
+        if (layout == null || decisionCache.isEmpty()) return true;
+        return detectModeFlipInTree(bucketChangedPaths, layout, getWidth());
+    }
+
+    /**
+     * Recursively walks the layout tree rooted at {@code node}, checking each
+     * {@link RelationLayout} that is a strict ancestor of any path in
+     * {@code changedPaths}. For each such relation, recomputes
+     * {@code calculateTableColumnWidth()} and compares the threshold
+     * {@code newTableWidth + nestedInset <= availableWidth} against the current
+     * {@link RelationLayout#isUseTable()} state. Returns {@code true} on the
+     * first detected flip.
+     *
+     * @param changedPaths  paths whose p90 bucket changed
+     * @param node          current layout node being evaluated
+     * @param availableWidth width available to {@code node} from its parent
+     * @return {@code true} if a mode flip is detected anywhere in the subtree
+     */
+    private static boolean detectModeFlipInTree(Set<SchemaPath> changedPaths,
+                                                 SchemaNodeLayout node,
+                                                 double availableWidth) {
+        if (!(node instanceof RelationLayout rl)) return false;
+
+        SchemaPath rlPath = rl.getSchemaPath();
+        if (rlPath != null && isAncestorOfAny(rlPath, changedPaths)) {
+            boolean currentUseTable = rl.isUseTable();
+            double newTableWidth    = rl.calculateTableColumnWidth();
+            double nestedInset      = rl.getStyle().getNestedHorizontalInset();
+            boolean wouldUseTable   = newTableWidth + nestedInset <= availableWidth;
+            if (currentUseTable != wouldUseTable) {
+                return true;
+            }
+        }
+
+        // Recurse into child RelationLayouts.
+        // In OUTLINE mode the child's available width = (parentWidth - labelWidth)
+        // - outlineCellHorizontalInset. In TABLE mode the top-level layout pass
+        // already committed the tree; we use a conservative full-width estimate
+        // for children to avoid false negatives.
+        double lw = rl.getLabelWidth();
+        double childWidth = rl.isUseTable()
+                ? availableWidth
+                : availableWidth - lw - rl.getStyle().getOutlineCellHorizontalInset();
+
+        for (SchemaNodeLayout child : rl.getChildren()) {
+            if (detectModeFlipInTree(changedPaths, child, childWidth)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns {@code true} when {@code candidate} is a strict ancestor of at
+     * least one path in {@code paths}: i.e., {@code candidate} is a proper
+     * prefix of that path (has fewer segments and the segments match).
+     */
+    private static boolean isAncestorOfAny(SchemaPath candidate,
+                                            Set<SchemaPath> paths) {
+        List<String> candSegs = candidate.segments();
+        for (SchemaPath p : paths) {
+            List<String> segs = p.segments();
+            if (segs.size() > candSegs.size()
+                    && segs.subList(0, candSegs.size()).equals(candSegs)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -926,6 +1033,24 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
                                                     Style model,
                                                     Map<SchemaPath, Double> p90Snapshot) {
         return remeasureChangedImpl(changedPaths, rootLayout, datum, model, p90Snapshot);
+    }
+
+    /**
+     * Test-visible entry-point for {@link #detectModeFlipInTree}.
+     * Allows headless unit tests to exercise the mode-flip detection logic
+     * without a live {@link AutoLayout} instance.
+     *
+     * @param bucketChangedPaths paths whose p90 bucket changed after re-measure
+     * @param rootLayout         the root of the layout tree (may be null)
+     * @param availableWidth     the width available to the root node
+     * @return {@code true} if any ancestor RelationLayout would change its
+     *         TABLE/OUTLINE mode; {@code true} when {@code rootLayout} is null
+     */
+    static boolean detectModeFlipForTest(Set<SchemaPath> bucketChangedPaths,
+                                          SchemaNodeLayout rootLayout,
+                                          double availableWidth) {
+        if (rootLayout == null) return true;
+        return detectModeFlipInTree(bucketChangedPaths, rootLayout, availableWidth);
     }
 
     /**
