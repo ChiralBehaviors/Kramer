@@ -2,10 +2,12 @@
 
 ## Metadata
 - **Type**: Architecture
-- **Status**: accepted
+- **Status**: closed
 - **Priority**: P2
 - **Created**: 2026-03-15
 - **Accepted**: 2026-03-16
+- **Closed**: 2026-03-16
+- **Close-reason**: implemented (Phase 1 code + Phase 2 expression language spec + Phase 3 → RDR-020)
 - **Reviewed-by**: self
 - **Related**: RDR-009 (LayoutStylesheet), RDR-014 (hideIfEmpty, sort), RDR-015 (renderMode), RDR-019 (Tufte Sparkline Rendering), SIEUFERD (SIGMOD 2016 Table 2)
 
