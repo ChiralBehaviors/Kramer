@@ -37,21 +37,9 @@ RDR-015 identified sparkline as a rendering mode but correctly deferred it becau
 
 ### Proposed Extension
 
-Add a `valueType` classification to `Primitive`:
+Array-vs-scalar detection is handled entirely in `PrimitiveLayout.measure()` renderMode logic, consistent with BAR/BADGE. No schema-layer change needed.
 
-```java
-public enum PrimitiveValueType {
-    SCALAR,         // current behavior — single JSON value
-    NUMERIC_SERIES  // ordered sequence of numbers (sparkline-compatible)
-}
-```
-
-On `Primitive`:
-```java
-private PrimitiveValueType valueType = PrimitiveValueType.SCALAR;
-```
-
-Detection: When a `JsonNode` datum is an `ArrayNode` AND all elements are numeric (`isNumber()`), the Primitive qualifies as `NUMERIC_SERIES`. This can be auto-detected during `PrimitiveLayout.measure()` or set explicitly via `LayoutStylesheet`.
+Detection: When a `JsonNode` datum is an `ArrayNode` AND `allElementsNumeric(datum)` is true (consistent with BAR detection), the layout qualifies for SPARKLINE rendering mode. This can be auto-detected during `PrimitiveLayout.measure()` or set explicitly via `LayoutStylesheet`.
 
 ---
 
@@ -67,12 +55,15 @@ record SparklineStats(
     double seriesMax,        // global maximum across all rows
     int maxSeriesLength,     // longest series (determines data point count)
     double q1,               // 25th percentile (for Tufte band)
-    double q3,               // 75th percentile (for Tufte band)
-    double lastValue         // most recent value (for end marker)
+    double q3                // 75th percentile (for Tufte band)
+    // lastValue is NOT here — it is per-row and computed per-cell in updateItem()
+    // via values[values.length - 1]. SparklineStats holds only global aggregates.
 ) {}
 ```
 
 Nullable on `MeasureResult` — only populated when `renderMode == SPARKLINE`. This follows the nullable sub-record pattern established by RDR-013 (`ContentWidthStats`) and adopted by RDR-015 (`NumericStats`, `PivotStats`).
+
+`q1` and `q3` are computed across all series values flattened across all rows (not per-series medians). This is simpler and more Tufte-correct — the band shows where individual data points fall globally.
 
 ### Sparkline Cell Implementation
 
@@ -120,7 +111,7 @@ Per Tufte: sparkline height = one line of text height. This matches the existing
 
 ### Width: Full Justified Width
 
-Sparklines use the full `justifiedWidth` allocated to the column. More width = more horizontal resolution = better shape representation. No special width computation needed — the existing `compress()` and `justify()` pipeline provides the width.
+`PrimitiveSparklineStyle.width()` returns `0.0` (following `PrimitiveBarStyle` precedent). The sparkline fills `justifiedWidth` from the compress/justify pipeline. A `sparkline-min-width` stylesheet property (default: `5 * cellHeight`) ensures readable aspect ratio — columns narrower than this minimum are padded to that width before sparkline rendering.
 
 ---
 
@@ -128,19 +119,20 @@ Sparklines use the full `justifiedWidth` allocated to the column. More width = m
 
 ### Phase 1: Schema Detection & MeasureResult (LOW-MEDIUM effort)
 
-1. Add `PrimitiveValueType` enum and field to `Primitive`
-2. In `PrimitiveLayout.measure()`, detect NUMERIC_SERIES: `datum.isArray() && allElementsNumeric(datum)`
-3. When NUMERIC_SERIES detected, accumulate `SparklineStats` (min, max, quartiles, series length) across all rows in the measurement sample
+1. In `PrimitiveLayout.measure()`, detect NUMERIC_SERIES: `datum.isArray() && allElementsNumeric(datum)` (no schema-layer change; detection is in the layout layer consistent with BAR/BADGE)
+2. Add `case SPARKLINE` to the `renderModeOverride` switch in `PrimitiveLayout.measure()` so explicit stylesheet opt-in is handled
+3. When NUMERIC_SERIES detected, accumulate `SparklineStats` (min, max, quartiles, series length) across all rows in the measurement sample; percentiles computed across all values flattened (not per-series medians)
 4. Add `SparklineStats` as nullable sub-record on `MeasureResult`
 5. Add `"render-mode": "sparkline"` as LayoutStylesheet property (explicit opt-in or auto-detected)
 
 ### Phase 2: Sparkline Cell Rendering (MEDIUM effort)
 
-1. Create `PrimitiveSparklineStyle` extending `PrimitiveStyle`
-2. Implement `build()` with `Polyline` + optional `Rectangle` band + optional `Circle` markers
-3. Wire through `Style` factory: when `renderMode == SPARKLINE`, create `PrimitiveSparklineStyle`
-4. CSS: `sparkline.css` co-located stylesheet for stroke color, band color, marker color
-5. Downsampling: when series length exceeds horizontal pixel count, reduce to one point per pixel
+1. Create `PrimitiveSparklineStyle` extending `PrimitiveStyle`; `width()` returns `0.0` (matches `PrimitiveBarStyle`)
+2. Implement `build()` with `Polyline` + optional `Rectangle` band + optional `Circle` markers; `lastValue` read from `values[values.length - 1]` in `updateItem()`, not from `SparklineStats`
+3. Wire through `Style` factory: when `renderMode == SPARKLINE`, create `PrimitiveSparklineStyle`. **SPARKLINE must preempt the `averageCardinality > 1` guard in `buildControl()`. Check `renderMode == SPARKLINE` BEFORE the cardinality check. Alternatively, set `averageCardinality = 1` when NUMERIC_SERIES is detected during `measure()` (the array IS the value, not multiple values).**
+4. Add `cachedSparklineStyle = null` to `PrimitiveLayout.clear()` alongside `cachedBarStyle` and `cachedBadgeStyle`
+5. CSS: `sparkline.css` co-located stylesheet for stroke color, band color, marker color
+6. Downsampling: when series length exceeds horizontal pixel count, reduce to one point per pixel
 
 ### Phase 3: LayoutStylesheet Properties (LOW effort, after RDR-018 Phase 1)
 
@@ -157,7 +149,7 @@ Sparklines use the full `justifiedWidth` allocated to the column. More width = m
 
 ## Interaction with Existing Architecture
 
-**Sealed hierarchy**: No change needed. `Primitive` is `final`, not sealed — adding `PrimitiveValueType` is a field addition. `PrimitiveLayout` is one of two permitted `SchemaNodeLayout` subtypes — sparkline rendering is a dispatch within `PrimitiveLayout.buildControl()`, not a new layout type.
+**Sealed hierarchy**: No change needed. `Primitive` is `final`, not sealed — no schema-layer field added. `PrimitiveLayout` is one of two permitted `SchemaNodeLayout` subtypes — sparkline rendering is a dispatch within `PrimitiveLayout.buildControl()`, not a new layout type.
 
 **VirtualFlow**: Sparkline cells are the same height as text cells (word-sized). No impact on `SizeTracker` uniform-length assumption.
 
@@ -240,7 +232,7 @@ Partially. The core scenario — numeric time-series fields displayed as text ar
 
 ### 2. Is the solution the simplest that could work?
 
-Yes. The implementation uses three JavaFX shape primitives (`Polyline`, `Rectangle`, `Circle`) that are already in the JDK. No new dependencies. The schema extension is a single nullable enum field on `Primitive` with a straightforward detection predicate (`datum.isArray() && allElementsNumeric(datum)`). The critical research finding (019-research-3, RF-2) confirms the branching point already exists in `PrimitiveLayout.measure()` at the `isArray()` branch — this is an extension of an existing dispatch, not a new one. `SparklineStats` is a 4th nullable sub-record on `MeasureResult`, following the identical pattern of `ContentWidthStats` (RDR-013).
+Yes. The implementation uses three JavaFX shape primitives (`Polyline`, `Rectangle`, `Circle`) that are already in the JDK. No new dependencies. No schema-layer change is needed — array-vs-scalar detection is handled entirely in `PrimitiveLayout.measure()` with the predicate `datum.isArray() && allElementsNumeric(datum)`, consistent with BAR/BADGE. The critical research finding (019-research-3, RF-2) confirms the branching point already exists in `PrimitiveLayout.measure()` at the `isArray()` branch — this is an extension of an existing dispatch, not a new one. `SparklineStats` is a 4th nullable sub-record on `MeasureResult`, following the identical pattern of `ContentWidthStats` (RDR-013).
 
 ### 3. Are all assumptions verified or explicitly acknowledged?
 
@@ -248,16 +240,17 @@ Verified via post-Wave2 research (019-research-1 through 019-research-7):
 
 - **`PrimitiveRenderMode.SPARKLINE` is a non-breaking enum extension** — confirmed via research. Adding to a `switch` without a sparkline arm leaves existing behavior unchanged.
 - **`PrimitiveSparklineStyle` follows `PrimitiveBarStyle` inner class pattern** — confirmed. The subclass pattern is established and the extension point is `buildControl()` + cached style, not `computePrimitiveStyle()`.
-- **Numeric detection must bifurcate**: `datum.isArray() && datum.get(0).isNumber()` → SPARKLINE; scalar → BAR. This bifurcation is critical and confirmed as a correctness requirement in research.
+- **Numeric detection must bifurcate**: `datum.isArray() && allElementsNumeric(datum)` → SPARKLINE; scalar → BAR. This bifurcation is critical and confirmed as a correctness requirement in research. `allElementsNumeric` is consistent with BAR detection semantics.
 - **`SparklineStats` is the 4th nullable sub-record** (after `ContentWidthStats`, `NumericStats`, `PivotStats`) — position confirmed.
 - **`build()` signature is `(FocusTraversal<?>, PrimitiveLayout)`; data arrives via `updateItem()`** — confirmed. Sparkline rendering logic must live in `updateItem()`, not `build()`.
-- **`cachedSparklineStyle` must be null-reset in `clear()`** — confirmed as required to prevent stale cached style on cell recycle.
+- **`cachedSparklineStyle` must be null-reset in `clear()`** — confirmed as required to prevent stale cached style on cell recycle. Added to Phase 2 implementation steps.
+- **`SPARKLINE` must preempt `averageCardinality > 1` guard in `buildControl()`** — the array IS the value, not multiple values. Check `renderMode == SPARKLINE` before the cardinality guard. Added to Phase 2 implementation steps.
 
 Unverified assumption: that `Polyline` performance is adequate for series >500 points within VirtualFlow recycle timing. The downsampling mitigation (one point per horizontal pixel) is documented in the Risks table and is standard practice, but has not been benchmarked in this codebase.
 
 ### 4. What is the rollback strategy if this fails?
 
-The feature is strictly opt-in. `PrimitiveRenderMode.SPARKLINE` is only activated when either (a) the `LayoutStylesheet` explicitly sets `render-mode: sparkline` for a path, or (b) auto-detection is enabled and a field qualifies. No existing code path is altered; the `isArray()` branch gains a new sub-branch but the existing `PrimitiveList` path remains reachable. Rollback is: remove the `SPARKLINE` arm from the render mode switch, delete `PrimitiveSparklineStyle` and `SparklineStats`, drop the nullable field from `MeasureResult`. Because `SparklineStats` is nullable and `PrimitiveRenderMode.SPARKLINE` is an additive enum value, removing them requires only targeted deletions with no ripple through existing callers. The feature is isolatable.
+The feature is strictly opt-in. `PrimitiveRenderMode.SPARKLINE` is only activated when either (a) the `LayoutStylesheet` explicitly sets `render-mode: sparkline` for a path, or (b) auto-detection is enabled and a field qualifies. No existing code path is altered; the `isArray()` branch gains a new sub-branch but the existing `PrimitiveList` path remains reachable. Rollback is: remove the `SPARKLINE` arm from the render mode switch, delete `PrimitiveSparklineStyle` and `SparklineStats`, drop the nullable field from `MeasureResult`. Because `SparklineStats` is nullable and `PrimitiveRenderMode.SPARKLINE` is an additive enum value, removing them requires only targeted deletions with no ripple through existing callers. The feature is isolatable. No `PrimitiveValueType` schema-layer enum was introduced, so there is no schema migration to roll back.
 
 ### 5. Are there cross-cutting concerns with other RDRs?
 
@@ -318,6 +311,6 @@ For RDR-011's HTML renderer, sparklines map to SVG `<polyline>` (line), `<rect>`
 
 ## Recommendation
 
-Phase 1 (schema detection + MeasureResult) is the prerequisite. Phase 2 (rendering) delivers the visual feature. Phases 3-4 are integration with the broader roadmap. Total effort: MEDIUM across all phases. The schema-layer extension (`PrimitiveValueType`) is the key design decision — once that exists, the rendering is straightforward JavaFX shape work.
+Phase 1 (detection in `PrimitiveLayout.measure()` + MeasureResult) is the prerequisite. Phase 2 (rendering) delivers the visual feature. Phases 3-4 are integration with the broader roadmap. Total effort: MEDIUM across all phases. The layout-layer detection (no schema change) is simpler than the previously considered `PrimitiveValueType` enum approach — once NUMERIC_SERIES detection is wired in `measure()`, the rendering is straightforward JavaFX shape work.
 
 This is the highest data-density visualization mode Kramer can offer. Tufte sparklines in nested table cells, with adaptive layout deciding column widths from statistical content measurement (RDR-013), is a combination no other layout system provides.

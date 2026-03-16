@@ -31,7 +31,7 @@ public interface LayoutStylesheet {
 
 This interface is generic enough to carry ANY per-path properties. The infrastructure exists — it just isn't populated with query-semantic properties.
 
-**Interface extension required**: The `LayoutStylesheet` interface defined in RDR-009 declares `getDouble`, `getInt`, and `getString` methods but not `getBoolean`. Multiple RDRs require boolean properties (`hide-if-empty`, `visible`, `sparkline-band-visible`, etc.). Phase 1 must add `boolean getBoolean(SchemaPath path, String property, boolean defaultValue)` to the `LayoutStylesheet` interface. This is a one-line addition to the interface and `DefaultLayoutStylesheet`.
+**getBoolean confirmed present**: `getBoolean` is confirmed present (Wave2). No interface change required.
 
 ---
 
@@ -120,12 +120,14 @@ Properties that transform data before layout:
 
 ```
 extractFrom(datum)
-  -> sort (Phase 1 display property)
   -> filter (Phase 2 data property)
   -> compute formulas (Phase 2 data property)
   -> aggregate (Phase 2 data property)
+  -> sort (Phase 1 display property)
   -> measure children
 ```
+
+> **Note**: Filter reduces the working set before formulas are evaluated; sort is final ordering applied after all data transformations are complete. This follows standard relational semantics (WHERE → computed columns → GROUP BY/aggregation → ORDER BY).
 
 **Important limitation**: All data manipulation in Phase 2 is client-side. The full dataset is fetched from the server before filtering, sorting, or aggregating. For large datasets (>1000 rows), this provides display convenience but not query optimization. Phase 3 addresses this by pushing operations to the server.
 
@@ -181,17 +183,7 @@ The gap from Kramer's current architecture to SIEUFERD's full query model is sma
 
 ## Interaction Model (Future, Post-Phase 3)
 
-With query-semantic properties on LayoutStylesheet, direct manipulation becomes possible:
-- **Right-click column header** -> sort ascending/descending (sets `sort-fields`)
-- **Right-click column header** -> filter (sets `filter`)
-- **Right-click column header** -> hide (sets `visible = false`)
-- **Drag column border** -> resize (sets explicit width override)
-- **Right-click relation** -> toggle hide-if-empty
-- **Right-click numeric field** -> show as bar chart (sets `render-mode = bar`)
-
-Each interaction modifies the `LayoutStylesheet`, triggering re-layout. If kramer-ql is active, the stylesheet change also modifies the GraphQL query (Phase 3), creating the SIEUFERD feedback loop.
-
-**Note**: These interaction examples (right-click menus, drag gestures) depend on an interaction framework that does not currently exist in Kramer. Building this framework is a separate effort, likely post-Phase 3.
+End-state: user gestures (column header clicks, context menus, drag-to-resize) modify `LayoutStylesheet` properties, which trigger re-layout. When kramer-ql is active (Phase 3), stylesheet changes also rewrite and re-execute the GraphQL query, closing the SIEUFERD feedback loop. This interaction framework does not currently exist in Kramer and is a separate effort from the property-wiring work in Phases 1 and 2.
 
 ---
 
@@ -201,6 +193,7 @@ Each interaction modifies the `LayoutStylesheet`, triggering re-layout. If krame
 1. Define property key constants for display properties
 2. Wire `visible` through existing LayoutStylesheet
 3. Ensure RDR-014 and RDR-015 properties route through LayoutStylesheet
+4. Extend `AutoLayout.decisionCache` to key on stylesheet version (via `LayoutStylesheet.getVersion()`). Properties like `visible` that affect layout require this to take effect. Without cache invalidation keyed on stylesheet version, property changes will silently produce stale layouts.
 
 **Phase 2** (HIGH effort, after expression language sub-specification):
 1. Complete expression language sub-specification (see requirements above)
@@ -305,6 +298,12 @@ SIEUFERD's formula scoping (aggregate by position in hierarchy) maps directly to
 ### RF-4: 7-Layer Architecture Is Analytical, Not Committed (Confidence: MEDIUM)
 The 7-layer architecture identified in earlier synthesis (Data Source -> Query Model -> Schema Tree -> Measure -> Layout Decisions -> Rendering -> Interaction) is a useful analytical framework for understanding where properties fit. It is not a committed architectural design or implementation plan.
 
+### RF-5: LayoutStylesheet Fully Wired; Cache Invalidation Gap (Confidence: HIGH)
+Wave2 research confirms `LayoutStylesheet` is wired end-to-end and `getBoolean` is present on the interface. However, `AutoLayout.decisionCache` does not key on stylesheet version. Stylesheet property changes (e.g., toggling `visible`) will not take effect until the cache is invalidated. There is no `getVersion()` method on `LayoutStylesheet` and no invalidation hook — this must be added as part of Phase 1.
+
+### RF-6: hide-if-empty, sort-fields on Relation; visible Absent; No LayoutPropertyKeys (Confidence: HIGH)
+Wave2 research confirms that `hide-if-empty` and `sort-fields` are currently read directly from `Relation` object fields, not from `LayoutStylesheet`. The `visible` property does not exist in the codebase. The `LayoutPropertyKeys` constant class does not exist. Phase 1 must add all three.
+
 ---
 
 ## Risks
@@ -329,6 +328,7 @@ The 7-layer architecture identified in earlier synthesis (Data Source -> Query M
 5. Formula fields compute correct aggregates with hierarchical scoping (Phase 2)
 6. (Phase 3, separate RDR) GraphQlUtil redesigned to retain AST; stylesheet changes trigger query re-execution
 7. All existing tests pass at each phase
+8. (Phase 1) Tests confirm `visible=false` excludes a field from layout output. Tests confirm that `hide-if-empty` and `sort-fields` delivered via stylesheet produce identical behavior to direct reads from `Relation` object fields. Stylesheet version change triggers cache invalidation and re-layout.
 
 ---
 
@@ -336,7 +336,7 @@ The 7-layer architecture identified in earlier synthesis (Data Source -> Query M
 
 ### 1. Has the problem been validated with real user scenarios?
 
-Partially. The core thesis — that Kramer needs per-path display properties addressable at runtime — is validated by the concrete requirements in RDR-014 (hide-if-empty, sort-fields) and RDR-015 (render-mode). Both features are stalled because there is no agreed property delivery mechanism; routing them through `LayoutStylesheet` is the unblocking step. However, Phase 2 (client-side data manipulation) and Phase 3 (query rewriting) have not been validated against real user workflows. The interaction model described in this RDR is speculative — no user has operated a prototype. Phase 1 is justified by existing blocked work; Phases 2 and 3 should be gated on user validation before investment.
+Partially. The core thesis — that Kramer needs per-path display properties addressable at runtime — is validated by the concrete requirements in RDR-014 (hide-if-empty, sort-fields) and RDR-015 (render-mode). Both features are stalled because there is no agreed property delivery mechanism; routing them through `LayoutStylesheet` is the unblocking step. The blocked RDR-014/015 work represents implementor-identified requirements grounded in SIEUFERD paper analysis. However, Phase 2 (client-side data manipulation) and Phase 3 (query rewriting) have not been validated against real user workflows. The interaction model described in this RDR is speculative — no user has operated a prototype. Phase 1 is justified by existing blocked work; Phases 2 and 3 should be gated on user validation before investment.
 
 ### 2. Is the solution the simplest that could work?
 
@@ -358,6 +358,7 @@ The following assumptions remain unverified and are explicitly acknowledged:
 - `hide-if-empty` and `sort-fields` are still on the `Relation` object rather than routed through `LayoutStylesheet`. Phase 1 assumes these can be migrated without breaking existing consumers. Migration path not validated.
 - The `visible` property does not yet exist anywhere in the codebase. Phase 1 assumes it can be added as a pure stylesheet property with no schema-object changes. This is likely true but unconfirmed against the layout pipeline.
 - The layout decision cache does not incorporate stylesheet version. Any Phase 1 property that influences cached layout decisions (e.g., `visible`) will silently return stale results until the cache invalidation strategy is extended to key on stylesheet identity. This is an unresolved correctness risk for Phase 1.
+- `DefaultLayoutStylesheet.primitiveStyle` and `relationStyle` use the leaf field name only when resolving a `SchemaPath`. Phase 1 per-path overrides are correct only when field names are unique across the schema. Migration to full-path lookup is not defined and would require a change to `DefaultLayoutStylesheet`'s resolution strategy.
 - Phase 2 expression language is entirely unspecified. All Phase 2 design is provisional.
 - Phase 3 assumes graphql-java's AST is retainable and that AST nodes can be mapped bidirectionally to `SchemaPath` values. This has not been prototyped.
 
@@ -380,6 +381,7 @@ Yes, several:
 - **RDR-015 (renderMode)**: Same concern as RDR-014. `render-mode` migration to `LayoutStylesheet` must be coordinated with RDR-015 implementation.
 - **RDR-011 (Layout Protocol Extraction)**: If RDR-011 extracts the layout decision tree into a protocol, Phase 1 property routing must be consistent with whatever interface RDR-011 defines. Risk of interface incompatibility if the two RDRs land in sequence without coordination.
 - **RDR-016 (Layout Stability / Incremental Update)**: If the layout stability work introduces or modifies a decision cache, the stylesheet-version invalidation concern becomes acute. Phase 1 `visible` property correctness depends on cache invalidation keying on stylesheet identity.
+- **RDR-013 (Statistical Content Width Measurement)**: If the measure pipeline is modified by RDR-013, Phase 2 formula evaluation must be ordered relative to statistical width measurement. Formula results produce new `JsonNode` values that affect measured content widths; ordering is not currently specified.
 - **RDR-019 (Tufte Sparkline Rendering)**: `sparkline` render-mode is explicitly deferred to RDR-019. When RDR-019 is accepted, its render-mode value must be added to the `LayoutPropertyKeys` constants registry defined in Phase 1. No conflict, but requires coordination at the time of RDR-019 implementation.
 
 ---
