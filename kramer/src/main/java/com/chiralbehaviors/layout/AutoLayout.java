@@ -17,6 +17,8 @@
 package com.chiralbehaviors.layout;
 
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,6 +38,8 @@ import javafx.beans.property.Property;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Point2D;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Region;
 
@@ -52,15 +56,21 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     private static final java.util.logging.Logger  log         = Logger.getLogger(AutoLayout.class.getCanonicalName());
     private static final String                    STYLE_SHEET = "auto-layout.css";
 
-    private LayoutCell<? extends Region>           control;
-    private final FocusController<AutoLayout>      controller;
-    private SimpleObjectProperty<JsonNode>         data        = new SimpleObjectProperty<>();
-    private SchemaNodeLayout                       layout;
-    private MeasureResult                          measureResult;
-    private double                                 layoutWidth = 0.0;
-    private Style                                 model;
-    private final SimpleObjectProperty<SchemaNode> root        = new SimpleObjectProperty<>();
-    private final String                           stylesheet;
+    private LayoutCell<? extends Region>                  control;
+    private final FocusController<AutoLayout>             controller;
+    private SimpleObjectProperty<JsonNode>                data         = new SimpleObjectProperty<>();
+    private final Map<LayoutDecisionKey, LayoutResult>    decisionCache = new HashMap<>();
+    private SchemaNodeLayout                              layout;
+    private MeasureResult                                 measureResult;
+    private double                                        layoutWidth  = 0.0;
+    private Style                                        model;
+    private final SimpleObjectProperty<SchemaNode>        root         = new SimpleObjectProperty<>();
+    private final String                                  stylesheet;
+
+    // Search
+    private SearchBar                                     searchBar;
+    private LayoutSearch                                  layoutSearch;
+    private int                                           searchCursor = -1;
 
     public AutoLayout() {
         this(null);
@@ -77,6 +87,11 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         getStyleClass().add(AUTO_LAYOUT);
         this.model = model;
         this.root.set(root);
+        this.root.addListener((o, p, c) -> {
+            layout = null;
+            measureResult = null;
+            decisionCache.clear();
+        });
         data.addListener((o, p, c) -> setContent());
         controller = new FocusController<>(this);
         getStylesheets().addListener((ListChangeListener<String>) c -> {
@@ -85,16 +100,19 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             model.setStyleSheets(newList, this);
             layout = null;
             measureResult = null;
+            decisionCache.clear();
             if (getData() != null) {
                 autoLayout();
             }
         });
         getStylesheets().add(getClass().getResource(DEFAULT_CSS)
                                        .toExternalForm());
+        installSearchKeyBindings();
     }
 
     public void autoLayout() {
         layoutWidth = 0.0;
+        decisionCache.clear();
         Platform.runLater(() -> autoLayout(getData(), getWidth()));
     }
 
@@ -188,6 +206,143 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         data.set(item);
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_FILLED, item != null);
         getNode().pseudoClassStateChanged(PSEUDO_CLASS_EMPTY, item == null);
+    }
+
+    // -----------------------------------------------------------------------
+    // Search bar
+    // -----------------------------------------------------------------------
+
+    /**
+     * Shows the search bar at the bottom of the AutoLayout pane and requests
+     * focus on the query field.
+     */
+    public void showSearchBar() {
+        if (searchBar == null) {
+            searchBar = new SearchBar();
+            searchBar.setOnFindNext(this::doFindNext);
+            searchBar.setOnFindPrevious(this::doFindPrevious);
+            searchBar.getSearchField().textProperty().addListener((obs, old, nv) -> rebuildSearch(nv));
+        }
+        if (!getChildren().contains(searchBar)) {
+            setBottomAnchor(searchBar, 0d);
+            setLeftAnchor(searchBar, 0d);
+            setRightAnchor(searchBar, 0d);
+            getChildren().add(searchBar);
+        }
+        searchBar.setVisible(true);
+        searchBar.getSearchField().requestFocus();
+    }
+
+    /**
+     * Hides the search bar and returns focus to the main content pane.
+     */
+    public void hideSearchBar() {
+        if (searchBar != null) {
+            getChildren().remove(searchBar);
+            searchBar.setVisible(false);
+        }
+        layoutSearch = null;
+        searchCursor = -1;
+        requestFocus();
+    }
+
+    /** Returns the SearchBar, or {@code null} if it has never been shown. */
+    public SearchBar getSearchBar() {
+        return searchBar;
+    }
+
+    // -----------------------------------------------------------------------
+    // Private search helpers
+    // -----------------------------------------------------------------------
+
+    private void installSearchKeyBindings() {
+        addEventFilter(KeyEvent.KEY_PRESSED, this::handleSearchKeyPressed);
+    }
+
+    private void handleSearchKeyPressed(KeyEvent evt) {
+        boolean shortcutDown = evt.isShortcutDown();
+        KeyCode code = evt.getCode();
+
+        if (shortcutDown && code == KeyCode.F) {
+            showSearchBar();
+            evt.consume();
+            return;
+        }
+
+        if (searchBar != null && searchBar.isVisible()) {
+            if (code == KeyCode.F3 && !evt.isShiftDown()) {
+                doFindNext();
+                evt.consume();
+                return;
+            }
+            if (code == KeyCode.F3 && evt.isShiftDown()) {
+                doFindPrevious();
+                evt.consume();
+                return;
+            }
+            if (code == KeyCode.ESCAPE) {
+                hideSearchBar();
+                evt.consume();
+            }
+        }
+    }
+
+    private void rebuildSearch(String query) {
+        SchemaNode schemaRoot = root.get();
+        JsonNode currentData  = data.get();
+        if (schemaRoot == null || currentData == null) {
+            layoutSearch = null;
+            searchCursor = -1;
+            updateMatchDisplay(0, 0);
+            return;
+        }
+        layoutSearch = new LayoutSearch(schemaRoot, currentData,
+                                        getOutermostVirtualFlow().orElse(null),
+                                        null);
+        layoutSearch.setQuery(query);
+        searchCursor = -1;
+        updateMatchDisplay(0, layoutSearch.countMatches());
+    }
+
+    private void doFindNext() {
+        if (searchBar == null) return;
+        ensureSearch();
+        if (layoutSearch == null) return;
+        layoutSearch.findNext().ifPresentOrElse(
+            r -> {
+                searchCursor++;
+                if (searchCursor >= layoutSearch.countMatches()) searchCursor = 0;
+                updateMatchDisplay(searchCursor + 1, layoutSearch.countMatches());
+            },
+            () -> updateMatchDisplay(0, 0)
+        );
+    }
+
+    private void doFindPrevious() {
+        if (searchBar == null) return;
+        ensureSearch();
+        if (layoutSearch == null) return;
+        layoutSearch.findPrevious().ifPresentOrElse(
+            r -> {
+                searchCursor--;
+                int total = layoutSearch.countMatches();
+                if (searchCursor < 0) searchCursor = total - 1;
+                updateMatchDisplay(searchCursor + 1, total);
+            },
+            () -> updateMatchDisplay(0, 0)
+        );
+    }
+
+    private void ensureSearch() {
+        if (layoutSearch == null && searchBar != null) {
+            rebuildSearch(searchBar.getSearchField().getText());
+        }
+    }
+
+    private void updateMatchDisplay(int current, int total) {
+        if (searchBar != null) {
+            searchBar.setMatchInfo(current, total);
+        }
     }
 
     private void autoLayout(JsonNode zeeData, double width) {
