@@ -2,11 +2,12 @@
 
 ## Metadata
 - **Type**: Feature
-- **Status**: accepted
+- **Status**: closed
 - **Priority**: P2
 - **Created**: 2026-03-15
 - **Accepted**: 2026-03-16
-- **Reopened**: 2026-03-16 (Phase 4 HTML sparkline SVG — prerequisite RDR-011 HtmlLayoutRenderer now complete)
+- **Closed**: 2026-03-16
+- **Close-reason**: implemented (all 4 phases complete, zero deferred work)
 - **Reviewed-by**: self
 - **Related**: RDR-015 (Alternative Rendering Modes — defers sparkline), RDR-009 (MeasureResult), RDR-011 (Layout Protocol)
 
