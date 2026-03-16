@@ -226,6 +226,68 @@ Total: **40+ individual inset values** plus font metrics per schema node. This i
 
 ---
 
+## Alternatives Considered
+
+### Alt A: Serialize the Mutable SchemaNodeLayout Tree Directly (Jackson on Live Objects)
+
+Capture layout state by serializing the existing `PrimitiveLayout`/`RelationLayout` object graph after the pipeline completes, using Jackson annotations on the live mutable objects.
+
+**Pros:**
+- No new record types; existing objects already hold all computed state.
+- Phase 1 implementation would be a few Jackson annotations and a serialization call.
+- No structural changes to the pipeline.
+
+**Cons:**
+- `SchemaNodeLayout` objects are mutable — serializing them mid-pipeline produces inconsistent snapshots. The `rootLevel` flag, `distributeExtraHeight` mutations, and ColumnSet slide-right balancing all modify state after intermediate pipeline phases. A snapshot taken before `distributeExtraHeight` runs will have wrong heights; a snapshot taken after will capture the transient `rootLevel == true` state.
+- `MeasureResult.extractor` is a lambda closure embedded in the live objects — not serializable and cannot be excluded without a custom serializer for every containing type.
+- `ColumnSet` is mutable with interleaved `List<Column>` internals modified during `compress()`. Jackson would serialize mid-mutation state unless the pipeline is redesigned to not mutate in-place.
+- The serialized form becomes a dump of implementation internals, not a protocol. Any refactoring of field names or types is a breaking protocol change.
+- Phase 4 (headless measurement) becomes impossible — the live object graph is inseparable from the JavaFX `Style` objects that computed it.
+
+**Rejection reason:** Correctness and timing constraints make live-object serialization unreliable. The mutability of `ColumnSet`, the post-pipeline `distributeExtraHeight` adjustment, and the non-serializable lambda in `MeasureResult` create a minefield of partial-state bugs. More fundamentally, the goal is a stable cross-platform protocol, not an internal state dump. The `LayoutDecisionNode` approach (composing the four result records into an explicit snapshot) is unambiguously correct because `snapshotLayoutResult()` is called after the pipeline converges, not during it.
+
+---
+
+### Alt B: GraphQL-Based Protocol (Re-Query per Platform, Server Computes Layout)
+
+Expose Kramer's layout computation as a GraphQL service. Clients query the layout endpoint with schema + data, receive layout decisions in the response.
+
+**Pros:**
+- Leverages existing `kramer-ql` module and GraphQL infrastructure already in the project.
+- Protocol is self-documenting via GraphQL schema introspection.
+- Stateless server — no client-side computation.
+- Fits cleanly into existing `QueryRoot`/`GraphQlUtil` patterns.
+
+**Cons:**
+- Requires a running Kramer server for every layout computation, even for offline use cases (PDF generation, terminal tools, embedded apps).
+- Round-trip latency is unacceptable for interactive resize events — the `AutoLayout` control fires layout on every width change.
+- `isConverged()` stability gate requires iterative pipeline passes; a network round-trip per iteration would be prohibitively slow.
+- Complicates the JavaFX renderer (currently a library with no server dependency) by introducing a mandatory network call.
+- Does not solve the Phase 4 (headless measurement) problem — the server still requires JavaFX toolkit initialization to measure CSS insets.
+
+**Rejection reason:** The primary use case is a local layout library consumed by JavaFX and future non-JavaFX renderers. Interposing a network boundary violates the performance contract for interactive layout (sub-millisecond resize response). The `LayoutDecisionNode` record tree achieves the same protocol goals without any network dependency — it is a value object that can be serialized to JSON for cross-process cases and passed in-memory for local cases.
+
+---
+
+### Alt C: CSS-Only Protocol (Send CSS + Data, Let Each Platform Do Its Own Layout)
+
+Ship a CSS stylesheet alongside the JSON data. Each rendering platform applies its own layout engine using the CSS as the specification. Kramer's role is reduced to generating a CSS ruleset.
+
+**Pros:**
+- Web renderers already implement CSS — no custom layout engine needed in the browser.
+- Stylesheet is small and human-readable.
+- Aligns with existing CSS-driven styling in Kramer (the `LayoutStylesheet` approach in RDR-010).
+
+**Cons:**
+- CSS cannot express Kramer's hierarchical adaptive layout decisions. The `useTable`/`useOutline` switch at each `Relation` node, column-set assignments, and `distributeExtraHeight` geometry are algorithmic decisions that CSS media queries and flex/grid layout cannot replicate from a stylesheet alone.
+- Each target platform would need to re-implement the RML algorithm independently, defeating the purpose of centralizing layout intelligence in Kramer.
+- Non-web targets (PDF, terminal, SwiftUI) do not implement CSS — they would need a CSS-to-layout interpreter in addition to their own renderer.
+- `ColumnSet` geometry (which fields go in which column, justified widths, cell heights) is output of the compress phase — it cannot be encoded as CSS without essentially serializing `CompressResult` anyway.
+
+**Rejection reason:** CSS is a styling language, not a layout decision protocol. The RML algorithm produces structural decisions (column assignments, render mode per node, justified geometry) that are not expressible as CSS rules. A CSS-only protocol would require each platform to re-implement the algorithm independently. The `LayoutDecisionNode` record tree is the correct granularity — it encodes what was decided and how space was divided, leaving only rendering mechanics to each platform.
+
+---
+
 ## Research Findings
 
 ### RF-1: Pipeline Phase Independence (Confidence: HIGH)
@@ -273,6 +335,53 @@ This is not a thin abstraction layer. A configuration-based `MeasurementStrategy
 5. Layout computation (measure -> decide) runs without JavaFX toolkit initialization when using headless measurement (Phase 4)
 6. Decision tree is JSON-serializable for cross-process consumption (excluding `MeasureResult.extractor`)
 7. All existing 142+ tests pass unchanged
+
+## Finalization Gate
+
+### 1. Has the problem been validated with real user scenarios?
+
+Partially. The JavaFX pipeline is exercised by 142+ existing tests that cover measure, layout, compress, and height phases across primitive and relation nodes. These tests validate that the pipeline produces correct geometry. However, no test yet validates the cross-platform serialization scenario — shipping a `LayoutDecisionNode` tree to a non-JavaFX renderer and confirming that the rendered output matches the JavaFX reference. The HTML renderer (Phase 3) must provide this validation before the protocol can be considered proven. The problem (layout intelligence locked to JavaFX) is real and well-evidenced; the solution's generality is an assumption until Phase 3 produces a passing acceptance test.
+
+### 2. Is the solution the simplest that could work?
+
+Yes, given the constraints. The core mechanism — composing the four existing result records (`MeasureResult`, `LayoutResult`, `CompressResult`, `HeightResult`) into a `LayoutDecisionNode` tree via `snapshotLayoutResult()` — adds no new algorithmic complexity. The `LayoutDecisionKey` cache (the embryonic protocol already present in the codebase) demonstrates that the pipeline already produces stable, reusable decision trees. The `isConverged()` stability gate ensures snapshot capture happens after the pipeline has reached a fixed point, eliminating partial-state bugs. The `MeasureResult.extractor` exclusion (a single `@JsonIgnore` or DTO projection) handles the one non-serializable field. Simpler alternatives (Alt A: serialize live objects, Alt C: CSS-only) were rejected because they cannot correctly capture pipeline state or cannot express the full decision space.
+
+### 3. Are all assumptions verified or explicitly acknowledged?
+
+The following assumptions are **verified** (by existing implementation and tests):
+- Four result records are immutable and already produced by `compute*()` methods on `PrimitiveLayout` and `RelationLayout` (RDR-009 implemented).
+- `MeasureResult.extractor` is a lambda and is not Jackson-serializable; Model A excludes it correctly because data extraction is server-side.
+- `ColumnSet` is mutable during `compress()`; `ColumnSetSnapshot`/`ColumnSnapshot` records provide the correct post-compress capture.
+- `distributeExtraHeight` runs after the main pipeline; for Model A, it should complete before `snapshotLayoutResult()` is called so that `HeightResult` reflects final geometry.
+
+The following assumptions are **explicitly acknowledged but unverified**:
+- `LayoutDecisionNode` contains sufficient information for a non-JavaFX renderer to produce visually equivalent output without back-references to `SchemaNodeLayout`. This is the central protocol completeness assumption and is not proven until Phase 3.
+- A configuration-based `MeasurementStrategy` (40+ explicit inset values, no JavaFX toolkit) will produce layouts close enough to the JavaFX-measured baseline to be acceptable for non-JavaFX targets. The acceptable tolerance has not been defined.
+- `RelationRenderMode`/`PrimitiveRenderMode` enums (RDR-015) will cover the full set of render modes needed by Phase 2 without requiring further `LayoutResult` changes.
+
+### 4. What is the rollback strategy if this fails?
+
+Phase 1 (extracting `LayoutDecisionNode`) is read-only relative to the existing pipeline — it adds a snapshot method without modifying any `compute*()` method or altering pipeline execution order. If Phase 1 produces incorrect geometry in the snapshot tree, the existing pipeline and JavaFX renderer are unaffected. Rollback is removing the snapshot method and the `LayoutDecisionNode` record.
+
+Phase 2 (refactoring `buildControl()` to consume `LayoutDecisionNode`) carries the first non-trivial rollback cost — if `JavaFxLayoutRenderer` cannot faithfully reproduce current rendering, the `buildControl()` path must be restored. The mitigation is maintaining the existing `buildControl()` implementation in parallel until the `JavaFxLayoutRenderer` passes all 142+ tests. Only then is the old path removed.
+
+Phase 3 (HTML renderer) is entirely new code with no rollback concern for existing functionality. If the HTML renderer cannot match JavaFX output, the acceptance test fails and Phase 3 is incomplete, but JavaFX rendering is unaffected.
+
+Phase 4 (headless measurement) is the highest-risk phase and should be treated as independently reversible. It is blocked on RDR-010 C3/S2 and should not begin until Phases 1–3 are stable. If Phase 4 proves impractical (e.g., the 40+ inset measurement surface requires too many platform-specific calibration values), the project can stop at Phase 3 — a cross-platform JSON protocol with server-side JavaFX measurement is still a meaningful outcome.
+
+### 5. Are there cross-cutting concerns with other RDRs?
+
+**RDR-009** (MeasureResult immutability): Implemented and closed. The four result records this RDR depends on are in place. No conflict.
+
+**RDR-008** (pipeline phases): Implemented and closed. The three-phase pipeline structure this RDR assumes is established. No conflict.
+
+**RDR-010** (CSS integration remediation): Active dependency. Phase 4 is blocked on RDR-010 C3 (LayoutStylesheet wiring for algorithm-tuning parameters) and RDR-010 S2 (protected measurement methods). If RDR-010 is descoped or delayed, Phase 4 is correspondingly delayed. Phases 1–3 have no dependency on RDR-010.
+
+**RDR-015** (alternative rendering modes): Phase 2 is blocked on RDR-015 defining `RelationRenderMode` and `PrimitiveRenderMode` enums. If RDR-015 is revised to use a different representation (e.g., a string tag rather than enums), `LayoutResult` must be updated accordingly. The `LayoutDecisionNode` serialized form is affected. This cross-RDR interface should be locked before Phase 2 begins.
+
+**RDR-012** (reactive semantic constraint layout), **RDR-016** (layout stability / incremental update), **RDR-018** (query-semantic layout stylesheet): These RDRs extend or constrain the layout pipeline. Any pipeline change they introduce must preserve the post-convergence snapshot contract: `snapshotLayoutResult()` must be callable after `isConverged()` returns `true`, and the result must be stable. RDR-016 in particular (incremental update) must ensure that partial pipeline re-runs do not produce partially-updated `LayoutDecisionNode` trees.
+
+---
 
 ## Recommendation
 

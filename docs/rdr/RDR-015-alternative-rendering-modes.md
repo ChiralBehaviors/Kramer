@@ -374,6 +374,116 @@ record LayoutResult(
 
 ---
 
+## Alternatives Considered
+
+### Alt A: CSS-only render modes (JavaFX CSS pseudo-classes to switch rendering)
+
+Use CSS pseudo-classes on the existing `Label`/`Region` nodes to toggle BAR vs TEXT appearance purely through stylesheets, without new Java subclasses.
+
+**Pros**:
+- Zero new Java classes — everything expressed in CSS
+- Live-switchable without layout recompute
+- Familiar to JavaFX developers who manage appearance via CSS
+
+**Cons**:
+- CSS cannot change the JavaFX node type — a `Label` displaying text cannot become a `StackPane` containing a `Rectangle` via CSS alone
+- Bar width is data-driven (proportional to numeric range); CSS has no access to `MeasureResult.numericStats()` or the computed cell width
+- `PrimitiveLayout` would still need to produce different node graphs per mode, nullifying any simplification
+- CSS pseudo-classes control appearance, not structure — sparse crosstab matrices require generating different child node counts per row, which CSS cannot do
+
+**Rejection reason**: Bar and badge rendering require structurally different node graphs (Rectangle+StackPane vs Label), not just style changes. CSS pseudo-classes are a presentation layer; mode dispatch is an architectural layer. The two responsibilities are orthogonal.
+
+---
+
+### Alt B: Plugin-based renderers (separate JAR per render mode, discovered at runtime)
+
+Provide a `PrimitiveRenderer` SPI (Service Provider Interface via `java.util.ServiceLoader`). Each render mode (BAR, BADGE, SPARKLINE) ships as a separate JAR that registers a renderer. Renderers are discovered at startup.
+
+**Pros**:
+- True open/closed principle — new modes without touching core
+- Enables third-party render modes (e.g., a proprietary chart renderer)
+- Clean separation: core JAR has no knowledge of visualization modes
+
+**Cons**:
+- ServiceLoader discovery adds startup cost and complexity to a single-module layout engine
+- `MeasureResult` is a sealed record — adding `NumericStats`/`PivotStats` sub-records still requires modifying core, so the extension boundary is not actually at the JAR level
+- The layout decision (which mode to use, how to measure) cannot be cleanly separated from the engine — `PrimitiveLayout.measure()` must populate `NumericStats` to compute bar heights; a plugin cannot retroactively change measure results
+- Adds a module boundary where there is no real deployment need — Kramer is a library, not an application server
+- Crosstab requires `MeasureResult.pivotStats()` which is core infrastructure regardless of plugin architecture
+
+**Rejection reason**: The extension point in Kramer is `computePrimitiveStyle()` (protected method), not a separate deployment artifact. Plugin SPI is the correct pattern when the set of implementations is open and unknown at build time; here, modes are enumerated and co-deployed. The sub-record pattern (established in RDR-013) is the correct extension mechanism for `MeasureResult`.
+
+---
+
+### Alt C: Single PrimitiveStyle subclass with mode flag (vs separate PrimitiveBarStyle / PrimitiveTextStyle)
+
+Rather than adding a `PrimitiveBarStyle` subclass parallel to `PrimitiveTextStyle`, add a `renderMode` field to the existing `PrimitiveTextStyle` and branch on it internally with a switch statement.
+
+**Pros**:
+- One fewer class to maintain
+- Mode-switching logic co-located with the style class
+
+**Cons**:
+- Violates single-responsibility: `PrimitiveTextStyle` would produce `Label`, `StackPane+Rectangle`, or `Label+background` depending on a flag — three different node graphs from one class
+- `buildControl()` grows with each new mode; switch statements in factory methods are a recognized extensibility anti-pattern
+- `computePrimitiveStyle()` is protected and is the correct extension point — the subclass pattern is already established in the codebase (per RDR-015 research finding: `computePrimitiveStyle()` is protected, mode dispatch must stay in `buildControl()`)
+- Height computation logic differs per mode: BAR uses `style.getHeight(justified, justified)` (one line), TEXT uses `style.getHeight(maxWidth, justified)` (wrapping) — these diverge further as modes are added, making a single class increasingly complex
+
+**Rejection reason**: The existing `PrimitiveTextStyle extends PrimitiveStyle` pattern establishes subclassing as the correct mechanism. `PrimitiveBarStyle extends PrimitiveStyle` follows this established convention. Mode-flagged dispatch in a single class trades short-term simplicity for long-term cohesion degradation.
+
+---
+
+## Finalization Gate
+
+### 1. Has the problem been validated with real user scenarios?
+
+**Partially validated.** The SIEUFERD paper (SIGMOD 2016, §3.3, Fig 5) provides the primary external validation — bar chart visualization of numeric fields and crosstab pivot are described as user-facing formatting options in a production system for structured report exploration. The bar chart case (COURSES TAUGHT rendered as bars) is a direct, documented real-world scenario.
+
+Within Kramer, the post-Wave1 research confirmed that `LayoutStylesheet` is now accessible in `measure()` via `model.getStylesheet()`, which validates the stylesheet-driven configuration path. The `NumericStats`/`PivotStats` nullable sub-record pattern has been validated against the `ContentWidthStats` precedent (RDR-013). However, end-user testing of bar rendering at various data ranges and crosstab sparse-matrix edge cases has not yet occurred. Phase 1 (BAR) should be validated in the explorer app before Phase 3 (crosstab) is implemented.
+
+### 2. Is the solution the simplest that could work?
+
+**Yes, with one known complexity.** For visualization primitives (Phase 1-2), the design is minimal: one new `PrimitiveBarStyle` subclass, one nullable `NumericStats` sub-record, one protected extension point (`computePrimitiveStyle()`). No new external dependencies, no new layout phases.
+
+Crosstab (Phase 3) is inherently more complex because it requires collecting pivot values during `measure()`, a different node structure (CrosstabHeader outside VirtualFlow), and new branches in `adjustHeight()`/`distributeExtraHeight()`. This complexity is not avoidable — crosstab fundamentally changes the row structure. The design minimizes added complexity by reusing the `NestedTable` header-outside-VirtualFlow pattern and the `SizeTracker` uniform-cell-length assumption.
+
+The `LayoutResult` boolean-to-enum migration (`useTable` → `RelationRenderMode`) is Phase 1 work and is confirmed necessary: the current `boolean useTable` cannot encode a third mode.
+
+### 3. Are all assumptions verified or explicitly acknowledged?
+
+**Verified assumptions** (confirmed by post-Wave1 research):
+- `LayoutStylesheet` is accessible in `measure()` via `model.getStylesheet()` — confirmed present
+- `NumericStats`/`PivotStats` follow the nullable sub-record pattern established by `ContentWidthStats` — confirmed by RDR-013 implementation
+- BAR height is `style.getHeight(justified, justified)` (one line) — confirmed correct; earlier versions had an error, now corrected
+- `computePrimitiveStyle()` is protected — confirmed as the correct extension point; mode dispatch stays in `buildControl()`
+
+**Explicitly acknowledged assumptions**:
+- `LayoutResult.useTable` boolean migration to `RelationRenderMode` enum is Phase 1 work — not yet done; all code currently uses `boolean useTable`
+- Pivot collection pipeline ordering (sort → filter → pivot → measure children) requires RDR-014's filter step to be present; Phase 3 has a soft dependency on RDR-014
+- Auto-detection heuristics (all values parse as Double → BAR; cardinality < 10 → BADGE) are first-pass estimates; thresholds may need calibration after real-data validation
+
+### 4. What is the rollback strategy if this fails?
+
+**Phase 1 (BAR/BADGE)**: Both modes are opt-in via stylesheet configuration or auto-detection. Auto-detection can be disabled by adding a `render-mode=text` override to the stylesheet. `PrimitiveBarStyle` is a new subclass — removing it does not affect `PrimitiveTextStyle` or any existing rendering path. Rollback = revert the `PrimitiveBarStyle` class and the `NumericStats` sub-record addition to `MeasureResult`; no existing behavior changes.
+
+**Phase 3 (Crosstab)**: Crosstab is a third mode in `RelationLayout`; the existing TABLE/OUTLINE paths are unchanged. The `RelationRenderMode.CROSSTAB` branch can be removed without affecting AUTO/TABLE/OUTLINE. The `PivotStats` sub-record on `MeasureResult` is nullable — removing it is a record field deletion. The CrosstabHeader/CrosstabCell/CrosstabRow classes are isolated. Rollback = remove the crosstab branch from `layout()` and the three new UI classes; the `boolean useTable` → `RelationRenderMode` migration is the only change that touches existing call sites and would need reverting.
+
+**LayoutResult migration** (`useTable` → `RelationRenderMode`): This is the highest-rollback-cost change — it touches all callers of `LayoutResult.useTable()`. Mitigation: add `boolean useTable()` as a derived accessor on `LayoutResult` (`return relationMode == TABLE`) to maintain backward compatibility during transition.
+
+### 5. Are there cross-cutting concerns with other RDRs?
+
+**RDR-009 (LayoutStylesheet)**: Direct dependency. `render-mode`, `pivot-field`, and `value-field` stylesheet properties are introduced by this RDR. These property keys must be registered in the central LayoutStylesheet Property Registry. `model.getStylesheet()` access in `measure()` is confirmed available (post-Wave1). All three property keys follow the kebab-case convention established in RDR-009.
+
+**RDR-011 (Layout Protocol Extraction)**: This RDR's `LayoutResult` enum migration (`boolean useTable` → `RelationRenderMode`) is a prerequisite for RDR-011's `LayoutDecisionNode` to carry complete rendering decisions. If RDR-011 is implemented before this migration, it will carry an incomplete `LayoutResult`. Recommended sequencing: complete Phase 1 of this RDR (including `LayoutResult` migration) before implementing RDR-011.
+
+**RDR-013 (Statistical Content Width)**: Established the nullable sub-record extension pattern for `MeasureResult`. `NumericStats` and `PivotStats` follow this pattern directly. No conflict; the pattern is additive.
+
+**RDR-014 (Conditional Display / Data Filtering)**: Soft dependency for Phase 3. Pivot value collection must run after RDR-014's `hideIfEmpty` filter step (see RF-4: phantom column header risk). If RDR-014 is not implemented, Phase 3 can still proceed — but the pipeline ordering constraint is documented and must be enforced when RDR-014 is added.
+
+**RDR-016 (Layout Stability / Incremental Update)**: Crosstab's data-dependent pivot column set (computed during `measure()`) is sensitive to data changes. If RDR-016 introduces incremental measure (partial remeasure on data update), it must invalidate `MeasureResult.pivotStats()` when the pivot field's distinct value set changes. This is a forward compatibility concern to document in RDR-016.
+
+---
+
 ## Research Findings
 
 ### RF-1: Crosstab Scope Is Bounded (Confidence: HIGH)
