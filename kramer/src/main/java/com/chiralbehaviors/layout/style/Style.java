@@ -22,7 +22,9 @@ import java.util.List;
 
 import javafx.application.Platform;
 
+import com.chiralbehaviors.layout.DefaultLayoutStylesheet;
 import com.chiralbehaviors.layout.LayoutLabel;
+import com.chiralbehaviors.layout.LayoutStylesheet;
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
@@ -130,6 +132,7 @@ public class Style {
 
     private final LayoutObserver              observer;
     private Object                            owner;
+    private LayoutStylesheet                  stylesheet;
 
     private final List<String>                styleSheets          = new ArrayList<>();
     private final IdentityHashMap<Primitive, PrimitiveStyle>  primitiveStyleCache  = new IdentityHashMap<>();
@@ -143,6 +146,28 @@ public class Style {
 
     public Style(LayoutObserver observer) {
         this.observer = observer;
+        this.stylesheet = new DefaultLayoutStylesheet(this);
+    }
+
+    public Style(LayoutObserver observer, LayoutStylesheet stylesheet) {
+        this.observer = observer;
+        this.stylesheet = stylesheet;
+    }
+
+    public Style(LayoutStylesheet stylesheet) {
+        this(new LayoutObserver() {
+        }, stylesheet);
+    }
+
+    public LayoutStylesheet getStylesheet() {
+        return stylesheet;
+    }
+
+    public void setStylesheet(LayoutStylesheet stylesheet) {
+        if (stylesheet == null) {
+            throw new NullPointerException("stylesheet must not be null");
+        }
+        this.stylesheet = stylesheet;
     }
 
     public <T extends LayoutCell<?>> void apply(T cell, Primitive p) {
