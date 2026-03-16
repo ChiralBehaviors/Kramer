@@ -93,7 +93,7 @@ The sub-record is stored in `MeasureResult` and persists across resize cycles, c
 BAR mode height = one label line height (single-line, no wrapping). This is consistent with `PrimitiveTextStyle.getHeight(maxWidth, justified)` when `maxWidth <= justified` (no wrapping needed). `computeCellHeight()` dispatches on render mode:
 
 ```java
-case BAR -> snap(style.getHeight(0, justified));  // fixed: one line via labelStyle.getHeight()
+case BAR -> snap(style.getHeight(justified, justified));  // one line: Math.ceil(justified/justified) = 1
 case TEXT -> snap(style.getHeight(maxWidth, justified));  // existing wrapping logic
 ```
 
