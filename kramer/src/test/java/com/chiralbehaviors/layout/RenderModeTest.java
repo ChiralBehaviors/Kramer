@@ -25,10 +25,11 @@ class RenderModeTest {
     @Test
     void primitiveRenderModeValues() {
         var values = PrimitiveRenderMode.values();
-        assertEquals(3, values.length);
+        assertEquals(4, values.length);
         assertNotNull(PrimitiveRenderMode.valueOf("TEXT"));
         assertNotNull(PrimitiveRenderMode.valueOf("BAR"));
         assertNotNull(PrimitiveRenderMode.valueOf("BADGE"));
+        assertNotNull(PrimitiveRenderMode.valueOf("SPARKLINE"));
     }
 
     @Test
