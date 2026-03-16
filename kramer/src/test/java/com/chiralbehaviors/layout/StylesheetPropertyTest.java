@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
+import com.chiralbehaviors.layout.DefaultLayoutStylesheet;
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.style.LabelStyle;
 import com.chiralbehaviors.layout.style.PrimitiveStyle;
 import com.chiralbehaviors.layout.style.RelationStyle;
@@ -484,7 +486,7 @@ class StylesheetPropertyTest {
     }
 
     @Test
-    void relationStyleSettersWork() {
+    void relationStyleIsImmutableAfterConstruction() {
         RelationStyle style = new RelationStyle(
             mock(LabelStyle.class),
             mock(com.chiralbehaviors.layout.table.NestedTable.class, RETURNS_DEEP_STUBS),
@@ -497,17 +499,24 @@ class StylesheetPropertyTest {
             mock(com.chiralbehaviors.layout.outline.OutlineElement.class, RETURNS_DEEP_STUBS)
         );
 
-        style.setOutlineMaxLabelWidth(100);
-        style.setOutlineColumnMinWidth(80);
-        style.setBulletText("•");
-        style.setBulletWidth(12);
-        style.setIndentWidth(20);
+        // Verify no setter methods exist on RelationStyle
+        var methods = java.util.Arrays.stream(RelationStyle.class.getMethods())
+                                      .map(java.lang.reflect.Method::getName)
+                                      .toList();
+        assertFalse(methods.contains("setOutlineMaxLabelWidth"),
+                    "RelationStyle should not have setOutlineMaxLabelWidth");
+        assertFalse(methods.contains("setOutlineColumnMinWidth"),
+                    "RelationStyle should not have setOutlineColumnMinWidth");
+        assertFalse(methods.contains("setBulletText"),
+                    "RelationStyle should not have setBulletText");
+        assertFalse(methods.contains("setBulletWidth"),
+                    "RelationStyle should not have setBulletWidth");
+        assertFalse(methods.contains("setIndentWidth"),
+                    "RelationStyle should not have setIndentWidth");
 
-        assertEquals(100.0, style.getOutlineMaxLabelWidth());
-        assertEquals(80.0, style.getOutlineColumnMinWidth());
-        assertEquals("•", style.getBulletText());
-        assertEquals(12.0, style.getBulletWidth());
-        assertEquals(20.0, style.getIndentWidth());
+        // Getters still work
+        assertEquals(200.0, style.getOutlineMaxLabelWidth());
+        assertEquals(60.0, style.getOutlineColumnMinWidth());
     }
 
     // ---- PrimitiveStyle property defaults ----
@@ -526,18 +535,29 @@ class StylesheetPropertyTest {
     }
 
     @Test
-    void primitiveStyleSettersWork() {
+    void primitiveStyleIsImmutableAfterConstruction() {
         LabelStyle labelStyle = mock(LabelStyle.class);
         PrimitiveStyle.PrimitiveTextStyle style =
             new PrimitiveStyle.PrimitiveTextStyle(labelStyle, new Insets(0), labelStyle);
 
-        style.setMinValueWidth(50);
-        style.setMaxTablePrimitiveWidth(200);
-        style.setVariableLengthThreshold(3.0);
+        // Verify no setter methods exist on PrimitiveStyle
+        var methods = java.util.Arrays.stream(PrimitiveStyle.class.getMethods())
+                                      .map(java.lang.reflect.Method::getName)
+                                      .toList();
+        assertFalse(methods.contains("setMinValueWidth"),
+                    "PrimitiveStyle should not have setMinValueWidth");
+        assertFalse(methods.contains("setMaxTablePrimitiveWidth"),
+                    "PrimitiveStyle should not have setMaxTablePrimitiveWidth");
+        assertFalse(methods.contains("setVariableLengthThreshold"),
+                    "PrimitiveStyle should not have setVariableLengthThreshold");
+        assertFalse(methods.contains("setOutlineSnapValueWidth"),
+                    "PrimitiveStyle should not have setOutlineSnapValueWidth");
+        assertFalse(methods.contains("setVerticalHeaderThreshold"),
+                    "PrimitiveStyle should not have setVerticalHeaderThreshold");
 
-        assertEquals(50.0, style.getMinValueWidth());
-        assertEquals(200.0, style.getMaxTablePrimitiveWidth());
-        assertEquals(3.0, style.getVariableLengthThreshold());
+        // Getters still work
+        assertEquals(30.0, style.getMinValueWidth());
+        assertEquals(350.0, style.getMaxTablePrimitiveWidth());
     }
 
     /**
@@ -627,6 +647,85 @@ class StylesheetPropertyTest {
         // Variable-length stretches to available — snap should NOT apply
         assertEquals(Style.snap(500), layout.getJustifiedWidth(),
                      "Variable-length field should not be affected by snap grid");
+    }
+
+    // ---- DefaultLayoutStylesheet override tests ----
+
+    /**
+     * setOverride + getDouble returns the overridden value for the given path.
+     */
+    @Test
+    void defaultLayoutStylesheetOverrideDouble() {
+        DefaultLayoutStylesheet sheet = new DefaultLayoutStylesheet(null);
+        SchemaPath path = new SchemaPath("root");
+
+        sheet.setOverride(path, "minValueWidth", 99.0);
+
+        assertEquals(99.0, sheet.getDouble(path, "minValueWidth", 30.0),
+                     "getDouble should return overridden value");
+    }
+
+    /**
+     * setOverride + getInt returns the overridden integer value.
+     */
+    @Test
+    void defaultLayoutStylesheetOverrideInt() {
+        DefaultLayoutStylesheet sheet = new DefaultLayoutStylesheet(null);
+        SchemaPath path = new SchemaPath("items");
+
+        sheet.setOverride(path, "maxCardinality", 5);
+
+        assertEquals(5, sheet.getInt(path, "maxCardinality", 10),
+                     "getInt should return overridden value");
+    }
+
+    /**
+     * setOverride + getString returns the overridden string value.
+     */
+    @Test
+    void defaultLayoutStylesheetOverrideString() {
+        DefaultLayoutStylesheet sheet = new DefaultLayoutStylesheet(null);
+        SchemaPath path = new SchemaPath("node");
+
+        sheet.setOverride(path, "bulletText", "•");
+
+        assertEquals("•", sheet.getString(path, "bulletText", ""),
+                     "getString should return overridden value");
+    }
+
+    /**
+     * Override on one path does not affect another path.
+     */
+    @Test
+    void defaultLayoutStylesheetOverrideIsolatedByPath() {
+        DefaultLayoutStylesheet sheet = new DefaultLayoutStylesheet(null);
+        SchemaPath pathA = new SchemaPath("a");
+        SchemaPath pathB = new SchemaPath("b");
+
+        sheet.setOverride(pathA, "minValueWidth", 50.0);
+
+        assertEquals(50.0, sheet.getDouble(pathA, "minValueWidth", 30.0),
+                     "pathA override should return 50.0");
+        assertEquals(30.0, sheet.getDouble(pathB, "minValueWidth", 30.0),
+                     "pathB should return default (no override)");
+    }
+
+    /**
+     * clearOverrides() removes all overrides; subsequent lookups return defaults.
+     */
+    @Test
+    void defaultLayoutStylesheetClearOverrides() {
+        DefaultLayoutStylesheet sheet = new DefaultLayoutStylesheet(null);
+        SchemaPath path = new SchemaPath("root");
+
+        sheet.setOverride(path, "minValueWidth", 99.0);
+        sheet.setOverride(path, "bulletText", "→");
+        sheet.clearOverrides();
+
+        assertEquals(30.0, sheet.getDouble(path, "minValueWidth", 30.0),
+                     "After clear, getDouble should return default");
+        assertEquals("", sheet.getString(path, "bulletText", ""),
+                     "After clear, getString should return default");
     }
 
     /**

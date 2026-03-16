@@ -43,11 +43,11 @@ public class RelationStyle extends NodeStyle {
     private final Insets  nestedInsets;
     private final Insets  outline;
     private final Insets  outlineCell;
-    private double        outlineMaxLabelWidth  = DEFAULT_OUTLINE_MAX_LABEL_WIDTH;
-    private double        outlineColumnMinWidth = DEFAULT_OUTLINE_COLUMN_MIN_WIDTH;
-    private String        bulletText            = "";
-    private double        bulletWidth           = 0;
-    private double        indentWidth           = 0;
+    private final double  outlineMaxLabelWidth  = DEFAULT_OUTLINE_MAX_LABEL_WIDTH;
+    private final double  outlineColumnMinWidth = DEFAULT_OUTLINE_COLUMN_MIN_WIDTH;
+    private final String  bulletText            = "";
+    private final double  bulletWidth           = 0;
+    private final double  indentWidth           = 0;
     private final Insets  row;
     private final Insets  rowCell;
     private final Insets  span;
@@ -167,40 +167,20 @@ public class RelationStyle extends NodeStyle {
         return outlineMaxLabelWidth;
     }
 
-    public void setOutlineMaxLabelWidth(double outlineMaxLabelWidth) {
-        this.outlineMaxLabelWidth = outlineMaxLabelWidth;
-    }
-
     public double getOutlineColumnMinWidth() {
         return outlineColumnMinWidth;
-    }
-
-    public void setOutlineColumnMinWidth(double outlineColumnMinWidth) {
-        this.outlineColumnMinWidth = outlineColumnMinWidth;
     }
 
     public String getBulletText() {
         return bulletText;
     }
 
-    public void setBulletText(String bulletText) {
-        this.bulletText = bulletText;
-    }
-
     public double getBulletWidth() {
         return bulletWidth;
     }
 
-    public void setBulletWidth(double bulletWidth) {
-        this.bulletWidth = bulletWidth;
-    }
-
     public double getIndentWidth() {
         return indentWidth;
-    }
-
-    public void setIndentWidth(double indentWidth) {
-        this.indentWidth = indentWidth;
     }
 
 }
