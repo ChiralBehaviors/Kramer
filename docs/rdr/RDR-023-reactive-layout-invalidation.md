@@ -2,10 +2,12 @@
 
 ## Metadata
 - **Type**: Feature
-- **Status**: accepted
+- **Status**: closed
 - **Priority**: P3
 - **Created**: 2026-03-16
 - **Accepted**: 2026-03-16
+- **Closed**: 2026-03-16
+- **Close-reason**: implemented (all phases complete, zero deferred work)
 - **Reviewed-by**: self
 - **Related**: RDR-012 (constraint solver), RDR-016 (layout stability / incremental update)
 
