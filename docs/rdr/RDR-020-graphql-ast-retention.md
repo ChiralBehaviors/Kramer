@@ -157,23 +157,53 @@ information (parent path + current field name) to build the path incrementally:
 
 ```
 buildContext(document) {
-    for each top-level Field f:
-        path = new SchemaPath(f.getName())
-        fieldIndex.put(path, f)
-        aliasIndex.put(path, f.getAlias() != null ? f.getAlias() : f.getName())
-        recurse(f, path)
+    fields = top-level Fields from document (OperationDefinition selections)
+    if fields.size == 1:
+        root = buildRelation(fields[0], SchemaPath.root(), fieldIndex)
+        // root is the child Relation directly
+    else if operationName != null:
+        root = new Relation(operationName)
+        for each top-level Field f:
+            key = f.getAlias() != null ? f.getAlias() : f.getName()
+            path = new SchemaPath(key)
+            fieldIndex.put(path, f)
+            // f.getName() tracked for schema type resolution if needed
+            root.addChild(buildRelation(f, path, fieldIndex))
+    else:
+        root = new QueryRoot()
+        for each top-level Field f:
+            key = f.getAlias() != null ? f.getAlias() : f.getName()
+            path = new SchemaPath(key)
+            fieldIndex.put(path, f)
+            root.addChild(buildRelation(f, path, fieldIndex))
+}
+
+buildRelation(f, parentPath, fieldIndex) {
+    key = f.getAlias() != null ? f.getAlias() : f.getName()
+    path = parentPath.child(key)
+    // NOTE: key (alias or name) is the data extraction key; f.getName() is the schema type name
+    node = new Relation(key)   // or Primitive(key) if leaf
+    fieldIndex.put(path, f)
+    for each child Field c in f.getSelectionSet():
+        node.addChild(buildRelation(c, path, fieldIndex))
+    return node
+    // fieldIndex path alignment: path mirrors the schema tree traversal exactly
 }
 ```
 
-Alias handling: when `f.getAlias() != null`, the `Relation`/`Primitive` node is still created
-with `f.getName()` (the real field name) for data extraction purposes. `aliasIndex` records
-the alias separately for use by display/rendering layers. This preserves backward compatibility
-with all existing data extraction code while enabling alias-aware display.
+Alias handling: the `Relation`/`Primitive` node is created with
+`f.getAlias() != null ? f.getAlias() : f.getName()` as the data extraction key — this is the
+key used to look up values in the JSON response (the server returns data keyed by alias when
+an alias is present). `f.getName()` is stored separately in `aliasIndex` (or a `typeNameIndex`)
+for schema type tracking when needed. This is the inverse of the naive approach: the alias is
+the correct data key; the field name tracks the schema type. `aliasIndex` records the alias
+for use by display/rendering layers as well.
 
 ### Phase structure
 
-Phase A and Phase B are prerequisites for Phase C and Phase D. Phase C cannot proceed
-without Phase B's directive schema. Phase D can proceed in parallel with Phase C.
+Phase A and Phase B are prerequisites for Phase C and Phase D2. Phase C cannot proceed
+without Phase B's directive schema. Phase D1 (defect fix) can proceed in parallel with
+Phase C immediately after Phase A. Phase D2 (new feature) requires Phase C.
 
 #### Phase A: Retain Document, build SchemaPath ↔ Field index
 
@@ -200,7 +230,11 @@ Scope:
 - `DirectiveReader` reads `Field.getDirectives()` from the `fieldIndex` for a given
   `SchemaPath` and produces per-path stylesheet overrides
 - Integration: when a `SchemaContext` is present, a directive-aware `LayoutStylesheet`
-  wrapper applies directive-derived overrides before falling through to the base stylesheet
+  wrapper applies directive-derived overrides before falling through to the base stylesheet.
+  `DirectiveAwareStylesheet` lives in **kramer-ql** (not kramer): it imports both
+  `LayoutStylesheet` (from kramer) and `SchemaContext` (from kramer-ql). Placing it in kramer
+  would create a forward dependency from the core module into the GraphQL integration module,
+  which is prohibited by the module dependency direction.
 - The directive namespace (`@hide`, `@render`, `@hideIfEmpty`) must be documented as
   client-side only; servers that validate directive declarations will reject these unless the
   schema declares them. Queries intended for servers with strict directive validation must
@@ -232,21 +266,34 @@ Phase C depends on Phase B (directive vocabulary must be stable before reconstru
 is built) and on RDR-018 Phase 2 (the `visible` property must be wired before reconstruction
 has meaningful work to do).
 
-#### Phase D: FragmentSpread support and Relay pagination
+#### Phase D1: FragmentSpread resolution (defect fix)
 
-Deliverable: `FragmentSpread` resolution; cursor management for Relay-style connections.
+Deliverable: `FragmentSpread` resolution; named fragment spreads no longer throw.
 
 Scope:
 - Replace the two `UnsupportedOperationException` throw sites with resolution against
   `Document.getDefinitionsOfType(FragmentDefinition.class)`
 - `FragmentDefinition` fields are inlined into the parent `Relation` during schema building;
   the `fieldIndex` maps the inlined fields under their resolved paths
+
+Phase D1 depends on Phase A (requires `Document` for fragment resolution). It can proceed
+in parallel with Phase C. This is a defect fix — `FragmentSpread` throws unconditionally
+today (RF-3); fixing it is not gated on any new feature.
+
+#### Phase D2: Relay cursor pagination (new feature)
+
+Deliverable: Cursor management for Relay-style connections.
+
+Scope:
 - Relay connection pattern recognition: detect `edges { node { ... } }` + `pageInfo` shape
-  and provide a cursor-advance API (`SchemaContext.advanceCursor(SchemaPath, String cursor)`)
+  and provide a cursor-advance API (`SchemaContext.withCursor(SchemaPath, String cursor)`)
   that returns a new `SchemaContext` with the updated `after` argument
 
-Phase D depends on Phase A (requires `Document` for fragment resolution). It can proceed
-in parallel with Phase C.
+Phase D2 depends on Phase A and Phase C (cursor advance requires query reconstruction to
+produce the next-page query string). Phase D2 is a new feature and should not block delivery
+of Phase D1.
+
+Phase D1 can proceed immediately after Phase A. Phase D2 requires Phase C.
 
 ---
 
@@ -310,8 +357,9 @@ when GraphQL's extension mechanism exists and graphql-java's AST already models 
 - Define `SchemaContext` record in `kramer-ql`
 - Refactor the recursive walk inside `buildSchema(String, Set<String>)` into an
   index-populating variant; expose as `buildContext(String, Set<String>)`
-- Alias extraction: `field.getAlias() != null ? field.getAlias() : field.getName()` into
-  `aliasIndex`
+- Schema node creation: use `f.getAlias() ?? f.getName()` as the data extraction key
+  (the key used to look up values in the JSON response). Store `f.getName()` separately
+  for schema type tracking. `aliasIndex` records the resolved display key per path.
 - Tests: verify `fieldIndex` covers all paths in the built `Relation` tree; verify
   `displayName()` returns alias where set; verify `Field.getArguments()` is non-null and
   accessible via `fieldIndex`
@@ -341,15 +389,20 @@ when GraphQL's extension mechanism exists and graphql-java's AST already models 
   argument preservation; cursor update produces correct `after` value in reconstructed query
 - Integration test: reconstruct + `evaluate()` returns data consistent with the modified query
 
-### Phase D: FragmentSpread support and Relay pagination
+### Phase D1: FragmentSpread resolution (defect fix)
 - Remove both `throw new UnsupportedOperationException(...)` sites
 - Implement `resolveFragment(FragmentSpread, Document)` that looks up
   `Document.getDefinitionsOfType(FragmentDefinition.class)` and inlines selections
 - `fieldIndex` receives inlined fields under their resolved `SchemaPath`
+- Tests: fragment spread round-trip; multi-site fragment spread (same fragment at two paths)
+
+### Phase D2: Relay cursor pagination (new feature)
 - Relay connection detection: `RelayConnectionDetector.isConnection(Relation)` heuristic
   (presence of `edges` child with `node` grandchild + `pageInfo` sibling)
-- Tests: fragment spread round-trip; multi-site fragment spread (same fragment at two paths);
-  Relay connection shape detection; `withCursor()` on a connection path
+- `SchemaContext.withCursor(SchemaPath connectionPath, String cursor)` returns a new
+  `SchemaContext` with the `after` argument updated on the relevant `Field`
+- Tests: Relay connection shape detection; `withCursor()` on a connection path produces
+  correct `after` value in reconstructed query (via Phase C)
 
 ---
 
@@ -457,8 +510,11 @@ Phase C rollback: `QueryBuilder` is a standalone utility with no required caller
 wired into the interaction layer. If query reconstruction proves unreliable, stop calling it.
 `evaluate()` continues to accept raw query strings.
 
-Phase D rollback: Restoring the `UnsupportedOperationException` is a one-line revert. Users
+Phase D1 rollback: Restoring the `UnsupportedOperationException` is a one-line revert. Users
 who relied on the exceptions as a guard are unaffected.
+
+Phase D2 rollback: `withCursor()` is additive to `SchemaContext`. Remove the method and
+`RelayConnectionDetector`. No behavior change to non-Relay callers.
 
 ### 5. Are there cross-cutting concerns with other RDRs?
 
@@ -479,3 +535,9 @@ who relied on the exceptions as a guard are unaffected.
   target mapping destinations for Phase B directives (`@hideIfEmpty`, `@render`). The
   property key strings must be finalized in RDR-014/015 implementations before Phase B
   maps directives to them.
+- **AutoLayout.decisionCache invalidation (Phase B)**: Phase B depends on the
+  `AutoLayout.decisionCache` invalidation fix in which `LayoutDecisionKey` includes a
+  `stylesheetVersion` field (implemented). When Phase B's `DirectiveAwareStylesheet`
+  changes the effective stylesheet for a path, the version change automatically invalidates
+  cached layout decisions for that path. No additional cache invalidation logic is required
+  in Phase B, provided the `stylesheetVersion` mechanism is in place before Phase B lands.

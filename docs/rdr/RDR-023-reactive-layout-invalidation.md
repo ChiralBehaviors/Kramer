@@ -17,7 +17,7 @@ RDR-016 delivered the `LayoutDecisionKey` cache and `control.updateItem()` hot p
 
 The result is that RDR-016's streaming updates are visually correct only when new data values fall within the previously measured statistical range. Any out-of-range update silently produces a wrong layout. This is acceptable as a known limitation in RDR-016 but is not acceptable for production streaming use cases (monitoring dashboards, live query results).
 
-RDR-012 Phase 3 addresses this by using the constraint solver to determine whether a data change actually shifts mode decisions, rather than conservatively assuming it does. The goal is `<16ms` relayout for point updates (values within existing statistical range) on a 20-node schema.
+RDR-012 Phase 3 addresses this by using the constraint solver to determine whether a data change actually shifts mode decisions, rather than conservatively assuming it does. The goal is `<2ms` for point updates (values within existing statistical range) and `<16ms` for p90-shifting updates (values that cross a width-bucket boundary) on a 20-node schema.
 
 ---
 
@@ -27,15 +27,30 @@ Three logical steps are inserted into the `setContent()` hot path between receiv
 
 **Step A — Data-path invalidation.** Compare incoming `JsonNode` values against a snapshot from the previous call. For each `SchemaPath` whose value set has changed, clear the corresponding `PrimitiveLayout`'s `frozenResult`. Only changed leaves are targeted.
 
-**Step B — Selective re-measure.** For each `PrimitiveLayout` whose `frozenResult` was cleared, invoke `measure()` on the new data. Capture the new p90 width. Collect the set of `PrimitiveLayout` nodes where `|new_p90 - old_p90| > EPSILON` (where EPSILON = 10.0, the same width bucket used by `LayoutDecisionKey`). A shift smaller than one bucket cannot change any constraint decision.
+**Step B — Selective re-measure.** For each `PrimitiveLayout` whose `frozenResult` was cleared, invoke `measure()` on the new data. Capture the new p90 width. Collect the set of `PrimitiveLayout` nodes where the new and old p90 values map to different width buckets: `(int)(new_p90 / 10) != (int)(old_p90 / 10)`. A shift that stays within the same bucket cannot change any constraint decision. (Using bucket identity rather than `>= EPSILON` avoids the edge case where values straddle a boundary at exactly a multiple of 10.)
 
 **Step C — Partial constraint re-solve.** If Step B returned a non-empty change set, find the lowest common ancestor (LCA) of the changed leaves in the schema tree. Re-solve only the constraint subtree rooted at the LCA with updated `RelationConstraint` records. If the solver returns the same mode assignment as cached, only `updateItem()` runs. If the assignment changed, rebuild only the affected subtree's control tree.
 
 If Step B returns an empty set (no p90 widths shifted), skip the solver entirely and let RDR-016's `updateItem()` path handle the update as it does today.
 
+If `ContentWidthStats.converged` is true and the new value falls within `[min, max]` of the frozen stats, skip clearing `frozenResult` entirely and proceed directly to `updateItem()` (case (a) fast path — no re-measure needed).
+
 ### Data snapshot
 
-`AutoLayout` retains a `Map<SchemaPath, List<String>>` — string-rendered values per primitive field, ordered by row position. Updated atomically at the end of each successful hot-path call. Keyed by `SchemaPath` (not field name) to handle schemas where the same name appears at multiple nesting levels.
+`AutoLayout` retains two parallel snapshots:
+
+- `Map<SchemaPath, List<String>> dataSnapshot` — string-rendered values per primitive field, ordered by row position.
+- `Map<SchemaPath, Double> p90Snapshot` — the p90 width captured from `frozenResult.p90Width()` for each path at the time it was last frozen.
+
+Both maps are keyed by `SchemaPath` (not field name) to handle schemas where the same name appears at multiple nesting levels.
+
+`p90Snapshot` is populated during `detectChangedPaths()`: before clearing any `frozenResult`, read `frozenResult.p90Width()` and record it in `p90Snapshot` for that path. This ensures the old p90 is available for the bucket-change comparison in Step B.
+
+Both snapshots are updated atomically at the end of each successful hot-path execution. Snapshot updates (both `dataSnapshot` and `p90Snapshot`) must be treated as a transaction: use try/finally to reset state on exception, preventing a partial update from leaving snapshots inconsistent with the live layout state.
+
+**Schema change:** if the schema root changes (new `SchemaNode` assigned to `AutoLayout`), both `dataSnapshot` and `p90Snapshot` must be cleared in full before the first `setContent()` call under the new schema.
+
+**Row deletion:** when the incoming data has fewer rows than `dataSnapshot` for a given path, treat all affected paths as changed. Remove the excess entries from `dataSnapshot` and clear `frozenResult` for the corresponding `PrimitiveLayout` nodes before proceeding to Step B.
 
 ### Outline sibling-lateral expansion
 
@@ -46,12 +61,14 @@ Outline column balancing creates lateral dependencies: when one field's width ch
 | Case | Behavior | Target latency |
 |------|----------|---------------|
 | (a) Point update, value within existing range | Step B returns empty; only `updateItem()` runs | <2ms |
-| (b) Max-value removal/insertion (p90 shifts) | Re-measure affected path; partial re-solve | <16ms |
+| (b) Max-value removal/insertion (p90 shifts bucket boundary) | Re-measure affected path; partial re-solve | <16ms |
 | (c) Outline sibling-lateral | Re-measure all siblings of changed field | O(siblings × rows) |
 
-### FXAT enforcement
+### FXAT enforcement (prerequisite fix)
 
 `setContent()` must begin with a JavaFX Application Thread assertion. If called from a background thread (e.g., a GraphQL subscription callback), wrap the entire update in `Platform.runLater()` and return. The snapshot comparison and `frozenResult` mutation are not thread-safe; the FXAT guard makes this safe by construction.
+
+This guard is a standalone prerequisite fix, independent of Phases 3a–3c. It must be delivered and reviewed before any snapshot infrastructure is introduced, since the snapshot state is only correct under FXAT-serialized access.
 
 ---
 
@@ -94,22 +111,36 @@ Bump the stylesheet version counter on every `setContent()` call. The existing `
 
 ## Implementation Plan
 
+### Prerequisite: FXAT guard
+
+- Add `Platform.isFxApplicationThread()` assertion at the entry of `setContent()`; if off-thread, enqueue via `Platform.runLater()` and return immediately
+- Deliver and review before any snapshot infrastructure lands; no snapshot state should exist without this guard in place
+
 ### Phase 3a: Data-path `frozenResult` invalidation
 
 - Add `Map<SchemaPath, List<String>> dataSnapshot` to `AutoLayout`
+- Add `Map<SchemaPath, Double> p90Snapshot` to `AutoLayout`; populated inside `detectChangedPaths()` by reading `frozenResult.p90Width()` before clearing
 - Add `void clearFrozenResult()` package-accessible mutator to `PrimitiveLayout`
 - Add `Set<SchemaPath> detectChangedPaths(JsonNode newData)` to `AutoLayout`
-- Invalidate on mismatch; update snapshot on each successful hot-path completion
-- TDD: single-field update; multi-field update; same-value no-op; new row appended (full rebuild)
+- Invalidate on mismatch; update both snapshots at end of successful pipeline execution, wrapped in try/finally to reset on exception
+- Handle row deletion: if incoming data has fewer rows than snapshot for a path, treat as changed and trim snapshot entries
+- Clear both `dataSnapshot` and `p90Snapshot` in full on schema root change
+- TDD: single-field update; multi-field update; same-value no-op; new row appended (full rebuild); row deleted; schema change clears snapshots
+
+> **Note:** Phases 3a and 3b can be delivered independently of Phase 3c. After Phase 3b, a lightweight Step C alternative is available: compare `new_p90` against the cached `LayoutResult.tableColumnWidth()` to detect a mode flip without invoking the full constraint solver. This lightweight check is sufficient to ship the invalidation fix while Phase 3c (full partial re-solve) waits for RDR-012 Phase 1 to be available.
 
 ### Phase 3b: Selective re-measure
 
 - Add `Map<SchemaPath, Double> remeasureChanged(Set<SchemaPath> changedPaths, JsonNode data)` to `AutoLayout`
 - OUTLINE sibling expansion: if parent is OUTLINE, add all siblings to re-measure set before invoking `measure()`
-- Return only paths where `|new_p90 - old_p90| > 10.0`
+- Return only paths where `(int)(new_p90 / 10) != (int)(old_p90 / 10)` (old p90 read from `p90Snapshot`)
 - TDD: value within bucket (empty map); value crosses bucket boundary; outline sibling expansion; shrink below old p90 but within bucket (empty map)
 
+> **Note (double traversal):** `detectChangedPaths()` currently traverses all rows to build the string diff, and `updateItem()` performs a second list-diff pass over the same rows. Consider merging these two passes to avoid the O(rows × fields) double traversal. This is a performance optimization and can be deferred to a follow-on phase.
+
 ### Phase 3c: Partial constraint re-solve
+
+> **Dependency:** Requires RDR-012 Phase 1 (constraint solver) to be operational. This phase is an enhancement; Phases 3a and 3b deliver the correctness fix independently.
 
 - Add `boolean partialResolve(Map<SchemaPath, Double> changedP90s)` to `AutoLayout`
 - Compute LCA of changed leaves; collect `RelationConstraint` records for LCA subtree with updated `tableWidth`
@@ -128,7 +159,7 @@ Partially. The `frozenResult` gap is confirmed by code inspection: `PrimitiveLay
 
 ### 2. Is the solution the simplest that could work?
 
-Yes. Steps A–C are minimal additions to the existing hot path. Step A is a map comparison. Step B re-invokes existing `measure()` logic. Step C re-invokes the existing constraint solver on a subtree. No new layout phases are introduced. The EPSILON threshold reuses the existing width bucket constant from `LayoutDecisionKey`.
+Yes. Steps A–C are minimal additions to the existing hot path. Step A is a map comparison. Step B re-invokes existing `measure()` logic. Step C re-invokes the existing constraint solver on a subtree. No new layout phases are introduced. The width-bucket comparison `(int)(new_p90 / 10) != (int)(old_p90 / 10)` reuses the existing bucket size constant from `LayoutDecisionKey`.
 
 ### 3. Are all assumptions verified or explicitly acknowledged?
 
@@ -138,20 +169,21 @@ Acknowledged gaps: snapshot memory overhead for very large datasets (>100K rows)
 
 ### 4. What is the rollback strategy if this fails?
 
-Each phase is independently reversible. Phase 3a: remove `dataSnapshot`, `clearFrozenResult()`, and `detectChangedPaths()` — the hot path reverts to the RDR-016 state. Phase 3b: remove `remeasureChanged()` — unchanged from Phase 3a. Phase 3c: remove `partialResolve()` — data changes continue to use `updateItem()` without solver re-evaluation, same as RDR-016. No shared state is introduced between phases.
+Each phase is independently reversible. Phase 3a: remove `dataSnapshot`, `p90Snapshot`, `clearFrozenResult()`, and `detectChangedPaths()` — the hot path reverts to the RDR-016 state. Phase 3b: remove `remeasureChanged()` — unchanged from Phase 3a. Phase 3c: remove `partialResolve()` — data changes continue to use `updateItem()` without solver re-evaluation, same as RDR-016. No shared state is introduced between phases.
 
 ### 5. Are there cross-cutting concerns with other RDRs?
 
 - **RDR-016**: Phase 3 builds on RDR-016's `LayoutDecisionKey` cache and `updateItem()` hot path. All RDR-016 success criteria must remain satisfied after Phase 3 integration.
 - **RDR-012**: Phase 3 requires the constraint solver (Phase 1 of RDR-012) to be operational. Phase 3 is a Phase 1 consumer; it cannot be implemented before Phase 1 is complete.
-- **RDR-013**: `ContentWidthStats.p90Width` is the width value compared against EPSILON. Phase 3 depends on RDR-013's statistical width measurement being in place.
+- **RDR-013**: `ContentWidthStats.p90Width` is the width value used in the bucket-change comparison. Phase 3 depends on RDR-013's statistical width measurement being in place.
 - **RDR-009**: `frozenStylesheetVersion` mechanism is defined in RDR-009's `MeasureResult` immutability contract. Phase 3 adds a second invalidation axis without modifying the existing stylesheet-version axis.
 
 ---
 
 ## Success Criteria
 
-- [ ] Point update (value within existing statistical range) produces `<16ms` relayout latency on a 20-node schema
+- [ ] Point update (value within existing statistical range) produces `<2ms` relayout latency on a 20-node schema (case (a))
+- [ ] p90-shifting update (value crosses a width-bucket boundary) produces `<16ms` relayout latency on a 20-node schema (case (b))
 - [ ] `frozenResult` is not cleared for paths whose data did not change
 - [ ] p90 shift that does not cross a 10px width-bucket boundary does not trigger `buildControl()`
 - [ ] p90 shift that flips a mode assignment rebuilds only the affected subtree, not the full control tree

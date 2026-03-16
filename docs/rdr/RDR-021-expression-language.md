@@ -33,8 +33,8 @@ RDR-018 extended `LayoutStylesheet` with query-semantic property keys (`filter-e
 
 ## Research Findings
 
-**RF-1: The design spec is complete.**
-The Phase 2 sub-specification defines the grammar (EBNF), type system, JsonNode materialization table, null-propagation rules, scoping rules, all four use cases (filter, formula, aggregate, sort), pipeline ordering, implementation strategy (recursive descent parser + sealed AST + pattern-matching evaluator), and risk mitigations. No further design work is required before implementation begins.
+**RF-1: Design spec complete for parser and evaluator.**
+The Phase 2 sub-specification defines the grammar (EBNF), type system, JsonNode materialization table, null-propagation rules, scoping rules, all four use cases (filter, formula, aggregate, sort), pipeline ordering, implementation strategy (recursive descent parser + sealed AST + pattern-matching evaluator), and risk mitigations. Four open questions (see below) must be resolved before pipeline wiring begins.
 
 **RF-2: Recursive descent is the correct parser choice.**
 An external parser generator (ANTLR, JavaCC, JEXL) would add a compile-time dependency for a grammar small enough to fit in one class. The expression grammar has six precedence levels and a closed function name set. Hand-written recursive descent produces a zero-dependency parser, keeps the codebase Spartan, and gives precise error positions in `ParseException`.
@@ -71,10 +71,10 @@ Expr (sealed)
   ├── BinaryOp(Op op, Expr left, Expr right)
   ├── UnaryOp(Op op, Expr operand)
   ├── FunctionCall(String name, List<Expr> args)
-  └── AggregateCall(String fn, Expr arg)
+  └── AggregateCall(String fn, Optional<Expr> arg)
 ```
 
-`AggregateCall` is distinguished from `FunctionCall` at parse time. This allows the evaluator to dispatch correctly using Java 25 pattern matching switch without runtime name inspection.
+`AggregateCall` is distinguished from `FunctionCall` at parse time. This allows the evaluator to dispatch correctly using Java 25 pattern matching switch without runtime name inspection. `count()` takes no argument; its `arg` is `Optional.empty()`. All other aggregate functions require exactly one argument expression.
 
 ### Evaluator
 
@@ -92,7 +92,7 @@ Expressions are parsed to AST once per unique string per `SchemaPath`, at first 
 
 1. Read `filter-expression` for the current `SchemaPath`. Compile (or retrieve from cache). Evaluate per row; exclude rows where result is false or null.
 2. Read `formula-expression` for each child `Primitive` path. Evaluate formulas in topological order over the filtered row set. Materialize results as `ObjectNode` field overrides.
-3. Read `aggregate-expression` for any child `Primitive` marked as aggregate. Evaluate over the post-formula row set.
+3. Read `aggregate-expression` for any child `Primitive` marked as aggregate. Evaluate aggregate over post-formula rows; hold result for rendering once the `aggregate-position` property is defined (see Open Question 3). Step C delivers computation, not rendering.
 4. Read `sort-expression` per row (if present) to derive sort keys. Apply sort.
 
 `ExpressionEvaluator` is injected via the `Style` factory, which already receives `LayoutStylesheet`. It is stateless per expression; all state is in the cached AST and the per-row `JsonNode` context.
@@ -144,6 +144,12 @@ No implementation cost, but filter predicates, formula columns, and aggregates a
 
 **Required constraint**: formula evaluation must complete before statistical width sampling begins. The pipeline position defined above (formulas evaluated early in `RelationLayout.measure()`, before child measure) satisfies this requirement, provided RDR-013's sampling hook is in the child measure path. This dependency must be validated during Phase 2c wiring.
 
+### Cross-Cutting Behavioral Notes
+
+**`hideIfEmpty` and `filter-expression` ordering**: `filter-expression` runs after `hideIfEmpty`. A filter that excludes all rows does NOT trigger `hideIfEmpty` re-evaluation. This is expected behavior: `hideIfEmpty` reflects the pre-filter presence of data; `filter-expression` is a view-level exclusion applied on top.
+
+**RDR-016 compatibility**: Any `MeasureResult` schema changes introduced by RDR-016 (layout stability / incremental update) must be reviewed for compatibility with expression result embedding. Expression evaluation results (filtered row sets, formula overlays, aggregate values) are stored alongside `MeasureResult`; a structural change to that record requires a coordinated update here.
+
 ### Open Questions (Deferred to Implementation)
 
 The following are deferred and must be resolved before Phase 2c wiring begins:
@@ -157,16 +163,16 @@ The following are deferred and must be resolved before Phase 2c wiring begins:
 
 ## Implementation Plan
 
-### Phase 1: Parser
+### Step A: Parser
 
 - Implement single-pass tokenizer producing the token stream specified in the design spec.
-- Implement recursive descent parser producing sealed `Expr` AST.
+- Implement recursive descent parser producing sealed `Expr` AST. `count()` is parsed as `AggregateCall(fn="count", arg=Optional.empty())`; all other aggregate functions require one argument expression.
 - `AggregateCall` distinguished from `FunctionCall` at parse time.
 - `ParseException` with char offset and message on parse error.
 - Parse-time validations: aggregate/non-aggregate context mismatch (warn + absent), mixed aggregate/scalar at expression root (warn + absent).
 - Unit tests: expression strings → expected AST structure; error cases → `ParseException` messages.
 
-### Phase 2: Evaluator
+### Step B: Evaluator
 
 - Implement `ExpressionEvaluator` with per-row evaluate (`Expr`, `JsonNode` → `Object`) and aggregate evaluate (`AggregateCall`, `List<JsonNode>` → `Object`).
 - Java 25 pattern matching switch over sealed `Expr` hierarchy.
@@ -177,7 +183,7 @@ The following are deferred and must be resolved before Phase 2c wiring begins:
 - AST cache keyed by expression string, invalidated by `LayoutStylesheet.getVersion()`.
 - Unit tests: eval against `ObjectNode` fixtures; null propagation cases; aggregate reduction; cycle detection.
 
-### Phase 3: Wire into RelationLayout.measure()
+### Step C: Pipeline Wiring into RelationLayout.measure()
 
 - Inject `ExpressionEvaluator` via `Style` factory.
 - Add filter pass after `extractFrom(datum)`: read `filter-expression`, evaluate per row, collect passing rows.

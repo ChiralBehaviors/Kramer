@@ -30,14 +30,36 @@ Condition 2 confirms the data produced at least one distinct pivot value. Nodes 
 
 ### RelationConstraint extension
 
+The record is extended by appending two fields. All seven existing fields are preserved:
+
 ```java
 record RelationConstraint(
-    double tableWidth,        // existing
-    double outlineWidth,      // existing
-    double crosstabWidth,     // new: 0 if not eligible
-    boolean crosstabEligible  // new: true iff pivot-field configured and pivotStats non-empty
+    // --- existing fields (unchanged) ---
+    SchemaNode        node,             // the Relation node
+    double            availableWidth,   // width budget at this node's position
+    double            tableWidth,       // measured width in TABLE mode
+    double            outlineWidth,     // measured width in OUTLINE mode
+    boolean           hardCrosstab,     // true → stylesheet-forced CROSSTAB (Phase 1 behavior)
+    RenderMode        forcedMode,       // non-null when mode is stylesheet-forced
+    List<Integer>     childIndices,     // indices of direct Relation children in constraint list
+    // --- new fields ---
+    double            crosstabWidth,    // minimum feasibility width for CROSSTAB; 0 if not eligible
+    boolean           crosstabEligible  // true iff pivot-field configured and pivotStats non-empty
 ) {}
 ```
+
+Pseudocode is additive — field count goes from 7 to 9. Record construction at all existing call sites passes the two new fields last, defaulting to `(0.0, false)` for non-eligible nodes.
+
+### hardCrosstab and crosstabEligible joint semantics
+
+| `hardCrosstab` | `crosstabEligible` | Solver behavior |
+|---|---|---|
+| `true` | `false` | Pinned to CROSSTAB; excluded from enumeration (Phase 1 behavior retained). |
+| `false` | `true` | Ternary solver variable: TABLE, OUTLINE, or CROSSTAB. |
+| `true` | `true` | `hardCrosstab` wins; node is pinned and excluded from enumeration. Log a warning at constraint-generation time: `"[RDR-024] node {} has both hardCrosstab and crosstabEligible set; hardCrosstab takes precedence"`. |
+| `false` | `false` | Binary solver variable: TABLE or OUTLINE only (existing behavior). |
+
+Rationale: `hardCrosstab` represents explicit stylesheet intent; it is never overridden by the solver. `crosstabEligible` represents a solver-visible opportunity discovered at measure time.
 
 ### CROSSTAB width computation
 
@@ -47,19 +69,39 @@ crosstabWidth = rowHeaderWidth + pivotCount × pivotColumnWidth + insets
 
 Where `rowHeaderWidth` is the sum of non-pivot, non-value child column widths; `pivotCount` is `measureResult.pivotStats().pivotCount()`; `pivotColumnWidth` is the value field's `MeasureResult.columnWidth()`; `insets` are the same as TABLE mode. This mirrors the formula already used by `layoutCrosstab()` at render time, computed eagerly during constraint generation so the solver can prune without triggering a render pass.
 
+`crosstabWidth` is a **minimum feasibility bound**. The constraint checks `crosstabWidth <= availableWidth`; if more width is available the CROSSTAB layout degrades gracefully (pivot columns expand proportionally) without requiring a re-solve.
+
 ### Feasibility and pruning
 
 A CROSSTAB assignment for node i is feasible when `crosstabWidth(i) <= availableWidth(i)`. When all three modes are infeasible, the solver uses the same fallback as Phase 1 (greedy for N > 15). No new failure modes are introduced.
+
+The greedy fallback is extended to emit CROSSTAB for eligible nodes: when a node has `crosstabEligible == true` and `!hardCrosstab`, the greedy pass tries CROSSTAB first (if feasible), then TABLE, then OUTLINE — matching the solver objective ordering. This ensures the greedy fallback and the exhaustive solver are consistent in their mode preferences.
 
 ### Solver objective
 
 The Phase 1 objective — maximize TABLE assignments, depth-first lexicographic tie-break — is extended to rank CROSSTAB equally with TABLE (both produce column-oriented layouts). When TABLE and CROSSTAB are both feasible and equally ranked, TABLE is preferred by default. A `prefer-mode` stylesheet property (values: `table`, `crosstab`) may be added post-implementation to let users express explicit preference.
 
-Rationale: treating CROSSTAB equal to TABLE avoids over-preferring CROSSTAB for small pivot counts where the sparse matrix is not actually denser than a table.
+The objective is computed as:
+
+```
+tableCount   = count of nodes assigned TABLE in a candidate assignment
+crosstabCount = count of nodes assigned CROSSTAB in a candidate assignment
+score = 2 * (tableCount + crosstabCount) + tableCount
+```
+
+The coefficient-2 term ranks any column-oriented assignment (TABLE or CROSSTAB) above any OUTLINE. The `+ tableCount` secondary term breaks ties by preferring TABLE over CROSSTAB when they are both feasible. Assignments are ranked by descending score; equal scores use depth-first lexicographic order (same as Phase 1 tie-break).
+
+Rationale: treating CROSSTAB equal to TABLE in the primary term avoids over-preferring CROSSTAB for small pivot counts where the sparse matrix is not actually denser than a table.
 
 ### Enumeration change
 
 The Phase 1 bit-vector enumeration is replaced with a **mixed-radix enumeration** parameterized by per-node mode count (2 or 3). The enumeration remains exhaustive. The N > 15 greedy fallback is retained unchanged. N counts all Relation nodes; CROSSTAB-eligible nodes do not lower the fallback threshold.
+
+**Mixed-radix threshold adjustment**: When K > 0 eligible nodes are present, the effective search-space budget grows as `3^K × 2^(N-K)`. To prevent the fallback threshold from silently allowing an over-large search, either:
+- Lower the threshold by K when K > 0: `effectiveThreshold = 15 - K`; or
+- Add an explicit performance test: for K=5, N=15 (≈ 249K assignments with pruning), the test must complete in under 1ms. The test fails if this bound is violated, flagging that the threshold must be reduced.
+
+The Phase 4a-T2 implementation must choose one strategy and document the decision.
 
 ---
 
