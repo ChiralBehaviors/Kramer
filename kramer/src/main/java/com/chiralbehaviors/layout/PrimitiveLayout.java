@@ -72,6 +72,9 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     private double                 lastP90Width              = Double.NaN;
     private int                    consecutiveStableCount    = 0;
 
+    // Last stylesheet seen during buildControl — used by cell renderers (Kramer-7c4)
+    private LayoutStylesheet       currentStylesheet;
+
     public PrimitiveLayout(Primitive p, PrimitiveStyle style) {
         super(p, style.getLabelStyle());
         this.style = style;
@@ -104,6 +107,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public LayoutCell<? extends Region> buildControl(FocusTraversal<?> parentTraversal,
                                                      Style model) {
+        currentStylesheet = (model != null) ? model.getStylesheet() : null;
         // SPARKLINE must preempt avgCard>1 guard: array-valued data has avgCard>1 by nature
         if (renderMode == PrimitiveRenderMode.SPARKLINE) {
             if (cachedSparklineStyle == null) {
@@ -500,6 +504,15 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     public MeasureResult getMeasureResult() {
         return measureResult;
+    }
+
+    /**
+     * Returns the {@link LayoutStylesheet} last captured during {@link #buildControl}.
+     * May be {@code null} if {@code buildControl} has not yet been called or was called
+     * with a {@code null} model.
+     */
+    public LayoutStylesheet getStylesheet() {
+        return currentStylesheet;
     }
 
     public PrimitiveRenderMode getRenderMode() {
