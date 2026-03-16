@@ -2,9 +2,11 @@
 
 ## Metadata
 - **Type**: Research
-- **Status**: proposed
+- **Status**: accepted
 - **Priority**: P2
 - **Created**: 2026-03-15
+- **Accepted**: 2026-03-16
+- **Reviewed-by**: self
 - **Related**: RDR-011 (layout protocol), RDR-009 (MeasureResult immutability), RDR-015 (alternative rendering modes), RDR-016 (layout stability / incremental update), RDR-018 (query-semantic layout stylesheet)
 
 ## Problem Statement
