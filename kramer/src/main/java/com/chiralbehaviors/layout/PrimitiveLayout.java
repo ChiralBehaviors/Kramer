@@ -361,11 +361,12 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     public LayoutResult computeLayout(double width) {
         clear();
         return new LayoutResult(
-            false,              // useTable — primitives never use table mode
-            useVerticalHeader,  // preserved from nestTableColumn if set
-            0,                  // tableColumnWidth — not applicable
+            RelationRenderMode.OUTLINE,    // primitives never use table mode
+            PrimitiveRenderMode.TEXT,
+            useVerticalHeader,             // preserved from nestTableColumn if set
+            0,                             // tableColumnWidth — not applicable
             columnHeaderIndentation,
-            width,              // constrainedColumnWidth
+            width,                         // constrainedColumnWidth
             List.of()
         );
     }

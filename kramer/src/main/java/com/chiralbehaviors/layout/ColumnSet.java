@@ -100,6 +100,17 @@ public class ColumnSet {
         return columns;
     }
 
+    public ColumnSetSnapshot toSnapshot(double height) {
+        var columnSnapshots = columns.stream()
+                                     .map(c -> new ColumnSnapshot(c.getWidth(),
+                                                                   c.getFields()
+                                                                    .stream()
+                                                                    .map(SchemaNodeLayout::getField)
+                                                                    .toList()))
+                                     .toList();
+        return new ColumnSetSnapshot(columnSnapshots, height);
+    }
+
     @Override
     public String toString() {
         return String.format("ColumnSet [%s]", columns);
