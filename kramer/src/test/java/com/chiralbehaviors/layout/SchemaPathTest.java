@@ -104,6 +104,50 @@ class SchemaPathTest {
                      layout.children.get(1).getSchemaPath());
     }
 
+    // ---- SchemaPath.sanitize() tests ----
+
+    @Test
+    void sanitizeNormalName() {
+        assertEquals("name", SchemaPath.sanitize("name"));
+        assertEquals("my-field", SchemaPath.sanitize("my-field"));
+        assertEquals("my_field", SchemaPath.sanitize("my_field"));
+        assertEquals("Field123", SchemaPath.sanitize("Field123"));
+    }
+
+    @Test
+    void sanitizeSpecialCharacters() {
+        assertEquals("my_field", SchemaPath.sanitize("my field"));
+        assertEquals("my_field", SchemaPath.sanitize("my.field"));
+        assertEquals("items_0_", SchemaPath.sanitize("items[0]"));
+        assertEquals("a_b_c", SchemaPath.sanitize("a/b/c"));
+        assertEquals("foo__bar", SchemaPath.sanitize("foo::bar"));
+    }
+
+    @Test
+    void sanitizeLeadingDigit() {
+        assertEquals("_1name", SchemaPath.sanitize("1name"));
+        assertEquals("_99problems", SchemaPath.sanitize("99problems"));
+        assertEquals("_0", SchemaPath.sanitize("0"));
+    }
+
+    @Test
+    void sanitizeEmpty() {
+        assertEquals("_unknown", SchemaPath.sanitize(""));
+    }
+
+    @Test
+    void sanitizeNull() {
+        assertEquals("_unknown", SchemaPath.sanitize(null));
+    }
+
+    @Test
+    void cssClassSanitizes() {
+        // cssClass() must apply sanitization
+        assertEquals("my_field", new SchemaPath("my field").cssClass());
+        assertEquals("_1name", new SchemaPath("1name").cssClass());
+        assertEquals("_unknown", new SchemaPath("").cssClass());
+    }
+
     @Test
     void defaultStylesheetOverrides() {
         var stylesheet = new DefaultLayoutStylesheet(new com.chiralbehaviors.layout.style.Style());

@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import javafx.geometry.Insets;
 
 import com.chiralbehaviors.layout.Column;
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
 import com.chiralbehaviors.layout.cell.VerticalCell;
@@ -83,7 +84,7 @@ public class OutlineColumn extends VerticalCell<OutlineColumn>
                          FocusTraversal<OutlineColumn> parentTraversal) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, SchemaPath.sanitize(field)));
         selectionModel = buildSelectionModel(i -> null, () -> elements.size(),
                                              i -> elements.get(i));
         mouseHandler = bind(selectionModel);

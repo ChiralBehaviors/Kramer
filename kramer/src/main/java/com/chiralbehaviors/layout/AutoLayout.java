@@ -80,7 +80,9 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         data.addListener((o, p, c) -> setContent());
         controller = new FocusController<>(this);
         getStylesheets().addListener((ListChangeListener<String>) c -> {
-            model.setStyleSheets(getStylesheets());
+            var newList = getStylesheets();
+            if (newList.equals(model.styleSheets())) return;
+            model.setStyleSheets(newList, this);
             layout = null;
             measureResult = null;
             if (getData() != null) {

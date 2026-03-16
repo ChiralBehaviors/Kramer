@@ -94,6 +94,29 @@ class LabelCellTest {
     }
 
     @Test
+    void testInitializeAddsKramerContainerStyleClass() {
+        Pane pane = new Pane();
+        PaneCellAdapter cell = new PaneCellAdapter(pane);
+        cell.initialize("outline-cell");
+        assertTrue(pane.getStyleClass().contains("kramer-container"),
+                   "initialize() must add 'kramer-container' style class");
+        assertTrue(pane.getStyleClass().contains("outline-cell"),
+                   "initialize() must add the defaultStyle argument");
+    }
+
+    @Test
+    void testInitializeAddsKramerContainerBeforeDefaultStyle() {
+        Pane pane = new Pane();
+        PaneCellAdapter cell = new PaneCellAdapter(pane);
+        cell.initialize("nested-row");
+        var styles = pane.getStyleClass();
+        int containerIdx = styles.indexOf("kramer-container");
+        int defaultIdx = styles.indexOf("nested-row");
+        assertTrue(containerIdx >= 0, "'kramer-container' must be present");
+        assertTrue(defaultIdx >= 0, "defaultStyle must be present");
+    }
+
+    @Test
     void testActivateIsNoOp() {
         PaneCellAdapter cell = new PaneCellAdapter(new Pane());
         assertDoesNotThrow(cell::activate);

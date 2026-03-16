@@ -33,11 +33,29 @@ public record SchemaPath(List<String> segments) {
     }
 
     /**
-     * CSS class uses the leaf field name for backward compatibility.
+     * Returns a sanitized CSS class name derived from the leaf field name.
+     * Sanitization rules:
+     * - null or empty input → "_unknown"
+     * - non-[a-zA-Z0-9_-] characters replaced with '_'
+     * - leading digit gets '_' prepended
      * Different nodes with the same field name get the same CSS rules.
      */
     public String cssClass() {
-        return leaf();
+        return sanitize(leaf());
+    }
+
+    /**
+     * Sanitizes a raw field name into a valid CSS identifier token.
+     */
+    public static String sanitize(String raw) {
+        if (raw == null || raw.isEmpty()) {
+            return "_unknown";
+        }
+        String cleaned = raw.replaceAll("[^a-zA-Z0-9_-]", "_");
+        if (Character.isDigit(cleaned.charAt(0))) {
+            cleaned = "_" + cleaned;
+        }
+        return cleaned;
     }
 
     @Override

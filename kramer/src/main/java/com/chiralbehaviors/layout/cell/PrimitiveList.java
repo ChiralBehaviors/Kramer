@@ -19,6 +19,7 @@ package com.chiralbehaviors.layout.cell;
 import java.util.Arrays;
 
 import com.chiralbehaviors.layout.PrimitiveLayout;
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -45,7 +46,7 @@ public class PrimitiveList extends VirtualFlow<LayoutCell<?>> {
                   return outlineCell;
               }, parentTraversal,
               Arrays.asList(DEFAULT_STYLE, String.format(SCHEMA_CLASS_TEMPLATE,
-                                                         layout.getField())));
+                                                         layout.getCssClass())));
         double width = layout.getJustifiedWidth();
         double height = layout.getHeight();
         setMinSize(width, height);
@@ -56,7 +57,7 @@ public class PrimitiveList extends VirtualFlow<LayoutCell<?>> {
     public PrimitiveList(String field) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, SchemaPath.sanitize(field)));
     }
 
     @Override

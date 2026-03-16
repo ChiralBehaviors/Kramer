@@ -20,7 +20,10 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 
+import javafx.application.Platform;
+
 import com.chiralbehaviors.layout.LayoutLabel;
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
@@ -53,6 +56,11 @@ import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 
+/**
+ * Factory for layout styles. Caches computed {@link PrimitiveStyle} and
+ * {@link RelationStyle} per schema node. All measurement methods must run
+ * on the JavaFX Application Thread (JAT); assertions guard this invariant.
+ */
 public class Style {
 
     public interface LayoutObserver {
@@ -116,7 +124,12 @@ public class Style {
         }
     }
 
+    /** Logical pixels for measurement scene — device-independent, not physical screen pixels. */
+    static final int MEASUREMENT_SCENE_WIDTH  = 800;
+    static final int MEASUREMENT_SCENE_HEIGHT = 600;
+
     private final LayoutObserver              observer;
+    private Object                            owner;
 
     private final List<String>                styleSheets          = new ArrayList<>();
     private final IdentityHashMap<Primitive, PrimitiveStyle>  primitiveStyleCache  = new IdentityHashMap<>();
@@ -156,7 +169,7 @@ public class Style {
                                        : layout((Relation) n);
     }
 
-    public void setStyleSheets(List<String> stylesheets) {
+    void setStyleSheets(List<String> stylesheets) {
         this.styleSheets.clear();
         this.styleSheets.addAll(stylesheets);
         primitiveStyleCache.clear();
@@ -164,15 +177,25 @@ public class Style {
         layoutCache.clear();
     }
 
+    public void setStyleSheets(List<String> stylesheets, Object owner) {
+        if (this.owner != null && this.owner != owner) {
+            throw new IllegalStateException(
+                "Style already owned by " + this.owner);
+        }
+        this.owner = owner;
+        setStyleSheets(stylesheets);
+    }
+
     public PrimitiveStyle style(Primitive p) {
         return primitiveStyleCache.computeIfAbsent(p,
                                                     k -> computePrimitiveStyle(p));
     }
 
-    private PrimitiveStyle computePrimitiveStyle(Primitive p) {
+    protected PrimitiveStyle computePrimitiveStyle(Primitive p) {
+        assert Platform.isFxApplicationThread() : "computePrimitiveStyle must run on JAT";
         VBox root = new VBox();
 
-        PrimitiveList list = new PrimitiveList(p.getField());
+        PrimitiveList list = new PrimitiveList(SchemaPath.sanitize(p.getField()));
 
         LayoutLabel label = new LayoutLabel("Lorem Ipsum");
 
@@ -182,12 +205,12 @@ public class Style {
         primitiveText.getStyleClass()
                      .addAll(PrimitiveLayoutCell.DEFAULT_STYLE,
                              PrimitiveTextStyle.PRIMITIVE_TEXT_CLASS,
-                             p.getField());
+                             SchemaPath.sanitize(p.getField()));
 
         root.getChildren()
             .addAll(list, label, primitiveText);
 
-        Scene scene = new Scene(root, 800, 600);
+        Scene scene = new Scene(root, MEASUREMENT_SCENE_WIDTH, MEASUREMENT_SCENE_HEIGHT);
         scene.getStylesheets()
              .addAll(styleSheets);
 
@@ -212,25 +235,27 @@ public class Style {
                                                    k -> computeRelationStyle(r));
     }
 
-    private RelationStyle computeRelationStyle(Relation r) {
+    protected RelationStyle computeRelationStyle(Relation r) {
+        assert Platform.isFxApplicationThread() : "computeRelationStyle must run on JAT";
         VBox root = new VBox();
 
-        NestedTable table = new NestedTable(r.getField());
-        NestedRow row = new NestedRow(r.getField());
-        NestedCell rowCell = new NestedCell(r.getField());
+        String cssClass = SchemaPath.sanitize(r.getField());
+        NestedTable table = new NestedTable(cssClass);
+        NestedRow row = new NestedRow(cssClass);
+        NestedCell rowCell = new NestedCell(cssClass);
 
-        Outline outline = new Outline(r.getField());
-        OutlineCell outlineCell = new OutlineCell(r.getField());
-        OutlineColumn column = new OutlineColumn(r.getField());
-        OutlineElement element = new OutlineElement(r.getField());
-        Span span = new Span(r.getField());
+        Outline outline = new Outline(cssClass);
+        OutlineCell outlineCell = new OutlineCell(cssClass);
+        OutlineColumn column = new OutlineColumn(cssClass);
+        OutlineElement element = new OutlineElement(cssClass);
+        Span span = new Span(cssClass);
 
         LayoutLabel label = new LayoutLabel("Lorem Ipsum");
 
         root.getChildren()
             .addAll(table, row, rowCell, outline, outlineCell, column, element,
                     span, label);
-        Scene scene = new Scene(root, 800, 600);
+        Scene scene = new Scene(root, MEASUREMENT_SCENE_WIDTH, MEASUREMENT_SCENE_HEIGHT);
         scene.getStylesheets()
              .addAll(styleSheets);
 
@@ -286,5 +311,15 @@ public class Style {
     // Visible for testing
     int layoutCacheSize() {
         return layoutCache.size();
+    }
+
+    /**
+     * Clears all cached styles and layouts. Call when discarding a schema tree
+     * or when stylesheets change outside the normal listener path.
+     */
+    public void clearCaches() {
+        primitiveStyleCache.clear();
+        relationStyleCache.clear();
+        layoutCache.clear();
     }
 }

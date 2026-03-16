@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutCell;
@@ -55,7 +56,7 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
 
     public NestedCell(RelationLayout layout,
                       FocusTraversal<NestedCell> parentTraversal, Style model) {
-        this(layout.getField(), parentTraversal);
+        this(layout.getCssClass(), parentTraversal);
         layout.forEach(child -> {
             LayoutCell<? extends Region> cell = child.buildColumn(layout.baseRowCellHeight(layout.getCellHeight()),
                                                                   focus, model);
@@ -73,7 +74,7 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
                       FocusTraversal<NestedCell> parentTraversal) {
         super(STYLE_SHEET);
         this.initialize(NESTED_CELL_CLASS);
-        getStyleClass().addAll(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        getStyleClass().addAll(String.format(SCHEMA_CLASS_TEMPLATE, SchemaPath.sanitize(field)));
         selectionModel = buildSelectionModel(i -> null, () -> cells.size(),
                                              i -> cells.get(i));
         focus = new FocusTraversalNode<LayoutCell<? extends Region>>(parentTraversal,

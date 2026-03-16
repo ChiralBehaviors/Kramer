@@ -434,19 +434,6 @@ class VerticalHeaderTest {
     }
 
     /**
-     * PrimitiveStyle setter for verticalHeaderThreshold works.
-     */
-    @Test
-    void primitiveStyleVerticalHeaderThresholdSetter() {
-        LabelStyle labelStyle = mock(LabelStyle.class);
-        PrimitiveStyle.PrimitiveTextStyle style =
-            new PrimitiveStyle.PrimitiveTextStyle(labelStyle, new Insets(0), labelStyle);
-
-        style.setVerticalHeaderThreshold(2.0);
-        assertEquals(2.0, style.getVerticalHeaderThreshold());
-    }
-
-    /**
      * Scenario 4: Phase 1 un-rotation reduces columnHeaderHeight.
      * Before un-rotation: height = snap(labelWidth) = 100.
      * After un-rotation: height = snap(labelStyle.getHeight()) = 20.

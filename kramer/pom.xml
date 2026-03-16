@@ -64,6 +64,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <argLine>
+                        -ea
                         --add-opens javafx.graphics/com.sun.javafx.application=ALL-UNNAMED
                         --add-opens javafx.graphics/com.sun.glass.ui=ALL-UNNAMED
                         --add-opens javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED

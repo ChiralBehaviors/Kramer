@@ -22,6 +22,7 @@ import java.util.List;
 
 import com.chiralbehaviors.layout.ColumnSet;
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
 import com.chiralbehaviors.layout.cell.VerticalCell;
@@ -54,7 +55,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
                        RelationLayout layout, FocusTraversal<OutlineCell> pt,
                        Style model, RelationStyle style, double labelWidth) {
-        this(layout.getField(), pt);
+        this(layout.getCssClass(), pt);
         columnSets.forEach(cs -> {
             Span span = new Span(childCardinality, layout, labelWidth, cs,
                                  focus, model, style);
@@ -71,7 +72,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
     public OutlineCell(String field, FocusTraversal<OutlineCell> parent) {
         super(STYLE_SHEET);
         initialize(OUTLINE_CELL_CLASS);
-        getStyleClass().addAll(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        getStyleClass().addAll(String.format(SCHEMA_CLASS_TEMPLATE, SchemaPath.sanitize(field)));
         selectionModel = buildSelectionModel(i -> null, () -> spans.size(),
                                              i -> spans.get(i));
         mouseHandler = bind(selectionModel);
