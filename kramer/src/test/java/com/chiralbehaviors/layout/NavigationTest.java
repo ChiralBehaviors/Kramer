@@ -4,7 +4,11 @@ package com.chiralbehaviors.layout;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -75,12 +79,15 @@ class NavigationTest {
         @SuppressWarnings("unchecked")
         FocusController<LayoutCell<?>> fc = mock(FocusController.class);
 
-        var search = new LayoutSearch(schema, data, vf, fc);
+        // Use synchronous runLater so deferred focusController.navigateTo fires immediately
+        List<Runnable> deferred = new ArrayList<>();
+        var search = new LayoutSearch(schema, data, vf, fc, deferred::add);
 
         var path = new SchemaPath("items").child("name");
         var result = new SearchResult(path, 3, "Name3", 0, 5);
 
         search.navigateToResult(result);
+        deferred.forEach(Runnable::run);
 
         verify(fc).navigateTo(vf, 3);
     }
@@ -111,10 +118,13 @@ class NavigationTest {
         @SuppressWarnings("unchecked")
         FocusController<LayoutCell<?>> fc = mock(FocusController.class);
 
-        var search = new LayoutSearch(schema, data, vf, fc);
+        // Use synchronous runLater so deferred focusController.navigateTo fires immediately
+        List<Runnable> deferred = new ArrayList<>();
+        var search = new LayoutSearch(schema, data, vf, fc, deferred::add);
         search.setQuery("Name1");
         Optional<SearchResult> result = search.findNext();
         assertTrue(result.isPresent());
+        deferred.forEach(Runnable::run);
 
         verify(vf).show(1);
         verify(fc).navigateTo(vf, 1);
@@ -127,14 +137,18 @@ class NavigationTest {
         @SuppressWarnings("unchecked")
         FocusController<LayoutCell<?>> fc = mock(FocusController.class);
 
-        var search = new LayoutSearch(schema, data, vf, fc);
+        // Use synchronous runLater so deferred focusController.navigateTo fires immediately
+        List<Runnable> deferred = new ArrayList<>();
+        var search = new LayoutSearch(schema, data, vf, fc, deferred::add);
         search.setQuery("Name4");
         search.findNext(); // advance to row 4
+        deferred.clear();  // discard deferred tasks from findNext
         reset(vf, fc);
 
         Optional<SearchResult> prev = search.findPrevious();
         assertTrue(prev.isPresent());
         int row = prev.get().rowIndex();
+        deferred.forEach(Runnable::run);
         verify(vf).show(row);
         verify(fc).navigateTo(vf, row);
     }

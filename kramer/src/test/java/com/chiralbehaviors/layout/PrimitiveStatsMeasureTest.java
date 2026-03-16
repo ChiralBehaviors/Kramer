@@ -196,7 +196,7 @@ class PrimitiveStatsMeasureTest {
 
         ContentWidthStats stats = layout.getMeasureResult().contentStats();
         assertNotNull(stats);
-        assertFalse(stats.converged(), "Phase 1 hardcodes converged=false");
+        assertFalse(stats.converged(), "converged=false because consecutiveStableCount (1) < k (3) on first call");
     }
 
     // --- Test 8: exactly minSamples elements triggers stats ---

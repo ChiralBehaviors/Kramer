@@ -297,6 +297,33 @@ class HideIfEmptyFilterTest {
     }
 
     // -----------------------------------------------------------------------
+    // Test: hideIfEmpty=true with JSON null child value is treated as empty
+    // -----------------------------------------------------------------------
+
+    @Test
+    void hideIfEmptyTrueNullChildValueIsFiltered() {
+        Relation schema = buildParentSchema("rows");
+        schema.setHideIfEmpty(true);
+
+        RelationLayout layout = buildLayout(schema);
+        Style model = mockModel(schema);
+
+        // Row whose "tags" field is JSON null (putNull) — must be filtered
+        ObjectNode nullTagRow = JsonNodeFactory.instance.objectNode();
+        nullTagRow.put("name", "NullTags");
+        nullTagRow.putNull("tags");
+
+        ArrayNode data = buildData(
+            buildRow("Keep", "t1"),
+            nullTagRow
+        );
+
+        List<String> names = namesAfterMeasure(layout, data, model);
+        assertEquals(List.of("Keep"), names,
+                     "Row with JSON null child relation value must be filtered by hideIfEmpty=true");
+    }
+
+    // -----------------------------------------------------------------------
     // Test: extractFrom() applies same filter as measure() for build-phase consistency
     // -----------------------------------------------------------------------
 

@@ -280,7 +280,44 @@ class PrimitiveConvergenceTest {
             "Should NOT converge when p90 delta exceeds tight epsilon=0.001");
     }
 
-    // --- Test 8: stat-convergence-k override honored ---
+    // --- Test 8: stylesheet version change mid-convergence resets counters ---
+
+    @Test
+    void stylesheetVersionChangeMidConvergenceResetsCount() {
+        PrimitiveStyle style = TestLayouts.mockPrimitiveStyle(1.0);
+        PrimitiveLayout layout = new PrimitiveLayout(new Primitive("text"), style);
+        SchemaPath path = new SchemaPath("text");
+        layout.setSchemaPath(path);
+        DefaultLayoutStylesheet sheet = new DefaultLayoutStylesheet(null);
+        Style model = modelWith(sheet);
+
+        // k=3 run: first call sets consecutiveStableCount=1
+        ArrayNode data = buildVariableDataset(35);
+        layout.measure(data, n -> n, model);
+        assertFalse(layout.isConverged(), "Not yet converged after call 1");
+
+        // Change stylesheet version between calls 1 and 2
+        sheet.setOverride(path, "stat-min-samples", 30);
+
+        // Second call after version change should reset consecutiveStableCount to 1,
+        // not increment it to 2 — so we cannot converge after only 2 total calls.
+        layout.measure(data, n -> n, model);
+        assertFalse(layout.isConverged(),
+            "consecutiveStableCount must reset when stylesheet version changes; " +
+            "should not converge on 2nd call after version bump");
+
+        // Third call (same version) increments to 2 — still below k=3
+        layout.measure(data, n -> n, model);
+        assertFalse(layout.isConverged(),
+            "Still not converged: count is 2 < k=3 after reset");
+
+        // Fourth call reaches k=3 stable calls since last reset
+        layout.measure(data, n -> n, model);
+        assertTrue(layout.isConverged(),
+            "Should converge after k=3 stable calls since last version change");
+    }
+
+    // --- Test 9: stat-convergence-k override honored (was Test 8) ---
 
     @Test
     void customKOverrideHonored() {

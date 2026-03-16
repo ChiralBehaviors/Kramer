@@ -143,6 +143,29 @@ public class LayoutSearch {
         this.runLater = runLater;
     }
 
+    /**
+     * Package-private constructor for unit tests: injects a VirtualFlow,
+     * FocusController, and a synchronous substitute for {@link Platform#runLater}.
+     *
+     * @param root            schema root
+     * @param data            array data
+     * @param virtualFlow     outermost VirtualFlow; may be {@code null}
+     * @param focusController focus controller; may be {@code null}
+     * @param runLater        substitute for Platform.runLater
+     */
+    @SuppressWarnings("unchecked")
+    LayoutSearch(SchemaNode root, JsonNode data,
+                 VirtualFlow<? extends LayoutCell<?>> virtualFlow,
+                 FocusController<? extends LayoutCell<?>> focusController,
+                 Consumer<Runnable> runLater) {
+        this.root = root;
+        this.data = data;
+        this.virtualFlow = (VirtualFlow<LayoutCell<?>>) virtualFlow;
+        this.focusController = (FocusController<LayoutCell<?>>) focusController;
+        this.flowResolver = null;
+        this.runLater = runLater;
+    }
+
     // -------------------------------------------------------------------------
     // Configuration
     // -------------------------------------------------------------------------
@@ -167,6 +190,11 @@ public class LayoutSearch {
 
     public boolean isWrapAround() {
         return wrapAround;
+    }
+
+    /** Returns the current cursor position within the match list (-1 = before first find). */
+    public int getCursorIndex() {
+        return cursor;
     }
 
     public void setWrapAround(boolean wrapAround) {
@@ -248,6 +276,9 @@ public class LayoutSearch {
      * (MinDistanceTo semantics — minimal scroll) and selects the row via the
      * FocusController.
      *
+     * <p>Selection is deferred to the next pulse so that the cell is rendered
+     * before {@code focusController.navigateTo} is called.
+     *
      * <p>This is a no-op when no VirtualFlow was supplied at construction time.
      *
      * @param result the search result to navigate to
@@ -258,9 +289,12 @@ public class LayoutSearch {
         }
         int rowIndex = result.rowIndex();
         virtualFlow.show(rowIndex);
-        if (focusController != null) {
-            focusController.navigateTo(virtualFlow, rowIndex);
-        }
+        // Defer selection to next pulse — cell must be rendered first
+        runLater.accept(() -> {
+            if (focusController != null) {
+                focusController.navigateTo(virtualFlow, rowIndex);
+            }
+        });
     }
 
     // -------------------------------------------------------------------------
@@ -359,22 +393,28 @@ public class LayoutSearch {
         if (autoLayout == null) {
             return null;
         }
-        return findFlowAtDepth(autoLayout, depth, new int[] { 0 });
+        return findFlowAtDepth(autoLayout, depth, 0);
     }
 
     private static VirtualFlow<?> findFlowAtDepth(javafx.scene.Node node,
                                                    int targetDepth,
-                                                   int[] currentDepth) {
+                                                   int currentDepth) {
         if (node instanceof VirtualFlow<?> vf) {
-            if (currentDepth[0] == targetDepth) {
+            if (currentDepth == targetDepth) {
                 return vf;
             }
-            currentDepth[0]++;
+            // Search children at next depth
+            for (javafx.scene.Node child : ((javafx.scene.Parent) vf).getChildrenUnmodifiable()) {
+                VirtualFlow<?> found = findFlowAtDepth(child, targetDepth, currentDepth + 1);
+                if (found != null) {
+                    return found;
+                }
+            }
+            return null;
         }
-        if (node instanceof javafx.scene.Parent parent) {
-            for (javafx.scene.Node child : parent.getChildrenUnmodifiable()) {
-                VirtualFlow<?> found = findFlowAtDepth(child, targetDepth,
-                                                       currentDepth);
+        if (node instanceof javafx.scene.Parent p) {
+            for (javafx.scene.Node child : p.getChildrenUnmodifiable()) {
+                VirtualFlow<?> found = findFlowAtDepth(child, targetDepth, currentDepth);
                 if (found != null) {
                     return found;
                 }

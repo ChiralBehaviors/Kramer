@@ -94,6 +94,8 @@ public final class RelationLayout extends SchemaNodeLayout {
      * Heuristic for autoSort with no sortFields: id > key > name > first primitive field.
      */
     static Comparator<JsonNode> buildSortComparator(Relation relation) {
+        // Priority: explicit sortFields always take effect (regardless of autoSort flag).
+        // autoSort only applies when sortFields is empty.
         List<String> fields = relation.getSortFields();
         if (!fields.isEmpty()) {
             Comparator<JsonNode> cmp = fieldComparator(fields.get(0));
@@ -106,7 +108,7 @@ public final class RelationLayout extends SchemaNodeLayout {
             return null;
         }
         // Heuristic: pick first child primitive matching id > key > name
-        List<String> candidates = List.of("id", "key", "name");
+        List<String> candidates = AUTO_SORT_CANDIDATES;
         for (String candidate : candidates) {
             if (relation.getChild(candidate) != null) {
                 return fieldComparator(candidate);
@@ -158,13 +160,16 @@ public final class RelationLayout extends SchemaNodeLayout {
      * Filter an ArrayNode, keeping only items that pass the given predicate.
      * Returns a new ArrayNode containing the survivors.
      */
-    static ArrayNode filterArrayNode(JsonNode datum, Predicate<JsonNode> pred) {
+    static ArrayNode filterArrayNode(JsonNode source, Predicate<JsonNode> pred) {
+        if (source == null) return JsonNodeFactory.instance.arrayNode();
         ArrayNode result = JsonNodeFactory.instance.arrayNode();
-        StreamSupport.stream(datum.spliterator(), false)
+        StreamSupport.stream(source.spliterator(), false)
                      .filter(pred)
                      .forEach(result::add);
         return result;
     }
+
+    private static final List<String> AUTO_SORT_CANDIDATES = List.of("id", "key", "name");
 
     protected int                          averageChildCardinality;
     protected double                       cellHeight       = -1;
@@ -191,6 +196,9 @@ public final class RelationLayout extends SchemaNodeLayout {
 
     @Override
     public void buildPaths(SchemaPath path, Style model) {
+        // Note: RelationLayout.measure() also sets child SchemaPath at line ~591.
+        // buildPaths() runs at construction time; measure() re-sets as a safety net.
+        // The two paths should produce identical results.
         setSchemaPath(path);
         for (SchemaNode child : getNode().getChildren()) {
             SchemaNodeLayout childLayout = model.layout(child);
@@ -438,7 +446,8 @@ public final class RelationLayout extends SchemaNodeLayout {
         return measureResult;
     }
 
-    /** Returns true when every descendant PrimitiveLayout has converged. */
+    /** Returns true when every descendant PrimitiveLayout has converged.
+     *  allMatch on empty stream is vacuously true — a relation with no children is trivially stable. */
     @Override
     public boolean isConverged() {
         return children.stream().allMatch(SchemaNodeLayout::isConverged);
@@ -563,8 +572,11 @@ public final class RelationLayout extends SchemaNodeLayout {
         sortComparator = buildSortComparator(getNode());
         // Sort the datum array before measuring children so that measurement
         // reflects data order consistent with the build phase.
+        // Copy before sorting to avoid mutating the caller's datum in-place.
         if (sortComparator != null && datum instanceof ArrayNode datumArray) {
-            sortArrayNode(datumArray, sortComparator);
+            ArrayNode sorted = datumArray.deepCopy();
+            sortArrayNode(sorted, sortComparator);
+            datum = sorted;
         }
         // Resolve hide-if-empty filter: only active when hideIfEmpty=true and
         // autoFoldable is null (filtering is incompatible with autoFold).

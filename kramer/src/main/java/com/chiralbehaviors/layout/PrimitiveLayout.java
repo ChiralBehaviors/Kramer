@@ -56,6 +56,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     // Convergence detection state (Kramer-16k)
     private MeasureResult          frozenResult;
     private long                   frozenStylesheetVersion   = -1;
+    private long                   lastSeenStylesheetVersion = -1;
     private double                 lastP90Width              = Double.NaN;
     private int                    consecutiveStableCount    = 0;
 
@@ -167,17 +168,19 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     @Override
     public double measure(JsonNode data, Function<JsonNode, JsonNode> extractor,
                           Style model) {
-        // Convergence short-circuit: return frozen result if stylesheet unchanged.
-        if (frozenResult != null && model != null) {
-            LayoutStylesheet stylesheet = model.getStylesheet();
-            if (stylesheet != null && frozenStylesheetVersion == stylesheet.getVersion()) {
-                return frozenResult.columnWidth();
-            }
-            // Stylesheet version changed — invalidate frozen state.
+        // Version-change detection: runs unconditionally before the frozen short-circuit
+        // so that a stylesheet change mid-convergence always resets counters.
+        LayoutStylesheet stylesheet = (model != null) ? model.getStylesheet() : null;
+        long currentVersion = (stylesheet != null) ? stylesheet.getVersion() : -1L;
+        if (currentVersion != lastSeenStylesheetVersion) {
             frozenResult = null;
             frozenStylesheetVersion = -1;
             lastP90Width = Double.NaN;
             consecutiveStableCount = 0;
+            lastSeenStylesheetVersion = currentVersion;
+        }
+        if (frozenResult != null && currentVersion == frozenStylesheetVersion) {
+            return frozenResult.columnWidth();
         }
 
         clear();
@@ -230,7 +233,6 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         int minSamples = MIN_SAMPLES;
         double epsilon = 1.0;
         int k = 3;
-        LayoutStylesheet stylesheet = (model != null) ? model.getStylesheet() : null;
         SchemaPath path = getSchemaPath();
         if (stylesheet != null && path != null) {
             minSamples = stylesheet.getInt(path, "stat-min-samples", MIN_SAMPLES);
@@ -422,6 +424,9 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     protected void clear() {
+        // Intentionally does NOT reset convergence state (frozenResult, consecutiveStableCount,
+        // lastP90Width). Convergence persists across layout cycles; only stylesheet version
+        // change resets it.
         super.clear();
         // isVariableLength lifecycle is now explicit in MeasureResult (RDR-009 SC-6).
         // useVerticalHeader resets because nestTableColumn() runs after clear().

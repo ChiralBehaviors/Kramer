@@ -68,7 +68,7 @@ public class SearchBar extends HBox {
             }
         });
 
-        // Enter in the text field triggers findNext (consumed before TRAVERSAL_INPUT_MAP).
+        // Enter in the text field triggers findNext — TextField consumes KEY_PRESSED for Enter internally and fires ActionEvent.
         searchField.setOnAction(e -> {
             if (onFindNext != null) {
                 onFindNext.run();
