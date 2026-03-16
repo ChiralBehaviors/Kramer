@@ -19,6 +19,7 @@ package com.chiralbehaviors.layout.table;
 import java.util.Arrays;
 
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
 import com.chiralbehaviors.layout.style.RelationStyle;
@@ -54,7 +55,7 @@ public class NestedRow extends VirtualFlow<NestedCell> {
                   return cell;
               }, parentTraversal,
               Arrays.asList(DEFAULT_STYLE, String.format(SCHEMA_CLASS_TEMPLATE,
-                                                         layout.getField())));
+                                                         layout.getCssClass())));
         if (!rootLevel) {
             // Nested row — fixed height for N rows within parent cell
             setMinHeight(rendered);
@@ -67,7 +68,7 @@ public class NestedRow extends VirtualFlow<NestedCell> {
     public NestedRow(String field) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, SchemaPath.sanitize(field)));
     }
 
     @Override

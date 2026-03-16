@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.chiralbehaviors.layout.SchemaNodeLayout;
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LabelCell;
@@ -57,7 +58,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement>
                           Style model, RelationStyle style) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, SchemaPath.sanitize(field)));
         this.cell = layout.buildControl(parentTraversal, model);
         this.parentTraversal = parentTraversal;
         OutlineElement node = getNode();
@@ -99,7 +100,7 @@ public class OutlineElement extends HorizontalCell<OutlineElement>
     public OutlineElement(String field) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, SchemaPath.sanitize(field)));
         this.cell = null;
         this.parentTraversal = null;
     }

@@ -51,7 +51,6 @@ abstract public class PrimitiveStyle extends NodeStyle {
 
         public PrimitiveLayoutCell(PrimitiveLayout p, String style,
                                    FocusTraversal<?> parentTraversal) {
-            initialize(p.getField());
             initialize(DEFAULT_STYLE);
             getNode().getStyleClass()
                      .addAll(style, p.getField());
@@ -124,7 +123,7 @@ abstract public class PrimitiveStyle extends NodeStyle {
 
     public static class PrimitiveTextStyle extends PrimitiveStyle {
 
-        public static String     PRIMITIVE_TEXT_CLASS = "primitive-text";
+        public static final String PRIMITIVE_TEXT_CLASS = "primitive-text";
 
         private final LabelStyle primitiveStyle;
 

@@ -212,6 +212,10 @@ public abstract sealed class SchemaNodeLayout permits PrimitiveLayout, RelationL
         return node.getField();
     }
 
+    public String getCssClass() {
+        return SchemaPath.sanitize(node.getField());
+    }
+
     public double getHeight() {
         return height;
     }

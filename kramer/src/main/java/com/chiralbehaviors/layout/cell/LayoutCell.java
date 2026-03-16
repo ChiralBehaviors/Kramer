@@ -57,6 +57,8 @@ public interface LayoutCell<T extends Region> extends Cell<JsonNode, T> {
         }
         if (node.getStyleClass() != null) {
             node.getStyleClass()
+                .add("kramer-container");
+            node.getStyleClass()
                 .add(defaultStyle);
         }
 

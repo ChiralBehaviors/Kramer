@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
@@ -56,7 +57,7 @@ public class NestedTable extends VerticalCell<NestedTable> {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
         getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE,
-                                          layout.getField()));
+                                          layout.getCssClass()));
         Region header = layout.buildColumnHeader();
         double width = Style.snap(layout.getJustifiedTableColumnWidth()
                                   + style.getTableHorizontalInset());
@@ -85,7 +86,7 @@ public class NestedTable extends VerticalCell<NestedTable> {
     public NestedTable(String field) {
         super(STYLE_SHEET);
         initialize(DEFAULT_STYLE);
-        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, field));
+        getStyleClass().add(String.format(SCHEMA_CLASS_TEMPLATE, SchemaPath.sanitize(field)));
         this.rows = null;
     }
 
