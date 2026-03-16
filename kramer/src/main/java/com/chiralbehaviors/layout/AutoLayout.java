@@ -345,6 +345,11 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         }
     }
 
+    /** Returns true when a layout has been measured and all primitives have converged. */
+    public boolean allConverged() {
+        return layout != null && layout.isConverged();
+    }
+
     private void autoLayout(JsonNode zeeData, double width) {
         if (width < 10.0) {
             return;
@@ -355,6 +360,20 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         if (layout == null) {
             return;
         }
+
+        // Convergence short-circuit: if all primitives have stable widths AND
+        // the decision cache has a result for this width bucket, skip layout+compress
+        // and go straight to buildControl using the existing layout tree state.
+        int dataCardinality = zeeData != null ? zeeData.size() : 0;
+        SchemaPath rootPath = layout.getSchemaPath();
+        if (allConverged() && rootPath != null) {
+            LayoutDecisionKey key = LayoutDecisionKey.of(rootPath, width, dataCardinality);
+            if (decisionCache.containsKey(key)) {
+                buildAndInstallControl(zeeData, width);
+                return;
+            }
+        }
+
         LayoutCell<?> old = control;
         // Save cursor state before unbind (which nulls it)
         var savedCursor = controller.getCursorState();
@@ -378,8 +397,48 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         node.setMaxWidth(width);
         control.updateItem(zeeData);
 
+        // Cache the layout decision for this width bucket.
+        // Use snapshotLayoutResult() to read existing state without re-running layout().
+        if (rootPath != null) {
+            LayoutDecisionKey key = LayoutDecisionKey.of(rootPath, width, dataCardinality);
+            if (!decisionCache.containsKey(key) && layout instanceof RelationLayout rl) {
+                decisionCache.put(key, rl.snapshotLayoutResult());
+            }
+        }
+
         // Recover cursor position after layout rebuild.
         // Find the first VirtualFlow in the new tree for cursor recovery.
+        findVirtualFlow(node).ifPresent(vf -> controller.recoverCursor(savedCursor, vf));
+    }
+
+    /**
+     * Build and install a new control using the current (cached) layout tree state.
+     * Called when convergence + cache hit allow skipping layout+compress.
+     */
+    private void buildAndInstallControl(JsonNode zeeData, double width) {
+        LayoutCell<?> old = control;
+        var savedCursor = controller.getCursorState();
+        controller.unbind();
+        // buildControl uses the already-computed justifiedWidth/useTable from last run.
+        layout.rootLevel = true;
+        control = layout.buildControl(controller, model);
+        layout.rootLevel = false;
+        Region node = control.getNode();
+
+        setTopAnchor(node, 0d);
+        setRightAnchor(node, 0d);
+        setBottomAnchor(node, 0d);
+        setLeftAnchor(node, 0d);
+
+        getChildren().setAll(node);
+        if (old != null) {
+            old.dispose();
+        }
+        node.setMinWidth(width);
+        node.setPrefWidth(width);
+        node.setMaxWidth(width);
+        control.updateItem(zeeData);
+
         findVirtualFlow(node).ifPresent(vf -> controller.recoverCursor(savedCursor, vf));
     }
 

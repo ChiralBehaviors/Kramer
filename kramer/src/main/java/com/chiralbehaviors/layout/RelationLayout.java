@@ -426,8 +426,22 @@ public final class RelationLayout extends SchemaNodeLayout {
         return useTable;
     }
 
+    /**
+     * Returns the direct child layout list. Exposed so tests can build
+     * trees without going through Style.layout().
+     */
+    public List<SchemaNodeLayout> getChildren() {
+        return children;
+    }
+
     public MeasureResult getMeasureResult() {
         return measureResult;
+    }
+
+    /** Returns true when every descendant PrimitiveLayout has converged. */
+    @Override
+    public boolean isConverged() {
+        return children.stream().allMatch(SchemaNodeLayout::isConverged);
     }
 
     public LayoutResult computeLayout(double width) {
@@ -442,6 +456,29 @@ public final class RelationLayout extends SchemaNodeLayout {
                 .map(c -> {
                     if (c instanceof PrimitiveLayout pl) return pl.computeLayout(width);
                     if (c instanceof RelationLayout rl) return rl.computeLayout(width);
+                    return null;
+                })
+                .toList()
+        );
+    }
+
+    /**
+     * Snapshot the layout decisions already computed by a prior {@code autoLayout()} run.
+     * Unlike {@link #computeLayout(double)}, this does NOT call {@code layout()} again —
+     * it reads the current in-memory state (useTable, justifiedWidth, etc.).
+     * Safe to call immediately after {@code autoLayout()} without side effects.
+     */
+    public LayoutResult snapshotLayoutResult() {
+        return new LayoutResult(
+            useTable,
+            false,
+            tableColumnWidth,
+            columnHeaderIndentation,
+            columnWidth,
+            children.stream()
+                .map(c -> {
+                    if (c instanceof PrimitiveLayout pl) return pl.computeLayout(pl.getJustifiedWidth());
+                    if (c instanceof RelationLayout rl) return rl.snapshotLayoutResult();
                     return null;
                 })
                 .toList()

@@ -351,6 +351,7 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
     }
 
     /** Returns true when a frozen (converged) result is cached and valid. */
+    @Override
     public boolean isConverged() {
         return frozenResult != null;
     }
