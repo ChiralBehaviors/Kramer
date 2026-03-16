@@ -356,6 +356,19 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         return Optional.of(layout.snapshotDecisionTree());
     }
 
+    /**
+     * Renders the current layout decision tree via {@link JavaFxLayoutRenderer}.
+     *
+     * <p>Returns {@link Optional#empty()} if no converged layout is available
+     * (same conditions as {@link #getLayoutDecisionTree()}).
+     *
+     * @param data the JSON data node to render
+     * @return an Optional containing the rendered {@link javafx.scene.Node}, or empty
+     */
+    public Optional<javafx.scene.Node> renderViaProtocol(JsonNode data) {
+        return getLayoutDecisionTree().map(tree -> new JavaFxLayoutRenderer().render(tree, data));
+    }
+
     private void autoLayout(JsonNode zeeData, double width) {
         if (width < 10.0) {
             return;

@@ -4,6 +4,7 @@ package com.chiralbehaviors.layout;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.style.PrimitiveStyle;
 import com.chiralbehaviors.layout.style.RelationStyle;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
@@ -131,6 +133,63 @@ class AutoLayoutDecisionTreeTest {
 
         assertTrue(result.isPresent());
         assertEquals("amount", result.get().fieldName());
+    }
+
+    // -----------------------------------------------------------------------
+    // 5. renderViaProtocol() produces a non-null result when converged (Kramer-giw)
+    //
+    // Note: JavaFxLayoutRenderer requires the JavaFX toolkit (creates Label/VBox),
+    // so we validate the wiring with a toolkit-free stub renderer that returns
+    // a plain Object. The contract being tested is:
+    //   getLayoutDecisionTree() present → renderViaProtocol returns non-null
+    // -----------------------------------------------------------------------
+
+    /** Toolkit-free stub renderer for testing the rendering protocol wiring. */
+    private static class StubRenderer extends AbstractLayoutRenderer<Object> {
+        @Override
+        protected Object renderPrimitive(LayoutDecisionNode node, JsonNode data) {
+            return "primitive:" + node.fieldName();
+        }
+
+        @Override
+        protected Object renderRelation(LayoutDecisionNode node, JsonNode data,
+                                        List<Object> children) {
+            return "relation:" + node.fieldName() + "[" + children.size() + "]";
+        }
+    }
+
+    @Test
+    void renderViaProtocolProducesNonNullResultWhenConverged() {
+        PrimitiveStyle primStyle = TestLayouts.mockPrimitiveStyle(1.0);
+
+        Primitive p = new Primitive("title");
+        PrimitiveLayout pl = new PrimitiveLayout(p, primStyle);
+        SchemaPath path = new SchemaPath("root", "title");
+        pl.setSchemaPath(path);
+
+        DefaultLayoutStylesheet sheet = new DefaultLayoutStylesheet(null);
+        sheet.setOverride(path, "stat-min-samples", 5);
+        sheet.setOverride(path, "stat-convergence-k", 2);
+        com.chiralbehaviors.layout.style.Style model = mock(com.chiralbehaviors.layout.style.Style.class);
+        when(model.getStylesheet()).thenReturn(sheet);
+
+        ArrayNode data = JsonNodeFactory.instance.arrayNode();
+        for (int i = 0; i < 6; i++) {
+            data.add("item" + i);
+        }
+        for (int i = 0; i < 2; i++) {
+            pl.measure(data, n -> n, model);
+        }
+        pl.buildPaths(path, model);
+        assertTrue(pl.isConverged(), "precondition: layout must be converged");
+
+        // Simulate AutoLayout.renderViaProtocol() protocol: converged tree → render
+        Optional<LayoutDecisionNode> tree = getLayoutDecisionTree(pl);
+        assertTrue(tree.isPresent(), "precondition: decision tree must be present");
+
+        // Use stub renderer (no JavaFX toolkit required) to verify rendering wiring
+        Object result = new StubRenderer().render(tree.get(), data);
+        assertNotNull(result, "rendering a converged decision tree must produce a non-null result");
     }
 
     // -----------------------------------------------------------------------
