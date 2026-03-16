@@ -229,6 +229,68 @@ Each interaction modifies the `LayoutStylesheet`, triggering re-layout. If krame
 
 ---
 
+## Alternatives Considered
+
+### Alt A: Extend Relation/Primitive Schema Objects Directly
+
+Embed all display and query-semantic properties directly on `Relation` and `Primitive` — no stylesheet indirection. Each schema node would carry its own `visible`, `hide-if-empty`, `render-mode`, `sort-fields`, etc. as first-class fields.
+
+**Pros:**
+- No indirection: layout code reads properties directly from the node it is processing.
+- Trivial serialization: schema trees are already Jackson-serializable; adding fields costs nothing.
+- Type-safe: properties are typed fields, not string-keyed map lookups with defaults.
+
+**Cons:**
+- Kills reuse: the same underlying schema cannot be rendered differently for different views or users without cloning the entire tree.
+- Couples data shape to presentation: `Relation` and `Primitive` are data-model types; burdening them with display state violates separation of concerns.
+- Per-path addressing becomes awkward: to change one field's `render-mode` at runtime, you must locate and mutate the schema node rather than replacing a stylesheet entry.
+- Phase 3 cannot work: query reconstruction requires a stable schema tree against which stylesheet diffs can be mapped to query AST nodes. If the schema tree IS the stylesheet, there is no stable referent.
+
+**Rejection reason:** Conflates schema structure with presentation policy. The whole point of `LayoutStylesheet` is to allow the same schema tree to be presented differently without cloning or mutating it. This was the motivation for RDR-009.
+
+---
+
+### Alt B: External JSON/YAML Config File Loaded at Startup
+
+Replace `LayoutStylesheet` with a static JSON or YAML config file that maps SchemaPath-like dotted strings to property bags. File is loaded once at startup; no runtime interface.
+
+**Pros:**
+- Familiar: most developers understand "put your config in a file."
+- No Java interface to implement: any app can supply a YAML file.
+- Human-editable without recompile.
+
+**Cons:**
+- Static binding: config is fixed at startup. There is no mechanism to adjust properties at runtime (user interaction, dynamic data) without restarting.
+- No type safety: property keys are strings in the file and strings in the reader. Typos fail silently at the default value.
+- Breaks Phase 3: query re-execution requires the stylesheet to be a live, mutable object that the interaction layer can write to. A file loaded at startup cannot participate in a reactive update loop.
+- Path resolution is undefined: dotted strings in YAML have no inherent connection to `SchemaPath`. A custom parser is required anyway, which is essentially reimplementing `LayoutStylesheet`.
+- Forces an external file dependency on every Kramer consumer, even those that have no configuration needs.
+
+**Rejection reason:** Static config files are suitable for initialization but cannot support the reactive manipulation model required by Phase 2 interaction and Phase 3 query rewriting. The `LayoutStylesheet` interface is already a superset of this capability and is already wired.
+
+---
+
+### Alt C: GraphQL Directive-Based Configuration
+
+Embed display and query-semantic properties as GraphQL directives on fields in the query document. Example: `orders @hideIfEmpty @sortBy(fields: "createdAt") { ... }`. `GraphQlUtil.buildSchema()` would parse directives into schema node properties.
+
+**Pros:**
+- Co-locates data shape and presentation in one artifact (the query).
+- No separate stylesheet file or object to manage.
+- Directives survive round-trips through GraphQL tooling.
+- Natural fit for Phase 3: the query IS the schema, and directives on fields are already part of the graphql-java AST.
+
+**Cons:**
+- Requires Phase 3 to be in place first: `GraphQlUtil.buildSchema()` currently discards all directives (RF-3). Reading directives is impossible until the AST is retained, which is the Phase 3 prerequisite.
+- Couples presentation to query text: to change a column's `render-mode` the user must edit the query string, not manipulate a UI control.
+- Directive namespace pollution: custom directives require server-side schema declarations in production GraphQL environments; ad-hoc directives may break strict validators.
+- Cannot represent properties that have no query analog (e.g., column width, cell format patterns). Directives are a reasonable home for query-semantic properties but an awkward home for pure display properties.
+- No current Kramer consumer uses directives. Adopting this as the primary mechanism requires a directive specification before any Phase 1 work can start, inverting the recommended phase order.
+
+**Rejection reason:** Directive-based configuration is a viable long-term complement to `LayoutStylesheet` for query-semantic properties in Phase 3, but it cannot replace the stylesheet for display properties, and it cannot function before Phase 3's AST-retention redesign. Adopting it as the primary approach now would block Phase 1 on Phase 3 prerequisites.
+
+---
+
 ## Research Findings
 
 ### RF-1: LayoutStylesheet Is Already Generic (Confidence: HIGH)
@@ -267,6 +329,58 @@ The 7-layer architecture identified in earlier synthesis (Data Source -> Query M
 5. Formula fields compute correct aggregates with hierarchical scoping (Phase 2)
 6. (Phase 3, separate RDR) GraphQlUtil redesigned to retain AST; stylesheet changes trigger query re-execution
 7. All existing tests pass at each phase
+
+---
+
+## Finalization Gate
+
+### 1. Has the problem been validated with real user scenarios?
+
+Partially. The core thesis — that Kramer needs per-path display properties addressable at runtime — is validated by the concrete requirements in RDR-014 (hide-if-empty, sort-fields) and RDR-015 (render-mode). Both features are stalled because there is no agreed property delivery mechanism; routing them through `LayoutStylesheet` is the unblocking step. However, Phase 2 (client-side data manipulation) and Phase 3 (query rewriting) have not been validated against real user workflows. The interaction model described in this RDR is speculative — no user has operated a prototype. Phase 1 is justified by existing blocked work; Phases 2 and 3 should be gated on user validation before investment.
+
+### 2. Is the solution the simplest that could work?
+
+For Phase 1, yes. The `LayoutStylesheet` interface is already fully wired (`getBoolean` has been confirmed as present post-Wave2 research). Adding property key constants and routing RDR-014/015 properties through the existing interface is minimal work. The alternatives (Alt A: schema object extension, Alt B: static config file, Alt C: GraphQL directives) all require more structural change for Phase 1 scope.
+
+For Phase 2, not yet — the expression language sub-specification has not been written. Without it, any Phase 2 implementation risks over- or under-engineering the evaluator. The simplest Phase 2 path cannot be confirmed until the expression grammar is constrained.
+
+For Phase 3, no: Phase 3 is architecturally complex by necessity. The simplest design has not been determined; that determination requires the separate `kramer-ql` redesign RDR called for in this document.
+
+### 3. Are all assumptions verified or explicitly acknowledged?
+
+The following assumptions have been verified by post-Wave2 research:
+
+- `LayoutStylesheet` interface is fully wired and `getBoolean` exists — **verified**.
+- `GraphQlUtil.buildSchema()` discards the graphql-java AST (Phase 3 blocker) — **verified** (RF-3).
+
+The following assumptions remain unverified and are explicitly acknowledged:
+
+- `hide-if-empty` and `sort-fields` are still on the `Relation` object rather than routed through `LayoutStylesheet`. Phase 1 assumes these can be migrated without breaking existing consumers. Migration path not validated.
+- The `visible` property does not yet exist anywhere in the codebase. Phase 1 assumes it can be added as a pure stylesheet property with no schema-object changes. This is likely true but unconfirmed against the layout pipeline.
+- The layout decision cache does not incorporate stylesheet version. Any Phase 1 property that influences cached layout decisions (e.g., `visible`) will silently return stale results until the cache invalidation strategy is extended to key on stylesheet identity. This is an unresolved correctness risk for Phase 1.
+- Phase 2 expression language is entirely unspecified. All Phase 2 design is provisional.
+- Phase 3 assumes graphql-java's AST is retainable and that AST nodes can be mapped bidirectionally to `SchemaPath` values. This has not been prototyped.
+
+### 4. What is the rollback strategy if this fails?
+
+**Phase 1 rollback**: Property constants and `LayoutStylesheet` routing are additive. If Phase 1 properties cause regressions, removing them is a one-PR revert. RDR-014 and RDR-015 implementations can revert to direct Relation/Primitive fields temporarily. No data migration required.
+
+**Phase 2 rollback**: Client-side filter/formula/aggregate are purely additive to the data pipeline. If the expression evaluator is defective, the pipeline step can be disabled (default: no expression registered). Data is unaffected; only the computed display columns disappear.
+
+**Phase 3 rollback**: Phase 3 is a redesign of `GraphQlUtil`, not an extension. It would live in a separate module/branch. A failed Phase 3 does not affect Phase 1 or Phase 2. The `kramer-ql` module can remain at its current design indefinitely while Phases 1 and 2 deliver value in display and client-side manipulation.
+
+**Worst-case**: The `LayoutStylesheet` property addressing model proves insufficient (e.g., path resolution semantics are wrong). Fallback is Alt A (schema object extension), which was rejected for architectural reasons but is always mechanically available as a last resort.
+
+### 5. Are there cross-cutting concerns with other RDRs?
+
+Yes, several:
+
+- **RDR-009 (LayoutStylesheet)**: Phase 1 directly depends on RDR-009 Phase C being complete. The `getBoolean` method confirmed present by Wave2 research satisfies this. However, the layout decision cache (introduced by RDR-009 or a related optimization) does not incorporate stylesheet version. If cache invalidation is not extended before Phase 1 `visible` property is wired, stylesheet changes will not reliably trigger re-layout.
+- **RDR-014 (hideIfEmpty, sort)**: `hide-if-empty` and `sort-fields` are currently on the `Relation` object. Phase 1 consolidates them under `LayoutStylesheet`. This migration must be coordinated with RDR-014 implementation; whichever lands first sets the precedent and may require a follow-up migration.
+- **RDR-015 (renderMode)**: Same concern as RDR-014. `render-mode` migration to `LayoutStylesheet` must be coordinated with RDR-015 implementation.
+- **RDR-011 (Layout Protocol Extraction)**: If RDR-011 extracts the layout decision tree into a protocol, Phase 1 property routing must be consistent with whatever interface RDR-011 defines. Risk of interface incompatibility if the two RDRs land in sequence without coordination.
+- **RDR-016 (Layout Stability / Incremental Update)**: If the layout stability work introduces or modifies a decision cache, the stylesheet-version invalidation concern becomes acute. Phase 1 `visible` property correctness depends on cache invalidation keying on stylesheet identity.
+- **RDR-019 (Tufte Sparkline Rendering)**: `sparkline` render-mode is explicitly deferred to RDR-019. When RDR-019 is accepted, its render-mode value must be added to the `LayoutPropertyKeys` constants registry defined in Phase 1. No conflict, but requires coordination at the time of RDR-019 implementation.
 
 ---
 

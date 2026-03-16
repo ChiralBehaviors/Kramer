@@ -173,6 +173,103 @@ Sparklines use the full `justifiedWidth` allocated to the column. More width = m
 
 ---
 
+## Alternatives Considered
+
+### Alt A: Embed Sparklines as Inline SVG in a WebView
+
+Each sparkline cell hosts a `javafx.scene.web.WebView` rendering an SVG `<polyline>` element inline.
+
+**Pros:**
+- SVG sparklines are the web standard; the rendering model is well-understood
+- All visual parameters (stroke, fill, opacity) are trivially controlled via inline CSS
+- No JavaFX shape coordinate mapping required — SVG viewBox handles scaling
+
+**Cons:**
+- `WebView` carries a full Chromium/WebKit embedded browser; memory cost per cell is prohibitive in a virtualized list with hundreds of cells
+- `WebView` initialization is asynchronous; VirtualFlow recycle-and-update cycles will produce visible blank frames
+- No integration with JavaFX CSS theming or `LayoutStylesheet` property resolution
+- Eliminates the RDR-011 layout protocol advantage: JavaFX and HTML renderers would share no code path, requiring two independent sparkline implementations
+
+**Rejection reason:** Memory and initialization overhead in a virtualized cell context is unacceptable. The VirtualFlow recycles cells continuously; a WebView per cell destroys performance.
+
+---
+
+### Alt B: Third-Party Charting Library (JFreeChart, TilesFX, or similar)
+
+Use an existing charting library to produce sparkline charts embedded as `ImageView` snapshots or as native JavaFX `Node` subtrees.
+
+**Pros:**
+- Mature rendering with well-tested edge cases (nulls, ragged series, one-point degenerate series)
+- Library may already handle downsampling and IQR computation
+- Faster initial implementation if the library provides a `SparklineChart` control
+
+**Cons:**
+- JFreeChart is a Swing/AWT library; embedding in JavaFX requires `SwingNode`, introducing thread-boundary issues and blurry HiDPI rendering
+- TilesFX and other JavaFX chart libraries are full-chart oriented, not word-sized sparkline oriented — minimum height exceeds one text line
+- Any third-party dependency for a leaf cell rendering task violates the spartan dependency principle; the actual JavaFX primitive required (`Polyline`, `Rectangle`, `Circle`) is three classes from the JDK
+- External libraries cannot participate in Kramer's `LayoutStylesheet` property system without adapter wrappers that cost more than writing it directly
+
+**Rejection reason:** No available library provides word-sized, text-height sparklines suitable for VirtualFlow cells. The implementation using raw JavaFX shapes is simpler and smaller than any adapter layer would be.
+
+---
+
+### Alt C: Server-Side Pre-Rasterized Images (PNG in ImageView)
+
+Render sparklines server-side as PNG images, embed via `ImageView` in the cell. The server computes sparkline pixels from the same JSON data and includes the PNG URL or base64 in the payload.
+
+**Pros:**
+- Completely decouples rendering from client-side JavaFX version or platform
+- Reuses existing image loading infrastructure (`ImageView` is already a first-class JavaFX node)
+- Renders identically across all client platforms (desktop, HTML via `<img>`)
+
+**Cons:**
+- Requires round-trips to a rendering service; incompatible with offline operation and local file data sources that Kramer must support
+- Blurs the boundary between data and presentation: PNG pixels in JSON payloads are not semantically typed; the schema layer cannot inspect or adapt them
+- Resolution mismatch: rasterized at server's assumed DPI, not the client's actual DPI — sparklines will be blurry on HiDPI displays unless the server knows the client density
+- Eliminates `SparklineStats` from `MeasureResult`; the layout engine loses the ability to normalize min/max across rows, breaking the column-global normalization that makes sparklines meaningful for comparison
+
+**Rejection reason:** Incompatible with Kramer's local-data model and column-global normalization requirement. Column normalization (same y-scale across all rows) is impossible when each row's sparkline is pre-rendered independently server-side.
+
+---
+
+## Finalization Gate
+
+### 1. Has the problem been validated with real user scenarios?
+
+Partially. The core scenario — numeric time-series fields displayed as text arrays like `[1.2, 3.4, 2.1]` in nested table cells — appears in real GraphQL APIs (metric histories, price series, score progressions) that the explorer app targets. RDR-015 identified sparkline as a user-facing need independently of this RDR, providing corroboration from a separate design review. The RDR has not been validated against a live user study; the evidence is architecture-driven inference. This is explicitly acknowledged as an assumption.
+
+### 2. Is the solution the simplest that could work?
+
+Yes. The implementation uses three JavaFX shape primitives (`Polyline`, `Rectangle`, `Circle`) that are already in the JDK. No new dependencies. The schema extension is a single nullable enum field on `Primitive` with a straightforward detection predicate (`datum.isArray() && allElementsNumeric(datum)`). The critical research finding (019-research-3, RF-2) confirms the branching point already exists in `PrimitiveLayout.measure()` at the `isArray()` branch — this is an extension of an existing dispatch, not a new one. `SparklineStats` is a 4th nullable sub-record on `MeasureResult`, following the identical pattern of `ContentWidthStats` (RDR-013).
+
+### 3. Are all assumptions verified or explicitly acknowledged?
+
+Verified via post-Wave2 research (019-research-1 through 019-research-7):
+
+- **`PrimitiveRenderMode.SPARKLINE` is a non-breaking enum extension** — confirmed via research. Adding to a `switch` without a sparkline arm leaves existing behavior unchanged.
+- **`PrimitiveSparklineStyle` follows `PrimitiveBarStyle` inner class pattern** — confirmed. The subclass pattern is established and the extension point is `buildControl()` + cached style, not `computePrimitiveStyle()`.
+- **Numeric detection must bifurcate**: `datum.isArray() && datum.get(0).isNumber()` → SPARKLINE; scalar → BAR. This bifurcation is critical and confirmed as a correctness requirement in research.
+- **`SparklineStats` is the 4th nullable sub-record** (after `ContentWidthStats`, `NumericStats`, `PivotStats`) — position confirmed.
+- **`build()` signature is `(FocusTraversal<?>, PrimitiveLayout)`; data arrives via `updateItem()`** — confirmed. Sparkline rendering logic must live in `updateItem()`, not `build()`.
+- **`cachedSparklineStyle` must be null-reset in `clear()`** — confirmed as required to prevent stale cached style on cell recycle.
+
+Unverified assumption: that `Polyline` performance is adequate for series >500 points within VirtualFlow recycle timing. The downsampling mitigation (one point per horizontal pixel) is documented in the Risks table and is standard practice, but has not been benchmarked in this codebase.
+
+### 4. What is the rollback strategy if this fails?
+
+The feature is strictly opt-in. `PrimitiveRenderMode.SPARKLINE` is only activated when either (a) the `LayoutStylesheet` explicitly sets `render-mode: sparkline` for a path, or (b) auto-detection is enabled and a field qualifies. No existing code path is altered; the `isArray()` branch gains a new sub-branch but the existing `PrimitiveList` path remains reachable. Rollback is: remove the `SPARKLINE` arm from the render mode switch, delete `PrimitiveSparklineStyle` and `SparklineStats`, drop the nullable field from `MeasureResult`. Because `SparklineStats` is nullable and `PrimitiveRenderMode.SPARKLINE` is an additive enum value, removing them requires only targeted deletions with no ripple through existing callers. The feature is isolatable.
+
+### 5. Are there cross-cutting concerns with other RDRs?
+
+Yes, three active dependencies:
+
+- **RDR-015 (Alternative Rendering Modes)**: `PrimitiveRenderMode.SPARKLINE` must be added to RDR-015's enum once this RDR is accepted. RDR-015 explicitly defers sparkline here. The `PrimitiveSparklineStyle` subclass pattern is defined in RDR-015 — both RDRs must be accepted together or sequentially with RDR-015 first.
+- **RDR-009 (MeasureResult / Stylesheet Data Structure)**: `SparklineStats` is a new nullable sub-record on `MeasureResult`. This is a data structure change gated on RDR-009's `MeasureResult` definition being stable. If RDR-009 revises the sub-record pattern, `SparklineStats` placement may shift.
+- **RDR-018 (Query Semantic Layout Stylesheet)**: Phase 3 of this RDR (LayoutStylesheet properties for sparkline parameters) is gated on RDR-018 Phase 1 establishing the property registry. Sparkline visual parameters (`sparkline-band-visible`, `sparkline-line-width`, etc.) cannot be wired until the property registration mechanism exists.
+- **RDR-013 (Statistical Content Width)**: No blocking dependency, but the statistical width engine from RDR-013 directly benefits sparkline column widths — wider columns improve horizontal resolution. Coordination is additive, not required for Phase 1-2.
+
+---
+
 ## Research Findings
 
 ### RF-1: Tufte Sparklines Are Word-Sized by Design (Confidence: HIGH)
