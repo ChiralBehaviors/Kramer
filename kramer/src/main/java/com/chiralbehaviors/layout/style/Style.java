@@ -165,6 +165,10 @@ public class Style {
      * Constructs a headless Style backed by a {@link MeasurementStrategy}.
      * CSS measurement is skipped; all style metrics come from the strategy.
      *
+     * <p>Note: DefaultLayoutStylesheet holds a back-reference to this Style.
+     * The cycle is intentional — stylesheet delegates to style for CSS defaults
+     * via the strategy.
+     *
      * @param observer            layout observer
      * @param measurementStrategy strategy to supply style metrics
      */

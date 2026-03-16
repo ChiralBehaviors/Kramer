@@ -38,6 +38,9 @@ class JavaFxMeasurementStrategyTest {
 
     @Test
     void measurePrimitiveStyleAssertsJAT() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+            JavaFxMeasurementStrategyTest.class.desiredAssertionStatus(),
+            "Requires -ea (assertions enabled)");
         // Test thread is not the JAT — assertion must fire (requires -ea)
         var strategy = new JavaFxMeasurementStrategy();
         var p = new Primitive("test");
@@ -48,6 +51,9 @@ class JavaFxMeasurementStrategyTest {
 
     @Test
     void measureRelationStyleAssertsJAT() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+            JavaFxMeasurementStrategyTest.class.desiredAssertionStatus(),
+            "Requires -ea (assertions enabled)");
         // Test thread is not the JAT — assertion must fire (requires -ea)
         var strategy = new JavaFxMeasurementStrategy();
         var r = new Relation("test");
@@ -58,6 +64,9 @@ class JavaFxMeasurementStrategyTest {
 
     @Test
     void measurePrimitiveStyleWithNullStylesheetsAssertsJAT() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+            JavaFxMeasurementStrategyTest.class.desiredAssertionStatus(),
+            "Requires -ea (assertions enabled)");
         var strategy = new JavaFxMeasurementStrategy();
         var p = new Primitive("test");
         // Even with null stylesheets, JAT assertion fires first
@@ -68,6 +77,9 @@ class JavaFxMeasurementStrategyTest {
 
     @Test
     void measureRelationStyleWithNullStylesheetsAssertsJAT() {
+        org.junit.jupiter.api.Assumptions.assumeTrue(
+            JavaFxMeasurementStrategyTest.class.desiredAssertionStatus(),
+            "Requires -ea (assertions enabled)");
         var strategy = new JavaFxMeasurementStrategy();
         var r = new Relation("test");
         assertThrows(AssertionError.class,

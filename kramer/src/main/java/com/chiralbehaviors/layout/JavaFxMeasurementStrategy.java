@@ -34,6 +34,8 @@ public class JavaFxMeasurementStrategy implements MeasurementStrategy {
             }
         }
 
+        // Access widened from protected to public deliberately — allows outer class to call
+        // these methods. No measurementStrategy injected, so JAT assert fires as intended.
         @Override
         public PrimitiveStyle computePrimitiveStyle(Primitive p) {
             return super.computePrimitiveStyle(p);

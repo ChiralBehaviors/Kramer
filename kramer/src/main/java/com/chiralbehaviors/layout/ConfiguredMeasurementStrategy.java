@@ -2,6 +2,7 @@
 package com.chiralbehaviors.layout;
 
 import java.util.List;
+import java.util.Objects;
 
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
@@ -24,6 +25,7 @@ public class ConfiguredMeasurementStrategy implements MeasurementStrategy {
 
     private static final double DEFAULT_LINE_HEIGHT = 20.0;
     private static final double DEFAULT_INSET       = 4.0;
+    // Intentionally independent of RelationStyle.DEFAULT_MAX_AVERAGE_CARDINALITY
     private static final int    DEFAULT_MAX_CARDINALITY = 10;
 
     private final double defaultLineHeight;
@@ -48,6 +50,7 @@ public class ConfiguredMeasurementStrategy implements MeasurementStrategy {
     @Override
     public PrimitiveStyle measurePrimitiveStyle(Primitive primitive,
                                                 List<String> stylesheets) {
+        Objects.requireNonNull(primitive, "primitive must not be null");
         Insets labelInsets = new Insets(defaultInset);
         LabelStyle labelStyle = new LabelStyle(defaultLineHeight, labelInsets);
         LabelStyle primitiveTextStyle = new LabelStyle(defaultLineHeight, labelInsets);
@@ -58,8 +61,11 @@ public class ConfiguredMeasurementStrategy implements MeasurementStrategy {
     @Override
     public RelationStyle measureRelationStyle(Relation relation,
                                               List<String> stylesheets) {
+        Objects.requireNonNull(relation, "relation must not be null");
         Insets labelInsets = new Insets(defaultInset);
         LabelStyle labelStyle = new LabelStyle(defaultLineHeight, labelInsets);
+        // Note: nestedInsets = row + rowCell = 2 * uniformInset. This is intentional —
+        // nested content has double padding matching the JavaFX CSS measurement behavior.
         Insets regionInsets = new Insets(defaultInset);
         return new RelationStyle(labelStyle, regionInsets, DEFAULT_MAX_CARDINALITY);
     }

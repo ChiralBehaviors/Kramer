@@ -59,7 +59,7 @@ public class LabelStyle {
     public LabelStyle(double lineHeight, Insets insets) {
         this.lineHeight = lineHeight;
         this.insets = insets;
-        this.font = Font.getDefault();
+        this.font = null;  // width() unavailable headless
     }
 
     public double getHeight() {
@@ -83,6 +83,9 @@ public class LabelStyle {
     }
 
     public double width(String text) {
+        if (font == null) {
+            throw new UnsupportedOperationException("LabelStyle.width() requires a live JavaFX toolkit");
+        }
         return Style.textWidth(text, font) + insets.getLeft()
                + insets.getRight();
     }

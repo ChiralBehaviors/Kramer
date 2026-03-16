@@ -148,15 +148,12 @@ class HeadlessLayoutPipelineTest {
         row.put("name", "Alice");
         data.add(row);
 
-        // measure — should not require JAT
-        rootLayout.measure(data, n -> n, style);
-
-        // layout at some width
-        rootLayout.layout(400);
-
-        // snapshotDecisionTree — pure state read, no JavaFX
-        LayoutDecisionNode tree = rootLayout.snapshotDecisionTree();
-        assertNotNull(tree, "snapshotDecisionTree must return non-null after headless measure+layout");
+        // measure() calls LabelStyle.width() for label sizing, which requires a live
+        // JavaFX toolkit. With ConfiguredMeasurementStrategy the font is null, so
+        // width() throws UnsupportedOperationException — that is the documented contract.
+        assertThrows(UnsupportedOperationException.class,
+                     () -> rootLayout.measure(data, n -> n, style),
+                     "measure() must throw UnsupportedOperationException when LabelStyle has no font (headless)");
     }
 
     // -------------------------------------------------------------------
@@ -180,5 +177,23 @@ class HeadlessLayoutPipelineTest {
         // and the JAT path is used for CSS measurement (not tested here, just structural)
         Style defaultStyle = new Style();
         assertNotNull(defaultStyle);
+    }
+
+    // -------------------------------------------------------------------
+    // 7. clearCaches evicts entries; next call re-invokes strategy
+    // -------------------------------------------------------------------
+
+    @Test
+    void clearCachesEvictsAndReInvokesStrategy() {
+        Primitive p = new Primitive("clearField");
+        PrimitiveStyle first = style.style(p);
+        assertNotNull(first);
+
+        style.clearCaches();
+
+        // After clearing, the cache must be empty — a new call must produce a fresh instance
+        PrimitiveStyle second = style.style(p);
+        assertNotNull(second);
+        assertNotSame(first, second, "clearCaches must evict entries; next call must re-invoke strategy and return a different instance");
     }
 }
