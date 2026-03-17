@@ -2,9 +2,11 @@
 
 ## Metadata
 - **Type**: Feature
-- **Status**: proposed
+- **Status**: accepted
 - **Priority**: P2
 - **Created**: 2026-03-16
+- **Accepted**: 2026-03-17
+- **Reviewed-by**: self
 - **Related**: RDR-026 (QueryState), RDR-017 (in-layout search), RDR-015 (render modes), RDR-019 (sparklines)
 
 ---
