@@ -3,7 +3,7 @@
 ## Metadata
 - **Type**: Feature
 - **Status**: accepted
-- **Partial**: Phases 1-2c implemented; Phase 2d (integration test) and Phase 3 (pagination awareness) deferred
+- **Partial**: Phases 1-2d implemented. Phase 3 (pagination awareness) deferred — requires RDR-020 Phase D2 (relay cursor pagination)
 - **Priority**: P2
 - **Created**: 2026-03-16
 - **Accepted**: 2026-03-17
