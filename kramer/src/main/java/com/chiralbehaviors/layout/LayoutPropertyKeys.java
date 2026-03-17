@@ -7,8 +7,7 @@ package com.chiralbehaviors.layout;
  * <p>Deferred consolidation: the following additional property keys exist in
  * the codebase but have not been centralised here yet:
  * {@code stat-min-samples}, {@code stat-convergence-epsilon},
- * {@code stat-convergence-k}, {@code badge-cardinality-threshold},
- * {@code pivot-field}.
+ * {@code stat-convergence-k}, {@code badge-cardinality-threshold}.
  */
 public final class LayoutPropertyKeys {
 
@@ -29,6 +28,10 @@ public final class LayoutPropertyKeys {
      * sort-fields is used as tiebreaker when both are present.
      */
     public static final String SORT_EXPRESSION      = "sort-expression";
+
+    // Crosstab / pivot properties
+    /** Field name whose distinct values become pivot columns in crosstab mode. */
+    public static final String PIVOT_FIELD = "pivot-field";
 
     // Sparkline rendering properties
     public static final String SPARKLINE_BAND_VISIBLE    = "sparkline-band-visible";
