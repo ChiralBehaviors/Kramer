@@ -320,6 +320,86 @@ class RelationLayoutSortTest {
     }
 
     // -----------------------------------------------------------------------
+    // Tests: fieldComparator with `-` prefix for descending sort
+    // -----------------------------------------------------------------------
+
+    @Test
+    void fieldComparatorAscendingByName() {
+        var cmp = RelationLayout.fieldComparator("name");
+        ObjectNode a = JsonNodeFactory.instance.objectNode(); a.put("name", "Alice");
+        ObjectNode b = JsonNodeFactory.instance.objectNode(); b.put("name", "Bob");
+        assertTrue(cmp.compare(a, b) < 0, "Alice < Bob ascending");
+        assertTrue(cmp.compare(b, a) > 0, "Bob > Alice ascending");
+        assertEquals(0, cmp.compare(a, a), "equal nodes compare to 0");
+    }
+
+    @Test
+    void fieldComparatorDescendingByName() {
+        var cmp = RelationLayout.fieldComparator("-name");
+        ObjectNode a = JsonNodeFactory.instance.objectNode(); a.put("name", "Alice");
+        ObjectNode b = JsonNodeFactory.instance.objectNode(); b.put("name", "Bob");
+        // descending: Bob > Alice, so Bob comes first
+        assertTrue(cmp.compare(b, a) < 0, "Bob before Alice in descending");
+        assertTrue(cmp.compare(a, b) > 0, "Alice after Bob in descending");
+        assertEquals(0, cmp.compare(a, a), "equal nodes compare to 0 descending");
+    }
+
+    @Test
+    void fieldComparatorDescendingNumericByScore() {
+        var cmp = RelationLayout.fieldComparator("-score");
+        ObjectNode lo = JsonNodeFactory.instance.objectNode(); lo.put("score", 5);
+        ObjectNode hi = JsonNodeFactory.instance.objectNode(); hi.put("score", 42);
+        // descending: hi (42) should come before lo (5)
+        assertTrue(cmp.compare(hi, lo) < 0, "42 before 5 in descending numeric");
+        assertTrue(cmp.compare(lo, hi) > 0, "5 after 42 in descending numeric");
+    }
+
+    @Test
+    void fieldComparatorNullsLastAscending() {
+        var cmp = RelationLayout.fieldComparator("name");
+        ObjectNode present = JsonNodeFactory.instance.objectNode(); present.put("name", "Alice");
+        ObjectNode nullNode = JsonNodeFactory.instance.objectNode(); nullNode.putNull("name");
+        ObjectNode missing = JsonNodeFactory.instance.objectNode(); // field absent
+        // nulls and missing must sort after present values
+        assertTrue(cmp.compare(present, nullNode) < 0, "present < null ascending");
+        assertTrue(cmp.compare(present, missing) < 0, "present < missing ascending");
+        assertEquals(0, cmp.compare(nullNode, missing), "null and missing are equal");
+    }
+
+    @Test
+    void fieldComparatorNullsLastDescending() {
+        var cmp = RelationLayout.fieldComparator("-name");
+        ObjectNode present = JsonNodeFactory.instance.objectNode(); present.put("name", "Alice");
+        ObjectNode nullNode = JsonNodeFactory.instance.objectNode(); nullNode.putNull("name");
+        ObjectNode missing = JsonNodeFactory.instance.objectNode(); // field absent
+        // nulls must still sort LAST even in descending mode (not flipped)
+        assertTrue(cmp.compare(present, nullNode) < 0, "present before null in descending");
+        assertTrue(cmp.compare(present, missing) < 0, "present before missing in descending");
+        assertEquals(0, cmp.compare(nullNode, missing), "null and missing equal in descending");
+    }
+
+    @Test
+    void descendingSortFieldViaRelation() {
+        Relation schema = new Relation("items");
+        schema.addChild(new Primitive("name"));
+        schema.addChild(new Primitive("score"));
+        schema.setSortFields(List.of("-name"));
+
+        RelationLayout layout = buildLayout(schema);
+        Style model = mockModel(schema);
+
+        ArrayNode data = buildData(new String[][] {
+            { "Alice",   "10" },
+            { "Charlie", "30" },
+            { "Bob",     "20" }
+        });
+
+        List<String> names = namesAfterMeasure(layout, data, model, "name");
+        assertEquals(List.of("Charlie", "Bob", "Alice"), names,
+                     "-name sort field must produce descending lexicographic order");
+    }
+
+    // -----------------------------------------------------------------------
     // Test: sort is stable — equal keys preserve relative insertion order
     // -----------------------------------------------------------------------
 

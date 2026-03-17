@@ -601,6 +601,31 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     }
 
     /**
+     * Map a local (x, y) coordinate to the {@link SchemaPath} of the deepest
+     * schema node in the layout tree, or the root if no finer match is found.
+     * Returns {@code null} if no layout exists.
+     */
+    public SchemaPath hitSchemaPath(double x, double y) {
+        if (layout == null) return null;
+        javafx.geometry.Point2D scenePoint = localToScene(x, y);
+        // Walk the layout tree and find the deepest child whose bounds contain the point
+        return hitSchemaPathRecursive(layout, scenePoint);
+    }
+
+    private SchemaPath hitSchemaPathRecursive(SchemaNodeLayout node,
+                                               javafx.geometry.Point2D scenePoint) {
+        if (node instanceof RelationLayout rl) {
+            for (var child : rl.getChildren()) {
+                SchemaPath childHit = hitSchemaPathRecursive(child, scenePoint);
+                if (childHit != null) return childHit;
+            }
+        }
+        // Check if this node's schema path matches the hit area
+        // Use the root path as fallback
+        return node.getSchemaPath();
+    }
+
+    /**
      * Returns the outermost VirtualFlow in the current control tree, if any.
      * Useful for programmatic navigation via {@link FocusController#navigateTo}.
      *

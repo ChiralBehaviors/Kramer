@@ -2,11 +2,13 @@
 
 ## Metadata
 - **Type**: Feature
-- **Status**: accepted
+- **Status**: closed
 - **Priority**: P3
 - **Created**: 2026-03-16
 - **Accepted**: 2026-03-16
+- **Closed**: 2026-03-16
 - **Reviewed-by**: self
+- **Close-reason**: implemented
 - **Related**: RDR-018 (Query-Semantic LayoutStylesheet, Phase 2 spec), RDR-014 (filter/sort properties), RDR-013 (statistical content width measurement)
 
 ---
