@@ -2,9 +2,8 @@
 
 ## Metadata
 - **Type**: Feature
-- **Status**: closed
-- **Closed**: 2026-03-17
-- **Close-reason**: implemented (Phases 1-2c; Phase 2d integration test + Phase 3 pagination deferred)
+- **Status**: accepted
+- **Partial**: Phases 1-2c implemented; Phase 2d (integration test) and Phase 3 (pagination awareness) deferred
 - **Priority**: P2
 - **Created**: 2026-03-16
 - **Accepted**: 2026-03-17
