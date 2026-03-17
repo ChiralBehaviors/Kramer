@@ -122,6 +122,31 @@ Dialog-based gestures (filter expression entry, formula entry) use a simple `Tex
 
 ---
 
+## Research Findings
+
+### RF-1: Explorer Module Is Interaction-Free (Confidence: HIGH)
+The explorer module has zero context menus, click handlers, or mouse event handlers. All interaction infrastructure (FocusController, MouseHandler, SelectionEvent, MultipleCellSelection) lives in the kramer core module. RDR-027's gesture bindings in the explorer would be the first consumer-side interaction code. Verified by searching for `ContextMenu`, `setOnMouseClicked`, `setOnAction`, `EventHandler` across the entire `explorer/` directory — no matches.
+
+### RF-2: Existing Event Infrastructure Is Extensible (Confidence: HIGH)
+`SelectionEvent` (kramer core) already fires SINGLE/DOUBLE/TRIPLE_SELECT events through the full layout tree with cell identity. `MouseHandler` captures `MouseButton.PRIMARY` only — right-click/context menus need separate handling. The `InputMapTemplate` pattern from WellBehavedFX is the established mechanism. RDR-027 can either extend `SelectionEvent` with new `EventType`s or create a parallel `InteractionEvent` hierarchy.
+
+### RF-3: ColumnHeader Has Zero Interaction (Confidence: HIGH)
+`ColumnHeader` (kramer table package) extends `VBox`, contains `Label` nodes for column names, and has no event handlers. Sort gestures require either (a) attaching handlers post-creation in `NestedTable`, or (b) threading a callback through the `SchemaNodeLayout.columnHeader()` → `ColumnHeader` creation pipeline. Option (a) is simpler.
+
+### RF-4: Name Collision Confirmed (Confidence: HIGH)
+`com.chiralbehaviors.layout.explorer.QueryState` exists — a mutable POJO holding GraphQL execution state (targetURL, query, variables, selection, operationName). Used extensively in `AutoLayoutController` via `activeQuery` and `queryState` fields. The new `LayoutQueryState` (from RDR-026) avoids this collision by name and package.
+
+### RF-5: autoLayout() Is Safe From Listeners (Confidence: HIGH)
+`AutoLayout.autoLayout()` delegates to `Platform.runLater()`, making it safe from any thread. Existing code in `AutoLayoutController` already calls `layout.autoLayout()` from a toggle listener (line 148), confirming the intended usage pattern. No debouncing — rapid calls queue multiple layout passes.
+
+### RF-6: Context Menus Attach Uniformly Across Container Types (Confidence: HIGH)
+All container types (OutlineColumn, OutlineCell, Span, NestedCell, VirtualFlow) follow an identical pattern: `mouseHandler` + `selectionModel` + `focus` fields, bound via `LayoutContainer.bind()`. Context menus can be added uniformly by extending `LayoutContainer.bind()` or attaching `ContextMenuEvent.CONTEXT_MENU_REQUESTED` handlers alongside it. Right-click does not conflict with existing PRIMARY-button handlers.
+
+### RF-7: AutoLayoutController Owns AutoLayout (Confidence: HIGH)
+`AutoLayoutController` creates and owns the `AutoLayout` instance (field at line 116, constructed at line 253). `AutoLayoutExplorer` is the Application shell — it never touches `AutoLayout` directly. Interaction wiring goes in `AutoLayoutController`, not `AutoLayoutExplorer`.
+
+---
+
 ## Implementation Plan
 
 ### Phase 1: Event Model + Handler (kramer module)
