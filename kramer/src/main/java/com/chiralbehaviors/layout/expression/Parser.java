@@ -35,6 +35,7 @@ import com.chiralbehaviors.layout.expression.Expr.*;
 public final class Parser {
 
     private static final int MAX_LENGTH = 4096;
+    private static final int MAX_DEPTH = 100;
 
     private static final Set<String> AGGREGATE_FUNCTIONS = Set.of(
         "sum", "count", "avg", "min", "max");
@@ -44,6 +45,7 @@ public final class Parser {
 
     private final List<Token> tokens;
     private int pos;
+    private int depth;
 
     private Parser(List<Token> tokens) {
         this.tokens = tokens;
@@ -75,8 +77,15 @@ public final class Parser {
 
     // --- Precedence climbing ---
 
+    private void checkDepth() throws ParseException {
+        if (++depth > MAX_DEPTH) {
+            throw new ParseException("Expression nesting too deep (exceeds " + MAX_DEPTH + ")", peek().offset());
+        }
+    }
+
     // or-expr ::= and-expr ( "||" and-expr )*
     private Expr parseOrExpr() throws ParseException {
+        checkDepth();
         var left = parseAndExpr();
         while (check(Token.Type.PIPE_PIPE)) {
             advance();
@@ -258,6 +267,19 @@ public final class Parser {
             }
         }
         expect(Token.Type.RPAREN, "Expected ')' after function arguments");
+        // Arity validation
+        int arity = args.size();
+        switch (name) {
+            case "if" -> {
+                if (arity != 3) throw new ParseException(
+                    "if() requires exactly 3 arguments, got " + arity, nameToken.offset());
+            }
+            case "len", "upper", "lower", "abs", "round" -> {
+                if (arity != 1) throw new ParseException(
+                    name + "() requires exactly 1 argument, got " + arity, nameToken.offset());
+            }
+            default -> {}
+        }
         return new ScalarCall(name, List.copyOf(args));
     }
 

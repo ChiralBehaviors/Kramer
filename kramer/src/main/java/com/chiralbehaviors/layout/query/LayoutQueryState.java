@@ -328,7 +328,7 @@ public class LayoutQueryState implements LayoutStylesheet {
             mutatedDuringSuppression = true;
             return;
         }
-        for (var listener : changeListeners) {
+        for (var listener : List.copyOf(changeListeners)) {
             listener.run();
         }
     }

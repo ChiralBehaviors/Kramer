@@ -657,4 +657,29 @@ class ExpressionParserTest {
                     new FieldRef(List.of("name")))))),
             expr);
     }
+
+    // --- Arity validation (C1 fix) ---
+
+    @Test
+    void errorIfWithWrongArity() {
+        assertThrows(ParseException.class, () -> Parser.parse("if($a)"));
+        assertThrows(ParseException.class, () -> Parser.parse("if($a, $b)"));
+        assertThrows(ParseException.class, () -> Parser.parse("if($a, $b, $c, $d)"));
+    }
+
+    @Test
+    void errorLenWithWrongArity() {
+        assertThrows(ParseException.class, () -> Parser.parse("len()"));
+        assertThrows(ParseException.class, () -> Parser.parse("len($a, $b)"));
+    }
+
+    // --- Recursion depth guard (C3 fix) ---
+
+    @Test
+    void errorTooDeepNesting() {
+        var deep = "(".repeat(200) + "$a" + ")".repeat(200);
+        var ex = assertThrows(ParseException.class, () -> Parser.parse(deep));
+        assertTrue(ex.getMessage().contains("too deep"),
+            "should mention depth: " + ex.getMessage());
+    }
 }
