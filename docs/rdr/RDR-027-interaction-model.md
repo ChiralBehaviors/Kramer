@@ -56,29 +56,55 @@ sealed interface LayoutInteraction permits
     record SetAggregate(SchemaPath path, String expression) implements LayoutInteraction {}
     record ClearAggregate(SchemaPath path) implements LayoutInteraction {}
     record ResetAll(SchemaPath path) implements LayoutInteraction {
-        /** Reset for the entire tree. */
+        /** Reset for the entire tree. Path is null for global reset. */
         public ResetAll() { this(null); }
     }
 }
 ```
 
+**Note on `ResetAll`**: The `path()` method returns `null` for global reset. Callers that access `event.path()` generically (e.g., logging) must null-check. `InteractionHandler` handles this explicitly via the switch dispatch.
+
+### Sort Direction Encoding
+
+Sort direction uses `sort-fields` with a `-` prefix convention for descending (e.g., `"-name"` sorts by name descending). This convention is documented in the RDR-021 spec ("sort-fields property convention (prefix `-` for descending)") and requires enhancing `RelationLayout.fieldComparator()` to strip the prefix and reverse the comparator when present. This is a prerequisite for `SortBy` — implemented as part of Phase 1.
+
+The sort-toggle state machine for column headers:
+1. **No sort** → click → `setSortFields(path, path.leaf())` (ascending)
+2. **Ascending** → click → `setSortFields(path, "-" + path.leaf())` (descending)
+3. **Descending** → click → `setSortFields(path, null)` (clear sort)
+
+The current state is determined by reading `queryState.getFieldState(path).sortFields()`.
+
 ### InteractionHandler
 
-Applies `LayoutInteraction` events to a `QueryState`:
+Applies `LayoutInteraction` events to a `LayoutQueryState`:
 
 ```java
 public class InteractionHandler {
-    private final QueryState queryState;
+    private final LayoutQueryState queryState;
 
     public void apply(LayoutInteraction event) {
         switch (event) {
             case SortBy(var path, var desc) ->
-                queryState.setSortExpression(path, desc ? "-" + path.leaf() : path.leaf());
+                queryState.setSortFields(path, desc ? "-" + path.leaf() : path.leaf());
             case ToggleVisible(var path) ->
-                queryState.setVisible(path, !queryState.getFieldState(path).visible());
+                queryState.setVisible(path, !queryState.getVisibleOrDefault(path));
             case SetFilter(var path, var expr) ->
                 queryState.setFilterExpression(path, expr);
-            // ... etc
+            case ClearFilter(var path) ->
+                queryState.setFilterExpression(path, null);
+            case SetRenderMode(var path, var mode) ->
+                queryState.setRenderMode(path, mode);
+            case SetFormula(var path, var expr) ->
+                queryState.setFormulaExpression(path, expr);
+            case ClearFormula(var path) ->
+                queryState.setFormulaExpression(path, null);
+            case SetAggregate(var path, var expr) ->
+                queryState.setAggregateExpression(path, expr);
+            case ClearAggregate(var path) ->
+                queryState.setAggregateExpression(path, null);
+            case ResetAll(_) ->
+                queryState.reset();
         }
     }
 }
@@ -92,7 +118,7 @@ Concrete gestures wired in the `explorer` app:
 
 | Gesture | UI Element | Interaction Event |
 |---------|-----------|-------------------|
-| Click column header | `ColumnHeader` in table mode | `SortBy(path, toggle)` |
+| Click column header | `ColumnHeader` in table mode (handler attached via lambda capture at construction, closing over `SchemaPath`) | `SortBy(path, toggle)` |
 | Right-click → "Hide" | Context menu on any field | `ToggleVisible(path)` |
 | Right-click → "Filter..." | Context menu on Primitive | `SetFilter(path, dialog)` |
 | Right-click → "Sort ascending/descending" | Context menu on Primitive | `SortBy(path, asc/desc)` |
@@ -150,9 +176,11 @@ All container types (OutlineColumn, OutlineCell, Span, NestedCell, VirtualFlow) 
 ## Implementation Plan
 
 ### Phase 1: Event Model + Handler (kramer module)
+- Enhance `RelationLayout.fieldComparator()` to support `-fieldName` prefix for descending sort (prerequisite for `SortBy`)
 - `LayoutInteraction` sealed hierarchy
-- `InteractionHandler` applying events to `QueryState`
-- Unit tests: event → QueryState mutation → FieldState verification
+- `InteractionHandler` applying events to `LayoutQueryState`
+- Unit tests: event → LayoutQueryState mutation → FieldState verification
+- Unit tests: fieldComparator with `-` prefix produces reversed ordering
 
 ### Phase 2: JavaFX Context Menus (explorer module)
 - Context menu factory for Primitive and Relation nodes
