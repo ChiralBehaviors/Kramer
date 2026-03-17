@@ -2,9 +2,11 @@
 
 ## Metadata
 - **Type**: Architecture
-- **Status**: proposed
+- **Status**: accepted
 - **Priority**: P2
 - **Created**: 2026-03-16
+- **Accepted**: 2026-03-16
+- **Reviewed-by**: self
 - **Related**: RDR-018 (query-semantic stylesheet), RDR-021 (expression language), RDR-014 (filter/sort), RDR-015 (render modes), RDR-023 (reactive invalidation)
 
 ---
