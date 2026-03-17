@@ -392,10 +392,8 @@ when GraphQL's extension mechanism exists and graphql-java's AST already models 
   `AstPrinter` for serialization
 - Strip client-only directive names before printing (configurable set of directive names to
   strip)
-- Cursor-advance API: `SchemaContext.withCursor(SchemaPath connectionPath, String cursor)`
-  returns a new `SchemaContext` with the `after` argument updated on the relevant `Field`
 - Tests: round-trip equality (parse → reconstruct → compare); hidden field omission;
-  argument preservation; cursor update produces correct `after` value in reconstructed query
+  argument preservation
 - Integration test: reconstruct + `evaluate()` returns data consistent with the modified query
 
 ### Phase D1: FragmentSpread resolution (defect fix)
