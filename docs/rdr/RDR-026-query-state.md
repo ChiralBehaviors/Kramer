@@ -2,10 +2,12 @@
 
 ## Metadata
 - **Type**: Architecture
-- **Status**: accepted
+- **Status**: closed
 - **Priority**: P2
 - **Created**: 2026-03-16
 - **Accepted**: 2026-03-16
+- **Closed**: 2026-03-16
+- **Close-reason**: implemented (all 3 phases)
 - **Reviewed-by**: self
 - **Related**: RDR-018 (query-semantic stylesheet), RDR-021 (expression language), RDR-014 (filter/sort), RDR-015 (render modes), RDR-023 (reactive invalidation)
 
