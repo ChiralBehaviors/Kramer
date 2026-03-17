@@ -84,18 +84,21 @@ public final class RelationLayout extends SchemaNodeLayout {
      * their text representation. Null/missing values sort last.
      */
     static Comparator<JsonNode> fieldComparator(String field) {
+        boolean descending = field.startsWith("-");
+        String key = descending ? field.substring(1) : field;
+        int dir = descending ? -1 : 1;
         return (a, b) -> {
-            JsonNode va = a == null ? null : a.get(field);
-            JsonNode vb = b == null ? null : b.get(field);
+            JsonNode va = a == null ? null : a.get(key);
+            JsonNode vb = b == null ? null : b.get(key);
             boolean missingA = va == null || va.isNull();
             boolean missingB = vb == null || vb.isNull();
             if (missingA && missingB) return 0;
-            if (missingA)             return 1;   // nulls last
+            if (missingA)             return 1;   // nulls last (direction-independent)
             if (missingB)             return -1;
             if (va.isNumber() && vb.isNumber()) {
-                return Double.compare(va.asDouble(), vb.asDouble());
+                return dir * Double.compare(va.asDouble(), vb.asDouble());
             }
-            return va.asText().compareTo(vb.asText());
+            return dir * va.asText().compareTo(vb.asText());
         };
     }
 
