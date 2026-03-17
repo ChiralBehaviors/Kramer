@@ -446,6 +446,29 @@ retaining this information, which is a redesign of the kramer-ql data flow."
 018-research-6 (referenced in RDR-018 Phase 3): "GraphQlUtil still discards AST. Phase 3
 prerequisite unchanged."
 
+### RF-6: graphql-java 25.0 provides all required APIs (Confidence: HIGH)
+
+`Document`, `Field` (implements `DirectivesContainer`), `OperationDefinition`, `FragmentDefinition`,
+`FragmentSpread`, `Directive`, and `AstPrinter` (with `printAst(Node) -> String`) are all available
+at v25.0. `AstPrinter` is `@PublicApi` and suitable for Phase C query reconstruction serialization.
+`Field.getDirectives()` returns `List<Directive>` — the parser preserves directives on fields.
+
+### RF-7: SchemaPath↔Field index buildable in single pass (Confidence: HIGH)
+
+The existing `buildSchema(Field, Set<String>)` recursive traversal (lines 90-110) already
+implicitly carries the path context (parent field name + current field name). Adding a
+`SchemaPath parentPath` parameter and `fieldIndex.put(path, field)` at each visit is a mechanical
+extension — no second walk required. `InlineFragment` handling correctly contributes fields to
+the parent's path without introducing a new nesting level.
+
+### RF-8: Explorer lifecycle integration point identified (Confidence: HIGH)
+
+`AutoLayoutController.setData()` (line 283) calls `GraphQlUtil.buildSchema(query, selection)` and
+feeds the result to `layout.setRoot()` + `layout.measure()`. Replace `buildSchema()` with
+`buildContext()` here. `SchemaContext.schema()` feeds into the existing layout pipeline unchanged.
+Second migration point: `PageContext` in toy-app (line 14) also calls `buildSchema()`.
+`StandaloneDemo` builds schemas manually and is unaffected.
+
 ---
 
 ## Finalization Gate
