@@ -19,9 +19,13 @@ package com.chiralbehaviors.layout;
 import static com.chiralbehaviors.layout.style.Style.*;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -32,6 +36,9 @@ import java.util.stream.StreamSupport;
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
+import com.chiralbehaviors.layout.expression.ExpressionEvaluator;
+import com.chiralbehaviors.layout.expression.Expr;
+import com.chiralbehaviors.layout.expression.ParseException;
 import com.chiralbehaviors.layout.outline.Outline;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -45,6 +52,7 @@ import com.chiralbehaviors.layout.table.TableHeader;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import javafx.geometry.Insets;
 import javafx.scene.layout.Region;
@@ -142,6 +150,53 @@ public final class RelationLayout extends SchemaNodeLayout {
     }
 
     /**
+     * Compare two evaluation results for sort ordering. Null-safe; nulls sort last.
+     */
+    static int compareValues(Object a, Object b) {
+        if (a == null && b == null) return 0;
+        if (a == null) return 1;  // nulls last
+        if (b == null) return -1;
+        if (a instanceof Double da && b instanceof Double db) return Double.compare(da, db);
+        if (a instanceof String sa && b instanceof String sb) return sa.compareTo(sb);
+        if (a instanceof Boolean ba && b instanceof Boolean bb) return Boolean.compare(ba, bb);
+        return a.toString().compareTo(b.toString());
+    }
+
+    /**
+     * Evaluate an expression that mixes aggregate and scalar operations.
+     * Creates a synthetic row where each AggregateCall is pre-evaluated and
+     * injected as a literal, then evaluates the remaining expression per-row.
+     */
+    static Object evaluateWithAggregates(ExpressionEvaluator evaluator,
+                                          Expr expr, List<JsonNode> rows) {
+        // Replace AggregateCall nodes with their computed literal values
+        Expr resolved = resolveAggregates(evaluator, expr, rows);
+        // Evaluate the resolved (aggregate-free) expression with an empty row
+        return evaluator.evaluate(resolved, JsonNodeFactory.instance.objectNode());
+    }
+
+    private static Expr resolveAggregates(ExpressionEvaluator evaluator,
+                                           Expr expr, List<JsonNode> rows) {
+        return switch (expr) {
+            case Expr.AggregateCall agg -> {
+                Object result = evaluator.evaluateAggregate(agg, rows);
+                yield new Expr.Literal(result);
+            }
+            case Expr.BinaryOp(var op, var l, var r) ->
+                new Expr.BinaryOp(op,
+                    resolveAggregates(evaluator, l, rows),
+                    resolveAggregates(evaluator, r, rows));
+            case Expr.UnaryOp(var op, var operand) ->
+                new Expr.UnaryOp(op, resolveAggregates(evaluator, operand, rows));
+            case Expr.ScalarCall(var name, var args) ->
+                new Expr.ScalarCall(name,
+                    args.stream().map(a -> resolveAggregates(evaluator, a, rows)).toList());
+            case Expr.Literal l -> l;
+            case Expr.FieldRef f -> f;
+        };
+    }
+
+    /**
      * Returns true if the item has at least one child Relation field that is a
      * non-empty array, or if the relation has no Relation children at all.
      */
@@ -198,6 +253,16 @@ public final class RelationLayout extends SchemaNodeLayout {
     private Comparator<JsonNode>           sortComparator;
     /** Filter predicate for hide-if-empty; null when filtering is disabled. */
     private Predicate<JsonNode>            hideIfEmptyFilter;
+    /** Aggregate expression results keyed by child field name. Populated during measure(). */
+    private Map<String, Object>            aggregateResults;
+    /** Compiled filter expression AST; null when no filter-expression is set. */
+    private Expr                           filterExprAst;
+    /** Ordered list of (field, ast) pairs for formula overlay; empty when no formulas. */
+    private List<Map.Entry<String, Expr>>  formulaEntries = List.of();
+    /** Compiled sort expression AST; null when no sort-expression is set. */
+    private Expr                           sortExprAst;
+    /** The ExpressionEvaluator from the last measure pass; held for extractFrom(). */
+    private ExpressionEvaluator            cachedEvaluator;
     /**
      * Solver-driven render-mode assignments. When non-null, layout() consults
      * this map instead of the greedy width check. Set by AutoLayout before the
@@ -432,13 +497,54 @@ public final class RelationLayout extends SchemaNodeLayout {
         Function<JsonNode, JsonNode> ex = extractor != null ? extractor : n -> n;
         JsonNode extracted = ex.apply(datum);
         JsonNode result = node.extractFrom(extracted);
-        if (sortComparator != null && result instanceof ArrayNode arr) {
+        // Apply base sort (sort-fields / Relation.sortFields) unless
+        // sort-expression is present — in that case, sort happens after formulas.
+        if (sortComparator != null && sortExprAst == null && result instanceof ArrayNode arr) {
             sortArrayNode(arr, sortComparator);
         }
         if (hideIfEmptyFilter != null && result instanceof ArrayNode arr) {
             result = filterArrayNode(arr, hideIfEmptyFilter);
         }
+        // Expression pipeline replay (filter → formula → sort-expression)
+        if (cachedEvaluator != null) {
+            if (filterExprAst != null && result instanceof ArrayNode arr) {
+                final ExpressionEvaluator ev = cachedEvaluator;
+                final Expr fAst = filterExprAst;
+                result = filterArrayNode(arr, row -> ev.toBoolean(ev.evaluate(fAst, row)));
+            }
+            if (!formulaEntries.isEmpty() && result instanceof ArrayNode arr) {
+                result = applyFormulas(arr, cachedEvaluator);
+            }
+            // Sort after formulas (sort-expression may reference formula fields)
+            if (sortComparator != null && result instanceof ArrayNode arr) {
+                sortArrayNode(arr, sortComparator);
+            }
+        } else if (sortComparator != null && sortExprAst != null
+                   && result instanceof ArrayNode arr) {
+            // Expression evaluator gone but sort comparator persists
+            sortArrayNode(arr, sortComparator);
+        }
         return result;
+    }
+
+    /**
+     * Apply formula overlays to each row in the array.
+     * Returns a new ArrayNode with formula results injected.
+     */
+    private ArrayNode applyFormulas(ArrayNode data, ExpressionEvaluator evaluator) {
+        ArrayNode overlaid = JsonNodeFactory.instance.arrayNode();
+        for (JsonNode row : data) {
+            ObjectNode newRow = JsonNodeFactory.instance.objectNode();
+            if (row.isObject()) {
+                newRow.setAll((ObjectNode) row);
+            }
+            for (var entry : formulaEntries) {
+                Object result = evaluator.evaluate(entry.getValue(), newRow);
+                newRow.set(entry.getKey(), ExpressionEvaluator.toJsonNode(result));
+            }
+            overlaid.add(newRow);
+        }
+        return overlaid;
     }
 
     public void forEach(Consumer<? super SchemaNodeLayout> action) {
@@ -481,6 +587,11 @@ public final class RelationLayout extends SchemaNodeLayout {
 
     public MeasureResult getMeasureResult() {
         return measureResult;
+    }
+
+    /** Aggregate expression results from the last measure() pass, keyed by child field name. */
+    public Map<String, Object> getAggregateResults() {
+        return aggregateResults;
     }
 
     /** Returns true when every descendant PrimitiveLayout has converged.
@@ -718,11 +829,157 @@ public final class RelationLayout extends SchemaNodeLayout {
         } else {
             hideIfEmptyFilter = null;
         }
+
+        // --- Expression pipeline (RDR-021): filter → formula → aggregate → sort ---
+        SchemaPath myPath = getSchemaPath();
+        LayoutStylesheet stylesheet = (model != null) ? model.getStylesheet() : null;
+        ExpressionEvaluator evaluator = (model != null) ? model.getExpressionEvaluator() : null;
+        if (evaluator != null && stylesheet != null) {
+            evaluator.syncVersion(stylesheet.getVersion());
+        }
+        // Reset expression state from previous measure
+        filterExprAst = null;
+        formulaEntries = List.of();
+        sortExprAst = null;
+        cachedEvaluator = evaluator;
+        aggregateResults = null;
+
+        // 1. filter-expression: per-row boolean predicate; false/null rows excluded
+        if (evaluator != null && stylesheet != null && myPath != null) {
+            String filterExpr = stylesheet.getString(myPath, LayoutPropertyKeys.FILTER_EXPRESSION, null);
+            if (filterExpr != null) {
+                try {
+                    filterExprAst = evaluator.compile(filterExpr);
+                    final ExpressionEvaluator ev = evaluator;
+                    final Expr fAst = filterExprAst;
+                    datum = filterArrayNode(datum, row -> ev.toBoolean(ev.evaluate(fAst, row)));
+                } catch (ParseException e) {
+                    LOG.warning(() -> "Invalid filter-expression at " + myPath + ": " + e.getMessage());
+                }
+            }
+        }
+
+        // 2. formula-expression: per-row virtual field computation
+        if (evaluator != null && stylesheet != null && myPath != null
+                && datum instanceof ArrayNode datumArray) {
+            Map<String, Expr> formulas = new LinkedHashMap<>();
+            Map<String, Set<String>> deps = new LinkedHashMap<>();
+            for (var child : getNode().getChildren()) {
+                if (child instanceof com.chiralbehaviors.layout.schema.Primitive) {
+                    SchemaPath childPath = myPath.child(child.getField());
+                    String formulaExpr = stylesheet.getString(childPath,
+                        LayoutPropertyKeys.FORMULA_EXPRESSION, null);
+                    if (formulaExpr != null) {
+                        try {
+                            Expr ast = evaluator.compile(formulaExpr);
+                            if (ExpressionEvaluator.containsAggregate(ast)) {
+                                LOG.warning(() -> "formula-expression at " + childPath
+                                    + " contains aggregate call; treating as absent");
+                            } else {
+                                formulas.put(child.getField(), ast);
+                                deps.put(child.getField(),
+                                    ExpressionEvaluator.extractFieldRefs(ast));
+                            }
+                        } catch (ParseException e) {
+                            LOG.warning(() -> "Invalid formula-expression at " + childPath
+                                + ": " + e.getMessage());
+                        }
+                    }
+                }
+            }
+            if (!formulas.isEmpty()) {
+                Set<String> cycles = ExpressionEvaluator.detectCycles(deps);
+                if (!cycles.isEmpty()) {
+                    LOG.warning(() -> "Circular formula references detected: " + cycles
+                        + " at " + myPath + "; skipping cycle members");
+                    cycles.forEach(formulas::remove);
+                }
+                List<String> evalOrder = ExpressionEvaluator.topologicalSort(deps);
+                // Store for extractFrom() reuse
+                var entries = new ArrayList<Map.Entry<String, Expr>>();
+                for (String field : evalOrder) {
+                    Expr ast = formulas.get(field);
+                    if (ast != null) {
+                        entries.add(Map.entry(field, ast));
+                    }
+                }
+                formulaEntries = List.copyOf(entries);
+                // Overlay formula results on each row
+                datum = applyFormulas(datumArray, evaluator);
+            }
+        }
+
+        // 3. aggregate-expression: compute aggregates (rendering deferred)
+        if (evaluator != null && stylesheet != null && myPath != null) {
+            Map<String, Object> aggResults = null;
+            for (var child : getNode().getChildren()) {
+                if (child instanceof com.chiralbehaviors.layout.schema.Primitive) {
+                    SchemaPath childPath = myPath.child(child.getField());
+                    String aggExpr = stylesheet.getString(childPath,
+                        LayoutPropertyKeys.AGGREGATE_EXPRESSION, null);
+                    if (aggExpr != null) {
+                        try {
+                            Expr ast = evaluator.compile(aggExpr);
+                            if (!ExpressionEvaluator.containsAggregate(ast)) {
+                                LOG.warning(() -> "aggregate-expression at " + childPath
+                                    + " has no aggregate call; treating as absent");
+                            } else {
+                                List<JsonNode> rows = new ArrayList<>();
+                                datum.forEach(rows::add);
+                                Object result;
+                                if (ast instanceof Expr.AggregateCall agg) {
+                                    result = evaluator.evaluateAggregate(agg, rows);
+                                } else {
+                                    result = evaluateWithAggregates(evaluator, ast, rows);
+                                }
+                                if (aggResults == null) aggResults = new HashMap<>();
+                                aggResults.put(child.getField(), result);
+                            }
+                        } catch (ParseException e) {
+                            LOG.warning(() -> "Invalid aggregate-expression at " + childPath
+                                + ": " + e.getMessage());
+                        }
+                    }
+                }
+            }
+            aggregateResults = aggResults;
+        }
+
+        // 4. sort-expression: per-row sort key, takes precedence over sort-fields
+        if (evaluator != null && stylesheet != null && myPath != null) {
+            String sortExpr = stylesheet.getString(myPath,
+                LayoutPropertyKeys.SORT_EXPRESSION, null);
+            if (sortExpr != null) {
+                try {
+                    sortExprAst = evaluator.compile(sortExpr);
+                    final ExpressionEvaluator ev = evaluator;
+                    final Expr sAst = sortExprAst;
+                    Comparator<JsonNode> exprCmp = (a, b) -> {
+                        Object va = ev.evaluate(sAst, a);
+                        Object vb = ev.evaluate(sAst, b);
+                        return compareValues(va, vb);
+                    };
+                    if (sortComparator != null) {
+                        sortComparator = exprCmp.thenComparing(sortComparator);
+                    } else {
+                        sortComparator = exprCmp;
+                    }
+                    if (datum instanceof ArrayNode sortArray) {
+                        ArrayNode sorted = sortArray.deepCopy();
+                        sortArrayNode(sorted, sortComparator);
+                        datum = sorted;
+                    }
+                } catch (ParseException e) {
+                    LOG.warning(() -> "Invalid sort-expression at " + myPath
+                        + ": " + e.getMessage());
+                }
+            }
+        }
+        // --- End expression pipeline ---
+
         // Collect pivot values AFTER sort+filter, BEFORE child iteration.
         // Reads pivot-field from stylesheet; if non-empty, scans datum for distinct values.
         PivotStats pivotStats = null;
-        SchemaPath myPath = getSchemaPath();
-        LayoutStylesheet stylesheet = (model != null) ? model.getStylesheet() : null;
         if (stylesheet != null && myPath != null) {
             String pivotField = stylesheet.getString(myPath, "pivot-field", "");
             if (!pivotField.isEmpty()) {

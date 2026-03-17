@@ -26,6 +26,7 @@ import com.chiralbehaviors.layout.DefaultLayoutStylesheet;
 import com.chiralbehaviors.layout.MeasurementStrategy;
 import com.chiralbehaviors.layout.LayoutLabel;
 import com.chiralbehaviors.layout.LayoutStylesheet;
+import com.chiralbehaviors.layout.expression.ExpressionEvaluator;
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.PrimitiveLayout;
 import com.chiralbehaviors.layout.RelationLayout;
@@ -135,6 +136,7 @@ public class Style {
     private Object                            owner;
     private LayoutStylesheet                  stylesheet;
     private MeasurementStrategy               measurementStrategy;
+    private final ExpressionEvaluator         expressionEvaluator = new ExpressionEvaluator();
 
     private final List<String>                styleSheets          = new ArrayList<>();
     private final IdentityHashMap<Primitive, PrimitiveStyle>  primitiveStyleCache  = new IdentityHashMap<>();
@@ -190,6 +192,11 @@ public class Style {
 
     public LayoutStylesheet getStylesheet() {
         return stylesheet;
+    }
+
+    /** Expression evaluator for filter, formula, aggregate, sort expressions. */
+    public ExpressionEvaluator getExpressionEvaluator() {
+        return expressionEvaluator;
     }
 
     public void setStylesheet(LayoutStylesheet stylesheet) {
