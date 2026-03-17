@@ -30,9 +30,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.chiralbehaviors.layout.AutoLayout;
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil;
+import com.chiralbehaviors.layout.query.ColumnSortHandler;
+import com.chiralbehaviors.layout.query.InteractionHandler;
+import com.chiralbehaviors.layout.query.InteractionMenuFactory;
+import com.chiralbehaviors.layout.query.LayoutQueryState;
+import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
+import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -114,6 +121,9 @@ public class AutoLayoutController {
     private AnchorPane          anchor;
     private WebTarget           endpoint;
     private AutoLayout          layout;
+    private LayoutQueryState    layoutQueryState;
+    private InteractionHandler  interactionHandler;
+    private InteractionMenuFactory menuFactory;
     private WebEngine           webEngine;
     @FXML
     private ToggleGroup         page;
@@ -250,7 +260,30 @@ public class AutoLayoutController {
     }
 
     private void initialize() {
-        layout = new AutoLayout();
+        // Wire LayoutQueryState into AutoLayout's Style for interaction support
+        Style style = new Style();
+        layoutQueryState = new LayoutQueryState(style);
+        style.setStylesheet(layoutQueryState);
+        layout = new AutoLayout(null, style);
+        layoutQueryState.addChangeListener(() -> layout.autoLayout());
+
+        // Interaction handler and context menu factory
+        interactionHandler = new InteractionHandler(layoutQueryState);
+        menuFactory = new InteractionMenuFactory(interactionHandler, layoutQueryState);
+
+        // Single context menu handler on the AutoLayout root — avoids
+        // VirtualFlow cell recycling issues (audit finding Blocker 2)
+        layout.addEventHandler(javafx.scene.input.ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
+            SchemaPath hitPath = layout.hitSchemaPath(event.getX(), event.getY());
+            if (hitPath != null) {
+                var contextMenu = isRelationPath(hitPath)
+                    ? menuFactory.buildRelationMenu(hitPath)
+                    : menuFactory.buildPrimitiveMenu(hitPath);
+                contextMenu.show(layout, event.getScreenX(), event.getScreenY());
+                event.consume();
+            }
+        });
+
         AnchorPane.setTopAnchor(layout, 0.0);
         AnchorPane.setLeftAnchor(layout, 0.0);
         AnchorPane.setBottomAnchor(layout, 0.0);
@@ -261,6 +294,23 @@ public class AutoLayoutController {
         AnchorPane.setLeftAnchor(schemaView, 0.0);
         AnchorPane.setBottomAnchor(schemaView, 0.0);
         AnchorPane.setRightAnchor(schemaView, 0.0);
+    }
+
+    private boolean isRelationPath(SchemaPath path) {
+        SchemaNode root = layout.getRoot();
+        if (root == null) return false;
+        // Walk path segments to find the target schema node
+        SchemaNode current = root;
+        for (int i = 1; i < path.segments().size(); i++) {
+            if (current instanceof Relation r) {
+                SchemaNode child = r.getChild(path.segments().get(i));
+                if (child == null) return false;
+                current = child;
+            } else {
+                return false;
+            }
+        }
+        return current instanceof Relation;
     }
 
     private void initialize(WebEngine engine) {
