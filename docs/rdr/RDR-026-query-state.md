@@ -88,7 +88,7 @@ public record FieldState(
 `QueryState` maintains a list of `Runnable` change listeners. Any mutation (setter call, reset) fires all listeners synchronously. The caller subscribes and triggers re-layout:
 
 ```java
-queryState.addChangeListener(() -> autoLayout.requestLayout());
+queryState.addChangeListener(() -> autoLayout.autoLayout());
 ```
 
 `AutoLayout` remains decoupled — it receives a `LayoutStylesheet` and does not know about `QueryState`. The existing version-check during layout passes (`LayoutDecisionKey` includes stylesheet version) ensures correctness even without the listener — the listener provides immediacy.
@@ -136,6 +136,36 @@ QueryState as a separate object that calls `setOverride()` on a `DefaultLayoutSt
 Add typed setters directly to `DefaultLayoutStylesheet`.
 
 **Rejected**: Violates single-responsibility. `DefaultLayoutStylesheet` is a storage layer. QueryState adds semantic intent, change notification, serialization, and reset — concerns that don't belong in a stylesheet.
+
+---
+
+## Research Findings
+
+### RF-1: LayoutStylesheet Contract Is Clean (Confidence: HIGH)
+`LayoutStylesheet` is a 7-method interface: `getVersion`, `getDouble`, `getInt`, `getString`, `getBoolean`, `primitiveStyle`, `relationStyle`. No default methods, no static methods, no hidden contracts. QueryState implementing this interface requires exactly these 7 methods, all delegating to the wrapped `DefaultLayoutStylesheet`. Verified at `LayoutStylesheet.java`.
+
+### RF-2: Single-Thread Assumption Valid (Confidence: HIGH)
+`DefaultLayoutStylesheet` has zero synchronization — `version` is not volatile, `overrides` is a plain `HashMap`. `AutoLayout` enforces FX Application Thread access via `Platform.runLater()` and `Platform.isFxApplicationThread()` guards. QueryState does not need thread safety.
+
+### RF-3: Substitution Points Identified (Confidence: HIGH)
+Style holds LayoutStylesheet. AutoLayout holds Style. The ownership chain:
+- `AutoLayout` → `Style model` (field)
+- `Style` creates `DefaultLayoutStylesheet(this)` by default, or accepts external via `Style(LayoutObserver, LayoutStylesheet)` or `Style.setStylesheet(LayoutStylesheet)`
+- `PrimitiveLayout.measure()` and `RelationLayout.measure()` read via `model.getStylesheet()`
+
+**Substitution**: `new Style(observer, queryState)` at construction, or `style.setStylesheet(queryState)` at runtime. No changes to AutoLayout needed.
+
+### RF-4: Re-Layout Trigger Is autoLayout(), Not requestLayout() (Confidence: HIGH)
+`AutoLayout extends AnchorPane` but does NOT override `requestLayout()`. The correct external trigger is `autoLayout.autoLayout()` (public method, line 126), which clears caches and posts `Platform.runLater()`. The change listener protocol should call `autoLayout.autoLayout()`, not `requestLayout()`. Design note updated.
+
+### RF-5: Zero Production Callers of setOverride (Confidence: HIGH)
+`DefaultLayoutStylesheet.setOverride()` has zero callers in production code (`kramer/src/main/java`, `kramer-ql`, `explorer`, `toy-app`). All 60+ calls are in test code only. QueryState typed setters will be the first production-code callers. No migration of existing call sites needed.
+
+### RF-6: pivot-field Confirmed (Confidence: HIGH)
+`RelationLayout.java` line 984: `stylesheet.getString(myPath, "pivot-field", "")`. String property, empty default. When non-empty, names a JSON field whose distinct values become pivot columns. Listed in `LayoutPropertyKeys` javadoc as deferred consolidation. QueryState should expose `setPivotField(SchemaPath, String)`.
+
+### RF-7: ExpressionEvaluator Isolation Confirmed (Confidence: HIGH)
+`ExpressionEvaluator` lives on `Style` (field), not on the stylesheet. The only stylesheet interaction is read-only: `evaluator.syncVersion(stylesheet.getVersion())` and `stylesheet.getString()` in `RelationLayout.measure()`. Both go through the `LayoutStylesheet` interface. QueryState's delegation will work transparently. No direct coupling needed.
 
 ---
 
