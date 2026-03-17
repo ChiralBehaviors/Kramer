@@ -17,7 +17,6 @@
 package com.chiralbehaviors.layout.expression;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,7 +39,15 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
  */
 public final class ExpressionEvaluator {
 
-    private final Map<String, Expr> cache = new HashMap<>();
+    private static final int MAX_CACHE_SIZE = 256;
+
+    @SuppressWarnings("serial")
+    private final Map<String, Expr> cache = new LinkedHashMap<>(16, 0.75f, true) {
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, Expr> eldest) {
+            return size() > MAX_CACHE_SIZE;
+        }
+    };
     private long lastVersion = -1;
 
     /**
@@ -104,7 +111,7 @@ public final class ExpressionEvaluator {
         // Map the argument expression over all rows, collect non-null numeric values
         var values = new ArrayList<Double>();
         for (var row : rows) {
-            var val = call.arg().map(arg -> evaluate(arg, row)).orElse(null);
+            var val = call.arg() != null ? evaluate(call.arg(), row) : null;
             if (val != null) {
                 var num = toNumber(val);
                 if (num != null) {
@@ -119,9 +126,9 @@ public final class ExpressionEvaluator {
 
         return switch (call.fn()) {
             case "sum" -> values.stream().mapToDouble(Double::doubleValue).sum();
-            case "avg" -> values.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
-            case "min" -> values.stream().mapToDouble(Double::doubleValue).min().orElse(0.0);
-            case "max" -> values.stream().mapToDouble(Double::doubleValue).max().orElse(0.0);
+            case "avg" -> values.stream().mapToDouble(Double::doubleValue).average().getAsDouble();
+            case "min" -> values.stream().mapToDouble(Double::doubleValue).min().getAsDouble();
+            case "max" -> values.stream().mapToDouble(Double::doubleValue).max().getAsDouble();
             default -> null;
         };
     }
@@ -351,6 +358,45 @@ public final class ExpressionEvaluator {
 
     // --- Cycle detection (Kahn's algorithm) ---
 
+    /** Internal graph representation for Kahn's algorithm. */
+    private record DepGraph(
+        LinkedHashMap<String, Integer> inDegree,
+        LinkedHashMap<String, Set<String>> dependents
+    ) {}
+
+    private static DepGraph buildDepGraph(Map<String, Set<String>> deps) {
+        var inDegree = new LinkedHashMap<String, Integer>();
+        var dependents = new LinkedHashMap<String, Set<String>>();
+        for (var entry : deps.entrySet()) {
+            inDegree.putIfAbsent(entry.getKey(), 0);
+            dependents.putIfAbsent(entry.getKey(), new HashSet<>());
+            for (var dep : entry.getValue()) {
+                inDegree.putIfAbsent(dep, 0);
+                dependents.putIfAbsent(dep, new HashSet<>());
+                dependents.get(dep).add(entry.getKey());
+                inDegree.merge(entry.getKey(), 1, Integer::sum);
+            }
+        }
+        return new DepGraph(inDegree, dependents);
+    }
+
+    private static List<String> kahnTraverse(DepGraph g) {
+        var queue = new ArrayList<String>();
+        for (var entry : g.inDegree.entrySet()) {
+            if (entry.getValue() == 0) queue.add(entry.getKey());
+        }
+        int idx = 0;
+        while (idx < queue.size()) {
+            var node = queue.get(idx++);
+            for (var dependent : g.dependents.getOrDefault(node, Set.of())) {
+                if (g.inDegree.merge(dependent, -1, Integer::sum) == 0) {
+                    queue.add(dependent);
+                }
+            }
+        }
+        return queue;
+    }
+
     /**
      * Detect fields participating in dependency cycles.
      *
@@ -358,44 +404,9 @@ public final class ExpressionEvaluator {
      * @return set of fields in cycles (empty if no cycles)
      */
     public static Set<String> detectCycles(Map<String, Set<String>> deps) {
-        // Build in-degree map
-        var inDegree = new LinkedHashMap<String, Integer>();
-        var graph = new LinkedHashMap<String, Set<String>>();
-        for (var entry : deps.entrySet()) {
-            inDegree.putIfAbsent(entry.getKey(), 0);
-            graph.putIfAbsent(entry.getKey(), new HashSet<>());
-            for (var dep : entry.getValue()) {
-                inDegree.putIfAbsent(dep, 0);
-                graph.putIfAbsent(dep, new HashSet<>());
-                // dep → entry.key (dep is depended upon by entry.key)
-                graph.get(dep).add(entry.getKey());
-                inDegree.merge(entry.getKey(), 1, Integer::sum);
-            }
-        }
-
-        // Kahn's: start with nodes that have in-degree 0
-        var queue = new ArrayList<String>();
-        for (var entry : inDegree.entrySet()) {
-            if (entry.getValue() == 0) {
-                queue.add(entry.getKey());
-            }
-        }
-
-        var sorted = new HashSet<String>();
-        int idx = 0;
-        while (idx < queue.size()) {
-            var node = queue.get(idx++);
-            sorted.add(node);
-            for (var dependent : graph.getOrDefault(node, Set.of())) {
-                int newDegree = inDegree.merge(dependent, -1, Integer::sum);
-                if (newDegree == 0) {
-                    queue.add(dependent);
-                }
-            }
-        }
-
-        // Anything not in sorted set is in a cycle
-        var allNodes = new HashSet<>(inDegree.keySet());
+        var g = buildDepGraph(deps);
+        var sorted = new HashSet<>(kahnTraverse(g));
+        var allNodes = new HashSet<>(g.inDegree.keySet());
         allNodes.removeAll(sorted);
         return allNodes;
     }
@@ -407,42 +418,10 @@ public final class ExpressionEvaluator {
      * @return ordered list of fields (dependencies first)
      */
     public static List<String> topologicalSort(Map<String, Set<String>> deps) {
-        var inDegree = new LinkedHashMap<String, Integer>();
-        var graph = new LinkedHashMap<String, Set<String>>();
-        for (var entry : deps.entrySet()) {
-            inDegree.putIfAbsent(entry.getKey(), 0);
-            graph.putIfAbsent(entry.getKey(), new HashSet<>());
-            for (var dep : entry.getValue()) {
-                inDegree.putIfAbsent(dep, 0);
-                graph.putIfAbsent(dep, new HashSet<>());
-                graph.get(dep).add(entry.getKey());
-                inDegree.merge(entry.getKey(), 1, Integer::sum);
-            }
-        }
-
-        var queue = new ArrayList<String>();
-        for (var entry : inDegree.entrySet()) {
-            if (entry.getValue() == 0) {
-                queue.add(entry.getKey());
-            }
-        }
-
-        var result = new ArrayList<String>();
-        int idx = 0;
-        while (idx < queue.size()) {
-            var node = queue.get(idx++);
-            // Only include nodes that are in the original deps keys
-            if (deps.containsKey(node)) {
-                result.add(node);
-            }
-            for (var dependent : graph.getOrDefault(node, Set.of())) {
-                int newDegree = inDegree.merge(dependent, -1, Integer::sum);
-                if (newDegree == 0) {
-                    queue.add(dependent);
-                }
-            }
-        }
-        return result;
+        var traversal = kahnTraverse(buildDepGraph(deps));
+        return traversal.stream()
+            .filter(deps::containsKey)
+            .toList();
     }
 
     /**
@@ -474,7 +453,7 @@ public final class ExpressionEvaluator {
             case BinaryOp(_, var l, var r) -> { collectFieldRefs(l, refs); collectFieldRefs(r, refs); }
             case UnaryOp(_, var operand) -> collectFieldRefs(operand, refs);
             case ScalarCall(_, var args) -> args.forEach(a -> collectFieldRefs(a, refs));
-            case AggregateCall(_, var arg) -> arg.ifPresent(a -> collectFieldRefs(a, refs));
+            case AggregateCall(_, var arg) -> { if (arg != null) collectFieldRefs(arg, refs); }
             case Literal(_) -> {}
         }
     }

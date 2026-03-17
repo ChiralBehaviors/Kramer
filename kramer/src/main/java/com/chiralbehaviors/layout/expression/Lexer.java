@@ -184,6 +184,23 @@ final class Lexer {
             if (path.isEmpty()) {
                 throw new ParseException("Empty field path reference", start);
             }
+            // Validate each segment is a valid identifier (I1/S5)
+            for (String segment : path.split("\\.", -1)) {
+                if (segment.isEmpty()) {
+                    throw new ParseException(
+                        "Empty segment in field path '${" + path + "}'", start);
+                }
+                if (!isIdentStart(segment.charAt(0))) {
+                    throw new ParseException(
+                        "Invalid segment '" + segment + "' in field path '${" + path + "}'", start);
+                }
+                for (int i = 1; i < segment.length(); i++) {
+                    if (!isIdentPart(segment.charAt(i))) {
+                        throw new ParseException(
+                            "Invalid character in segment '" + segment + "' in field path '${" + path + "}'", start);
+                    }
+                }
+            }
             return new Token(Token.Type.FIELD_PATH_REF, path, start);
         } else if (isIdentStart(c)) {
             int nameStart = pos;

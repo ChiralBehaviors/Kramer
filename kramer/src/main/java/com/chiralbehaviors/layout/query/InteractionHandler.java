@@ -25,7 +25,7 @@ package com.chiralbehaviors.layout.query;
  *
  * @author hhildebrand
  */
-public class InteractionHandler {
+public final class InteractionHandler {
 
     private final LayoutQueryState queryState;
 

@@ -24,6 +24,8 @@ package com.chiralbehaviors.layout.expression;
  */
 public class ParseException extends Exception {
 
+    private static final long serialVersionUID = 1L;
+
     private final int offset;
 
     public ParseException(String message, int offset) {

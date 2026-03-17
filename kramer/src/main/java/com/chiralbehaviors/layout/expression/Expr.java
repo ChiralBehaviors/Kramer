@@ -17,7 +17,6 @@
 package com.chiralbehaviors.layout.expression;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Sealed AST hierarchy for the expression language (RDR-021).
@@ -51,6 +50,6 @@ public sealed interface Expr
     /** A scalar function call: len, upper, lower, abs, round, if. */
     record ScalarCall(String name, List<Expr> args) implements Expr {}
 
-    /** An aggregate function call: sum, count, avg, min, max. count() has empty arg. */
-    record AggregateCall(String fn, Optional<Expr> arg) implements Expr {}
+    /** An aggregate function call: sum, count, avg, min, max. count() has null arg. */
+    record AggregateCall(String fn, Expr arg) implements Expr {}
 }

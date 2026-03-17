@@ -19,7 +19,7 @@ package com.chiralbehaviors.layout.expression;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
-import java.util.Optional;
+
 
 import org.junit.jupiter.api.Test;
 
@@ -429,21 +429,21 @@ class ExpressionParserTest {
     void parseSumAggregate() throws ParseException {
         var expr = Parser.parse("sum($revenue)");
         assertEquals(
-            new AggregateCall("sum", Optional.of(new FieldRef(List.of("revenue")))),
+            new AggregateCall("sum", new FieldRef(List.of("revenue"))),
             expr);
     }
 
     @Test
     void parseCountAggregate() throws ParseException {
         var expr = Parser.parse("count()");
-        assertEquals(new AggregateCall("count", Optional.empty()), expr);
+        assertEquals(new AggregateCall("count", null), expr);
     }
 
     @Test
     void parseAvgAggregate() throws ParseException {
         var expr = Parser.parse("avg($unit_price)");
         assertEquals(
-            new AggregateCall("avg", Optional.of(new FieldRef(List.of("unit_price")))),
+            new AggregateCall("avg", new FieldRef(List.of("unit_price"))),
             expr);
     }
 
@@ -451,7 +451,7 @@ class ExpressionParserTest {
     void parseMinAggregate() throws ParseException {
         var expr = Parser.parse("min($value)");
         assertEquals(
-            new AggregateCall("min", Optional.of(new FieldRef(List.of("value")))),
+            new AggregateCall("min", new FieldRef(List.of("value"))),
             expr);
     }
 
@@ -459,7 +459,7 @@ class ExpressionParserTest {
     void parseMaxAggregate() throws ParseException {
         var expr = Parser.parse("max($value)");
         assertEquals(
-            new AggregateCall("max", Optional.of(new FieldRef(List.of("value")))),
+            new AggregateCall("max", new FieldRef(List.of("value"))),
             expr);
     }
 
@@ -468,10 +468,10 @@ class ExpressionParserTest {
         // sum($price * $quantity)
         var expr = Parser.parse("sum($price * $quantity)");
         assertEquals(
-            new AggregateCall("sum", Optional.of(
+            new AggregateCall("sum",
                 new BinaryOp(BinaryOp.Op.MUL,
                     new FieldRef(List.of("price")),
-                    new FieldRef(List.of("quantity"))))),
+                    new FieldRef(List.of("quantity")))),
             expr);
     }
 
@@ -481,8 +481,8 @@ class ExpressionParserTest {
         var expr = Parser.parse("sum($revenue) / count()");
         assertEquals(
             new BinaryOp(BinaryOp.Op.DIV,
-                new AggregateCall("sum", Optional.of(new FieldRef(List.of("revenue")))),
-                new AggregateCall("count", Optional.empty())),
+                new AggregateCall("sum", new FieldRef(List.of("revenue"))),
+                new AggregateCall("count", null)),
             expr);
     }
 

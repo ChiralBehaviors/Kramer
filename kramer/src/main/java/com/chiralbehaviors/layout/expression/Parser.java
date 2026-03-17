@@ -19,7 +19,6 @@ package com.chiralbehaviors.layout.expression;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import com.chiralbehaviors.layout.expression.Expr.*;
@@ -240,7 +239,7 @@ public final class Parser {
 
         if ("count".equals(fn)) {
             expect(Token.Type.RPAREN, "count() takes no arguments");
-            return new AggregateCall(fn, Optional.empty());
+            return new AggregateCall(fn, null);
         }
 
         // Other aggregates require exactly one argument
@@ -250,7 +249,7 @@ public final class Parser {
         }
         var arg = parseOrExpr();
         expect(Token.Type.RPAREN, "Expected ')' after aggregate argument");
-        return new AggregateCall(fn, Optional.of(arg));
+        return new AggregateCall(fn, arg);
     }
 
     private Expr parseScalarCall(Token nameToken) throws ParseException {

@@ -236,7 +236,8 @@ public class LayoutQueryState implements LayoutStylesheet {
                 JsonNode pathNode = entry.getValue();
                 if (!pathNode.isObject()) continue;
 
-                String[] segments = pathStr.split("/");
+                String[] segments = pathStr.split("/", -1);
+                if (segments.length == 0 || segments[0].isEmpty()) continue;
                 SchemaPath path = new SchemaPath(segments[0],
                     java.util.Arrays.copyOfRange(segments, 1, segments.length));
 
