@@ -601,9 +601,9 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     }
 
     /**
-     * Map a local (x, y) coordinate to the {@link SchemaPath} of the schema
-     * node whose rendered region contains that point. Returns {@code null} if
-     * no schema node is hit.
+     * Map a local (x, y) coordinate to the {@link SchemaPath} of the deepest
+     * schema node in the layout tree, or the root if no finer match is found.
+     * Returns {@code null} if no layout exists.
      */
     public SchemaPath hitSchemaPath(double x, double y) {
         if (layout == null) return null;

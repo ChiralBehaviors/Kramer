@@ -518,8 +518,8 @@ public final class RelationLayout extends SchemaNodeLayout {
             if (!formulaEntries.isEmpty() && result instanceof ArrayNode arr) {
                 result = applyFormulas(arr, cachedEvaluator);
             }
-            // Sort after formulas (sort-expression may reference formula fields)
-            if (sortComparator != null && result instanceof ArrayNode arr) {
+            // Sort after formulas only when sort-expression is active (may reference formula fields)
+            if (sortComparator != null && sortExprAst != null && result instanceof ArrayNode arr) {
                 sortArrayNode(arr, sortComparator);
             }
         } else if (sortComparator != null && sortExprAst != null

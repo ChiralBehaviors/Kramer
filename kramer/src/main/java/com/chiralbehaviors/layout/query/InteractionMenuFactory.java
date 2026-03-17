@@ -74,8 +74,13 @@ public final class InteractionMenuFactory {
         menu.getItems().add(menuItem("Filter...", () -> {
             promptExpression("Filter expression for " + fieldName,
                 fs.filterExpression())
-                .ifPresent(expr ->
-                    handler.apply(new LayoutInteraction.SetFilter(path, expr)));
+                .ifPresent(expr -> {
+                    if (expr.isBlank()) {
+                        handler.apply(new LayoutInteraction.ClearFilter(path));
+                    } else {
+                        handler.apply(new LayoutInteraction.SetFilter(path, expr));
+                    }
+                });
         }));
 
         // Formula
@@ -86,8 +91,13 @@ public final class InteractionMenuFactory {
         menu.getItems().add(menuItem("Formula...", () -> {
             promptExpression("Formula for " + fieldName,
                 fs.formulaExpression())
-                .ifPresent(expr ->
-                    handler.apply(new LayoutInteraction.SetFormula(path, expr)));
+                .ifPresent(expr -> {
+                    if (expr.isBlank()) {
+                        handler.apply(new LayoutInteraction.ClearFormula(path));
+                    } else {
+                        handler.apply(new LayoutInteraction.SetFormula(path, expr));
+                    }
+                });
         }));
 
         menu.getItems().add(new SeparatorMenuItem());
@@ -127,8 +137,13 @@ public final class InteractionMenuFactory {
         menu.getItems().add(menuItem("Filter...", () -> {
             promptExpression("Filter expression",
                 fs.filterExpression())
-                .ifPresent(expr ->
-                    handler.apply(new LayoutInteraction.SetFilter(path, expr)));
+                .ifPresent(expr -> {
+                    if (expr.isBlank()) {
+                        handler.apply(new LayoutInteraction.ClearFilter(path));
+                    } else {
+                        handler.apply(new LayoutInteraction.SetFilter(path, expr));
+                    }
+                });
         }));
 
         menu.getItems().add(new SeparatorMenuItem());
