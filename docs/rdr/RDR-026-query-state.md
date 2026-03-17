@@ -23,7 +23,7 @@ SIEUFERD (SIGMOD 2016) defines 17 per-field properties that unify query semantic
 - **RDR-018 Critique C2**: Expression language was unspecified. Resolved by RDR-021 (parser + evaluator + pipeline wiring).
 - **RDR-018 Critique S5**: Client-side scalability limitation acknowledged. QueryState does not claim server-side equivalence.
 - **Substantive Critique C2**: QueryState must not create dual representation with `DefaultLayoutStylesheet`. Resolved: QueryState **implements** `LayoutStylesheet`, wrapping `DefaultLayoutStylesheet` internally. Single source of truth.
-- **Substantive Critique C3**: Re-layout trigger unspecified. Resolved: QueryState fires change listeners on mutation. The caller (e.g., explorer app) subscribes and calls `AutoLayout.requestLayout()`. AutoLayout's existing version-check during layout passes serves as fallback.
+- **Substantive Critique C3**: Re-layout trigger unspecified. Resolved: QueryState fires change listeners on mutation. The caller (e.g., explorer app) subscribes and calls `AutoLayout.autoLayout()`. AutoLayout's existing version-check during layout passes serves as fallback.
 - **Substantive Critique S1**: Only fully-specified properties included. 9 properties enumerated; cellFormat, frozen, collapseDuplicates excluded.
 - **Substantive Critique S2**: RDR-021 open questions listed as explicit pre-conditions.
 - **Substantive Critique S4**: Undo/diff removed. Only `reset()` provided.
@@ -83,9 +83,13 @@ public record FieldState(
 - `collapseDuplicates` — requires its own specification per RDR-018 deferral
 - `aggregatePosition` — blocked on RDR-021 Open Question 2
 
+### getFieldState Contract
+
+`getFieldState(SchemaPath)` returns a `FieldState` where each field is `null` if no override has been set for that property at the given path. Callers must treat null `Boolean` fields as their documented defaults before unboxing (e.g., `visible` defaults to `true` when null). A convenience method `getVisibleOrDefault(SchemaPath)` returning `boolean` (never null) is provided for common cases.
+
 ### Re-Layout Notification Protocol
 
-`QueryState` maintains a list of `Runnable` change listeners. Any mutation (setter call, reset) fires all listeners synchronously. The caller subscribes and triggers re-layout:
+`QueryState` maintains a list of `Runnable` change listeners. Any mutation (setter call, reset) fires all listeners synchronously. An internal `suppressNotifications` flag enables batch operations — `fromJson()` suppresses notifications during restoration and fires exactly one notification on completion. The caller subscribes and triggers re-layout:
 
 ```java
 queryState.addChangeListener(() -> autoLayout.autoLayout());
@@ -95,7 +99,9 @@ queryState.addChangeListener(() -> autoLayout.autoLayout());
 
 ### Serialization
 
-`QueryState.toJson()` serializes all non-default `FieldState` entries as a JSON object keyed by `SchemaPath.toString()`. `QueryState.fromJson(String, Style)` restores state. This enables saving/loading user configurations.
+`QueryState.toJson()` serializes all non-default `FieldState` entries as a JSON object keyed by `SchemaPath.toString()` (format: `"segment1/segment2/..."`). `QueryState.fromJson(String, Style)` restores state with notifications suppressed — exactly one change notification fires on completion. This enables saving/loading user configurations.
+
+**Serialization key stability**: `SchemaPath.toString()` uses `/`-delimited segments. This format is a stability dependency for saved configurations — changes to the format would silently break deserialization (missing overrides, no errors). The format is documented here as the contract.
 
 ### Known Performance Characteristic
 
