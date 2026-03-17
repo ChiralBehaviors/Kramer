@@ -159,8 +159,11 @@ information (parent path + current field name) to build the path incrementally:
 buildContext(document) {
     fields = top-level Fields from document (OperationDefinition selections)
     if fields.size == 1:
-        root = buildRelation(fields[0], SchemaPath.root(), fieldIndex)
-        // root is the child Relation directly
+        key = fields[0].getAlias() != null ? fields[0].getAlias() : fields[0].getName()
+        rootPath = new SchemaPath(key)
+        fieldIndex.put(rootPath, fields[0])
+        root = buildRelation(fields[0], rootPath, fieldIndex)
+        // root is the child Relation directly (no wrapper)
     else if operationName != null:
         root = new Relation(operationName)
         for each top-level Field f:
@@ -194,10 +197,13 @@ buildRelation(f, parentPath, fieldIndex) {
 Alias handling: the `Relation`/`Primitive` node is created with
 `f.getAlias() != null ? f.getAlias() : f.getName()` as the data extraction key — this is the
 key used to look up values in the JSON response (the server returns data keyed by alias when
-an alias is present). `f.getName()` is stored separately in `aliasIndex` (or a `typeNameIndex`)
-for schema type tracking when needed. This is the inverse of the naive approach: the alias is
-the correct data key; the field name tracks the schema type. `aliasIndex` records the alias
-for use by display/rendering layers as well.
+an alias is present).
+
+`aliasIndex` stores the **alias** for paths where an alias is present. It is only populated
+when `f.getAlias() != null`. `displayName(path)` returns the alias if one exists, or falls
+back to `path.leaf()` (the field name) when no alias is set. For schema type tracking (the
+original `f.getName()` when an alias overrides it), use `fieldAt(path).map(Field::getName)`
+— the `Field` AST node in `fieldIndex` always carries both the name and alias.
 
 ### Phase structure
 
@@ -214,6 +220,8 @@ Scope:
 - `buildContext()` methods (string-accepting; Field-accepting overloads are internal)
 - Recursive index construction integrated into existing walk
 - Alias display name resolution via `aliasIndex`
+- Source-matching in `buildContext(String, String, Set)` must match against
+  `f.getAlias() != null ? f.getAlias() : f.getName()` (not just `f.getName()`)
 - Unit tests: round-trip that every `SchemaPath` in a built schema has a corresponding `Field`
   entry; alias round-trip; argument preservation (not used yet, but verify non-null)
 
@@ -255,16 +263,17 @@ Scope:
   serializes to a query string using graphql-java's `AstPrinter`
 - Re-execution: reconstructed query string passed to existing `evaluate()` — no change to
   the HTTP layer
-- Cursor-based pagination: `first`/`after` arguments on connection fields (Relay spec) are
-  preserved during reconstruction and can be updated via `SchemaContext` mutation before
-  reconstruction. This is the mechanism for page-advance: update the cursor argument on the
-  relevant field, reconstruct, re-execute.
-- Arguments that are NOT pagination-related must be preserved verbatim from the original
-  `Field` node in `fieldIndex`
+- All field arguments (including pagination `first`/`after`) are preserved verbatim from the
+  original `Field` node in `fieldIndex` during reconstruction
+- Cursor mutation (`withCursor()`) is Phase D2 scope, not Phase C — Phase C preserves
+  arguments as-is without modification
 
 Phase C depends on Phase B (directive vocabulary must be stable before reconstruction logic
-is built) and on RDR-018 Phase 2 (the `visible` property must be wired before reconstruction
-has meaningful work to do).
+is built). RDR-018 Phase 2 (`visible` property wiring) is NOT a hard dependency — Phase C
+can be built and tested with a stub stylesheet (always returning `visible=true`). The
+`visible` property is already implemented via `LayoutPropertyKeys.VISIBLE` and
+`LayoutQueryState.setVisible()` (RDR-026). Phase C integration tests should cover both
+the stub case and the live `LayoutQueryState`-driven case.
 
 #### Phase D1: FragmentSpread resolution (defect fix)
 
