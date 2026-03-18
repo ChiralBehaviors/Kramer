@@ -78,12 +78,13 @@ public class QueryRewriter {
      * Returns the modified Document, or the original if no server-side
      * operations are applicable.
      */
-    public Document rewrite(Document original, QueryState queryState) {
+    public String rewrite(SchemaContext ctx, LayoutQueryState queryState) {
         // For each SchemaPath with a filter/sort expression:
         //   1. Check if the backend supports pushing that operation
         //   2. If yes: add/modify the field argument in the AST
-        //   3. If no: leave for client-side evaluation (RDR-021 pipeline)
-        // Use QueryBuilder.reconstruct() for the final Document
+        //   3. Null pushed client-side expressions inside suppressNotifications
+        //   4. If no: leave for client-side evaluation (RDR-021 pipeline)
+        // Use QueryBuilder.reconstruct(ctx, queryState) for the final query string
     }
 }
 ```
@@ -202,8 +203,16 @@ re-layout listener (`layout.autoLayout()`).
   ```
 - Coordinate with the existing GraphiQL WebEngine query submission path — user-typed
   queries from the editor should bypass the rewriter and use the raw query string
-- Prevent re-entrant fetch loops: the `setData()` callback from a re-fetch should NOT
-  trigger another re-fetch. Use a `fetchInProgress` guard flag.
+- Prevent re-entrant fetch loops with a `fetchInProgress` guard flag:
+  1. Set `fetchInProgress = true` BEFORE calling `queryRewriter.rewrite()` (which
+     nulls client-side expressions inside `suppressNotifications`, triggering a
+     change notification — the guard must already be active when this fires)
+  2. The change listener checks `if (fetchInProgress) return;` at the top
+  3. `fetchAsync()` submits the rewritten query to the background executor
+  4. The `Platform.runLater` callback in `fetchAsync` calls `setData()`, then
+     clears `fetchInProgress = false` at the end of the callback
+  This ensures the guard is held across the full rewrite → fetch → setData cycle,
+  preventing the null-expression batch notification from triggering a second fetch.
 
 ### Phase 3c: Double-evaluation prevention + End-to-end test
 
