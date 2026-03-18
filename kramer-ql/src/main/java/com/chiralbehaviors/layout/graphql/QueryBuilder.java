@@ -51,6 +51,7 @@ public class QueryBuilder {
     public String reconstruct(SchemaContext ctx, LayoutStylesheet stylesheet) {
         Document original = ctx.document();
 
+        @SuppressWarnings("rawtypes")
         List<Definition> newDefs = new ArrayList<>();
 
         for (Definition<?> def : original.getDefinitions()) {
@@ -59,8 +60,10 @@ public class QueryBuilder {
                     op.getSelectionSet(), null, stylesheet);
                 newDefs.add(op.transform(b -> b.selectionSet(newSS)));
             } else if (def instanceof FragmentDefinition frag) {
-                // preserve fragment definitions verbatim
-                newDefs.add(frag);
+                // Filter fragment bodies for hidden fields (I1 fix)
+                SelectionSet filteredSS = filterSelectionSet(
+                    frag.getSelectionSet(), null, stylesheet);
+                newDefs.add(frag.transform(b -> b.selectionSet(filteredSS)));
             } else {
                 newDefs.add(def);
             }

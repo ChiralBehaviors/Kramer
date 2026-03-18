@@ -105,12 +105,16 @@ public record SchemaContext(
      * Walks the Document definitions replacing {@code oldField} identity with
      * {@code newField} at every level of the selection set tree.
      */
+    @SuppressWarnings("rawtypes")
     private static Document patchDocument(Document doc, Field oldField, Field newField) {
         List<Definition> newDefs = new ArrayList<>();
         for (Definition<?> def : doc.getDefinitions()) {
             if (def instanceof OperationDefinition op) {
                 SelectionSet patched = patchSelectionSet(op.getSelectionSet(), oldField, newField);
                 newDefs.add(op.transform(b -> b.selectionSet(patched)));
+            } else if (def instanceof graphql.language.FragmentDefinition frag) {
+                SelectionSet patched = patchSelectionSet(frag.getSelectionSet(), oldField, newField);
+                newDefs.add(frag.transform(b -> b.selectionSet(patched)));
             } else {
                 newDefs.add(def);
             }

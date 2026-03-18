@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.chiralbehaviors.layout.graphql;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import com.chiralbehaviors.layout.LayoutStylesheet;
@@ -23,6 +24,7 @@ public final class DirectiveAwareStylesheet implements LayoutStylesheet {
     private final LayoutStylesheet inner;
     private final DirectiveReader  reader;
     private final SchemaContext    ctx;
+    private final Map<SchemaPath, Map<String, Object>> directiveCache = new HashMap<>();
 
     /**
      * @param inner  the wrapped stylesheet (fallback for all lookups)
@@ -44,7 +46,7 @@ public final class DirectiveAwareStylesheet implements LayoutStylesheet {
 
     @Override
     public boolean getBoolean(SchemaPath path, String property, boolean defaultValue) {
-        Map<String, Object> overrides = reader.readDirectives(ctx, path);
+        Map<String, Object> overrides = cachedDirectives(path);
         if (overrides.containsKey(property)) {
             return (Boolean) overrides.get(property);
         }
@@ -53,11 +55,15 @@ public final class DirectiveAwareStylesheet implements LayoutStylesheet {
 
     @Override
     public String getString(SchemaPath path, String property, String defaultValue) {
-        Map<String, Object> overrides = reader.readDirectives(ctx, path);
+        Map<String, Object> overrides = cachedDirectives(path);
         if (overrides.containsKey(property)) {
             return overrides.get(property).toString();
         }
         return inner.getString(path, property, defaultValue);
+    }
+
+    private Map<String, Object> cachedDirectives(SchemaPath path) {
+        return directiveCache.computeIfAbsent(path, p -> reader.readDirectives(ctx, p));
     }
 
     @Override
