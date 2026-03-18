@@ -2,7 +2,9 @@
 package com.chiralbehaviors.layout.graphql;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.expression.Expr;
@@ -35,12 +37,24 @@ import graphql.language.Value;
  * Visible-false field removal is already handled by {@link QueryBuilder#reconstruct}
  * — this class does not duplicate that logic.
  * <p>
- * See RDR-028 Phase 2 for design rationale.
+ * When a filter or sort is pushed server-side, the corresponding field on
+ * {@link LayoutQueryState} is nulled inside {@code suppressNotifications} so that
+ * client-side evaluation sees no expression (preventing double evaluation). The
+ * original expression is retained in {@link #pushedFilters} / {@link #pushedSorts}
+ * so it can be restored if the path becomes non-pushable or the user clears it.
+ * <p>
+ * See RDR-028 Phase 3c for double-evaluation prevention design rationale.
  */
 public final class QueryRewriter {
 
     private final ServerCapabilities capabilities;
     private final QueryBuilder queryBuilder;
+
+    /** Original filter expressions that have been pushed server-side and nulled on queryState. */
+    private final Map<SchemaPath, String> pushedFilters = new HashMap<>();
+
+    /** Original sort field strings that have been pushed server-side and nulled on queryState. */
+    private final Map<SchemaPath, String> pushedSorts = new HashMap<>();
 
     public QueryRewriter(ServerCapabilities capabilities) {
         this.capabilities = capabilities;
@@ -55,10 +69,17 @@ public final class QueryRewriter {
      * <ol>
      *   <li>Check if {@link ServerCapabilities} supports push for this path.</li>
      *   <li>If pushable and filter is translatable via {@link ExprToGraphQL},
-     *       inject the filter argument into the field's AST node.</li>
-     *   <li>If pushable and sortFields is set, inject an orderBy argument.</li>
-     *   <li>Otherwise leave for client-side.</li>
+     *       inject the filter argument into the field's AST node, save the
+     *       expression in {@link #pushedFilters}, and null it on queryState
+     *       inside {@code suppressNotifications} to prevent double evaluation.</li>
+     *   <li>If pushable and sortFields is set, inject an orderBy argument,
+     *       save in {@link #pushedSorts}, and null it on queryState.</li>
+     *   <li>Otherwise leave for client-side evaluation.</li>
      * </ol>
+     * <p>
+     * When a path is no longer pushable (capabilities changed or expression
+     * cleared by user), it is dropped from {@link #pushedFilters} /
+     * {@link #pushedSorts} and the client-side value is left intact.
      *
      * @param ctx        the schema context holding the parsed document
      * @param queryState the current layout query state with user overrides
@@ -67,25 +88,79 @@ public final class QueryRewriter {
     public String rewrite(SchemaContext ctx, LayoutQueryState queryState) {
         SchemaContext modified = ctx;
 
-        for (SchemaPath path : queryState.overriddenPaths()) {
+        // Snapshot the overridden paths before any nulling occurs this rewrite cycle.
+        // We need this because suppressNotifications() synchronously removes paths from
+        // overriddenPaths() as we null them, which would confuse post-loop cleanup.
+        var overridden = queryState.overriddenPaths();
+
+        // Track which paths were actively pushed this cycle so we can distinguish
+        // "just pushed and nulled" from "path is gone because user cleared it".
+        var pushedFilterPaths = new java.util.HashSet<SchemaPath>();
+        var pushedSortPaths   = new java.util.HashSet<SchemaPath>();
+
+        for (SchemaPath path : overridden) {
             FieldState fs = queryState.getFieldState(path);
 
             // --- Filter push-down ---
             String filterExpr = fs.filterExpression();
             if (filterExpr != null && !filterExpr.isBlank()
                     && capabilities.canPushFilter(path)) {
-                modified = pushFilter(modified, path, filterExpr);
+                SchemaContext pushed = pushFilter(modified, path, filterExpr);
+                if (pushed != modified) {
+                    // Successfully injected — null client-side to prevent double evaluation
+                    modified = pushed;
+                    pushedFilters.put(path, filterExpr);
+                    pushedFilterPaths.add(path);
+                    queryState.suppressNotifications(
+                        () -> queryState.setFilterExpression(path, null));
+                }
+            } else if (!pushedFilterPaths.contains(path)) {
+                // No longer pushable (or expression cleared by user) — drop from pushed map
+                pushedFilters.remove(path);
             }
 
             // --- Sort push-down ---
             String sortFields = fs.sortFields();
             if (sortFields != null && !sortFields.isBlank()
                     && capabilities.canPushSort(path)) {
-                modified = pushSort(modified, path, sortFields);
+                SchemaContext pushed = pushSort(modified, path, sortFields);
+                if (pushed != modified) {
+                    modified = pushed;
+                    pushedSorts.put(path, sortFields);
+                    pushedSortPaths.add(path);
+                    queryState.suppressNotifications(
+                        () -> queryState.setSortFields(path, null));
+                }
+            } else if (!pushedSortPaths.contains(path)) {
+                pushedSorts.remove(path);
             }
         }
 
+        // Drop pushed entries for paths that were in the pushed maps from a prior rewrite
+        // but are no longer in overriddenPaths AND were not actively pushed this cycle.
+        // (This handles the case where a user fully clears a path's overrides between rewrites.)
+        pushedFilters.keySet().removeIf(
+            p -> !overridden.contains(p) && !pushedFilterPaths.contains(p));
+        pushedSorts.keySet().removeIf(
+            p -> !overridden.contains(p) && !pushedSortPaths.contains(p));
+
         return queryBuilder.reconstruct(modified, queryState);
+    }
+
+    /**
+     * Returns the filter expression that was last pushed server-side for the given path,
+     * or {@code null} if no push is currently active.
+     */
+    public String getPushedFilter(SchemaPath path) {
+        return pushedFilters.get(path);
+    }
+
+    /**
+     * Returns the sort fields string that was last pushed server-side for the given path,
+     * or {@code null} if no push is currently active.
+     */
+    public String getPushedSort(SchemaPath path) {
+        return pushedSorts.get(path);
     }
 
     // -----------------------------------------------------------------------
