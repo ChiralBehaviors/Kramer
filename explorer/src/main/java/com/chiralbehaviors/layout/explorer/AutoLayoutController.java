@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import com.chiralbehaviors.layout.AutoLayout;
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil;
+import com.chiralbehaviors.layout.graphql.SchemaContext;
 import com.chiralbehaviors.layout.query.ColumnSortHandler;
 import com.chiralbehaviors.layout.query.InteractionHandler;
 import com.chiralbehaviors.layout.query.InteractionMenuFactory;
@@ -136,6 +137,7 @@ public class AutoLayoutController {
     private QueryState          queryState;
     @FXML
     private BorderPane          root;
+    private SchemaContext       schemaContext;
     private SchemaView          schemaView;
     @FXML
     private RadioButton         showLayout;
@@ -185,6 +187,10 @@ public class AutoLayoutController {
 
     public AutoLayout getLayout() {
         return layout;
+    }
+
+    public SchemaContext getSchemaContext() {
+        return schemaContext;
     }
 
     public Parent getRoot() {
@@ -336,8 +342,9 @@ public class AutoLayoutController {
         if (queryState.getQuery() == null) {
             return;
         }
-        Relation schema = GraphQlUtil.buildContext(queryState.getQuery(),
-                                                    queryState.getSelection()).schema();
+        this.schemaContext = GraphQlUtil.buildContext(queryState.getQuery(),
+                                                      queryState.getSelection());
+        Relation schema = schemaContext.schema();
         schemaView.setRoot(schema);
         layout.setRoot(schema);
         layout.measure(data); 
