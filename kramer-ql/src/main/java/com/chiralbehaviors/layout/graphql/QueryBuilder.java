@@ -105,8 +105,13 @@ public class QueryBuilder {
                         b.selectionSet(childSS);
                     }
                 }));
+            } else if (sel instanceof graphql.language.InlineFragment inlineFrag) {
+                // Recurse into inline fragment selections for visibility filtering
+                SelectionSet filteredInlineSS = filterSelectionSet(
+                    inlineFrag.getSelectionSet(), parentPath, stylesheet);
+                filtered.add(inlineFrag.transform(b -> b.selectionSet(filteredInlineSS)));
             } else {
-                // InlineFragment / FragmentSpread — pass through unchanged
+                // FragmentSpread — pass through (body filtered in reconstruct)
                 filtered.add(sel);
             }
         }

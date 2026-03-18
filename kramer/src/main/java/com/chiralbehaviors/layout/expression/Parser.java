@@ -107,6 +107,7 @@ public final class Parser {
 
     // not-expr ::= "!" not-expr | compare-expr
     private Expr parseNotExpr() throws ParseException {
+        checkDepth();
         if (check(Token.Type.BANG)) {
             advance();
             var operand = parseNotExpr();
@@ -166,6 +167,7 @@ public final class Parser {
 
     // unary-expr ::= "-" unary-expr | primary
     private Expr parseUnaryExpr() throws ParseException {
+        checkDepth();
         if (check(Token.Type.MINUS)) {
             advance();
             var operand = parseUnaryExpr();

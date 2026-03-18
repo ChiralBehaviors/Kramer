@@ -896,6 +896,7 @@ public final class RelationLayout extends SchemaNodeLayout {
                     LOG.warning(() -> "Circular formula references detected: " + cycles
                         + " at " + myPath + "; skipping cycle members");
                     cycles.forEach(formulas::remove);
+                    cycles.forEach(deps::remove);
                 }
                 List<String> evalOrder = ExpressionEvaluator.topologicalSort(deps);
                 // Store for extractFrom() reuse
