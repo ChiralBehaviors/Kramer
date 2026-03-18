@@ -2,9 +2,11 @@
 
 ## Metadata
 - **Type**: Architecture
-- **Status**: proposed
+- **Status**: accepted
 - **Priority**: P3
 - **Created**: 2026-03-16
+- **Accepted**: 2026-03-17
+- **Reviewed-by**: self
 - **Related**: RDR-020 (GraphQL AST retention), RDR-026 (QueryState), RDR-018 (query-semantic stylesheet, Phase 3)
 
 ---
