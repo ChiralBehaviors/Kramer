@@ -33,6 +33,9 @@ import com.chiralbehaviors.layout.AutoLayout;
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil;
 import com.chiralbehaviors.layout.graphql.SchemaContext;
+import com.chiralbehaviors.layout.graphql.SchemaIntrospector;
+import com.chiralbehaviors.layout.graphql.ServerCapabilities;
+import com.chiralbehaviors.layout.graphql.QueryRewriter;
 import com.chiralbehaviors.layout.query.InteractionHandler;
 import com.chiralbehaviors.layout.query.InteractionMenuFactory;
 import com.chiralbehaviors.layout.query.LayoutQueryState;
@@ -87,6 +90,7 @@ public class AutoLayoutController {
                 final String finalResult = result;
                 Platform.runLater(() -> {
                     setData(finalResult);
+                    fetchInProgress = false;
                     JSObject window = (JSObject) webEngine.executeScript("window");
                     window.call("onFetchComplete", finalResult);
                 });
@@ -125,10 +129,13 @@ public class AutoLayoutController {
     @FXML
     private AnchorPane          anchor;
     private WebTarget           endpoint;
+    private volatile boolean    fetchInProgress;
     private AutoLayout          layout;
     private LayoutQueryState    layoutQueryState;
     private InteractionHandler  interactionHandler;
     private InteractionMenuFactory menuFactory;
+    private volatile QueryRewriter queryRewriter;
+    private volatile ServerCapabilities serverCapabilities;
     private WebEngine           webEngine;
     @FXML
     private ToggleGroup         page;
@@ -275,7 +282,16 @@ public class AutoLayoutController {
         layoutQueryState = new LayoutQueryState(style);
         style.setStylesheet(layoutQueryState);
         layout = new AutoLayout(null, style);
-        layoutQueryState.addChangeListener(() -> layout.autoLayout());
+        layoutQueryState.addChangeListener(() -> {
+            if (fetchInProgress) return;
+            if (queryRewriter != null && schemaContext != null) {
+                fetchInProgress = true;
+                String rewritten = queryRewriter.rewrite(schemaContext, layoutQueryState);
+                activeQuery.fetchAsync(rewritten);
+            } else {
+                layout.autoLayout();
+            }
+        });
 
         // Interaction handler and context menu factory
         interactionHandler = new InteractionHandler(layoutQueryState);
@@ -342,6 +358,8 @@ public class AutoLayoutController {
         }
         this.schemaContext = GraphQlUtil.buildContext(queryState.getQuery(),
                                                       queryState.getSelection());
+        this.serverCapabilities = SchemaIntrospector.discover(schemaContext);
+        this.queryRewriter = new QueryRewriter(serverCapabilities);
         Relation schema = schemaContext.schema();
         schemaView.setRoot(schema);
         layout.setRoot(schema);
