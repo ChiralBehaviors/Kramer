@@ -102,7 +102,20 @@ public class QueryRewriter {
 
 When an operation is not pushed server-side, it remains in `QueryState` and is evaluated client-side by the existing expression pipeline (RDR-021). The pipeline runs regardless — pushed operations produce pre-filtered/sorted data that the client-side pipeline sees as already-processed.
 
-**Double-evaluation prevention**: When an operation IS pushed server-side, the `QueryRewriter` marks that `SchemaPath + operation` as "server-handled." The expression pipeline in `RelationLayout.measure()` checks this flag and skips client-side evaluation for that operation at that path. This prevents filtering data that's already filtered.
+**Double-evaluation prevention**: When an operation IS pushed server-side, the `QueryRewriter`
+nulls the corresponding client-side expression on `LayoutQueryState` (e.g.,
+`queryState.setFilterExpression(path, null)` for a pushed filter). The expression pipeline in
+`RelationLayout.measure()` sees no expression and skips client-side evaluation. The original
+expression is retained in `QueryRewriter` internal state for re-push on the next rewrite cycle.
+
+This approach:
+- Requires no new interface methods or `LayoutStylesheet` changes
+- Respects the module boundary (`QueryRewriter` in `kramer-ql` writes to `LayoutQueryState`
+  in `kramer` via its public API — no upward dependency)
+- Uses the existing `suppressNotifications` batch API to null all pushed expressions in one
+  notification cycle
+- When the user clears a pushed filter, `QueryRewriter` detects the null and stops pushing,
+  restoring client-side-only behavior
 
 ### Integration With kramer-ql
 
@@ -158,10 +171,48 @@ Properties not listed are display-only (no server-side component).
 - Integration with RDR-020's `QueryBuilder.reconstruct()`
 - Unit tests: rewrite produces correct Document AST modifications
 
-### Phase 3: Pipeline Integration
-- Double-evaluation prevention flag
-- Wire into `explorer` app's query execution loop
+### Phase 3a: AutoLayoutController SchemaContext Retention (explorer module)
+
+Currently `AutoLayoutController.setData()` at line 339 calls
+`GraphQlUtil.buildContext(...).schema()` — the `SchemaContext` is discarded immediately.
+This phase retains it as controller state for use by the rewriter.
+
+- Add `private SchemaContext schemaContext` field to `AutoLayoutController`
+- Update `setData()` to store the full context: `this.schemaContext = GraphQlUtil.buildContext(...)`
+  then `layout.setRoot(schemaContext.schema())`
+- Thread `ServerCapabilities` into the controller from the connection lifecycle
+  (`ActiveState.setEndpoint()` or `AutoLayoutController` constructor)
+- Tests: verify `schemaContext` is non-null after `setData()`
+
+### Phase 3b: Change-Driven Re-fetch Path (explorer module)
+
+Add a re-fetch listener to `LayoutQueryState` that is distinct from the existing
+re-layout listener (`layout.autoLayout()`).
+
+- Register a second change listener on `layoutQueryState`:
+  ```
+  layoutQueryState.addChangeListener(() -> {
+      if (queryRewriter != null && schemaContext != null) {
+          String rewritten = queryRewriter.rewrite(schemaContext, layoutQueryState);
+          activeQuery.fetchAsync(rewritten);
+      } else {
+          layout.autoLayout();
+      }
+  });
+  ```
+- Coordinate with the existing GraphiQL WebEngine query submission path — user-typed
+  queries from the editor should bypass the rewriter and use the raw query string
+- Prevent re-entrant fetch loops: the `setData()` callback from a re-fetch should NOT
+  trigger another re-fetch. Use a `fetchInProgress` guard flag.
+
+### Phase 3c: Double-evaluation prevention + End-to-end test
+
+- Implement the null-expression push-down mechanism in `QueryRewriter`:
+  when pushing filter/sort server-side, null the client-side expression via
+  `queryState.setFilterExpression(path, null)` inside `suppressNotifications`
+- Retain original expressions in `QueryRewriter` state for re-push
 - End-to-end test: interaction event → QueryState → rewrite → fetch → layout
+  (requires stub GraphQL server or mock WebTarget)
 
 ---
 
@@ -222,8 +273,8 @@ generic (`{field: "name", direction: "DESC"}`). v1 fixed-format approach is reas
 | Argument naming varies across GraphQL implementations | High | Fixed recognized names in v1; configurable in follow-on |
 | Introspection disabled on some endpoints | Medium | Graceful fallback to all-client-side |
 | Push-down produces different results than client-side | Medium | Test equivalence for simple cases; document edge cases |
-| Double-evaluation prevention flag adds complexity | Low | Simple per-path set; cleared on each measure pass |
-| SchemaContext discarded in AutoLayoutController | Medium | Phase 0: retain as controller state before rewriter wiring |
+| Double-evaluation prevention via null-expression push | Medium | QueryRewriter nulls client-side expression via public LayoutQueryState API; retains original internally for re-push (Phase 3c) |
+| SchemaContext discarded in AutoLayoutController | Medium | Phase 3a: retain as controller state before rewriter wiring |
 | ~~RDR-020 Phase C not yet implemented~~ | ~~Blocking~~ | **Resolved** — Phase C implemented 2026-03-17 |
 
 ---
