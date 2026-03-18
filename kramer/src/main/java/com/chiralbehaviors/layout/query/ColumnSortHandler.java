@@ -22,6 +22,8 @@ import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.SchemaPath;
 
 import javafx.scene.Node;
+import javafx.scene.control.Control;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
@@ -41,11 +43,17 @@ public final class ColumnSortHandler {
 
     private final InteractionHandler handler;
     private final LayoutQueryState queryState;
+    private PaginationContext paginationContext = PaginationContext.NONE;
 
     public ColumnSortHandler(InteractionHandler handler,
                               LayoutQueryState queryState) {
         this.handler = handler;
         this.queryState = queryState;
+    }
+
+    /** Set pagination context. When page-local, sorted headers show a tooltip. */
+    public void setPaginationContext(PaginationContext ctx) {
+        this.paginationContext = ctx != null ? ctx : PaginationContext.NONE;
     }
 
     /**
@@ -65,6 +73,9 @@ public final class ColumnSortHandler {
 
             SchemaPath path = childPaths.get(columnIndex);
             cycleSortState(path);
+            // Show tooltip on sorted column when paginated
+            Node columnNode = header.getChildren().get(columnIndex);
+            updateSortTooltip(columnNode, path);
             event.consume();
         });
     }
@@ -104,6 +115,21 @@ public final class ColumnSortHandler {
         } else {
             // Unknown sort state → clear
             handler.apply(new LayoutInteraction.ClearSort(path));
+        }
+    }
+
+    /**
+     * Update tooltip on a column header node to indicate page-local sort.
+     */
+    private void updateSortTooltip(Node columnNode, SchemaPath path) {
+        String sortFields = queryState.getFieldState(path).sortFields();
+        boolean sorted = sortFields != null && !sortFields.isEmpty();
+        if (columnNode instanceof Control control) {
+            if (sorted && paginationContext.isPageLocal()) {
+                control.setTooltip(new Tooltip("Sorted within current page only"));
+            } else {
+                control.setTooltip(null);
+            }
         }
     }
 

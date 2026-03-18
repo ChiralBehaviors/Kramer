@@ -36,11 +36,21 @@ public final class InteractionMenuFactory {
 
     private final InteractionHandler handler;
     private final LayoutQueryState queryState;
+    private PaginationContext paginationContext = PaginationContext.NONE;
 
     public InteractionMenuFactory(InteractionHandler handler,
                                    LayoutQueryState queryState) {
         this.handler = handler;
         this.queryState = queryState;
+    }
+
+    /** Set the pagination context. Affects sort menu item labels. */
+    public void setPaginationContext(PaginationContext ctx) {
+        this.paginationContext = ctx != null ? ctx : PaginationContext.NONE;
+    }
+
+    public PaginationContext getPaginationContext() {
+        return paginationContext;
     }
 
     /**
@@ -49,11 +59,12 @@ public final class InteractionMenuFactory {
     public ContextMenu buildPrimitiveMenu(SchemaPath path) {
         var menu = new ContextMenu();
         String fieldName = path.leaf();
+        String sortSuffix = paginationContext.isPageLocal() ? " (page only)" : "";
 
         // Sort
-        menu.getItems().add(menuItem("Sort ascending", () ->
+        menu.getItems().add(menuItem("Sort ascending" + sortSuffix, () ->
             handler.apply(new LayoutInteraction.SortBy(path, false))));
-        menu.getItems().add(menuItem("Sort descending", () ->
+        menu.getItems().add(menuItem("Sort descending" + sortSuffix, () ->
             handler.apply(new LayoutInteraction.SortBy(path, true))));
 
         menu.getItems().add(new SeparatorMenuItem());
