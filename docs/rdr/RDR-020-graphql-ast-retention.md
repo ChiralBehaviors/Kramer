@@ -2,10 +2,12 @@
 
 ## Metadata
 - **Type**: Architecture
-- **Status**: accepted
+- **Status**: closed
 - **Priority**: P3
 - **Created**: 2026-03-16
 - **Accepted**: 2026-03-17
+- **Closed**: 2026-03-17
+- **Close-reason**: implemented (all 5 phases)
 - **Reviewed-by**: self
 - **Related**: RDR-018 (Phase 3 prerequisite), RDR-009 (LayoutStylesheet/SchemaPath)
 
