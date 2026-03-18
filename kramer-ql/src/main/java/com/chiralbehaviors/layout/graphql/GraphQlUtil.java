@@ -45,11 +45,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import graphql.language.Definition;
 import graphql.language.Document;
 import graphql.language.Field;
+import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.OperationDefinition;
 import graphql.language.OperationDefinition.Operation;
 import graphql.language.Selection;
+import graphql.language.SelectionSet;
 import graphql.parser.Parser;
 
 /**
@@ -239,7 +241,7 @@ public final class GraphQlUtil {
                                 aliasIndex.put(path, field.getAlias());
                             }
                             children.add(buildContextRelation(field, path,
-                                excludedFields, fieldIndex, aliasIndex));
+                                excludedFields, fieldIndex, aliasIndex, document));
                         }
                     }
                 });
@@ -289,7 +291,7 @@ public final class GraphQlUtil {
                                 }
                                 Relation schema = buildContextRelation(
                                     field, path, excludedFields,
-                                    fieldIndex, aliasIndex);
+                                    fieldIndex, aliasIndex, document);
                                 return new SchemaContext(document, schema,
                                     fieldIndex, aliasIndex);
                             }
@@ -302,15 +304,12 @@ public final class GraphQlUtil {
             String.format("Invalid query, cannot find source: %s", source));
     }
 
-    /**
-     * Recursive helper: builds a Relation tree and populates fieldIndex/aliasIndex
-     * in a single pass alongside the existing schema walk.
-     */
     private static Relation buildContextRelation(
             Field parentField, SchemaPath parentPath,
             Set<String> excludedFields,
             Map<SchemaPath, Field> fieldIndex,
-            Map<SchemaPath, String> aliasIndex) {
+            Map<SchemaPath, String> aliasIndex,
+            Document document) {
         String parentKey = parentField.getAlias() != null
             ? parentField.getAlias() : parentField.getName();
         Relation parent = new Relation(parentKey);
@@ -332,14 +331,20 @@ public final class GraphQlUtil {
                     parent.addChild(new Primitive(key));
                 } else {
                     parent.addChild(buildContextRelation(field, childPath,
-                        excludedFields, fieldIndex, aliasIndex));
+                        excludedFields, fieldIndex, aliasIndex, document));
                 }
             } else if (selection instanceof InlineFragment inlineFragment) {
                 buildContextInlineFragment(parent, inlineFragment, parentPath,
-                    excludedFields, fieldIndex, aliasIndex);
-            } else if (selection instanceof FragmentSpread) {
-                throw new UnsupportedOperationException(
-                    "Named fragment spreads are not supported; use inline fragments");
+                    excludedFields, fieldIndex, aliasIndex, document);
+            } else if (selection instanceof FragmentSpread spread) {
+                var fragmentDef = document.getDefinitionsOfType(FragmentDefinition.class)
+                    .stream()
+                    .filter(f -> f.getName().equals(spread.getName()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException(
+                        "Fragment not found: " + spread.getName()));
+                buildContextInlineFragment(parent, fragmentDef.getSelectionSet(),
+                    parentPath, excludedFields, fieldIndex, aliasIndex, document);
             }
         }
         return parent;
@@ -349,9 +354,20 @@ public final class GraphQlUtil {
             Relation parent, InlineFragment fragment, SchemaPath parentPath,
             Set<String> excludedFields,
             Map<SchemaPath, Field> fieldIndex,
-            Map<SchemaPath, String> aliasIndex) {
-        for (Selection<?> selection : fragment.getSelectionSet()
-                                             .getSelections()) {
+            Map<SchemaPath, String> aliasIndex,
+            Document document) {
+        buildContextInlineFragment(parent, fragment.getSelectionSet(),
+            parentPath, excludedFields, fieldIndex, aliasIndex, document);
+    }
+
+    private static void buildContextInlineFragment(
+            Relation parent, SelectionSet selectionSet,
+            SchemaPath parentPath,
+            Set<String> excludedFields,
+            Map<SchemaPath, Field> fieldIndex,
+            Map<SchemaPath, String> aliasIndex,
+            Document document) {
+        for (Selection<?> selection : selectionSet.getSelections()) {
             if (selection instanceof Field field) {
                 String key = field.getAlias() != null
                     ? field.getAlias() : field.getName();
@@ -367,14 +383,20 @@ public final class GraphQlUtil {
                     parent.addChild(new Primitive(key));
                 } else {
                     parent.addChild(buildContextRelation(field, childPath,
-                        excludedFields, fieldIndex, aliasIndex));
+                        excludedFields, fieldIndex, aliasIndex, document));
                 }
             } else if (selection instanceof InlineFragment inlineFragment) {
                 buildContextInlineFragment(parent, inlineFragment, parentPath,
-                    excludedFields, fieldIndex, aliasIndex);
-            } else if (selection instanceof FragmentSpread) {
-                throw new UnsupportedOperationException(
-                    "Named fragment spreads are not supported; use inline fragments");
+                    excludedFields, fieldIndex, aliasIndex, document);
+            } else if (selection instanceof FragmentSpread spread) {
+                var fragmentDef = document.getDefinitionsOfType(FragmentDefinition.class)
+                    .stream()
+                    .filter(f -> f.getName().equals(spread.getName()))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException(
+                        "Fragment not found: " + spread.getName()));
+                buildContextInlineFragment(parent, fragmentDef.getSelectionSet(),
+                    parentPath, excludedFields, fieldIndex, aliasIndex, document);
             }
         }
     }

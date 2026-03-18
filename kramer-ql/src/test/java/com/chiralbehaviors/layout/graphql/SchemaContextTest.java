@@ -225,4 +225,104 @@ class SchemaContextTest {
         assertTrue(ctx.fieldAt(importsPath).isPresent(),
             "Inline fragment fields should be indexed");
     }
+
+    // --- Named fragment spread resolution (RDR-020 Phase D1) ---
+
+    @Test
+    void buildContextResolvesNamedFragment() {
+        String query = """
+                query Q {
+                  users {
+                    ...UserFields
+                  }
+                }
+                fragment UserFields on User {
+                  name
+                  email
+                }
+                """;
+        SchemaContext ctx = GraphQlUtil.buildContext(query);
+
+        assertNotNull(ctx.schema());
+        // Named operation wraps in Relation "Q"
+        assertEquals("Q", ctx.schema().getField());
+
+        // Fragment fields must appear in schema tree
+        Relation usersRelation = (Relation) ctx.schema().getChildren().get(0);
+        assertEquals("users", usersRelation.getField());
+        assertEquals(2, usersRelation.getChildren().size(),
+            "Fragment fields name and email should be inlined");
+
+        // Fragment fields must appear in fieldIndex (paths rooted at query fields, not operation name)
+        SchemaPath namePath = new SchemaPath("users", "name");
+        SchemaPath emailPath = new SchemaPath("users", "email");
+        assertTrue(ctx.fieldAt(namePath).isPresent(), "name from fragment should be indexed");
+        assertTrue(ctx.fieldAt(emailPath).isPresent(), "email from fragment should be indexed");
+    }
+
+    @Test
+    void buildContextResolvesNestedFragment() {
+        String query = """
+                query Q {
+                  users {
+                    ...UserFields
+                  }
+                }
+                fragment UserFields on User {
+                  name
+                  orders {
+                    total
+                    amount
+                  }
+                }
+                """;
+        SchemaContext ctx = GraphQlUtil.buildContext(query);
+
+        // name (Primitive) + orders (Relation) from fragment
+        Relation usersRelation = (Relation) ctx.schema().getChildren().get(0);
+        assertEquals(2, usersRelation.getChildren().size(),
+            "Fragment should contribute name and orders");
+
+        SchemaPath ordersPath = new SchemaPath("users", "orders");
+        SchemaPath totalPath = new SchemaPath("users", "orders", "total");
+        assertTrue(ctx.fieldAt(ordersPath).isPresent(), "orders relation should be indexed");
+        assertTrue(ctx.fieldAt(totalPath).isPresent(), "nested total should be indexed");
+    }
+
+    @Test
+    void buildContextUnknownFragmentThrows() {
+        String query = """
+                {
+                  users {
+                    ...MissingFrag
+                  }
+                }
+                """;
+        assertThrows(IllegalStateException.class, () -> GraphQlUtil.buildContext(query),
+            "Unknown fragment reference should throw IllegalStateException");
+    }
+
+    @Test
+    void buildSchemaStillThrowsOnFragmentSpread() {
+        // Legacy buildSchema() does not have a Document; fragment resolution not supported.
+        String query = """
+                {
+                  users {
+                    ...UserFields
+                  }
+                }
+                fragment UserFields on User {
+                  name
+                  email
+                }
+                """;
+        // Parse the Field manually to call buildSchema(Field, Set)
+        var document = graphql.parser.Parser.parse(query);
+        var operation = (graphql.language.OperationDefinition) document.getDefinitions().get(0);
+        var usersField = (graphql.language.Field) operation.getSelectionSet().getSelections().get(0);
+
+        assertThrows(UnsupportedOperationException.class,
+            () -> GraphQlUtil.buildSchema(usersField),
+            "Legacy buildSchema should still throw on FragmentSpread");
+    }
 }
