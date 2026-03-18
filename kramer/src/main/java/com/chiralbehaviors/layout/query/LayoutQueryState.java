@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.chiralbehaviors.layout.DefaultLayoutStylesheet;
 import com.chiralbehaviors.layout.LayoutPropertyKeys;
@@ -89,6 +90,11 @@ public class LayoutQueryState implements LayoutStylesheet {
      */
     public FieldState getFieldState(SchemaPath path) {
         return fieldStates.getOrDefault(path, FieldState.EMPTY);
+    }
+
+    /** Returns the set of paths that have any field state overrides. */
+    public Set<SchemaPath> overriddenPaths() {
+        return Set.copyOf(fieldStates.keySet());
     }
 
     /**
