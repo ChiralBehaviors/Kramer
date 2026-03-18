@@ -165,6 +165,56 @@ Properties not listed are display-only (no server-side component).
 
 ---
 
+## Research Findings
+
+### RF-1: RDR-020 Phase C blocker resolved (Confidence: HIGH)
+
+`QueryBuilder.reconstruct(SchemaContext, LayoutStylesheet)` exists at
+`kramer-ql/.../QueryBuilder.java:51`. Walks Document AST, filters hidden fields,
+strips client directives, serializes via `AstPrinter.printAst()`. 8 tests pass.
+
+### RF-2: LayoutQueryState → LayoutStylesheet bridge works (Confidence: HIGH)
+
+`LayoutQueryState` implements `LayoutStylesheet` at line 33. `getBoolean()` delegates
+to inner `DefaultLayoutStylesheet`. Can be passed directly to `QueryBuilder.reconstruct()`
+as the stylesheet argument — no adapter needed.
+
+### RF-3: No existing sort/filter argument patterns in test queries (Confidence: HIGH)
+
+No test queries use `orderBy`, `filter`, `where`, or `sort` arguments. Only `agency(id: $id)`,
+`users(limit: 10)`, and Relay cursor args exist. New test fixtures needed.
+
+### RF-4: SchemaContext.fieldAt().getArguments() works for argument access (Confidence: HIGH)
+
+`SchemaContext.fieldAt(path).get().getArguments()` returns `List<Argument>`. Confirmed by
+test at `SchemaContextTest.java:123-125`. Rewriter can inspect existing field arguments.
+
+### RF-5: Explorer integration gap — SchemaContext is transient (Confidence: HIGH)
+
+`AutoLayoutController.setData()` at line 339 builds `SchemaContext` but only extracts
+`.schema()` — the full context is discarded. The change listener at line 274 only triggers
+`autoLayout()` (re-layout), not re-fetch. Rewriter needs: (1) retained SchemaContext as
+controller state, (2) change-listener-driven re-fetch path.
+
+### RF-6: Expression-to-GraphQL translation feasible for simple cases (Confidence: HIGH)
+
+`Expr` sealed hierarchy supports pattern-matching translation. `BinaryOp(EQ/NEQ/LT/GT/LTE/GTE)`
+maps to `_eq/_neq/_lt/_gt/_lte/_gte`. `AND/OR` maps to `_and/_or`. Arithmetic, `ScalarCall`,
+and `AggregateCall` cannot be pushed down — require "pushability check" before translation.
+
+### RF-7: withCursor() fully implemented (Confidence: HIGH)
+
+`SchemaContext.withCursor(SchemaPath, String)` at line 72 returns new immutable SchemaContext
+with updated `after` argument in both `fieldIndex` and `Document` AST. 5 tests pass.
+
+### RF-8: Sort field → orderBy mapping is format-dependent (Confidence: HIGH)
+
+`sortFields` stored as `"name"` or `"-name"`. No sort-to-argument logic exists. Translation
+depends on backend: Hasura (`order_by: {name: desc}`), PostGraphile (`orderBy: NAME_DESC`),
+generic (`{field: "name", direction: "DESC"}`). v1 fixed-format approach is reasonable.
+
+---
+
 ## Risks
 
 | Risk | Severity | Mitigation |
@@ -173,7 +223,8 @@ Properties not listed are display-only (no server-side component).
 | Introspection disabled on some endpoints | Medium | Graceful fallback to all-client-side |
 | Push-down produces different results than client-side | Medium | Test equivalence for simple cases; document edge cases |
 | Double-evaluation prevention flag adds complexity | Low | Simple per-path set; cleared on each measure pass |
-| RDR-020 Phase C not yet implemented | Blocking | This RDR cannot proceed until RDR-020 Phase C is complete |
+| SchemaContext discarded in AutoLayoutController | Medium | Phase 0: retain as controller state before rewriter wiring |
+| ~~RDR-020 Phase C not yet implemented~~ | ~~Blocking~~ | **Resolved** — Phase C implemented 2026-03-17 |
 
 ---
 
