@@ -100,11 +100,10 @@ public final class ColumnSortHandler {
             handler.apply(new LayoutInteraction.SortBy(path, true));
         } else if (current.equals("-" + fieldName)) {
             // Descending → clear sort
-            // Bypasses InteractionHandler — LayoutInteraction has no ClearSort variant.
-            queryState.setSortFields(path, null);
+            handler.apply(new LayoutInteraction.ClearSort(path));
         } else {
             // Unknown sort state → clear
-            queryState.setSortFields(path, null);
+            handler.apply(new LayoutInteraction.ClearSort(path));
         }
     }
 

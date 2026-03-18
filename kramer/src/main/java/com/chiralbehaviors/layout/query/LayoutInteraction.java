@@ -28,7 +28,8 @@ import com.chiralbehaviors.layout.SchemaPath;
  * @author hhildebrand
  */
 public sealed interface LayoutInteraction permits
-    LayoutInteraction.SortBy, LayoutInteraction.ToggleVisible,
+    LayoutInteraction.SortBy, LayoutInteraction.ClearSort,
+    LayoutInteraction.ToggleVisible,
     LayoutInteraction.SetFilter, LayoutInteraction.ClearFilter,
     LayoutInteraction.SetRenderMode, LayoutInteraction.SetFormula,
     LayoutInteraction.ClearFormula, LayoutInteraction.SetAggregate,
@@ -38,6 +39,9 @@ public sealed interface LayoutInteraction permits
 
     /** Sort the field at {@code path} ascending ({@code descending=false}) or descending. */
     record SortBy(SchemaPath path, boolean descending) implements LayoutInteraction {}
+
+    /** Clear any sort on the field at {@code path}. */
+    record ClearSort(SchemaPath path) implements LayoutInteraction {}
 
     /** Toggle the visibility of the field at {@code path}. */
     record ToggleVisible(SchemaPath path) implements LayoutInteraction {}

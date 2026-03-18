@@ -59,6 +59,12 @@ import javafx.scene.web.WebEngine;
 import netscape.javascript.JSObject;
 
 public class AutoLayoutController {
+
+    /** Shut down background executor. Call when the controller is discarded. */
+    public void dispose() {
+        activeQuery.executor.shutdownNow();
+    }
+
     public class ActiveState extends QueryState {
         private final ExecutorService executor = Executors.newSingleThreadExecutor(r -> {
             Thread t = new Thread(r, "graphql-fetch");

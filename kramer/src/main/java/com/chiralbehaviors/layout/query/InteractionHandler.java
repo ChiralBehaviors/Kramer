@@ -43,6 +43,9 @@ public final class InteractionHandler {
             case LayoutInteraction.SortBy(var path, var desc) ->
                 queryState.setSortFields(path, desc ? "-" + path.leaf() : path.leaf());
 
+            case LayoutInteraction.ClearSort(var path) ->
+                queryState.setSortFields(path, null);
+
             case LayoutInteraction.ToggleVisible(var path) ->
                 queryState.setVisible(path, !queryState.getVisibleOrDefault(path));
 

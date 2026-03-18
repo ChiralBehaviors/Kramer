@@ -37,7 +37,7 @@ public class LayoutQueryState implements LayoutStylesheet {
     private final DefaultLayoutStylesheet inner;
     private final Map<SchemaPath, FieldState> fieldStates = new HashMap<>();
     private final List<Runnable> changeListeners = new ArrayList<>();
-    private boolean suppressing = false;
+    private int suppressDepth = 0;
     private boolean mutatedDuringSuppression = false;
 
     public LayoutQueryState(Style style) {
@@ -190,16 +190,23 @@ public class LayoutQueryState implements LayoutStylesheet {
      * occurred). No notifications fire during the batch.
      */
     public void suppressNotifications(Runnable batch) {
-        suppressing = true;
+        suppressDepth++;
+        boolean outerMutated = mutatedDuringSuppression;
         mutatedDuringSuppression = false;
         try {
             batch.run();
         } finally {
-            suppressing = false;
-            if (mutatedDuringSuppression) {
-                fireChangeListeners();
+            suppressDepth--;
+            boolean hadMutations = mutatedDuringSuppression;
+            if (suppressDepth == 0) {
+                mutatedDuringSuppression = false;
+                if (hadMutations || outerMutated) {
+                    fireChangeListeners();
+                }
+            } else {
+                // Re-entering: propagate mutation flag upward
+                mutatedDuringSuppression = outerMutated || hadMutations;
             }
-            mutatedDuringSuppression = false;
         }
     }
 
@@ -325,7 +332,7 @@ public class LayoutQueryState implements LayoutStylesheet {
     }
 
     private void fireChangeListeners() {
-        if (suppressing) {
+        if (suppressDepth > 0) {
             mutatedDuringSuppression = true;
             return;
         }
