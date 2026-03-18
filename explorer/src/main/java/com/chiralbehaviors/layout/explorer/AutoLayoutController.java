@@ -330,8 +330,8 @@ public class AutoLayoutController {
         if (queryState.getQuery() == null) {
             return;
         }
-        Relation schema = (Relation) GraphQlUtil.buildSchema(queryState.getQuery(),
-                                                             queryState.getSelection());
+        Relation schema = GraphQlUtil.buildContext(queryState.getQuery(),
+                                                    queryState.getSelection()).schema();
         schemaView.setRoot(schema);
         layout.setRoot(schema);
         layout.measure(data); 

@@ -45,7 +45,7 @@ public class PageContext {
     public PageContext(Page page, Map<String, Object> variables) {
         this.page = page;
         this.variables = variables;
-        this.root = GraphQlUtil.buildSchema(page.getQuery());
+        this.root = GraphQlUtil.buildContext(page.getQuery()).schema();
     }
 
     public JsonNode evaluate(WebTarget endpoint) throws QueryException {

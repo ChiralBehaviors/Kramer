@@ -18,10 +18,14 @@ package com.chiralbehaviors.layout.graphql;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+
+import com.chiralbehaviors.layout.SchemaPath;
 
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.client.Entity;
@@ -39,6 +43,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import graphql.language.Definition;
+import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
@@ -200,6 +205,178 @@ public final class GraphQlUtil {
         }
         throw new IllegalStateException(String.format("Invalid query, cannot find source: %s",
                                                       source));
+    }
+
+    // --- buildContext: retains Document + builds SchemaPath↔Field index ---
+
+    public static SchemaContext buildContext(String query) {
+        return buildContext(query, DEFAULT_EXCLUDED);
+    }
+
+    public static SchemaContext buildContext(String query,
+                                              Set<String> excludedFields) {
+        Document document = Parser.parse(query);
+        Map<SchemaPath, Field> fieldIndex = new LinkedHashMap<>();
+        Map<SchemaPath, String> aliasIndex = new HashMap<>();
+        List<Relation> children = new ArrayList<>();
+        AtomicReference<String> operationName = new AtomicReference<>();
+
+        document.getDefinitions()
+                .stream()
+                .filter(OperationDefinition.class::isInstance)
+                .map(OperationDefinition.class::cast)
+                .filter(d -> d.getOperation().equals(Operation.QUERY))
+                .findFirst()
+                .ifPresent(operation -> {
+                    operationName.set(operation.getName());
+                    for (Selection<?> selection : operation.getSelectionSet()
+                                                          .getSelections()) {
+                        if (selection instanceof Field field) {
+                            String key = field.getAlias() != null ? field.getAlias() : field.getName();
+                            SchemaPath path = new SchemaPath(key);
+                            fieldIndex.put(path, field);
+                            if (field.getAlias() != null) {
+                                aliasIndex.put(path, field.getAlias());
+                            }
+                            children.add(buildContextRelation(field, path,
+                                excludedFields, fieldIndex, aliasIndex));
+                        }
+                    }
+                });
+
+        if (children.isEmpty()) {
+            throw new IllegalStateException(
+                String.format("Invalid query: %s", query));
+        }
+
+        Relation schema;
+        if (operationName.get() != null) {
+            schema = new Relation(operationName.get());
+            children.forEach(schema::addChild);
+        } else if (children.size() > 1) {
+            schema = new QueryRoot("query");
+            children.forEach(schema::addChild);
+        } else {
+            schema = children.get(0);
+        }
+
+        return new SchemaContext(document, schema, fieldIndex, aliasIndex);
+    }
+
+    public static SchemaContext buildContext(String query, String source) {
+        return buildContext(query, source, DEFAULT_EXCLUDED);
+    }
+
+    public static SchemaContext buildContext(String query, String source,
+                                              Set<String> excludedFields) {
+        Document document = Parser.parse(query);
+        Map<SchemaPath, Field> fieldIndex = new LinkedHashMap<>();
+        Map<SchemaPath, String> aliasIndex = new HashMap<>();
+
+        for (Definition<?> definition : document.getDefinitions()) {
+            if (definition instanceof OperationDefinition operation) {
+                if (operation.getOperation().equals(Operation.QUERY)) {
+                    for (Selection<?> selection : operation.getSelectionSet()
+                                                          .getSelections()) {
+                        if (selection instanceof Field field) {
+                            String key = field.getAlias() != null
+                                ? field.getAlias() : field.getName();
+                            if (source.equals(key)) {
+                                SchemaPath path = new SchemaPath(key);
+                                fieldIndex.put(path, field);
+                                if (field.getAlias() != null) {
+                                    aliasIndex.put(path, field.getAlias());
+                                }
+                                Relation schema = buildContextRelation(
+                                    field, path, excludedFields,
+                                    fieldIndex, aliasIndex);
+                                return new SchemaContext(document, schema,
+                                    fieldIndex, aliasIndex);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        throw new IllegalStateException(
+            String.format("Invalid query, cannot find source: %s", source));
+    }
+
+    /**
+     * Recursive helper: builds a Relation tree and populates fieldIndex/aliasIndex
+     * in a single pass alongside the existing schema walk.
+     */
+    private static Relation buildContextRelation(
+            Field parentField, SchemaPath parentPath,
+            Set<String> excludedFields,
+            Map<SchemaPath, Field> fieldIndex,
+            Map<SchemaPath, String> aliasIndex) {
+        String parentKey = parentField.getAlias() != null
+            ? parentField.getAlias() : parentField.getName();
+        Relation parent = new Relation(parentKey);
+
+        for (Selection<?> selection : parentField.getSelectionSet()
+                                                 .getSelections()) {
+            if (selection instanceof Field field) {
+                String key = field.getAlias() != null
+                    ? field.getAlias() : field.getName();
+                if (excludedFields.contains(field.getName())) {
+                    continue;
+                }
+                SchemaPath childPath = parentPath.child(key);
+                fieldIndex.put(childPath, field);
+                if (field.getAlias() != null) {
+                    aliasIndex.put(childPath, field.getAlias());
+                }
+                if (field.getSelectionSet() == null) {
+                    parent.addChild(new Primitive(key));
+                } else {
+                    parent.addChild(buildContextRelation(field, childPath,
+                        excludedFields, fieldIndex, aliasIndex));
+                }
+            } else if (selection instanceof InlineFragment inlineFragment) {
+                buildContextInlineFragment(parent, inlineFragment, parentPath,
+                    excludedFields, fieldIndex, aliasIndex);
+            } else if (selection instanceof FragmentSpread) {
+                throw new UnsupportedOperationException(
+                    "Named fragment spreads are not supported; use inline fragments");
+            }
+        }
+        return parent;
+    }
+
+    private static void buildContextInlineFragment(
+            Relation parent, InlineFragment fragment, SchemaPath parentPath,
+            Set<String> excludedFields,
+            Map<SchemaPath, Field> fieldIndex,
+            Map<SchemaPath, String> aliasIndex) {
+        for (Selection<?> selection : fragment.getSelectionSet()
+                                             .getSelections()) {
+            if (selection instanceof Field field) {
+                String key = field.getAlias() != null
+                    ? field.getAlias() : field.getName();
+                if (excludedFields.contains(field.getName())) {
+                    continue;
+                }
+                SchemaPath childPath = parentPath.child(key);
+                fieldIndex.put(childPath, field);
+                if (field.getAlias() != null) {
+                    aliasIndex.put(childPath, field.getAlias());
+                }
+                if (field.getSelectionSet() == null) {
+                    parent.addChild(new Primitive(key));
+                } else {
+                    parent.addChild(buildContextRelation(field, childPath,
+                        excludedFields, fieldIndex, aliasIndex));
+                }
+            } else if (selection instanceof InlineFragment inlineFragment) {
+                buildContextInlineFragment(parent, inlineFragment, parentPath,
+                    excludedFields, fieldIndex, aliasIndex);
+            } else if (selection instanceof FragmentSpread) {
+                throw new UnsupportedOperationException(
+                    "Named fragment spreads are not supported; use inline fragments");
+            }
+        }
     }
 
     public static ObjectNode evaluate(WebTarget endpoint,
