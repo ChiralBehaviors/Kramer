@@ -33,6 +33,18 @@ public final class LayoutPropertyKeys {
     /** Field name whose distinct values become pivot columns in crosstab mode. */
     public static final String PIVOT_FIELD = "pivot-field";
 
+    // Frozen / aggregate position properties
+    /** Prevents user mutation of this field's query state via InteractionHandler. */
+    public static final String FROZEN             = "frozen";
+    /** Where aggregate results render: "footer" or null (hidden). */
+    public static final String AGGREGATE_POSITION = "aggregate-position";
+    /** Printf-style format string for cell display (e.g., "%.2f", "%d"). */
+    public static final String CELL_FORMAT        = "cell-format";
+    /** User-set column width override in pixels; null = use computed justifiedWidth. */
+    public static final String COLUMN_WIDTH       = "column-width";
+    /** Hide consecutive duplicate rows in a Relation (SIEUFERD COLLAPSEDUPLICATEROWS). */
+    public static final String COLLAPSE_DUPLICATES = "collapse-duplicates";
+
     // Sparkline rendering properties
     public static final String SPARKLINE_BAND_VISIBLE    = "sparkline-band-visible";
     public static final String SPARKLINE_END_MARKER      = "sparkline-end-marker";

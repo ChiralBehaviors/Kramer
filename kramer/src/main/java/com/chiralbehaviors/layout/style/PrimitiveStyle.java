@@ -53,6 +53,35 @@ import javafx.util.Duration;
  */
 abstract public class PrimitiveStyle extends NodeStyle {
 
+    private static final java.util.logging.Logger log =
+        java.util.logging.Logger.getLogger(PrimitiveStyle.class.getCanonicalName());
+
+    /**
+     * Format a cell value using the PrimitiveLayout's cellFormat.
+     * Falls back to raw text on null format or format error.
+     */
+    static String formatCellValue(PrimitiveLayout p, JsonNode item) {
+        String fmt = p.getCellFormat();
+        if (fmt == null || item == null || item.isNull() || item.isMissingNode()) {
+            return SchemaNode.asText(item);
+        }
+        try {
+            Object value;
+            if (item.isNumber()) {
+                value = item.numberValue();
+            } else if (item.isBoolean()) {
+                value = item.booleanValue();
+            } else {
+                value = item.asText();
+            }
+            return String.format(fmt, value);
+        } catch (java.util.IllegalFormatException e) {
+            log.warning("CellFormat '" + fmt + "' incompatible with value: " + e.getMessage());
+            return SchemaNode.asText(item);
+        }
+    }
+
+
     abstract public class PrimitiveLayoutCell<C extends Region>
             implements LayoutCell<C> {
         public static final String DEFAULT_STYLE = "primitive";
@@ -172,7 +201,7 @@ abstract public class PrimitiveStyle extends NodeStyle {
                 @Override
                 public void updateItem(JsonNode item) {
                     super.updateItem(item);
-                    label.setText(SchemaNode.asText(item));
+                    label.setText(formatCellValue(p, item));
                 }
             };
 

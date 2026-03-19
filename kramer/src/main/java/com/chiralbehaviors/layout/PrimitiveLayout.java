@@ -74,6 +74,10 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     // Last stylesheet seen during buildControl — used by cell renderers (Kramer-7c4)
     private LayoutStylesheet       currentStylesheet;
+    /** Cached cell-format from stylesheet; null = raw value display. */
+    private String                 cellFormat;
+    /** Cached column-width override from stylesheet; -1 = use computed. */
+    private double                 columnWidthOverride = -1.0;
 
     public PrimitiveLayout(Primitive p, PrimitiveStyle style) {
         super(p, style.getLabelStyle());
@@ -183,6 +187,11 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         return cellHeight;
     }
 
+    /** Cached cell-format from stylesheet; null = raw value display. */
+    public String getCellFormat() {
+        return cellFormat;
+    }
+
     @Override
     public Primitive getNode() {
         return (Primitive) node;
@@ -190,6 +199,11 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public double justify(double justified) {
+        // Column-width override from stylesheet (user drag-to-resize)
+        if (columnWidthOverride > 0) {
+            justifiedWidth = Style.snap(Math.max(columnWidthOverride, 20.0));
+            return justifiedWidth;
+        }
         justifiedWidth = Style.snap(justified);
         return justifiedWidth;
     }
@@ -322,6 +336,12 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
         // This is independent of the MIN_SAMPLES requirement for percentile stats.
         NumericStats numericStats = null;
         SparklineStats sparklineStats = null;
+        cellFormat = (stylesheet != null && path != null)
+                     ? stylesheet.getString(path, LayoutPropertyKeys.CELL_FORMAT, null)
+                     : null;
+        columnWidthOverride = (stylesheet != null && path != null)
+                              ? stylesheet.getDouble(path, LayoutPropertyKeys.COLUMN_WIDTH, -1.0)
+                              : -1.0;
         String renderModeOverride = (stylesheet != null && path != null)
                                     ? stylesheet.getString(path, "render-mode", "auto")
                                     : "auto";

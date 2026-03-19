@@ -29,6 +29,9 @@ import com.chiralbehaviors.layout.style.RelationStyle;
 import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.geometry.Pos;
+import javafx.scene.control.Label;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -69,6 +72,16 @@ public class NestedTable extends VerticalCell<NestedTable> {
 
         getChildren().addAll(header, rows);
         model.apply(rows, layout.getNode());
+
+        // Aggregate footer — root-level only (avoids height allocation issues in nested tables)
+        if (rootLevel && "footer".equals(layout.getAggregatePosition())) {
+            var aggResults = layout.getAggregateResults();
+            if (aggResults != null && !aggResults.isEmpty()) {
+                HBox footer = buildAggregateFooter(layout, aggResults);
+                getChildren().add(footer);
+            }
+        }
+
         if (rootLevel) {
             // Root table fills viewport — VirtualFlow grows to fill VBox
             setMinWidth(width);
@@ -98,6 +111,25 @@ public class NestedTable extends VerticalCell<NestedTable> {
     @Override
     public void setFocus() {
         if (rows != null) rows.setFocus();
+    }
+
+    private static HBox buildAggregateFooter(RelationLayout layout,
+                                                java.util.Map<String, Object> aggResults) {
+        HBox footer = new HBox();
+        footer.getStyleClass().add("aggregate-footer");
+        footer.setAlignment(Pos.CENTER_LEFT);
+        for (var child : layout.getChildren()) {
+            double colWidth = Style.snap(child.getJustifiedWidth());
+            String fieldName = child.getField();
+            Object value = aggResults.get(fieldName);
+            Label cell = new Label(value != null ? value.toString() : "");
+            cell.getStyleClass().add("aggregate-cell");
+            cell.setMinWidth(colWidth);
+            cell.setPrefWidth(colWidth);
+            cell.setMaxWidth(colWidth);
+            footer.getChildren().add(cell);
+        }
+        return footer;
     }
 
     @Override

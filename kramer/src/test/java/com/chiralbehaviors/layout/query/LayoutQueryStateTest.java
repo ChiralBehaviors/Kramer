@@ -50,7 +50,7 @@ class LayoutQueryStateTest {
 
     @Test
     void fieldStateAllNullsByDefault() {
-        var fs = new FieldState(null, null, null, null, null, null, null, null, null);
+        var fs = new FieldState(null, null, null, null, null, null, null, null, null, null, null, null, null, null);
         assertNull(fs.visible());
         assertNull(fs.renderMode());
         assertNull(fs.hideIfEmpty());
@@ -60,12 +60,17 @@ class LayoutQueryStateTest {
         assertNull(fs.aggregateExpression());
         assertNull(fs.sortExpression());
         assertNull(fs.pivotField());
+        assertNull(fs.frozen());
+        assertNull(fs.aggregatePosition());
+        assertNull(fs.cellFormat());
+        assertNull(fs.columnWidth());
+        assertNull(fs.collapseDuplicates());
     }
 
     @Test
     void fieldStateWithValues() {
         var fs = new FieldState(true, "TABLE", false, "name", "$x > 5",
-            "$price * $qty", "sum($revenue)", "$score", "category");
+            "$price * $qty", "sum($revenue)", "$score", "category", true, "footer", "%.2f", 150.0, true);
         assertEquals(true, fs.visible());
         assertEquals("TABLE", fs.renderMode());
         assertEquals(false, fs.hideIfEmpty());
@@ -75,6 +80,11 @@ class LayoutQueryStateTest {
         assertEquals("sum($revenue)", fs.aggregateExpression());
         assertEquals("$score", fs.sortExpression());
         assertEquals("category", fs.pivotField());
+        assertEquals(true, fs.frozen());
+        assertEquals("footer", fs.aggregatePosition());
+        assertEquals("%.2f", fs.cellFormat());
+        assertEquals(150.0, fs.columnWidth());
+        assertEquals(true, fs.collapseDuplicates());
     }
 
     // --- getFieldState returns all-null for unset path ---

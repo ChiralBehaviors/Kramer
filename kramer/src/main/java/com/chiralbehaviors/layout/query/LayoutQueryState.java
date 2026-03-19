@@ -112,63 +112,126 @@ public class LayoutQueryState implements LayoutStylesheet {
         setProperty(path, LayoutPropertyKeys.VISIBLE, value,
             (fs, v) -> new FieldState(asBool(v), fs.renderMode(), fs.hideIfEmpty(),
                 fs.sortFields(), fs.filterExpression(), fs.formulaExpression(),
-                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField()));
+                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField(),
+                fs.frozen(), fs.aggregatePosition(), fs.cellFormat(),
+                fs.columnWidth(), fs.collapseDuplicates()));
     }
 
     public void setRenderMode(SchemaPath path, String value) {
         setProperty(path, LayoutPropertyKeys.RENDER_MODE, value,
             (fs, v) -> new FieldState(fs.visible(), asStr(v), fs.hideIfEmpty(),
                 fs.sortFields(), fs.filterExpression(), fs.formulaExpression(),
-                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField()));
+                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField(),
+                fs.frozen(), fs.aggregatePosition(), fs.cellFormat(),
+                fs.columnWidth(), fs.collapseDuplicates()));
     }
 
     public void setHideIfEmpty(SchemaPath path, Boolean value) {
         setProperty(path, LayoutPropertyKeys.HIDE_IF_EMPTY, value,
             (fs, v) -> new FieldState(fs.visible(), fs.renderMode(), asBool(v),
                 fs.sortFields(), fs.filterExpression(), fs.formulaExpression(),
-                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField()));
+                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField(),
+                fs.frozen(), fs.aggregatePosition(), fs.cellFormat(),
+                fs.columnWidth(), fs.collapseDuplicates()));
     }
 
     public void setSortFields(SchemaPath path, String value) {
         setProperty(path, LayoutPropertyKeys.SORT_FIELDS, value,
             (fs, v) -> new FieldState(fs.visible(), fs.renderMode(), fs.hideIfEmpty(),
                 asStr(v), fs.filterExpression(), fs.formulaExpression(),
-                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField()));
+                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField(),
+                fs.frozen(), fs.aggregatePosition(), fs.cellFormat(),
+                fs.columnWidth(), fs.collapseDuplicates()));
     }
 
     public void setFilterExpression(SchemaPath path, String value) {
         setProperty(path, LayoutPropertyKeys.FILTER_EXPRESSION, value,
             (fs, v) -> new FieldState(fs.visible(), fs.renderMode(), fs.hideIfEmpty(),
                 fs.sortFields(), asStr(v), fs.formulaExpression(),
-                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField()));
+                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField(),
+                fs.frozen(), fs.aggregatePosition(), fs.cellFormat(),
+                fs.columnWidth(), fs.collapseDuplicates()));
     }
 
     public void setFormulaExpression(SchemaPath path, String value) {
         setProperty(path, LayoutPropertyKeys.FORMULA_EXPRESSION, value,
             (fs, v) -> new FieldState(fs.visible(), fs.renderMode(), fs.hideIfEmpty(),
                 fs.sortFields(), fs.filterExpression(), asStr(v),
-                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField()));
+                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField(),
+                fs.frozen(), fs.aggregatePosition(), fs.cellFormat(),
+                fs.columnWidth(), fs.collapseDuplicates()));
     }
 
     public void setAggregateExpression(SchemaPath path, String value) {
         setProperty(path, LayoutPropertyKeys.AGGREGATE_EXPRESSION, value,
             (fs, v) -> new FieldState(fs.visible(), fs.renderMode(), fs.hideIfEmpty(),
                 fs.sortFields(), fs.filterExpression(), fs.formulaExpression(),
-                asStr(v), fs.sortExpression(), fs.pivotField()));
+                asStr(v), fs.sortExpression(), fs.pivotField(),
+                fs.frozen(), fs.aggregatePosition(), fs.cellFormat(),
+                fs.columnWidth(), fs.collapseDuplicates()));
     }
 
     public void setSortExpression(SchemaPath path, String value) {
         setProperty(path, LayoutPropertyKeys.SORT_EXPRESSION, value,
             (fs, v) -> new FieldState(fs.visible(), fs.renderMode(), fs.hideIfEmpty(),
                 fs.sortFields(), fs.filterExpression(), fs.formulaExpression(),
-                fs.aggregateExpression(), asStr(v), fs.pivotField()));
+                fs.aggregateExpression(), asStr(v), fs.pivotField(),
+                fs.frozen(), fs.aggregatePosition(), fs.cellFormat(),
+                fs.columnWidth(), fs.collapseDuplicates()));
     }
 
     public void setPivotField(SchemaPath path, String value) {
         setProperty(path, PIVOT_FIELD, value,
             (fs, v) -> new FieldState(fs.visible(), fs.renderMode(), fs.hideIfEmpty(),
                 fs.sortFields(), fs.filterExpression(), fs.formulaExpression(),
-                fs.aggregateExpression(), fs.sortExpression(), asStr(v)));
+                fs.aggregateExpression(), fs.sortExpression(), asStr(v),
+                fs.frozen(), fs.aggregatePosition(), fs.cellFormat(),
+                fs.columnWidth(), fs.collapseDuplicates()));
+    }
+
+    public void setFrozen(SchemaPath path, Boolean value) {
+        setProperty(path, LayoutPropertyKeys.FROZEN, value,
+            (fs, v) -> new FieldState(fs.visible(), fs.renderMode(), fs.hideIfEmpty(),
+                fs.sortFields(), fs.filterExpression(), fs.formulaExpression(),
+                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField(),
+                asBool(v), fs.aggregatePosition(), fs.cellFormat(),
+                fs.columnWidth(), fs.collapseDuplicates()));
+    }
+
+    public void setAggregatePosition(SchemaPath path, String value) {
+        setProperty(path, LayoutPropertyKeys.AGGREGATE_POSITION, value,
+            (fs, v) -> new FieldState(fs.visible(), fs.renderMode(), fs.hideIfEmpty(),
+                fs.sortFields(), fs.filterExpression(), fs.formulaExpression(),
+                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField(),
+                fs.frozen(), asStr(v), fs.cellFormat(),
+                fs.columnWidth(), fs.collapseDuplicates()));
+    }
+
+    public void setCellFormat(SchemaPath path, String value) {
+        setProperty(path, LayoutPropertyKeys.CELL_FORMAT, value,
+            (fs, v) -> new FieldState(fs.visible(), fs.renderMode(), fs.hideIfEmpty(),
+                fs.sortFields(), fs.filterExpression(), fs.formulaExpression(),
+                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField(),
+                fs.frozen(), fs.aggregatePosition(), asStr(v),
+                fs.columnWidth(), fs.collapseDuplicates()));
+    }
+
+    public void setColumnWidth(SchemaPath path, Double value) {
+        setProperty(path, LayoutPropertyKeys.COLUMN_WIDTH, value,
+            (fs, v) -> new FieldState(fs.visible(), fs.renderMode(), fs.hideIfEmpty(),
+                fs.sortFields(), fs.filterExpression(), fs.formulaExpression(),
+                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField(),
+                fs.frozen(), fs.aggregatePosition(), fs.cellFormat(),
+                asDbl(v), fs.collapseDuplicates()));
+    }
+
+    public void setCollapseDuplicates(SchemaPath path, Boolean value) {
+        setProperty(path, LayoutPropertyKeys.COLLAPSE_DUPLICATES, value,
+            (fs, v) -> new FieldState(fs.visible(), fs.renderMode(), fs.hideIfEmpty(),
+                fs.sortFields(), fs.filterExpression(), fs.formulaExpression(),
+                fs.aggregateExpression(), fs.sortExpression(), fs.pivotField(),
+                fs.frozen(), fs.aggregatePosition(), fs.cellFormat(),
+                fs.columnWidth(), asBool(v)));
     }
 
     // --- Reset ---
@@ -264,6 +327,11 @@ public class LayoutQueryState implements LayoutStylesheet {
                 if (obj.has("aggregateExpression")) setAggregateExpression(path, obj.get("aggregateExpression").asText());
                 if (obj.has("sortExpression")) setSortExpression(path, obj.get("sortExpression").asText());
                 if (obj.has("pivotField")) setPivotField(path, obj.get("pivotField").asText());
+                if (obj.has("frozen")) setFrozen(path, obj.get("frozen").asBoolean());
+                if (obj.has("aggregatePosition")) setAggregatePosition(path, obj.get("aggregatePosition").asText());
+                if (obj.has("cellFormat")) setCellFormat(path, obj.get("cellFormat").asText());
+                if (obj.has("columnWidth") && !obj.get("columnWidth").isNull()) setColumnWidth(path, obj.get("columnWidth").asDouble());
+                if (obj.has("collapseDuplicates") && !obj.get("collapseDuplicates").isNull()) setCollapseDuplicates(path, obj.get("collapseDuplicates").asBoolean());
             }
         });
     }
@@ -279,6 +347,11 @@ public class LayoutQueryState implements LayoutStylesheet {
         if (fs.aggregateExpression() != null) node.put("aggregateExpression", fs.aggregateExpression());
         if (fs.sortExpression() != null) node.put("sortExpression", fs.sortExpression());
         if (fs.pivotField() != null) node.put("pivotField", fs.pivotField());
+        if (fs.frozen() != null) node.put("frozen", fs.frozen());
+        if (fs.aggregatePosition() != null) node.put("aggregatePosition", fs.aggregatePosition());
+        if (fs.cellFormat() != null) node.put("cellFormat", fs.cellFormat());
+        if (fs.columnWidth() != null) node.put("columnWidth", fs.columnWidth());
+        if (fs.collapseDuplicates() != null) node.put("collapseDuplicates", fs.collapseDuplicates());
         return node;
     }
 
@@ -335,6 +408,11 @@ public class LayoutQueryState implements LayoutStylesheet {
         if (fs.aggregateExpression() != null) inner.setOverride(p, LayoutPropertyKeys.AGGREGATE_EXPRESSION, fs.aggregateExpression());
         if (fs.sortExpression() != null) inner.setOverride(p, LayoutPropertyKeys.SORT_EXPRESSION, fs.sortExpression());
         if (fs.pivotField() != null) inner.setOverride(p, PIVOT_FIELD, fs.pivotField());
+        if (fs.frozen() != null) inner.setOverride(p, LayoutPropertyKeys.FROZEN, fs.frozen());
+        if (fs.aggregatePosition() != null) inner.setOverride(p, LayoutPropertyKeys.AGGREGATE_POSITION, fs.aggregatePosition());
+        if (fs.cellFormat() != null) inner.setOverride(p, LayoutPropertyKeys.CELL_FORMAT, fs.cellFormat());
+        if (fs.columnWidth() != null) inner.setOverride(p, LayoutPropertyKeys.COLUMN_WIDTH, fs.columnWidth());
+        if (fs.collapseDuplicates() != null) inner.setOverride(p, LayoutPropertyKeys.COLLAPSE_DUPLICATES, fs.collapseDuplicates());
     }
 
     private void fireChangeListeners() {
@@ -353,5 +431,9 @@ public class LayoutQueryState implements LayoutStylesheet {
 
     private static String asStr(Object v) {
         return v instanceof String s ? s : null;
+    }
+
+    private static Double asDbl(Object v) {
+        return v instanceof Double d ? d : (v instanceof Number n ? n.doubleValue() : null);
     }
 }
