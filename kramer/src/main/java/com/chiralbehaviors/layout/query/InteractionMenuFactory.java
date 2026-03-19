@@ -200,7 +200,10 @@ public final class InteractionMenuFactory {
         // Quote the literal value so expression-syntax characters in the data
         // (like $, parentheses, operators) don't cause a ParseException.
         String quotedValue = "\"" + cellValue.replace("\\", "\\\\")
-                                              .replace("\"", "\\\"") + "\"";
+                                              .replace("\"", "\\\"")
+                                              .replace("\n", "\\n")
+                                              .replace("\r", "\\r")
+                                              .replace("\t", "\\t") + "\"";
         var filterByValue = menuItem("Filter by \"" + displayValue + "\"", () ->
             handler.apply(new LayoutInteraction.SetFilter(path, quotedValue)));
         filterByValue.setDisable(frozen);

@@ -197,7 +197,7 @@ public class AutoLayoutController {
             });
 
         // Field selector toggle button in toolbar (Cmd+F to toggle)
-        fieldSelectorToggle = new javafx.scene.control.ToggleButton("Fields (⌘F)");
+        fieldSelectorToggle = new javafx.scene.control.ToggleButton("Fields (\u21E7\u2318F)");
         fieldSelectorToggle.selectedProperty().addListener((o, prev, selected) -> {
             if (selected) {
                 root.setLeft(fieldSelectorPanel);
@@ -209,9 +209,11 @@ public class AutoLayoutController {
         var buttonBar = (javafx.scene.control.ButtonBar) root.getBottom();
         buttonBar.getButtons().add(fieldSelectorToggle);
 
-        // Global keyboard shortcut: Cmd+F toggles field selector
+        // Global keyboard shortcut: Cmd+Shift+F toggles field selector
+        // (Cmd+F is reserved for AutoLayout's search bar)
         root.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
-            if (event.isShortcutDown() && event.getCode() == javafx.scene.input.KeyCode.F) {
+            if (event.isShortcutDown() && event.isShiftDown()
+                    && event.getCode() == javafx.scene.input.KeyCode.F) {
                 fieldSelectorToggle.setSelected(!fieldSelectorToggle.isSelected());
                 event.consume();
             }
@@ -486,10 +488,12 @@ public class AutoLayoutController {
         columnNode.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_RELEASED, e -> {
             if (dragState[1] >= 0) {
                 double delta = e.getScreenX() - dragState[0];
-                double newWidth = Math.max(20.0, dragState[1] + delta);
                 columnNode.setStyle("");
-                layoutQueryState.setColumnWidth(path, newWidth);
-                dragState[1] = -1;  // reset sentinel
+                if (Math.abs(delta) > 1.0) {
+                    double newWidth = Math.max(20.0, dragState[1] + delta);
+                    layoutQueryState.setColumnWidth(path, newWidth);
+                }
+                dragState[1] = -1;
                 e.consume();
             }
         });

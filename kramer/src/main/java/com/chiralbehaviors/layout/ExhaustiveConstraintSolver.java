@@ -225,10 +225,6 @@ public final class ExhaustiveConstraintSolver implements ConstraintSolver {
             if (!fits) {
                 return false;
             }
-            // Parent-column fit (use readable width for readability threshold)
-            if (node.readableTableWidth() + node.nestedHorizontalInset() > parentTableWidth) {
-                return false;
-            }
             // Children of TABLE parent see this node's tableWidth
             for (RelationConstraint child : node.children()) {
                 if (!checkFeasible(child, assignment, variable, indexMap, fixed,

@@ -421,9 +421,11 @@ class LayoutTransitionTest {
                     totalJustified += child.justifiedWidth();
                 }
 
-                // Sum matches available minus columnHeaderIndentation
-                // (justify() subtracts indentation before distributing to children).
-                // Tolerance accounts for indentation + pixel snapping.
+                // justify() passes (w - columnHeaderIndentation) to justifyColumn(),
+                // so children sum to less than w. The 10px tolerance covers
+                // columnHeaderIndentation (~6px) plus pixel snapping. For deeply
+                // nested schemas, indentation may exceed 10px — use a wider
+                // tolerance or compare against (w - indentation) directly.
                 if (Math.abs(totalJustified - w) > 10.0 && totalJustified > 0) {
                     failures.append(String.format(
                         "w=%.0f: total justified=%.1f deviates >10px from available; ",
