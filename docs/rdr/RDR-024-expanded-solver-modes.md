@@ -45,16 +45,16 @@ The record is extended by appending two fields. All seven existing fields are pr
 ```java
 record RelationConstraint(
     // --- existing fields (unchanged) ---
-    SchemaNode        node,             // the Relation node
-    double            availableWidth,   // width budget at this node's position
-    double            tableWidth,       // measured width in TABLE mode
-    double            outlineWidth,     // measured width in OUTLINE mode
-    boolean           hardCrosstab,     // true → stylesheet-forced CROSSTAB (Phase 1 behavior)
-    RenderMode        forcedMode,       // non-null when mode is stylesheet-forced
-    List<Integer>     childIndices,     // indices of direct Relation children in constraint list
+    SchemaPath                path,                    // addressing key for this node
+    double                    tableWidth,              // result of calculateTableColumnWidth()
+    double                    nestedHorizontalInset,   // horizontal inset for nestTableColumn()
+    double                    availableWidthAsOutline,  // width when parent renders as OUTLINE
+    double                    availableWidthAsTable,    // width when parent renders as TABLE
+    List<RelationConstraint>  children,                // constraints for direct Relation children
+    boolean                   hardCrosstab,            // true → stylesheet-forced CROSSTAB
     // --- new fields ---
-    double            crosstabWidth,    // minimum feasibility width for CROSSTAB; 0 if not eligible
-    boolean           crosstabEligible  // true iff pivot-field configured and pivotStats non-empty
+    double                    crosstabWidth,           // minimum feasibility width for CROSSTAB; 0 if not eligible
+    boolean                   crosstabEligible         // true iff pivot-field configured and pivotStats non-empty
 ) {}
 ```
 
@@ -152,7 +152,7 @@ straightforward.
 
 `RelationRenderMode.java`: `{AUTO, TABLE, OUTLINE, CROSSTAB}`. BAR is `PrimitiveRenderMode.BAR`
 (per-leaf, not per-Relation). BAR does not belong in the solver's mode enumeration — it is
-orthogonal. RDR-024 title mentions BAR but the proposal body correctly addresses only CROSSTAB.
+orthogonal. The proposal correctly addresses only CROSSTAB as a solver mode.
 
 ### RF-3: CROSSTAB infrastructure exists and is tested (Confidence: HIGH)
 
@@ -199,7 +199,7 @@ Risk "Mixed-radix breaks pruning" is LOW, not MEDIUM.
 | Search space growth for large K | Medium | K (eligible nodes) is always small — `pivot-field` is intentional configuration; for K=5, N=15: 3^5 × 2^10 ≈ 249K assignments, tractable with pruning |
 | CROSSTAB width is data-dependent (pivot count changes with data) | Medium | Any data change that triggers re-measure also regenerates `RelationConstraint` records; no additional invalidation required |
 | CROSSTAB vs TABLE preference ambiguity for small pivot counts | Low | Default TABLE tie-break handles this correctly; `prefer-mode` property deferred to post-implementation |
-| Mixed-radix enumeration breaks tree-structured pruning invariant | Medium | Verify that enumeration order preserves breadth-first-by-depth property required for correct child pruning; unit test mixed-radix enumeration exhaustiveness independently |
+| Mixed-radix enumeration breaks tree-structured pruning invariant | Low (RF-8) | Pruning walks the constraint tree, not the enumeration counter. DFS-order preserved if variable list stays in DFS order. Unit test mixed-radix exhaustiveness independently |
 
 ---
 
@@ -220,6 +220,10 @@ Risk "Mixed-radix breaks pruning" is LOW, not MEDIUM.
 - Extend objective: CROSSTAB ranked equal to TABLE; tie-break prefers TABLE
 - Retain N > 15 greedy fallback unchanged
 - Unit tests: single eligible node (CROSSTAB when fits, TABLE when CROSSTAB does not, OUTLINE when neither); mixed schema 3^2 × 2^3 = 72 assignments; N=15 with K=5 performance (<1ms with pruning)
+- Wire solver CROSSTAB assignment to rendering (RF-5 fix): modify `RelationLayout.layout()` —
+  when `solverResults` contains CROSSTAB for this node, call `layoutCrosstab(width, pivotValues)`
+  instead of `columnWidth()`. Test: solver assigns CROSSTAB → rendered control is CrosstabHeader,
+  not an outline column.
 
 ### Phase 4a-T3: Integration tests with mixed TABLE/OUTLINE/CROSSTAB schemas
 
