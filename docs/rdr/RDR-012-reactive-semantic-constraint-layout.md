@@ -1,3 +1,17 @@
+---
+title: "Reactive Semantic Constraint Layout"
+id: RDR-012
+type: Research
+status: closed
+close_reason: "implemented (Phase 1 constraint solver) + designed (Phases 2-4)"
+priority: P2
+author: Hal Hildebrand
+created: 2026-03-15
+accepted_date: 2026-03-16
+closed_date: 2026-03-16
+reviewed-by: self
+---
+
 # RDR-012: Reactive Semantic Constraint Layout
 
 ## Metadata

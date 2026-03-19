@@ -1,3 +1,13 @@
+---
+title: "LLM Annotation Pipeline"
+id: RDR-022
+type: Feature
+status: proposed
+priority: P3
+author: Hal Hildebrand
+created: 2026-03-16
+---
+
 # RDR-022: LLM Annotation Pipeline
 
 ## Metadata

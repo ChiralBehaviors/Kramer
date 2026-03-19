@@ -1,3 +1,16 @@
+---
+title: "Stylesheet Data Structure Design"
+id: RDR-009
+type: Architecture
+status: closed
+close_reason: implemented
+priority: P2
+author: Hal Hildebrand
+created: 2026-03-15
+accepted_date: 2026-03-15
+reviewed-by: self
+---
+
 # RDR-009: Stylesheet Data Structure Design
 
 ## Metadata

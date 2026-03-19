@@ -1,3 +1,17 @@
+---
+title: "Reactive Layout Invalidation"
+id: RDR-023
+type: Feature
+status: closed
+close_reason: "implemented (all phases complete, zero deferred work)"
+priority: P3
+author: Hal Hildebrand
+created: 2026-03-16
+accepted_date: 2026-03-16
+closed_date: 2026-03-16
+reviewed-by: self
+---
+
 # RDR-023: Reactive Layout Invalidation
 
 ## Metadata

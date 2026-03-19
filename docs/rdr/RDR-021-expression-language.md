@@ -1,3 +1,17 @@
+---
+title: "Expression Language for LayoutStylesheet"
+id: RDR-021
+type: Feature
+status: closed
+close_reason: implemented
+priority: P3
+author: Hal Hildebrand
+created: 2026-03-16
+accepted_date: 2026-03-16
+closed_date: 2026-03-16
+reviewed-by: self
+---
+
 # RDR-021: Expression Language for LayoutStylesheet
 
 ## Metadata

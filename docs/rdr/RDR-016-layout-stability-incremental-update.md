@@ -1,3 +1,17 @@
+---
+title: "Layout Stability & Incremental Update"
+id: RDR-016
+type: Feature
+status: closed
+close_reason: implemented
+priority: P2
+author: Hal Hildebrand
+created: 2026-03-15
+accepted_date: 2026-03-15
+closed_date: 2026-03-16
+reviewed-by: self
+---
+
 # RDR-016: Layout Stability & Incremental Update
 
 ## Metadata

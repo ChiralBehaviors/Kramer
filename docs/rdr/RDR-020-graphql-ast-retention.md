@@ -1,3 +1,17 @@
+---
+title: "GraphQL AST Retention in kramer-ql"
+id: RDR-020
+type: Architecture
+status: closed
+close_reason: "implemented (all 5 phases)"
+priority: P3
+author: Hal Hildebrand
+created: 2026-03-16
+accepted_date: 2026-03-17
+closed_date: 2026-03-17
+reviewed-by: self
+---
+
 # RDR-020: GraphQL AST Retention in kramer-ql
 
 ## Metadata

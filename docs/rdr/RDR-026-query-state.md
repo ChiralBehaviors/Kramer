@@ -1,3 +1,17 @@
+---
+title: "QueryState — Layer 2 Query Model"
+id: RDR-026
+type: Architecture
+status: closed
+close_reason: "implemented (all 3 phases)"
+priority: P2
+author: Hal Hildebrand
+created: 2026-03-16
+accepted_date: 2026-03-16
+closed_date: 2026-03-16
+reviewed-by: self
+---
+
 # RDR-026: QueryState — Layer 2 Query Model
 
 ## Metadata

@@ -1,3 +1,17 @@
+---
+title: "Statistical Content-Width Measurement"
+id: RDR-013
+type: Feature
+status: closed
+close_reason: implemented
+priority: P1
+author: Hal Hildebrand
+created: 2026-03-15
+accepted_date: 2026-03-15
+closed_date: 2026-03-16
+reviewed-by: self
+---
+
 # RDR-013: Statistical Content-Width Measurement
 
 ## Metadata

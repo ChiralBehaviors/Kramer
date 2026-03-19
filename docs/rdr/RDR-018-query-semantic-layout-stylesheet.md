@@ -1,3 +1,17 @@
+---
+title: "Query-Semantic LayoutStylesheet Extension"
+id: RDR-018
+type: Architecture
+status: closed
+close_reason: "implemented (Phase 1 code + Phase 2 expression language spec + Phase 3 → RDR-020)"
+priority: P2
+author: Hal Hildebrand
+created: 2026-03-15
+accepted_date: 2026-03-16
+closed_date: 2026-03-16
+reviewed-by: self
+---
+
 # RDR-018: Query-Semantic LayoutStylesheet Extension
 
 ## Metadata

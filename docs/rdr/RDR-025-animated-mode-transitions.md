@@ -1,3 +1,13 @@
+---
+title: "Animated Mode Transitions"
+id: RDR-025
+type: Feature
+status: proposed
+priority: P4
+author: Hal Hildebrand
+created: 2026-03-16
+---
+
 # RDR-025: Animated Mode Transitions
 
 ## Metadata

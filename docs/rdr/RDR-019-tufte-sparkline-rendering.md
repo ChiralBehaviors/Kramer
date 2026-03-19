@@ -1,3 +1,17 @@
+---
+title: "Tufte Sparkline Rendering Mode"
+id: RDR-019
+type: Feature
+status: closed
+close_reason: "implemented (all 4 phases complete, zero deferred work)"
+priority: P2
+author: Hal Hildebrand
+created: 2026-03-15
+accepted_date: 2026-03-16
+closed_date: 2026-03-16
+reviewed-by: self
+---
+
 # RDR-019: Tufte Sparkline Rendering Mode
 
 ## Metadata

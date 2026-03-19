@@ -1,3 +1,17 @@
+---
+title: "Alternative Rendering Modes — Visualization Primitives & Crosstab"
+id: RDR-015
+type: Feature
+status: closed
+close_reason: "implemented (Phases 1-3; Phase 4 SPARKLINE deferred to RDR-019)"
+priority: P2
+author: Hal Hildebrand
+created: 2026-03-15
+accepted_date: 2026-03-16
+closed_date: 2026-03-16
+reviewed-by: self
+---
+
 # RDR-015: Alternative Rendering Modes — Visualization Primitives & Crosstab
 
 ## Metadata

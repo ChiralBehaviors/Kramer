@@ -1,3 +1,17 @@
+---
+title: "Query Rewriter — Layer 1↔2 Bridge"
+id: RDR-028
+type: Architecture
+status: closed
+close_reason: "implemented (all 5 phases)"
+priority: P3
+author: Hal Hildebrand
+created: 2026-03-16
+accepted_date: 2026-03-17
+closed_date: 2026-03-18
+reviewed-by: self
+---
+
 # RDR-028: Query Rewriter — Layer 1↔2 Bridge
 
 ## Metadata

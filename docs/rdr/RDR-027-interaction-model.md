@@ -1,3 +1,17 @@
+---
+title: "Interaction Model — Layer 7 Gestures"
+id: RDR-027
+type: Feature
+status: closed
+close_reason: "implemented (all 3 phases)"
+priority: P2
+author: Hal Hildebrand
+created: 2026-03-16
+accepted_date: 2026-03-17
+closed_date: 2026-03-17
+reviewed-by: self
+---
+
 # RDR-027: Interaction Model — Layer 7 Gestures
 
 ## Metadata

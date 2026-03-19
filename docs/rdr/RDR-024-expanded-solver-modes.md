@@ -1,3 +1,13 @@
+---
+title: "Expanded Constraint Solver Modes"
+id: RDR-024
+type: Feature
+status: proposed
+priority: P3
+author: Hal Hildebrand
+created: 2026-03-16
+---
+
 # RDR-024: Expanded Constraint Solver Modes
 
 ## Metadata
