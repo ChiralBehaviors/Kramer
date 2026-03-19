@@ -756,25 +756,28 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
                 // Re-measure only affected primitives and compare p90 buckets
                 Set<SchemaPath> bucketChangedPaths = remeasureChanged(changedPaths, datum);
 
-                if (bucketChangedPaths.isEmpty()) {
-                    // P90 shifted but stayed in same bucket — just rebind, no re-layout
-                    if (control != null) {
-                        control.updateItem(datum);
+                if (control == null) {
+                    // Cold start: control tree not yet built — must run
+                    // full autoLayout regardless of bucket changes. If the
+                    // layout has been sized, run immediately; otherwise defer
+                    // to let resize() trigger it with the real width.
+                    double w = getWidth();
+                    if (w >= 10.0) {
+                        autoLayout(datum, w);
                     }
+                    // Don't update dataSnapshot — let autoLayout handle it.
+                    return;
+                } else if (bucketChangedPaths.isEmpty()) {
+                    // P90 shifted but stayed in same bucket — just rebind, no re-layout
+                    control.updateItem(datum);
                     dataSnapshot = DataSnapshot.buildSnapshot(layout, datum);
                     return;
-                }
-
-                // Phase 3c: check whether the bucket change actually flips a TABLE/OUTLINE decision.
-                // This is O(changed_paths) — no solver re-run needed.
-                if (detectModeFlip(bucketChangedPaths)) {
-                    // Mode assignment changed — full re-layout required
+                } else if (detectModeFlip(bucketChangedPaths)) {
+                    // Phase 3c: bucket change flips a TABLE/OUTLINE decision
                     autoLayout(datum, getWidth());
                 } else {
                     // Width shifted but mode unchanged — rebind only
-                    if (control != null) {
-                        control.updateItem(datum);
-                    }
+                    control.updateItem(datum);
                 }
                 updateSnapshots(datum);
                 return;

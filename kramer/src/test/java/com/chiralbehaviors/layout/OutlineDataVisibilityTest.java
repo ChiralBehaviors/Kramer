@@ -214,6 +214,27 @@ class OutlineDataVisibilityTest {
     }
 
     /**
+     * REGRESSION TEST for the cold-start bug: setRoot → measure → updateItem
+     * followed by a resize must build the control tree with data visible.
+     * Before the fix, setContent() updated dataSnapshot on cold start
+     * (control==null), causing the subsequent resize → autoLayout to see
+     * "no changes" and skip data population.
+     */
+    @Test
+    void coldStartResizeRendersData() throws Exception {
+        List<LabelInfo> labels = renderAndCollect(1200, 600);
+
+        // The render pipeline does setRoot → measure → updateItem → resize.
+        // Data values must be present after this sequence.
+        boolean hasData = labels.stream().anyMatch(l ->
+            l.text().contains("Frank") || l.text().contains("Dashboard"));
+
+        assertTrue(hasData,
+            "After cold-start + resize, data must be visible. Labels: "
+            + labels.stream().map(LabelInfo::text).toList());
+    }
+
+    /**
      * Data labels must have non-zero rendered width. A label with text
      * "Frank Thompson" but width=0 is invisible to the user.
      */
