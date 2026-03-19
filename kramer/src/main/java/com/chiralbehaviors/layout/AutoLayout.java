@@ -81,6 +81,13 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
     private SearchBar                                     searchBar;
     private LayoutSearch                                  layoutSearch;
 
+    // Post-layout callback (installed by controller to wire sort handlers, etc.)
+    private Runnable                                      postLayoutCallback;
+
+    public void setPostLayoutCallback(Runnable callback) {
+        this.postLayoutCallback = callback;
+    }
+
     public AutoLayout() {
         this(null);
     }
@@ -542,6 +549,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         // Recover cursor position after layout rebuild.
         // Find the first VirtualFlow in the new tree for cursor recovery.
         findVirtualFlow(node).ifPresent(vf -> controller.recoverCursor(savedCursor, vf));
+        if (postLayoutCallback != null) postLayoutCallback.run();
     }
 
     /**
@@ -581,6 +589,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         control.updateItem(zeeData);
 
         findVirtualFlow(node).ifPresent(vf -> controller.recoverCursor(savedCursor, vf));
+        if (postLayoutCallback != null) postLayoutCallback.run();
     }
 
     /**
@@ -625,15 +634,43 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
 
     private SchemaPath hitSchemaPathRecursive(SchemaNodeLayout node,
                                                javafx.geometry.Point2D scenePoint) {
-        if (node instanceof RelationLayout rl) {
-            for (var child : rl.getChildren()) {
-                SchemaPath childHit = hitSchemaPathRecursive(child, scenePoint);
-                if (childHit != null) return childHit;
+        if (control == null) return node.getSchemaPath();
+        SchemaPath found = hitSchemaPathFromScene(control.getNode(), scenePoint);
+        return found != null ? found : node.getSchemaPath();
+    }
+
+    /**
+     * Walk the JavaFX scene graph depth-first looking for the deepest node
+     * carrying a {@link SchemaPath} whose bounds contain the given scene point.
+     * SchemaPath carriers: {@link VirtualFlow} ({@code getSchemaPath()}) and
+     * any node with SchemaPath as {@code getUserData()}.
+     */
+    private SchemaPath hitSchemaPathFromScene(javafx.scene.Node node,
+                                              javafx.geometry.Point2D scenePoint) {
+        javafx.geometry.Point2D local = node.sceneToLocal(scenePoint);
+        if (local == null || !node.contains(local)) {
+            return null;
+        }
+
+        // Check children first for deeper (more specific) matches
+        if (node instanceof javafx.scene.Parent parent) {
+            // Reverse iteration: later children are rendered on top
+            var children = parent.getChildrenUnmodifiable();
+            for (int i = children.size() - 1; i >= 0; i--) {
+                SchemaPath childPath = hitSchemaPathFromScene(children.get(i), scenePoint);
+                if (childPath != null) return childPath;
             }
         }
-        // Check if this node's schema path matches the hit area
-        // Use the root path as fallback
-        return node.getSchemaPath();
+
+        // Check this node
+        if (node instanceof VirtualFlow<?> vf && vf.getSchemaPath() != null) {
+            return vf.getSchemaPath();
+        }
+        if (node.getUserData() instanceof SchemaPath sp) {
+            return sp;
+        }
+
+        return null;
     }
 
     /**

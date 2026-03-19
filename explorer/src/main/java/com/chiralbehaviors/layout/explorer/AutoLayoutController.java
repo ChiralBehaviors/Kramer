@@ -19,6 +19,7 @@ package com.chiralbehaviors.layout.explorer;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,6 +37,7 @@ import com.chiralbehaviors.layout.graphql.SchemaContext;
 import com.chiralbehaviors.layout.graphql.SchemaIntrospector;
 import com.chiralbehaviors.layout.graphql.ServerCapabilities;
 import com.chiralbehaviors.layout.graphql.QueryRewriter;
+import com.chiralbehaviors.layout.query.ColumnSortHandler;
 import com.chiralbehaviors.layout.query.InteractionHandler;
 import com.chiralbehaviors.layout.query.InteractionMenuFactory;
 import com.chiralbehaviors.layout.query.LayoutQueryState;
@@ -297,6 +299,9 @@ public class AutoLayoutController {
         interactionHandler = new InteractionHandler(layoutQueryState);
         menuFactory = new InteractionMenuFactory(interactionHandler, layoutQueryState);
 
+        var sortHandler = new ColumnSortHandler(interactionHandler, layoutQueryState);
+        layout.setPostLayoutCallback(() -> installSortHandlers(layout, sortHandler));
+
         // Single context menu handler on the AutoLayout root — avoids
         // VirtualFlow cell recycling issues (audit finding Blocker 2)
         layout.addEventHandler(javafx.scene.input.ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
@@ -320,6 +325,26 @@ public class AutoLayoutController {
         AnchorPane.setLeftAnchor(schemaView, 0.0);
         AnchorPane.setBottomAnchor(schemaView, 0.0);
         AnchorPane.setRightAnchor(schemaView, 0.0);
+    }
+
+    private void installSortHandlers(javafx.scene.Parent root,
+                                     ColumnSortHandler handler) {
+        for (javafx.scene.Node child : root.getChildrenUnmodifiable()) {
+            if (child instanceof com.chiralbehaviors.layout.table.TableHeader th) {
+                var paths = new ArrayList<SchemaPath>();
+                for (javafx.scene.Node col : th.getChildren()) {
+                    if (col.getUserData() instanceof SchemaPath sp) {
+                        paths.add(sp);
+                    }
+                }
+                if (!paths.isEmpty()) {
+                    handler.install(th, paths);
+                }
+            }
+            if (child instanceof javafx.scene.Parent p) {
+                installSortHandlers(p, handler);
+            }
+        }
     }
 
     private boolean isRelationPath(SchemaPath path) {

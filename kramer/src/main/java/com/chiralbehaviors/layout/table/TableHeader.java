@@ -37,7 +37,10 @@ public class TableHeader extends HBox {
                        List<SchemaNodeLayout> children) {
         this();
         setAlignment(Pos.CENTER);
-        children.forEach(c -> getChildren().add(c.columnHeader()
-                                                 .apply(height)));
+        children.forEach(c -> {
+            var header = c.columnHeader().apply(height);
+            header.setUserData(c.getSchemaPath());
+            getChildren().add(header);
+        });
     }
 }
