@@ -2,11 +2,13 @@
 title: "Expanded Constraint Solver Modes"
 id: RDR-024
 type: Feature
-status: accepted
+status: closed
+close_reason: "implemented (all 3 phases)"
 priority: P2
 author: Hal Hildebrand
 created: 2026-03-16
 accepted_date: 2026-03-18
+closed_date: 2026-03-18
 reviewed-by: self
 ---
 
@@ -14,8 +16,10 @@ reviewed-by: self
 
 ## Metadata
 - **Type**: Feature
-- **Status**: accepted
+- **Status**: closed
 - **Accepted**: 2026-03-18
+- **Closed**: 2026-03-18
+- **Close-reason**: implemented (all 3 phases)
 - **Reviewed-by**: self
 - **Priority**: P3
 - **Created**: 2026-03-16
