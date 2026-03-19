@@ -747,9 +747,19 @@ public final class RelationLayout extends SchemaNodeLayout {
                         + "; falling back to greedy layout decision");
             } else if (mode == RelationRenderMode.TABLE) {
                 return nestTableColumn(Indent.TOP, new Insets(0));
+            } else if (mode == RelationRenderMode.CROSSTAB) {
+                // RF-5: invoke layoutCrosstab() when solver assigns CROSSTAB mode.
+                // Guard: pivotStats must be non-null (populated during measure phase).
+                MeasureResult mr = getMeasureResult();
+                if (mr != null && mr.pivotStats() != null && !mr.pivotStats().pivotValues().isEmpty()) {
+                    return layoutCrosstab(width, mr.pivotStats().pivotValues());
+                }
+                // Fallback: no pivot data available — degrade to OUTLINE
+                LOG.fine(() -> "Solver assigned CROSSTAB but no pivot data for path: " + myPath
+                          + "; degrading to OUTLINE");
+                return columnWidth();
             } else {
-                // OUTLINE or CROSSTAB: CROSSTAB is handled separately in measure/buildControl;
-                // for layout purposes treat anything non-TABLE as outline.
+                // OUTLINE: standard column layout
                 return columnWidth();
             }
         }
