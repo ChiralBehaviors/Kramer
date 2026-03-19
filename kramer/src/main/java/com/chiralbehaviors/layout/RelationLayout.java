@@ -1322,7 +1322,10 @@ public final class RelationLayout extends SchemaNodeLayout {
 
     protected int resolveCardinality(int cardinality) {
         int maxCard = measureResult != null ? measureResult.maxCardinality() : maxCardinality;
-        return Math.max(1, Math.min(cardinality, maxCard));
+        int resolved = Math.min(cardinality, maxCard);
+        // Allow zero cardinality when all items have been filtered out.
+        // Math.max(1, ...) only guards when data exists but cardinality arg is 0.
+        return maxCard == 0 ? 0 : Math.max(1, resolved);
     }
 
     public double getJustifiedTableColumnWidth() {
