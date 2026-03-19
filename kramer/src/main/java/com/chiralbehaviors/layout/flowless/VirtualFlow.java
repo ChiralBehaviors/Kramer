@@ -13,6 +13,8 @@ import java.util.function.BiFunction;
 
 import org.reactfx.collection.MemoizationList;
 import org.reactfx.util.Lists;
+
+import com.chiralbehaviors.layout.SchemaPath;
 import org.reactfx.value.Val;
 import org.reactfx.value.Var;
 
@@ -213,6 +215,8 @@ public class VirtualFlow<C extends LayoutCell<?>>
 
     private static final String                      VIRTUAL_FLOW  = "virtual-flow";
 
+    private SchemaPath                               schemaPath;
+
     protected final FocusTraversalNode<C>            focus;
 
     protected final ObservableList<JsonNode>         items;
@@ -373,6 +377,14 @@ public class VirtualFlow<C extends LayoutCell<?>>
 
     public OptionalInt getLastVisibleIndex() {
         return cellPositioner.getLastVisibleIndex();
+    }
+
+    public SchemaPath getSchemaPath() {
+        return schemaPath;
+    }
+
+    public void setSchemaPath(SchemaPath schemaPath) {
+        this.schemaPath = schemaPath;
     }
 
     public MultipleCellSelection<JsonNode, C> getSelectionModel() {

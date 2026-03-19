@@ -58,6 +58,7 @@ public class NestedRow extends VirtualFlow<NestedCell> {
               }, parentTraversal,
               Arrays.asList(DEFAULT_STYLE, String.format(SCHEMA_CLASS_TEMPLATE,
                                                          layout.getCssClass())));
+        setSchemaPath(layout.getSchemaPath());
         if (!rootLevel) {
             // Nested row — fixed height for N rows within parent cell
             setMinHeight(rendered);

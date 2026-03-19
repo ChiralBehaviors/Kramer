@@ -58,6 +58,7 @@ public class Outline extends VirtualFlow<OutlineCell> {
               }, parentTraversal,
               Arrays.asList(DEFAULT_STYLE, String.format(SCHEMA_CLASS_TEMPLATE,
                                                          layout.getCssClass())));
+        setSchemaPath(layout.getSchemaPath());
         model.apply(this, layout.getNode());
     }
 

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversalNode.Bias;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
@@ -18,6 +19,7 @@ import javafx.collections.ObservableList;
 import javafx.geometry.BoundingBox;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Pane;
 
 /**
@@ -253,6 +255,69 @@ class CursorNavigationTest {
 
         // Should not throw, just be a no-op
         assertDoesNotThrow(() -> controller.down());
+    }
+
+    // --- fieldPath derived from VirtualFlow SchemaPath ---
+
+    @Test
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    void testNavigateTo_fieldPathNonNullWhenFlowHasSchemaPath() {
+        // Build a mock VirtualFlow with a SchemaPath set
+        VirtualFlow vf = mock(VirtualFlow.class);
+        SchemaPath path = new SchemaPath("catalog", "items");
+        when(vf.getSchemaPath()).thenReturn(path);
+        when(vf.getItemCount()).thenReturn(1);
+
+        // Items list with one entry (identity object)
+        JsonNode item = TextNode.valueOf("row0");
+        ObservableList<JsonNode> items = FXCollections.observableArrayList(item);
+        when(vf.getItems()).thenReturn(items);
+
+        // Mock selection model + cell with a real Pane as node
+        MultipleCellSelection selModel = mock(MultipleCellSelection.class);
+        when(vf.getSelectionModel()).thenReturn(selModel);
+
+        Pane cellPane = new Pane();
+        LayoutCell cell = mock(LayoutCell.class);
+        when(cell.getNode()).thenReturn(cellPane);
+        when(selModel.getCell(0)).thenReturn(cell);
+
+        controller.navigateTo(vf, 0);
+
+        CursorState cs = controller.getCursorState();
+        assertNotNull(cs, "CursorState must be set after navigateTo");
+        assertNotNull(cs.fieldPath(),
+                      "fieldPath must be non-null when VirtualFlow has a SchemaPath");
+        assertEquals("catalog/items", cs.fieldPath(),
+                     "fieldPath should be the SchemaPath string representation");
+    }
+
+    @Test
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    void testNavigateTo_fieldPathNullWhenFlowHasNoSchemaPath() {
+        // VirtualFlow with no SchemaPath set (returns null)
+        VirtualFlow vf = mock(VirtualFlow.class);
+        when(vf.getSchemaPath()).thenReturn(null);
+        when(vf.getItemCount()).thenReturn(1);
+
+        JsonNode item = TextNode.valueOf("row0");
+        ObservableList<JsonNode> items = FXCollections.observableArrayList(item);
+        when(vf.getItems()).thenReturn(items);
+
+        MultipleCellSelection selModel = mock(MultipleCellSelection.class);
+        when(vf.getSelectionModel()).thenReturn(selModel);
+
+        Pane cellPane = new Pane();
+        LayoutCell cell = mock(LayoutCell.class);
+        when(cell.getNode()).thenReturn(cellPane);
+        when(selModel.getCell(0)).thenReturn(cell);
+
+        controller.navigateTo(vf, 0);
+
+        CursorState cs = controller.getCursorState();
+        assertNotNull(cs, "CursorState must be set after navigateTo");
+        assertNull(cs.fieldPath(),
+                   "fieldPath should be null when VirtualFlow has no SchemaPath");
     }
 
     // --- Helper ---

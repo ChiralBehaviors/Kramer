@@ -40,6 +40,7 @@ import java.util.List;
 import org.fxmisc.wellbehaved.event.template.InputMapTemplate;
 
 import com.chiralbehaviors.layout.AutoLayout;
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
@@ -422,9 +423,14 @@ public class FocusController<C extends LayoutCell<?>>
             cellCenter = new Point2D(0, 0);
         }
 
+        // Derive fieldPath from the VirtualFlow's SchemaPath (set at construction
+        // time by Outline and NestedRow from their RelationLayout).
+        SchemaPath sp = vf.getSchemaPath();
+        String fieldPath = sp != null ? sp.toString() : null;
+
         cursorState = new CursorState(
             identity,
-            null,  // fieldPath — not yet implemented; requires schema-aware lookup
+            fieldPath,
             index,
             cellCenter,
             localBounds
