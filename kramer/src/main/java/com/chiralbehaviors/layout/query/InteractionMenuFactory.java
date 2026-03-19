@@ -197,8 +197,12 @@ public final class InteractionMenuFactory {
             ? cellValue.substring(0, 27) + "..."
             : cellValue;
 
+        // Quote the literal value so expression-syntax characters in the data
+        // (like $, parentheses, operators) don't cause a ParseException.
+        String quotedValue = "\"" + cellValue.replace("\\", "\\\\")
+                                              .replace("\"", "\\\"") + "\"";
         var filterByValue = menuItem("Filter by \"" + displayValue + "\"", () ->
-            handler.apply(new LayoutInteraction.SetFilter(path, cellValue)));
+            handler.apply(new LayoutInteraction.SetFilter(path, quotedValue)));
         filterByValue.setDisable(frozen);
 
         var copyValue = menuItem("Copy value", () -> {

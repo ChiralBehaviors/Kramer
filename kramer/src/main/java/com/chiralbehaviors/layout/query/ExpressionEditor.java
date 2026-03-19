@@ -88,11 +88,17 @@ public final class ExpressionEditor extends VBox {
      * Returns empty if cancelled, or the expression text if confirmed.
      */
     public static Optional<String> showDialog(String title, String currentValue) {
+        return showDialog(title, currentValue, null);
+    }
+
+    public static Optional<String> showDialog(String title, String currentValue,
+                                               ExpressionEvaluator evaluator) {
         var dialog = new javafx.scene.control.Dialog<String>();
         dialog.setTitle(title);
         dialog.setHeaderText(null);
 
-        var editor = new ExpressionEditor();
+        var editor = evaluator != null ? new ExpressionEditor(evaluator)
+                                       : new ExpressionEditor();
         editor.setText(currentValue != null ? currentValue : "");
 
         dialog.getDialogPane().setContent(editor);

@@ -140,7 +140,7 @@ public class AutoLayoutController {
     private InteractionMenuFactory menuFactory;
     private FieldSelectorPanel fieldSelectorPanel;
     private javafx.scene.control.ToggleButton fieldSelectorToggle;
-    private volatile SchemaPath lastClickedColumnPath;
+    private SchemaPath lastClickedColumnPath;
     private volatile QueryRewriter queryRewriter;
     private volatile ServerCapabilities serverCapabilities;
     private WebEngine           webEngine;
@@ -347,11 +347,14 @@ public class AutoLayoutController {
                 contextMenu.getItems().add(new javafx.scene.control.SeparatorMenuItem());
                 var undoItem = new javafx.scene.control.MenuItem("Undo");
                 undoItem.setOnAction(e -> { if (!fetchInProgress) interactionHandler.undo(); });
-                undoItem.setDisable(!interactionHandler.canUndo() || fetchInProgress);
                 var redoItem = new javafx.scene.control.MenuItem("Redo");
                 redoItem.setOnAction(e -> { if (!fetchInProgress) interactionHandler.redo(); });
-                redoItem.setDisable(!interactionHandler.canRedo() || fetchInProgress);
                 contextMenu.getItems().addAll(undoItem, redoItem);
+                // Evaluate disable state on show so it reflects current state
+                contextMenu.setOnShowing(e -> {
+                    undoItem.setDisable(!interactionHandler.canUndo() || fetchInProgress);
+                    redoItem.setDisable(!interactionHandler.canRedo() || fetchInProgress);
+                });
                 contextMenu.show(layout, event.getScreenX(), event.getScreenY());
                 event.consume();
             }
@@ -449,7 +452,8 @@ public class AutoLayoutController {
     private static final double GRAB_ZONE = 4.0;
 
     private void installColumnResizeHandler(javafx.scene.Node columnNode, SchemaPath path) {
-        final double[] dragState = new double[2]; // [0]=startX, [1]=startWidth
+        // [0]=startX, [1]=startWidth; -1 sentinel = not dragging
+        final double[] dragState = {0, -1};
 
         columnNode.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_MOVED, e -> {
             double rightEdge = columnNode.getBoundsInLocal().getMaxX();
@@ -470,7 +474,7 @@ public class AutoLayoutController {
         });
 
         columnNode.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_DRAGGED, e -> {
-            if (dragState[1] > 0) {
+            if (dragState[1] >= 0) {
                 double delta = e.getScreenX() - dragState[0];
                 double newWidth = Math.max(20.0, dragState[1] + delta);
                 columnNode.setStyle("-fx-min-width: " + newWidth + "; -fx-pref-width: " + newWidth
@@ -480,12 +484,12 @@ public class AutoLayoutController {
         });
 
         columnNode.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_RELEASED, e -> {
-            if (dragState[1] > 0) {
+            if (dragState[1] >= 0) {
                 double delta = e.getScreenX() - dragState[0];
                 double newWidth = Math.max(20.0, dragState[1] + delta);
-                columnNode.setStyle("");  // Clear inline style so layout engine prevails
+                columnNode.setStyle("");
                 layoutQueryState.setColumnWidth(path, newWidth);
-                dragState[1] = 0;
+                dragState[1] = -1;  // reset sentinel
                 e.consume();
             }
         });
