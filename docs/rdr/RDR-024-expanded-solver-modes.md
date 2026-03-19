@@ -139,6 +139,59 @@ Run the Phase 1 binary solver first to get TABLE/OUTLINE assignments. Then, as a
 
 ---
 
+## Research Findings
+
+### RF-1: Binary bit-vector enumeration confirmed (Confidence: HIGH)
+
+`ExhaustiveConstraintSolver.java` lines 82-98: `1 << n` combinations, one bit per variable
+node. `checkFeasible()` walks `RelationConstraint.children()` — pruning is tree-structured
+and independent of the enumeration encoding. Mixed-radix replacement is mechanically
+straightforward.
+
+### RF-2: RelationRenderMode has CROSSTAB but not BAR (Confidence: HIGH)
+
+`RelationRenderMode.java`: `{AUTO, TABLE, OUTLINE, CROSSTAB}`. BAR is `PrimitiveRenderMode.BAR`
+(per-leaf, not per-Relation). BAR does not belong in the solver's mode enumeration — it is
+orthogonal. RDR-024 title mentions BAR but the proposal body correctly addresses only CROSSTAB.
+
+### RF-3: CROSSTAB infrastructure exists and is tested (Confidence: HIGH)
+
+`PivotStats` record, `CrosstabHeader/Row/Cell` JavaFX controls, `layoutCrosstab()` method,
+`buildCrosstab()` placeholder, `PIVOT_FIELD` property key. Tests in `CrosstabTest.java` and
+`PivotStatsTest.java`. Crosstab width formula: `rowHeaderWidth + pivotCount * columnWidth`.
+
+### RF-4: Gap — buildConstraintTree() lacks MeasureResult/stylesheet access (Confidence: HIGH)
+
+`AutoLayout.buildConstraintTree()` at lines 414-445 does not read `rl.getMeasureResult().pivotStats()`
+or `stylesheet.getString(path, "pivot-field", "")`. Both are needed for crosstab eligibility
+determination. The constraint builder needs `PivotStats` to compute `crosstabWidth`.
+
+### RF-5: Gap — Solver CROSSTAB assignment does not trigger layoutCrosstab() (Confidence: HIGH)
+
+`RelationLayout.layout()` at lines 741-755 treats CROSSTAB as OUTLINE for width computation.
+`layoutCrosstab()` is only called directly during `measure()`, not from the solver integration
+path. The solver can assign CROSSTAB but it has no effect on rendering.
+
+### RF-6: checkFeasible() needs CROSSTAB branch (Confidence: HIGH)
+
+`ExhaustiveConstraintSolver.checkFeasible()` at lines 138-184 only checks TABLE and OUTLINE
+feasibility. A CROSSTAB branch is needed: `crosstabWidth <= availableWidth`, with correct
+child-width propagation for crosstab parent (row-header width, not full parent width).
+
+### RF-7: Cardinality data available but unused by solver (Confidence: HIGH)
+
+`MeasureResult` has `averageCardinality`, `maxCardinality`, `averageChildCardinality`,
+`PivotStats.pivotCount()`. The solver currently uses only width-based constraints. Cardinality
+data is available via `rl.getMeasureResult()` for future constraint refinement.
+
+### RF-8: Mixed-radix preserves pruning invariant (Confidence: HIGH)
+
+Tree-structured pruning in `checkFeasible()` walks the `RelationConstraint` tree, not the
+enumeration counter. DFS-order tiebreak is preserved if the variable list stays in DFS order.
+Risk "Mixed-radix breaks pruning" is LOW, not MEDIUM.
+
+---
+
 ## Risks
 
 | Risk | Severity | Mitigation |
