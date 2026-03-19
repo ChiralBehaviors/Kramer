@@ -23,6 +23,10 @@ import java.util.List;
  *                                {@code Double.MAX_VALUE} if parent width is unknown
  * @param children                constraints for direct Relation children
  * @param hardCrosstab            true when useCrosstab is explicitly set; fixed in solver
+ * @param crosstabWidth           minimum feasibility width for CROSSTAB; 0 if not eligible
+ *                                (RDR-024: conservative approximation via mr.columnWidth())
+ * @param crosstabEligible        true iff pivot-field is configured and pivotStats non-empty
+ *                                (RDR-024)
  */
 public record RelationConstraint(
         SchemaPath path,
@@ -31,7 +35,9 @@ public record RelationConstraint(
         double availableWidthAsOutline,
         double availableWidthAsTable,
         List<RelationConstraint> children,
-        boolean hardCrosstab
+        boolean hardCrosstab,
+        double crosstabWidth,
+        boolean crosstabEligible
 ) {
     public RelationConstraint {
         children = children == null ? List.of() : List.copyOf(children);
@@ -53,5 +59,20 @@ public record RelationConstraint(
      */
     public boolean fitsTableInParentTable() {
         return tableWidth + nestedHorizontalInset <= availableWidthAsTable;
+    }
+
+    /**
+     * Returns true when this node's CROSSTAB rendering fits within its
+     * outline-mode available width.
+     */
+    public boolean fitsCrosstab() {
+        return crosstabEligible && crosstabWidth + nestedHorizontalInset <= availableWidthAsOutline;
+    }
+
+    /**
+     * Returns true when CROSSTAB fits in parent TABLE mode width.
+     */
+    public boolean fitsCrosstabInParentTable() {
+        return crosstabEligible && crosstabWidth + nestedHorizontalInset <= availableWidthAsTable;
     }
 }

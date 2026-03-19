@@ -30,7 +30,9 @@ class ConstraintSolverTest {
                 available,
                 Double.MAX_VALUE,
                 List.of(),
-                hardCrosstab
+                hardCrosstab,
+                0.0,
+                false
         );
     }
 
@@ -73,17 +75,17 @@ class ConstraintSolverTest {
         //   outline available=50 → fitsTable: 45 ≤ 50 ✓
         //   table available=55  → fitsTableInParentTable: 45 ≤ 55 ✓
         RelationConstraint childA = new RelationConstraint(
-                childAPath, 40.0, 5.0, 50.0, 55.0, List.of(), false);
+                childAPath, 40.0, 5.0, 50.0, 55.0, List.of(), false, 0.0, false);
 
         // child "b": tableWidth=60, nestedInset=5
         //   outline available=50 → fitsTable: 65 > 50 ✗
         //   table available=55  → fitsTableInParentTable: 65 > 55 ✗
         RelationConstraint childB = new RelationConstraint(
-                childBPath, 60.0, 5.0, 50.0, 55.0, List.of(), false);
+                childBPath, 60.0, 5.0, 50.0, 55.0, List.of(), false, 0.0, false);
 
         // parent: tableWidth=110, nestedInset=5, available=200 → fits
         RelationConstraint parent = new RelationConstraint(
-                parentPath, 110.0, 5.0, 200.0, Double.MAX_VALUE, List.of(childA, childB), false);
+                parentPath, 110.0, 5.0, 200.0, Double.MAX_VALUE, List.of(childA, childB), false, 0.0, false);
 
         Map<SchemaPath, RelationRenderMode> result = SOLVER.solve(parent);
 
@@ -109,11 +111,11 @@ class ConstraintSolverTest {
         // This test verifies the parent→child width propagation is correct.
 
         RelationConstraint child = new RelationConstraint(
-                childPath, 40.0, 5.0, 60.0, Double.MAX_VALUE, List.of(), false);
+                childPath, 40.0, 5.0, 60.0, Double.MAX_VALUE, List.of(), false, 0.0, false);
 
         // Parent fits (tableWidth=60, nestedInset=5, available=100 → 65 ≤ 100)
         RelationConstraint parent = new RelationConstraint(
-                parentPath, 60.0, 5.0, 100.0, Double.MAX_VALUE, List.of(child), false);
+                parentPath, 60.0, 5.0, 100.0, Double.MAX_VALUE, List.of(child), false, 0.0, false);
 
         Map<SchemaPath, RelationRenderMode> result = SOLVER.solve(parent);
 
@@ -135,16 +137,16 @@ class ConstraintSolverTest {
         // Create 16 child relation nodes — 8 that fit, 8 that don't
         for (int i = 0; i < 8; i++) {
             SchemaPath p = rootPath.child("fits" + i);
-            children.add(new RelationConstraint(p, 40.0, 5.0, 50.0, Double.MAX_VALUE, List.of(), false));
+            children.add(new RelationConstraint(p, 40.0, 5.0, 50.0, Double.MAX_VALUE, List.of(), false, 0.0, false));
         }
         for (int i = 0; i < 8; i++) {
             SchemaPath p = rootPath.child("nope" + i);
-            children.add(new RelationConstraint(p, 60.0, 5.0, 50.0, Double.MAX_VALUE, List.of(), false));
+            children.add(new RelationConstraint(p, 60.0, 5.0, 50.0, Double.MAX_VALUE, List.of(), false, 0.0, false));
         }
 
         // root itself fits
         RelationConstraint root = new RelationConstraint(
-                rootPath, 200.0, 5.0, 1000.0, Double.MAX_VALUE, children, false);
+                rootPath, 200.0, 5.0, 1000.0, Double.MAX_VALUE, children, false, 0.0, false);
 
         Map<SchemaPath, RelationRenderMode> result = SOLVER.solve(root);
 

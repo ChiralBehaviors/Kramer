@@ -433,6 +433,15 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
                 .map(c -> buildConstraintTree(c, childAvailableOutline, childAvailableTable))
                 .filter(Objects::nonNull)
                 .toList();
+        // RDR-024: compute CROSSTAB feasibility fields
+        MeasureResult mr = rl.getMeasureResult();
+        String pivotField = model.getStylesheet().getString(rl.getSchemaPath(),
+                                                            LayoutPropertyKeys.PIVOT_FIELD, "");
+        boolean crosstabEligible = !pivotField.isEmpty()
+                && mr != null
+                && mr.pivotStats() != null
+                && mr.pivotStats().pivotCount() > 0;
+        double crosstabWidth = crosstabEligible ? mr.columnWidth() : 0.0;
         return new RelationConstraint(
                 rl.getSchemaPath(),
                 tableWidth,
@@ -440,7 +449,9 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
                 width,
                 availableWidthAsTable,
                 childConstraints,
-                rl.isCrosstab()
+                rl.isCrosstab(),
+                crosstabWidth,
+                crosstabEligible
         );
     }
 
