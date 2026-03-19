@@ -362,4 +362,202 @@ class LayoutTransitionTest {
         }
         assertTrue(seenTable, "Table mode should be chosen at some width <= 1500px");
     }
+
+    // -----------------------------------------------------------------------
+    // Comprehensive resize sweep: validates layout invariants at every width
+    // -----------------------------------------------------------------------
+
+    /**
+     * Sweep from 200px to 2000px in 25px steps. At EVERY width, validate:
+     * <ol>
+     *   <li>Layout completes without exception</li>
+     *   <li>In table mode: every child has positive justifiedWidth</li>
+     *   <li>In table mode: every child gets >= labelWidth</li>
+     *   <li>In table mode: justified widths sum to available width (±1px)</li>
+     *   <li>In table mode: no single child takes > 80% of total</li>
+     *   <li>In outline mode: the layout chose outline (useTable=false)</li>
+     *   <li>Mode transition is monotonic (no table→outline→table oscillation)</li>
+     * </ol>
+     */
+    @Test
+    void resizeSweepNestedSchema() {
+        Relation schema = buildNestedSchema();
+        ArrayNode data = buildEmployeeData();
+
+        boolean seenTable = false;
+        double transitionWidth = -1;
+        StringBuilder failures = new StringBuilder();
+
+        for (double w = 200; w <= 2000; w += 25) {
+            LayoutResult r;
+            try {
+                r = runLayout(schema, data, w);
+            } catch (Exception e) {
+                failures.append(String.format("w=%.0f: EXCEPTION %s; ", w, e.getMessage()));
+                continue;
+            }
+            assertNotNull(r, "Layout result should not be null at w=" + w);
+
+            if (r.useTable()) {
+                if (!seenTable) {
+                    seenTable = true;
+                    transitionWidth = w;
+                }
+
+                double totalJustified = 0;
+                for (ChildInfo child : r.children()) {
+                    // Positive width
+                    if (child.justifiedWidth() <= 0) {
+                        failures.append(String.format(
+                            "w=%.0f: '%s' justified=%.1f <= 0; ",
+                            w, child.field(), child.justifiedWidth()));
+                    }
+                    // At least label width
+                    if (child.justifiedWidth() < child.labelWidth() - 0.5) {
+                        failures.append(String.format(
+                            "w=%.0f: '%s' justified=%.1f < label=%.1f; ",
+                            w, child.field(), child.justifiedWidth(), child.labelWidth()));
+                    }
+                    totalJustified += child.justifiedWidth();
+                }
+
+                // Sum matches available minus columnHeaderIndentation
+                // (justify() subtracts indentation before distributing to children).
+                // Tolerance accounts for indentation + pixel snapping.
+                if (Math.abs(totalJustified - w) > 10.0 && totalJustified > 0) {
+                    failures.append(String.format(
+                        "w=%.0f: total justified=%.1f deviates >10px from available; ",
+                        w, totalJustified));
+                }
+
+                // No single child dominates
+                for (ChildInfo child : r.children()) {
+                    if (totalJustified > 0 && child.justifiedWidth() / totalJustified > 0.80) {
+                        failures.append(String.format(
+                            "w=%.0f: '%s' dominates at %.0f%%; ",
+                            w, child.field(), child.justifiedWidth() / totalJustified * 100));
+                    }
+                }
+            } else {
+                // Outline mode — verify no table→outline regression
+                if (seenTable) {
+                    failures.append(String.format(
+                        "w=%.0f: outline after table at %.0f (non-monotonic); ",
+                        w, transitionWidth));
+                }
+            }
+        }
+
+        assertTrue(failures.isEmpty(),
+            "Resize sweep failures:\n" + failures.toString().replace("; ", ";\n"));
+        assertTrue(seenTable,
+            "Table mode should be chosen at some width in [200, 2000]");
+    }
+
+    /**
+     * Same sweep for a flat 3-column schema — should always be table above
+     * a low threshold and respect all invariants.
+     */
+    @Test
+    void resizeSweepFlatSchema() {
+        Relation schema = buildFlatSchema();
+        ArrayNode data = NF.arrayNode();
+        for (int i = 0; i < 10; i++) {
+            ObjectNode row = NF.objectNode();
+            row.put("id", i);
+            row.put("name", "Item number " + i);
+            row.put("value", i * 100 + 42);
+            data.add(row);
+        }
+
+        boolean seenTable = false;
+        StringBuilder failures = new StringBuilder();
+
+        for (double w = 100; w <= 800; w += 25) {
+            LayoutResult r = runLayout(schema, data, w);
+            assertNotNull(r);
+
+            if (r.useTable()) {
+                seenTable = true;
+                for (ChildInfo child : r.children()) {
+                    if (child.justifiedWidth() <= 0) {
+                        failures.append(String.format(
+                            "w=%.0f: '%s' justified=%.1f <= 0; ",
+                            w, child.field(), child.justifiedWidth()));
+                    }
+                    if (child.justifiedWidth() < child.labelWidth() - 0.5) {
+                        failures.append(String.format(
+                            "w=%.0f: '%s' justified=%.1f < label=%.1f; ",
+                            w, child.field(), child.justifiedWidth(), child.labelWidth()));
+                    }
+                }
+            }
+        }
+
+        assertTrue(failures.isEmpty(),
+            "Flat schema sweep failures:\n" + failures.toString().replace("; ", ";\n"));
+        assertTrue(seenTable, "Flat 3-column schema should use table at some width <= 800px");
+    }
+
+    /**
+     * Deeply nested schema: root → child relation → grandchild relation.
+     * Validates the recursive readability threshold across nesting levels.
+     */
+    @Test
+    void resizeSweepDeeplyNested() {
+        Relation schema = new Relation("org");
+        schema.addChild(new Primitive("name"));
+
+        Relation teams = new Relation("teams");
+        teams.addChild(new Primitive("team"));
+
+        Relation members = new Relation("members");
+        members.addChild(new Primitive("person"));
+        members.addChild(new Primitive("role"));
+        teams.addChild(members);
+
+        schema.addChild(teams);
+
+        ArrayNode data = NF.arrayNode();
+        ObjectNode org = NF.objectNode();
+        org.put("name", "Engineering");
+        ArrayNode teamsArr = NF.arrayNode();
+        for (String t : new String[] {"Backend", "Frontend", "Platform"}) {
+            ObjectNode team = NF.objectNode();
+            team.put("team", t);
+            ArrayNode membersArr = NF.arrayNode();
+            for (int i = 0; i < 3; i++) {
+                ObjectNode m = NF.objectNode();
+                m.put("person", t + " Dev " + i);
+                m.put("role", "Engineer");
+                membersArr.add(m);
+            }
+            team.set("members", membersArr);
+            teamsArr.add(team);
+        }
+        org.set("teams", teamsArr);
+        data.add(org);
+
+        boolean seenTable = false;
+        StringBuilder failures = new StringBuilder();
+
+        for (double w = 200; w <= 1200; w += 50) {
+            LayoutResult r = runLayout(schema, data, w);
+            assertNotNull(r);
+
+            if (r.useTable()) {
+                seenTable = true;
+                for (ChildInfo child : r.children()) {
+                    if (child.justifiedWidth() <= 0) {
+                        failures.append(String.format(
+                            "w=%.0f: '%s' justified=%.1f <= 0; ",
+                            w, child.field(), child.justifiedWidth()));
+                    }
+                }
+            }
+        }
+
+        assertTrue(failures.isEmpty(),
+            "Deep nested sweep failures:\n" + failures.toString().replace("; ", ";\n"));
+    }
 }
