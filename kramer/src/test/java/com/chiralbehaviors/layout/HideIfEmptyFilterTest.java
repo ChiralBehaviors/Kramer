@@ -324,6 +324,106 @@ class HideIfEmptyFilterTest {
     }
 
     // -----------------------------------------------------------------------
+    // Tests for deep recursive empty-check (Kramer-i4ph)
+    // -----------------------------------------------------------------------
+
+    /**
+     * 3-level nesting: parent → child Relation (non-empty) → grandchild Relation (empty).
+     * The child array is non-empty but every item in it has an empty grandchild array.
+     * With the deep check, the row must be filtered out.
+     */
+    @Test
+    void deepEmptyCheckFiltersNestedEmpty() {
+        // Schema: parent has "sections" (Relation) → each section has "items" (Relation) → each item has "label" (Primitive)
+        Relation grandchild = new Relation("items");
+        grandchild.addChild(new Primitive("label"));
+
+        Relation child = new Relation("sections");
+        child.addChild(grandchild);
+
+        Relation parent = new Relation("rows");
+        parent.addChild(child);
+        parent.setHideIfEmpty(true);
+
+        // Data: one section exists, but its "items" array is empty
+        ObjectNode sectionWithNoItems = JsonNodeFactory.instance.objectNode();
+        sectionWithNoItems.set("items", JsonNodeFactory.instance.arrayNode()); // empty grandchild
+
+        ArrayNode sections = JsonNodeFactory.instance.arrayNode();
+        sections.add(sectionWithNoItems);
+
+        ObjectNode row = JsonNodeFactory.instance.objectNode();
+        row.set("sections", sections); // child exists and non-empty, but grandchild empty
+
+        ArrayNode data = JsonNodeFactory.instance.arrayNode();
+        data.add(row);
+
+        // hasNonEmptyChildren should return false because the grandchild items are empty
+        boolean result = RelationLayout.hasNonEmptyChildren(row, parent);
+        assertFalse(result,
+                    "deepEmptyCheck: row with non-empty child but empty grandchild must be filtered");
+    }
+
+    /**
+     * 3-level nesting: parent → child Relation (non-empty) → grandchild Relation (non-empty).
+     * The grandchild has actual data, so the row must be kept.
+     */
+    @Test
+    void deepEmptyCheckKeepsNestedNonEmpty() {
+        Relation grandchild = new Relation("items");
+        grandchild.addChild(new Primitive("label"));
+
+        Relation child = new Relation("sections");
+        child.addChild(grandchild);
+
+        Relation parent = new Relation("rows");
+        parent.addChild(child);
+        parent.setHideIfEmpty(true);
+
+        // Data: one section with one item that has a label
+        ObjectNode item = JsonNodeFactory.instance.objectNode();
+        item.put("label", "hello");
+
+        ArrayNode items = JsonNodeFactory.instance.arrayNode();
+        items.add(item);
+
+        ObjectNode section = JsonNodeFactory.instance.objectNode();
+        section.set("items", items);
+
+        ArrayNode sections = JsonNodeFactory.instance.arrayNode();
+        sections.add(section);
+
+        ObjectNode row = JsonNodeFactory.instance.objectNode();
+        row.set("sections", sections);
+
+        boolean result = RelationLayout.hasNonEmptyChildren(row, parent);
+        assertTrue(result,
+                   "deepEmptyCheck: row with non-empty grandchild must be kept");
+    }
+
+    /**
+     * 2-level nesting (flat schema): existing behavior preserved.
+     * parent → tags (Relation). Row with non-empty tags is kept; row without is filtered.
+     */
+    @Test
+    void shallowStillWorksForFlatSchema() {
+        Relation schema = buildParentSchema("rows");
+        schema.setHideIfEmpty(true);
+
+        RelationLayout layout = buildLayout(schema);
+        Style model = mockModel(schema);
+
+        ArrayNode data = buildData(
+            buildRow("Keep", "tag1", "tag2"),
+            buildRow("Drop")
+        );
+
+        List<String> names = namesAfterMeasure(layout, data, model);
+        assertEquals(List.of("Keep"), names,
+                     "shallowStillWorks: flat 2-level schema must still filter correctly");
+    }
+
+    // -----------------------------------------------------------------------
     // Test: extractFrom() applies same filter as measure() for build-phase consistency
     // -----------------------------------------------------------------------
 

@@ -198,18 +198,36 @@ public final class RelationLayout extends SchemaNodeLayout {
         };
     }
 
+    private static final int MAX_EMPTY_CHECK_DEPTH = 10;
+
     /**
      * Returns true if the item has at least one child Relation field that is a
-     * non-empty array, or if the relation has no Relation children at all.
+     * non-empty array with at least one item that itself has non-empty children
+     * (recursively), or if the relation has no Relation children at all.
+     * Recursion is capped at MAX_EMPTY_CHECK_DEPTH to prevent stack overflow.
      */
     static boolean hasNonEmptyChildren(JsonNode item, Relation relation) {
+        return hasNonEmptyChildren(item, relation, 0);
+    }
+
+    private static boolean hasNonEmptyChildren(JsonNode item, Relation relation, int depth) {
         boolean hasRelationChild = false;
         for (SchemaNode child : relation.getChildren()) {
             if (child.isRelation()) {
                 hasRelationChild = true;
                 JsonNode childData = item.get(child.getField());
                 if (childData != null && childData.isArray() && childData.size() > 0) {
-                    return true;
+                    if (depth >= MAX_EMPTY_CHECK_DEPTH) {
+                        // Depth limit reached — treat non-empty array as having data
+                        return true;
+                    }
+                    Relation childRelation = (Relation) child;
+                    // Recurse: the child array must have at least one item with non-empty children
+                    for (JsonNode grandchild : childData) {
+                        if (hasNonEmptyChildren(grandchild, childRelation, depth + 1)) {
+                            return true;
+                        }
+                    }
                 }
             }
         }
