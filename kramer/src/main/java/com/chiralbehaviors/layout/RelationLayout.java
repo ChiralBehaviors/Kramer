@@ -1337,17 +1337,27 @@ public final class RelationLayout extends SchemaNodeLayout {
         if (surplus <= 0) {
             // Not enough space for minimums — scale proportionally
             SchemaNodeLayout last = children.get(children.size() - 1);
-            double rem = available;
-            for (SchemaNodeLayout child : children) {
-                double childJustified;
-                if (child.equals(last)) {
-                    childJustified = Math.max(0.0, rem);
-                } else {
-                    double minW = minimumChildWidth(child);
-                    childJustified = Style.relax(available * (minW / minimumTotal));
-                    rem -= childJustified;
+            double rem = Math.max(0.0, available);
+            if (minimumTotal <= 0) {
+                // No minimum information — distribute equally
+                double share = Style.relax(rem / children.size());
+                for (SchemaNodeLayout child : children) {
+                    double w = child.equals(last) ? Math.max(0.0, rem) : share;
+                    rem -= w;
+                    child.justify(w);
                 }
-                child.justify(childJustified);
+            } else {
+                for (SchemaNodeLayout child : children) {
+                    double childJustified;
+                    if (child.equals(last)) {
+                        childJustified = Math.max(0.0, rem);
+                    } else {
+                        double minW = minimumChildWidth(child);
+                        childJustified = Math.max(0.0, Style.relax(rem * (minW / minimumTotal)));
+                        rem -= childJustified;
+                    }
+                    child.justify(childJustified);
+                }
             }
             return;
         }

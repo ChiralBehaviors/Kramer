@@ -52,7 +52,7 @@ public class ColumnHeader extends VBox {
         if (sortArrow == null) {
             sortArrow = new Label();
             sortArrow.getStyleClass().add("sort-arrow");
-            getChildren().add(sortArrow);
+            getChildren().add(0, sortArrow);
         }
 
         getStyleClass().removeAll("sorted-asc", "sorted-desc");
