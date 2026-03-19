@@ -248,6 +248,42 @@ public final class RelationLayout extends SchemaNodeLayout {
         return result;
     }
 
+    /**
+     * Remove consecutive duplicate rows. Two adjacent rows are duplicates if all
+     * their top-level field values are equal (compared as text). Returns a new
+     * ArrayNode with duplicates removed. Matches SIEUFERD COLLAPSEDUPLICATEROWS.
+     */
+    static ArrayNode collapseDuplicateRows(ArrayNode source) {
+        ArrayNode result = JsonNodeFactory.instance.arrayNode();
+        JsonNode prev = null;
+        for (JsonNode row : source) {
+            if (prev == null || !rowsEqual(prev, row)) {
+                result.add(row);
+            }
+            prev = row;
+        }
+        return result;
+    }
+
+    private static boolean rowsEqual(JsonNode a, JsonNode b) {
+        if (a.size() != b.size()) return false;
+        // Check all fields in a against b
+        var aFields = a.fieldNames();
+        while (aFields.hasNext()) {
+            String field = aFields.next();
+            String va = a.path(field).asText("");
+            String vb = b.path(field).asText("");
+            if (!va.equals(vb)) return false;
+        }
+        // Check fields in b not in a
+        var bFields = b.fieldNames();
+        while (bFields.hasNext()) {
+            String field = bFields.next();
+            if (!a.has(field)) return false;
+        }
+        return true;
+    }
+
     private static final List<String>  AUTO_SORT_CANDIDATES = List.of("id", "key", "name");
     private static final Logger        LOG                  = Logger.getLogger(RelationLayout.class.getName());
 
@@ -275,6 +311,8 @@ public final class RelationLayout extends SchemaNodeLayout {
     private Predicate<JsonNode>            hideIfEmptyFilter;
     /** Aggregate expression results keyed by child field name. Populated during measure(). */
     private Map<String, Object>            aggregateResults;
+    /** Cached aggregate-position from stylesheet; null = hidden. Root-level only. */
+    private String                         aggregatePosition;
     /** Compiled filter expression AST; null when no filter-expression is set. */
     private Expr                           filterExprAst;
     /** Ordered list of (field, ast) pairs for formula overlay; empty when no formulas. */
@@ -614,6 +652,11 @@ public final class RelationLayout extends SchemaNodeLayout {
         return aggregateResults;
     }
 
+    /** Cached aggregate-position from stylesheet; null = hidden. */
+    public String getAggregatePosition() {
+        return aggregatePosition;
+    }
+
     /** Returns true when every descendant PrimitiveLayout has converged.
      *  allMatch on empty stream is vacuously true — a relation with no children is trivially stable. */
     @Override
@@ -782,9 +825,13 @@ public final class RelationLayout extends SchemaNodeLayout {
             }
         }
 
-        // Paper §3.3: use table whenever it fits the available width from parent
-        // Include nestedHorizontalInset which nestTableColumn() will add
-        if (tableWidth + style.getNestedHorizontalInset() <= width) {
+        // Paper §3.3: use table when it fits the available width from parent.
+        // Readability threshold: each leaf column needs at least
+        // max(effectiveWidth, 2 * labelWidth) — enough for the header plus
+        // a minimum of displayable content. Without this, a table with many
+        // columns is chosen at widths where every column truncates its data.
+        double readableWidth = readableTableWidth();
+        if (readableWidth + style.getNestedHorizontalInset() <= width) {
             return nestTableColumn(Indent.TOP, new Insets(0));
         }
         return columnWidth();
@@ -870,6 +917,9 @@ public final class RelationLayout extends SchemaNodeLayout {
         // Reset expression state from previous measure
         filterExprAst = null;
         formulaEntries = List.of();
+        aggregatePosition = (stylesheet != null && myPath != null)
+            ? stylesheet.getString(myPath, LayoutPropertyKeys.AGGREGATE_POSITION, null)
+            : null;
         sortExprAst = null;
         cachedEvaluator = evaluator;
         aggregateResults = null;
@@ -1007,6 +1057,13 @@ public final class RelationLayout extends SchemaNodeLayout {
             }
         }
         // --- End expression pipeline ---
+
+        // 5. collapse-duplicates: remove consecutive duplicate rows (SIEUFERD COLLAPSEDUPLICATEROWS)
+        if (stylesheet != null && myPath != null
+            && stylesheet.getBoolean(myPath, LayoutPropertyKeys.COLLAPSE_DUPLICATES, false)
+            && datum instanceof ArrayNode arr && arr.size() > 1) {
+            datum = collapseDuplicateRows(arr);
+        }
 
         // Collect pivot values AFTER sort+filter, BEFORE child iteration.
         // Reads pivot-field from stylesheet; if non-empty, scans datum for distinct values.
@@ -1261,39 +1318,33 @@ public final class RelationLayout extends SchemaNodeLayout {
         // Phase 2 recomputes available width from effectiveChildWidth(),
         // which automatically reflects the post-un-rotation state.
 
-        // Partition children into fixed-length and variable-length
-        // RelationLayout children are treated as variable-length by default
-        List<SchemaNodeLayout> variableChildren = new ArrayList<>();
-        double fixedTotal = 0;
-        double varNaturalTotal = 0;
+        // Two-pass minimum-guarantee distribution (Bakke §3.3).
+        //
+        // Pass 1: guarantee each child at least its minimum readable width
+        // (labelWidth for primitives, recursive sum for relations). This
+        // prevents nested relations — whose aggregate tableColumnWidth
+        // dominates — from starving sibling primitives.
+        //
+        // Pass 2: distribute surplus proportionally based on each child's
+        // natural width above its minimum.
 
+        double minimumTotal = 0;
         for (SchemaNodeLayout child : children) {
-            double ew = effectiveChildWidth(child);
-            if (child instanceof PrimitiveLayout pl && !pl.isVariableLength()) {
-                fixedTotal += ew;
-            } else {
-                variableChildren.add(child);
-                varNaturalTotal += ew;
-            }
+            minimumTotal += minimumChildWidth(child);
         }
 
-        // Edge case: no variable-length children → proportional for all
-        if (variableChildren.isEmpty()) {
-            if (fixedTotal <= 0) {
-                double equalShare = Style.relax(available / children.size());
-                children.forEach(c -> c.justify(equalShare));
-                return;
-            }
-            double totalEffective = fixedTotal;
-            double rem = available;
+        double surplus = available - minimumTotal;
+        if (surplus <= 0) {
+            // Not enough space for minimums — scale proportionally
             SchemaNodeLayout last = children.get(children.size() - 1);
+            double rem = available;
             for (SchemaNodeLayout child : children) {
                 double childJustified;
                 if (child.equals(last)) {
-                    childJustified = rem;
+                    childJustified = Math.max(0.0, rem);
                 } else {
-                    double ew = effectiveChildWidth(child);
-                    childJustified = Style.relax(available * (ew / totalEffective));
+                    double minW = minimumChildWidth(child);
+                    childJustified = Style.relax(available * (minW / minimumTotal));
                     rem -= childJustified;
                 }
                 child.justify(childJustified);
@@ -1301,30 +1352,26 @@ public final class RelationLayout extends SchemaNodeLayout {
             return;
         }
 
-        // Phase 2a: justify fixed-length children at effective width
+        // Surplus distribution: each child gets minimum + proportional share
+        // of surplus based on (effectiveWidth - minimum).
+        double surplusWeightTotal = 0;
         for (SchemaNodeLayout child : children) {
-            if (child instanceof PrimitiveLayout pl && !pl.isVariableLength()) {
-                child.justify(effectiveChildWidth(child));
-            }
+            surplusWeightTotal += Math.max(0, effectiveChildWidth(child) - minimumChildWidth(child));
         }
 
-        // Phase 2b: distribute remaining to variable-length children
-        double varAvailable = available - fixedTotal;
-        if (varNaturalTotal <= 0) {
-            double equalShare = Style.relax(varAvailable / variableChildren.size());
-            variableChildren.forEach(c -> c.justify(equalShare));
-            return;
-        }
-        SchemaNodeLayout lastVar = variableChildren.get(variableChildren.size() - 1);
-        double varRemaining = varAvailable;
-        for (SchemaNodeLayout child : variableChildren) {
+        SchemaNodeLayout last = children.get(children.size() - 1);
+        double remaining = available;
+        for (SchemaNodeLayout child : children) {
             double childJustified;
-            if (child.equals(lastVar)) {
-                childJustified = Math.max(0.0, varRemaining); // anti-drift, clamp
+            if (child.equals(last)) {
+                childJustified = Math.max(0.0, remaining); // anti-drift
             } else {
-                double ew = effectiveChildWidth(child);
-                childJustified = Style.relax(varAvailable * (ew / varNaturalTotal));
-                varRemaining -= childJustified;
+                double minW = minimumChildWidth(child);
+                double surplusShare = surplusWeightTotal > 0
+                    ? surplus * (Math.max(0, effectiveChildWidth(child) - minW) / surplusWeightTotal)
+                    : surplus / children.size();
+                childJustified = Style.relax(minW + surplusShare);
+                remaining -= childJustified;
             }
             child.justify(childJustified);
         }
@@ -1336,6 +1383,50 @@ public final class RelationLayout extends SchemaNodeLayout {
             return Math.max(pl.tableColumnWidth(), pl.getLabelWidth());
         }
         return child.tableColumnWidth();
+    }
+
+    /**
+     * Minimum table width for the table to be readable. Each leaf column
+     * needs at least max(effectiveWidth, 2 * labelWidth) — space for the
+     * header plus enough room for displayable content.
+     */
+    double readableTableWidth() {
+        return children.stream()
+            .mapToDouble(this::readableChildWidth)
+            .sum()
+            + style.getRowCellHorizontalInset()
+            + style.getRowHorizontalInset();
+    }
+
+    private double readableChildWidth(SchemaNodeLayout child) {
+        if (child instanceof RelationLayout rl) {
+            return rl.getChildren().stream()
+                .mapToDouble(this::readableChildWidth)
+                .sum();
+        }
+        // Each column needs its measured content width plus label-width of
+        // headroom. This accommodates values that exceed P90 measurement
+        // and prevents table mode at widths that produce heavy truncation.
+        return effectiveChildWidth(child) + child.getLabelWidth();
+    }
+
+    /**
+     * Minimum width a child must receive to remain readable.
+     * For primitives: labelWidth (enough to show the header).
+     * For relations: sum of children's minimums (recursive).
+     */
+    private double minimumChildWidth(SchemaNodeLayout child) {
+        if (child instanceof PrimitiveLayout pl) {
+            return pl.getLabelWidth();
+        }
+        if (child instanceof RelationLayout rl) {
+            double sum = 0;
+            for (SchemaNodeLayout grandchild : rl.getChildren()) {
+                sum += minimumChildWidth(grandchild);
+            }
+            return Math.max(sum, child.getLabelWidth());
+        }
+        return child.getLabelWidth();
     }
 
     protected int resolveCardinality(int cardinality) {

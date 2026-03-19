@@ -21,7 +21,8 @@ import com.chiralbehaviors.layout.SchemaPath;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 
 /**
  * Factory for building JavaFX context menus that dispatch
@@ -60,29 +61,43 @@ public final class InteractionMenuFactory {
         var menu = new ContextMenu();
         String fieldName = path.leaf();
         String sortSuffix = paginationContext.isPageLocal() ? " (page only)" : "";
+        FieldState fs = queryState.getFieldState(path);
+        boolean frozen = Boolean.TRUE.equals(fs.frozen());
 
         // Sort
-        menu.getItems().add(menuItem("Sort ascending" + sortSuffix, () ->
-            handler.apply(new LayoutInteraction.SortBy(path, false))));
-        menu.getItems().add(menuItem("Sort descending" + sortSuffix, () ->
-            handler.apply(new LayoutInteraction.SortBy(path, true))));
+        var sortAsc = menuItem("Sort ascending" + sortSuffix + "  \u2318\u2191", () ->
+            handler.apply(new LayoutInteraction.SortBy(path, false)));
+        var sortDesc = menuItem("Sort descending" + sortSuffix + "  \u2318\u2193", () ->
+            handler.apply(new LayoutInteraction.SortBy(path, true)));
+        sortAsc.setDisable(frozen);
+        sortDesc.setDisable(frozen);
+        menu.getItems().addAll(sortAsc, sortDesc);
+        if (fs.sortFields() != null && !fs.sortFields().isEmpty()) {
+            var clearSort = menuItem("Clear sort", () ->
+                handler.apply(new LayoutInteraction.ClearSort(path)));
+            clearSort.setDisable(frozen);
+            menu.getItems().add(clearSort);
+        }
 
         menu.getItems().add(new SeparatorMenuItem());
 
         // Visibility
         boolean visible = queryState.getVisibleOrDefault(path);
-        menu.getItems().add(menuItem(visible ? "Hide" : "Show", () ->
-            handler.apply(new LayoutInteraction.ToggleVisible(path))));
+        var visItem = menuItem(visible ? "Hide" : "Show", () ->
+            handler.apply(new LayoutInteraction.ToggleVisible(path)));
+        visItem.setDisable(frozen);
+        menu.getItems().add(visItem);
 
         menu.getItems().add(new SeparatorMenuItem());
 
         // Filter
-        FieldState fs = queryState.getFieldState(path);
         if (fs.filterExpression() != null) {
-            menu.getItems().add(menuItem("Clear filter", () ->
-                handler.apply(new LayoutInteraction.ClearFilter(path))));
+            var clearFilter = menuItem("Clear filter", () ->
+                handler.apply(new LayoutInteraction.ClearFilter(path)));
+            clearFilter.setDisable(frozen);
+            menu.getItems().add(clearFilter);
         }
-        menu.getItems().add(menuItem("Filter...", () -> {
+        var filterItem = menuItem("Filter...", () -> {
             promptExpression("Filter expression for " + fieldName,
                 fs.filterExpression())
                 .ifPresent(expr -> {
@@ -92,14 +107,18 @@ public final class InteractionMenuFactory {
                         handler.apply(new LayoutInteraction.SetFilter(path, expr));
                     }
                 });
-        }));
+        });
+        filterItem.setDisable(frozen);
+        menu.getItems().add(filterItem);
 
         // Formula
         if (fs.formulaExpression() != null) {
-            menu.getItems().add(menuItem("Clear formula", () ->
-                handler.apply(new LayoutInteraction.ClearFormula(path))));
+            var clearFormula = menuItem("Clear formula", () ->
+                handler.apply(new LayoutInteraction.ClearFormula(path)));
+            clearFormula.setDisable(frozen);
+            menu.getItems().add(clearFormula);
         }
-        menu.getItems().add(menuItem("Formula...", () -> {
+        var formulaItem = menuItem("Formula...", () -> {
             promptExpression("Formula for " + fieldName,
                 fs.formulaExpression())
                 .ifPresent(expr -> {
@@ -109,7 +128,39 @@ public final class InteractionMenuFactory {
                         handler.apply(new LayoutInteraction.SetFormula(path, expr));
                     }
                 });
-        }));
+        });
+        formulaItem.setDisable(frozen);
+        menu.getItems().add(formulaItem);
+
+        // Aggregate
+        if (fs.aggregateExpression() != null) {
+            var clearAggregate = menuItem("Clear aggregate", () ->
+                handler.apply(new LayoutInteraction.ClearAggregate(path)));
+            clearAggregate.setDisable(frozen);
+            menu.getItems().add(clearAggregate);
+        }
+        var aggregateItem = menuItem("Aggregate...", () -> {
+            promptExpression("Aggregate for " + fieldName,
+                fs.aggregateExpression())
+                .ifPresent(expr -> {
+                    if (expr.isBlank()) {
+                        handler.apply(new LayoutInteraction.ClearAggregate(path));
+                    } else {
+                        handler.apply(new LayoutInteraction.SetAggregate(path, expr));
+                    }
+                });
+        });
+        aggregateItem.setDisable(frozen);
+        menu.getItems().add(aggregateItem);
+
+        // Quick aggregate shortcuts
+        var sumItem = menuItem("Add SUM", () ->
+            handler.apply(new LayoutInteraction.SetAggregate(path, "sum($" + fieldName + ")")));
+        var countItem = menuItem("Add COUNT", () ->
+            handler.apply(new LayoutInteraction.SetAggregate(path, "count($" + fieldName + ")")));
+        sumItem.setDisable(frozen);
+        countItem.setDisable(frozen);
+        menu.getItems().addAll(sumItem, countItem);
 
         menu.getItems().add(new SeparatorMenuItem());
 
@@ -121,31 +172,82 @@ public final class InteractionMenuFactory {
     }
 
     /**
+     * Build a primitive context menu with cell-specific items. When
+     * {@code cellValue} is non-null, adds "Filter by this value" and
+     * "Copy value" items.
+     */
+    public ContextMenu buildPrimitiveMenu(SchemaPath path, String cellValue) {
+        var menu = buildPrimitiveMenu(path);
+        if (cellValue == null || cellValue.isEmpty()) return menu;
+
+        boolean frozen = Boolean.TRUE.equals(queryState.getFieldState(path).frozen());
+        var items = menu.getItems();
+
+        // Insert cell-specific items before "Reset all"
+        int resetIdx = -1;
+        for (int i = 0; i < items.size(); i++) {
+            if ("Reset all".equals(items.get(i).getText())) {
+                resetIdx = i;
+                break;
+            }
+        }
+        if (resetIdx < 0) resetIdx = items.size();
+
+        String displayValue = cellValue.length() > 30
+            ? cellValue.substring(0, 27) + "..."
+            : cellValue;
+
+        var filterByValue = menuItem("Filter by \"" + displayValue + "\"", () ->
+            handler.apply(new LayoutInteraction.SetFilter(path, cellValue)));
+        filterByValue.setDisable(frozen);
+
+        var copyValue = menuItem("Copy value", () -> {
+            var content = new ClipboardContent();
+            content.putString(cellValue);
+            Clipboard.getSystemClipboard().setContent(content);
+        });
+
+        items.add(resetIdx, new SeparatorMenuItem());
+        items.add(resetIdx, copyValue);
+        items.add(resetIdx, filterByValue);
+
+        return menu;
+    }
+
+    /**
      * Build a context menu for a Relation node (interior node).
      */
     public ContextMenu buildRelationMenu(SchemaPath path) {
         var menu = new ContextMenu();
+        FieldState fs = queryState.getFieldState(path);
+        boolean frozen = Boolean.TRUE.equals(fs.frozen());
 
         // Render mode
-        menu.getItems().add(menuItem("Show as table", () ->
-            handler.apply(new LayoutInteraction.SetRenderMode(path, "TABLE"))));
-        menu.getItems().add(menuItem("Show as outline", () ->
-            handler.apply(new LayoutInteraction.SetRenderMode(path, "OUTLINE"))));
+        var tableItem = menuItem("Show as table", () ->
+            handler.apply(new LayoutInteraction.SetRenderMode(path, "TABLE")));
+        var outlineItem = menuItem("Show as outline", () ->
+            handler.apply(new LayoutInteraction.SetRenderMode(path, "OUTLINE")));
+        tableItem.setDisable(frozen);
+        outlineItem.setDisable(frozen);
+        menu.getItems().addAll(tableItem, outlineItem);
 
         menu.getItems().add(new SeparatorMenuItem());
 
         // Visibility
         boolean visible = queryState.getVisibleOrDefault(path);
-        menu.getItems().add(menuItem(visible ? "Hide" : "Show", () ->
-            handler.apply(new LayoutInteraction.ToggleVisible(path))));
+        var visItem = menuItem(visible ? "Hide" : "Show", () ->
+            handler.apply(new LayoutInteraction.ToggleVisible(path)));
+        visItem.setDisable(frozen);
+        menu.getItems().add(visItem);
 
         // Filter
-        FieldState fs = queryState.getFieldState(path);
         if (fs.filterExpression() != null) {
-            menu.getItems().add(menuItem("Clear filter", () ->
-                handler.apply(new LayoutInteraction.ClearFilter(path))));
+            var clearFilter = menuItem("Clear filter", () ->
+                handler.apply(new LayoutInteraction.ClearFilter(path)));
+            clearFilter.setDisable(frozen);
+            menu.getItems().add(clearFilter);
         }
-        menu.getItems().add(menuItem("Filter...", () -> {
+        var filterItem = menuItem("Filter...", () -> {
             promptExpression("Filter expression",
                 fs.filterExpression())
                 .ifPresent(expr -> {
@@ -155,7 +257,9 @@ public final class InteractionMenuFactory {
                         handler.apply(new LayoutInteraction.SetFilter(path, expr));
                     }
                 });
-        }));
+        });
+        filterItem.setDisable(frozen);
+        menu.getItems().add(filterItem);
 
         menu.getItems().add(new SeparatorMenuItem());
 
@@ -174,10 +278,6 @@ public final class InteractionMenuFactory {
 
     private static java.util.Optional<String> promptExpression(
             String title, String currentValue) {
-        var dialog = new TextInputDialog(currentValue != null ? currentValue : "");
-        dialog.setTitle(title);
-        dialog.setHeaderText(null);
-        dialog.setContentText("Expression:");
-        return dialog.showAndWait();
+        return ExpressionEditor.showDialog(title, currentValue);
     }
 }

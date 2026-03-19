@@ -35,8 +35,37 @@ import javafx.scene.layout.VBox;
  */
 public class ColumnHeader extends VBox {
 
+    private Label sortArrow;
+
     public ColumnHeader() {
         getStyleClass().clear();
+    }
+
+    /**
+     * Update the sort indicator arrow and CSS classes based on the current
+     * sort state for this column.
+     *
+     * @param sortFields the current sortFields value from FieldState (may be null)
+     * @param fieldName  the leaf field name for this column
+     */
+    public void updateSortIndicator(String sortFields, String fieldName) {
+        if (sortArrow == null) {
+            sortArrow = new Label();
+            sortArrow.getStyleClass().add("sort-arrow");
+            getChildren().add(sortArrow);
+        }
+
+        getStyleClass().removeAll("sorted-asc", "sorted-desc");
+
+        if (sortFields != null && sortFields.equals(fieldName)) {
+            sortArrow.setText("\u25B2");
+            getStyleClass().add("sorted-asc");
+        } else if (sortFields != null && sortFields.equals("-" + fieldName)) {
+            sortArrow.setText("\u25BC");
+            getStyleClass().add("sorted-desc");
+        } else {
+            sortArrow.setText("");
+        }
     }
 
     public ColumnHeader(double width, double height, PrimitiveLayout layout) {

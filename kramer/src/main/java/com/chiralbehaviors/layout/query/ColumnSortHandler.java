@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.chiralbehaviors.layout.SchemaNodeLayout;
 import com.chiralbehaviors.layout.SchemaPath;
+import com.chiralbehaviors.layout.table.ColumnHeader;
 
 import javafx.scene.Node;
 import javafx.scene.control.Control;
@@ -40,6 +41,9 @@ import javafx.scene.layout.HBox;
  * @author hhildebrand
  */
 public final class ColumnSortHandler {
+
+    private static final String SORT_HANDLER_KEY = "kramer.sortHandlerInstalled";
+    private static final String SORT_INSTALL_COUNT_KEY = "kramer.sortHandlerInstallCount";
 
     private final InteractionHandler handler;
     private final LayoutQueryState queryState;
@@ -65,6 +69,14 @@ public final class ColumnSortHandler {
      * @param childPaths schema paths for each column, in order
      */
     public void install(HBox header, List<SchemaPath> childPaths) {
+        if (Boolean.TRUE.equals(header.getProperties().get(SORT_HANDLER_KEY))) {
+            return;
+        }
+        header.getProperties().put(SORT_HANDLER_KEY, Boolean.TRUE);
+        // Track install count for testability
+        int count = header.getProperties().get(SORT_INSTALL_COUNT_KEY) instanceof Integer i ? i : 0;
+        header.getProperties().put(SORT_INSTALL_COUNT_KEY, count + 1);
+
         header.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
             if (event.getButton() != MouseButton.PRIMARY) return;
 
@@ -73,11 +85,35 @@ public final class ColumnSortHandler {
 
             SchemaPath path = childPaths.get(columnIndex);
             cycleSortState(path);
-            // Show tooltip on sorted column when paginated
+            // Immediate visual feedback on the clicked column
             Node columnNode = header.getChildren().get(columnIndex);
+            if (columnNode instanceof ColumnHeader ch) {
+                String newSort = queryState.getFieldState(path).sortFields();
+                ch.updateSortIndicator(newSort, path.leaf());
+            }
             updateSortTooltip(columnNode, path);
             event.consume();
         });
+    }
+
+    /**
+     * Update sort indicators on all ColumnHeader children of the given header.
+     * Called after layout to reflect the current sort state visually.
+     *
+     * @param header     the TableHeader HBox
+     * @param childPaths schema paths for each column, in order
+     */
+    public void updateIndicators(HBox header, List<SchemaPath> childPaths) {
+        List<Node> children = header.getChildren();
+        int limit = Math.min(children.size(), childPaths.size());
+        for (int i = 0; i < limit; i++) {
+            Node child = children.get(i);
+            if (child instanceof ColumnHeader ch) {
+                SchemaPath path = childPaths.get(i);
+                String sortFields = queryState.getFieldState(path).sortFields();
+                ch.updateSortIndicator(sortFields, path.leaf());
+            }
+        }
     }
 
     /**

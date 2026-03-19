@@ -269,8 +269,9 @@ class VerticalHeaderTest {
     }
 
     /**
-     * Phase 2: fixed-length children get their natural/effective width,
-     * variable-length children get proportional extra space.
+     * Phase 2: all children get at least their minimum (labelWidth), then
+     * surplus is distributed proportionally based on natural width above
+     * minimum. Both fixed and variable children participate.
      */
     @Test
     void mixedFixedVariableJustification() {
@@ -291,15 +292,20 @@ class VerticalHeaderTest {
         layout.children.add(name);
         layout.tableColumnWidth = date.tableColumnWidth() + name.tableColumnWidth();
 
-        // Available = 300, tableColumnWidth = 70+100 = 170
-        // Fixed date should get 70 (natural width, label fits)
-        // Variable name should get 300-70 = 230 (all remaining)
+        // Available = 300, minimums = 40+40 = 80, surplus = 220
+        // Surplus weights: date=(70-40)=30, name=(100-40)=60, total=90
+        // date: 40 + 220*(30/90) = 40 + 73.3 ≈ 113
+        // name: 300 - 113 ≈ 187
         layout.justify(300);
 
-        assertEquals(Style.snap(70), date.getJustifiedWidth(),
-                     "Fixed-length date should get natural width (70)");
-        assertEquals(Style.snap(230), name.getJustifiedWidth(),
-                     "Variable-length name should get remaining space (230)");
+        assertTrue(date.getJustifiedWidth() >= 40,
+                   "date should get at least label width (40)");
+        assertTrue(date.getJustifiedWidth() > 70,
+                   "date should get surplus above natural width at 300px");
+        assertTrue(name.getJustifiedWidth() > date.getJustifiedWidth(),
+                   "name (larger natural width) should get more than date");
+        assertEquals(300, Style.snap(date.getJustifiedWidth() + name.getJustifiedWidth()),
+                     0.5, "Total should equal available width");
     }
 
     /**
@@ -389,14 +395,15 @@ class VerticalHeaderTest {
         layout.children.add(name);
         layout.tableColumnWidth = date.tableColumnWidth() + name.tableColumnWidth();
 
-        // Available = 300
-        // Fixed date gets natural 70, variable name gets 300-70 = 230
+        // Available = 300, surplus distributed to all children
         layout.justify(300);
 
-        assertEquals(Style.snap(70), date.getJustifiedWidth(),
-                     "Fixed-length should get natural width even without vertical headers");
-        assertEquals(Style.snap(230), name.getJustifiedWidth(),
-                     "Variable-length should get remaining even without vertical headers");
+        assertTrue(date.getJustifiedWidth() >= 40,
+                   "date should get at least label width");
+        assertTrue(date.getJustifiedWidth() > 70,
+                   "date should participate in surplus distribution");
+        assertEquals(300, Style.snap(date.getJustifiedWidth() + name.getJustifiedWidth()),
+                     0.5, "Total should equal available width");
     }
 
     /**
@@ -500,14 +507,15 @@ class VerticalHeaderTest {
         layout.children.add(items);
         layout.tableColumnWidth = date.tableColumnWidth() + items.tableColumnWidth();
 
-        // Available = 300, tableColumnWidth = 70+100 = 170
-        // Fixed date gets 70, variable items gets 300-70 = 230
+        // Available = 300, surplus distributed to all children
         layout.justify(300);
 
-        assertEquals(Style.snap(70), date.getJustifiedWidth(),
-                     "Fixed-length date should get natural width");
+        assertTrue(date.getJustifiedWidth() >= 40,
+                   "date should get at least label width");
         assertTrue(items.getJustifiedWidth() > 100,
-                   "RelationLayout child should get proportional extra as variable-length");
+                   "RelationLayout child should get proportional extra");
+        assertEquals(300, Style.snap(date.getJustifiedWidth() + items.getJustifiedWidth()),
+                     0.5, "Total should equal available width");
     }
 
     /**

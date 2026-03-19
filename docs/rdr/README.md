@@ -17,3 +17,5 @@ See the [RDR process documentation](https://github.com/cwensel/rdr) for the full
 | RDR-007 | Comprehensive Layout Engine Bug Remediation | closed | Bug | P1 |
 | RDR-008 | Core Algorithm Reevaluation & Bakke 2013 Alignment | closed | Architecture | P1 |
 | RDR-009 | Stylesheet Data Structure Design | closed | Architecture | P2 |
+| RDR-029 | Interaction UI Affordances | closed | Feature | P0 |
+| RDR-030 | Schema Navigation & Discovery | proposed | Feature | P1 |

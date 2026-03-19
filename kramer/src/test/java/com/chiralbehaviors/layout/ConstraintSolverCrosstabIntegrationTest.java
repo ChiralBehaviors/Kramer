@@ -25,6 +25,16 @@ class ConstraintSolverCrosstabIntegrationTest {
 
     private static final ConstraintSolver SOLVER = new ExhaustiveConstraintSolver();
 
+    /** Build a RelationConstraint with readableTableWidth = tableWidth. */
+    private static RelationConstraint rc(SchemaPath path, double tableWidth,
+            double nestedInset, double availOutline, double availTable,
+            List<RelationConstraint> children, boolean hardCrosstab,
+            double crosstabWidth, boolean crosstabEligible) {
+        return new RelationConstraint(path, tableWidth, tableWidth, nestedInset,
+            availOutline, availTable, children, hardCrosstab, crosstabWidth,
+            crosstabEligible);
+    }
+
     // -----------------------------------------------------------------------
     // Test 1: CROSSTAB assigned when eligible and TABLE does not fit
     // 3-level schema: root, child A (crosstab-eligible), child B (no pivot).
@@ -44,7 +54,7 @@ class ConstraintSolverCrosstabIntegrationTest {
 
         // Child A: tableWidth=500 exceeds availableWidth=200 so TABLE is infeasible.
         // crosstabWidth=150 fits → solver must choose CROSSTAB (only column-mode that fits).
-        RelationConstraint childA = new RelationConstraint(
+        RelationConstraint childA = rc(
             pathA,
             /*tableWidth*/ 500.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -57,7 +67,7 @@ class ConstraintSolverCrosstabIntegrationTest {
         );
 
         // Child B: not eligible for CROSSTAB, tableWidth=80 fits
-        RelationConstraint childB = new RelationConstraint(
+        RelationConstraint childB = rc(
             pathB,
             /*tableWidth*/ 80.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -69,7 +79,7 @@ class ConstraintSolverCrosstabIntegrationTest {
             /*crosstabEligible*/ false
         );
 
-        RelationConstraint root = new RelationConstraint(
+        RelationConstraint root = rc(
             rootPath,
             /*tableWidth*/ 600.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -107,7 +117,7 @@ class ConstraintSolverCrosstabIntegrationTest {
         // Width allows TABLE (tableWidth=100) but not CROSSTAB (crosstabWidth=300)
         double availableWidth = 200.0;
 
-        RelationConstraint childA = new RelationConstraint(
+        RelationConstraint childA = rc(
             pathA,
             /*tableWidth*/ 100.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -119,7 +129,7 @@ class ConstraintSolverCrosstabIntegrationTest {
             /*crosstabEligible*/ true
         );
 
-        RelationConstraint childB = new RelationConstraint(
+        RelationConstraint childB = rc(
             pathB,
             /*tableWidth*/ 80.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -131,7 +141,7 @@ class ConstraintSolverCrosstabIntegrationTest {
             /*crosstabEligible*/ false
         );
 
-        RelationConstraint root = new RelationConstraint(
+        RelationConstraint root = rc(
             rootPath,
             /*tableWidth*/ 200.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -168,7 +178,7 @@ class ConstraintSolverCrosstabIntegrationTest {
         // Width too narrow for either TABLE (tableWidth=100) or CROSSTAB (crosstabWidth=200)
         double availableWidth = 50.0;
 
-        RelationConstraint childA = new RelationConstraint(
+        RelationConstraint childA = rc(
             pathA,
             /*tableWidth*/ 100.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -180,7 +190,7 @@ class ConstraintSolverCrosstabIntegrationTest {
             /*crosstabEligible*/ true
         );
 
-        RelationConstraint childB = new RelationConstraint(
+        RelationConstraint childB = rc(
             pathB,
             /*tableWidth*/ 80.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -192,7 +202,7 @@ class ConstraintSolverCrosstabIntegrationTest {
             /*crosstabEligible*/ false
         );
 
-        RelationConstraint root = new RelationConstraint(
+        RelationConstraint root = rc(
             rootPath,
             /*tableWidth*/ 200.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -227,7 +237,7 @@ class ConstraintSolverCrosstabIntegrationTest {
         // Very narrow — nothing fits, but A has hardCrosstab=true
         double availableWidth = 30.0;
 
-        RelationConstraint childA = new RelationConstraint(
+        RelationConstraint childA = rc(
             pathA,
             /*tableWidth*/ 200.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -239,7 +249,7 @@ class ConstraintSolverCrosstabIntegrationTest {
             /*crosstabEligible*/ true
         );
 
-        RelationConstraint childB = new RelationConstraint(
+        RelationConstraint childB = rc(
             pathB,
             /*tableWidth*/ 80.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -251,7 +261,7 @@ class ConstraintSolverCrosstabIntegrationTest {
             /*crosstabEligible*/ false
         );
 
-        RelationConstraint root = new RelationConstraint(
+        RelationConstraint root = rc(
             rootPath,
             /*tableWidth*/ 300.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -293,7 +303,7 @@ class ConstraintSolverCrosstabIntegrationTest {
 
         // A: eligible. tableWidth=600 does NOT fit (600 > 400), crosstabWidth=200 fits (200 ≤ 400).
         // With TABLE infeasible and CROSSTAB feasible, solver assigns CROSSTAB.
-        RelationConstraint childA = new RelationConstraint(
+        RelationConstraint childA = rc(
             pathA,
             /*tableWidth*/ 600.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -306,7 +316,7 @@ class ConstraintSolverCrosstabIntegrationTest {
         );
 
         // B: eligible, crosstabWidth=700 does NOT fit, tableWidth=90 fits → TABLE
-        RelationConstraint childB = new RelationConstraint(
+        RelationConstraint childB = rc(
             pathB,
             /*tableWidth*/ 90.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -319,7 +329,7 @@ class ConstraintSolverCrosstabIntegrationTest {
         );
 
         // C: not eligible, tableWidth=70 fits → TABLE
-        RelationConstraint childC = new RelationConstraint(
+        RelationConstraint childC = rc(
             pathC,
             /*tableWidth*/ 70.0,
             /*nestedHorizontalInset*/ 0.0,
@@ -331,7 +341,7 @@ class ConstraintSolverCrosstabIntegrationTest {
             /*crosstabEligible*/ false
         );
 
-        RelationConstraint root = new RelationConstraint(
+        RelationConstraint root = rc(
             rootPath,
             /*tableWidth*/ 800.0,
             /*nestedHorizontalInset*/ 0.0,

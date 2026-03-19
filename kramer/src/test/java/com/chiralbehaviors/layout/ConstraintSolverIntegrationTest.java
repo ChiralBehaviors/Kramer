@@ -109,6 +109,7 @@ class ConstraintSolverIntegrationTest {
         RelationConstraint constraint = new RelationConstraint(
             rootPath,
             layout.calculateTableColumnWidth(),
+            layout.readableTableWidth(),
             relStyle.getNestedHorizontalInset(),
             800.0,
             Double.MAX_VALUE,
@@ -231,15 +232,15 @@ class ConstraintSolverIntegrationTest {
         // 16 children, alternating fits/no-fits
         for (int i = 0; i < 8; i++) {
             SchemaPath p = rootPath.child("fits" + i);
-            children.add(new RelationConstraint(p, 40.0, 0.0, 100.0, Double.MAX_VALUE, List.of(), false, 0.0, false));
+            children.add(new RelationConstraint(p, 40.0, 40.0, 0.0, 100.0, Double.MAX_VALUE, List.of(), false, 0.0, false));
         }
         for (int i = 0; i < 8; i++) {
             SchemaPath p = rootPath.child("nope" + i);
-            children.add(new RelationConstraint(p, 120.0, 0.0, 100.0, Double.MAX_VALUE, List.of(), false, 0.0, false));
+            children.add(new RelationConstraint(p, 120.0, 120.0, 0.0, 100.0, Double.MAX_VALUE, List.of(), false, 0.0, false));
         }
 
         RelationConstraint root = new RelationConstraint(
-            rootPath, 200.0, 0.0, 1000.0, Double.MAX_VALUE, children, false, 0.0, false
+            rootPath, 200.0, 200.0, 0.0, 1000.0, Double.MAX_VALUE, children, false, 0.0, false
         );
 
         // Must not throw; greedy fallback runs for the 16 variable nodes
@@ -276,10 +277,10 @@ class ConstraintSolverIntegrationTest {
         SchemaPath childPath = rootPath.child("sub");
 
         RelationConstraint child = new RelationConstraint(
-            childPath, 50.0, 0.0, 100.0, Double.MAX_VALUE, List.of(), false, 0.0, false
+            childPath, 50.0, 50.0, 0.0, 100.0, Double.MAX_VALUE, List.of(), false, 0.0, false
         );
         RelationConstraint root = new RelationConstraint(
-            rootPath, 100.0, 0.0, 200.0, Double.MAX_VALUE, List.of(child), true, 0.0, false  // hardCrosstab=true
+            rootPath, 100.0, 100.0, 0.0, 200.0, Double.MAX_VALUE, List.of(child), true, 0.0, false  // hardCrosstab=true
         );
 
         Map<SchemaPath, RelationRenderMode> result = SOLVER.solve(root);

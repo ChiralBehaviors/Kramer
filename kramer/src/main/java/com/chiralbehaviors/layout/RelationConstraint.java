@@ -31,6 +31,7 @@ import java.util.List;
 public record RelationConstraint(
         SchemaPath path,
         double tableWidth,
+        double readableTableWidth,
         double nestedHorizontalInset,
         double availableWidthAsOutline,
         double availableWidthAsTable,
@@ -50,7 +51,7 @@ public record RelationConstraint(
      * {@code tableWidth + nestedHorizontalInset <= availableWidthAsOutline}.
      */
     public boolean fitsTable() {
-        return tableWidth + nestedHorizontalInset <= availableWidthAsOutline;
+        return readableTableWidth + nestedHorizontalInset <= availableWidthAsOutline;
     }
 
     /**
@@ -58,7 +59,7 @@ public record RelationConstraint(
      * available width. Used when the parent is rendering as TABLE.
      */
     public boolean fitsTableInParentTable() {
-        return tableWidth + nestedHorizontalInset <= availableWidthAsTable;
+        return readableTableWidth + nestedHorizontalInset <= availableWidthAsTable;
     }
 
     /**

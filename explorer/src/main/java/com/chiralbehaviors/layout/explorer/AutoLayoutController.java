@@ -38,8 +38,10 @@ import com.chiralbehaviors.layout.graphql.SchemaIntrospector;
 import com.chiralbehaviors.layout.graphql.ServerCapabilities;
 import com.chiralbehaviors.layout.graphql.QueryRewriter;
 import com.chiralbehaviors.layout.query.ColumnSortHandler;
+import com.chiralbehaviors.layout.query.FieldSelectorPanel;
 import com.chiralbehaviors.layout.query.InteractionHandler;
 import com.chiralbehaviors.layout.query.InteractionMenuFactory;
+import com.chiralbehaviors.layout.query.LayoutInteraction;
 import com.chiralbehaviors.layout.query.LayoutQueryState;
 import com.chiralbehaviors.layout.schema.Relation;
 import com.chiralbehaviors.layout.schema.SchemaNode;
@@ -136,6 +138,9 @@ public class AutoLayoutController {
     private LayoutQueryState    layoutQueryState;
     private InteractionHandler  interactionHandler;
     private InteractionMenuFactory menuFactory;
+    private FieldSelectorPanel fieldSelectorPanel;
+    private javafx.scene.control.ToggleButton fieldSelectorToggle;
+    private volatile SchemaPath lastClickedColumnPath;
     private volatile QueryRewriter queryRewriter;
     private volatile ServerCapabilities serverCapabilities;
     private WebEngine           webEngine;
@@ -190,6 +195,27 @@ public class AutoLayoutController {
                     log.error("exception processing toggle", e);
                 }
             });
+
+        // Field selector toggle button in toolbar (Cmd+F to toggle)
+        fieldSelectorToggle = new javafx.scene.control.ToggleButton("Fields (⌘F)");
+        fieldSelectorToggle.selectedProperty().addListener((o, prev, selected) -> {
+            if (selected) {
+                root.setLeft(fieldSelectorPanel);
+            } else {
+                root.setLeft(null);
+            }
+        });
+        // Add to bottom ButtonBar
+        var buttonBar = (javafx.scene.control.ButtonBar) root.getBottom();
+        buttonBar.getButtons().add(fieldSelectorToggle);
+
+        // Global keyboard shortcut: Cmd+F toggles field selector
+        root.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
+            if (event.isShortcutDown() && event.getCode() == javafx.scene.input.KeyCode.F) {
+                fieldSelectorToggle.setSelected(!fieldSelectorToggle.isSelected());
+                event.consume();
+            }
+        });
     }
 
     public AutoLayout getLayout() {
@@ -298,20 +324,77 @@ public class AutoLayoutController {
         // Interaction handler and context menu factory
         interactionHandler = new InteractionHandler(layoutQueryState);
         menuFactory = new InteractionMenuFactory(interactionHandler, layoutQueryState);
+        fieldSelectorPanel = new FieldSelectorPanel(interactionHandler, layoutQueryState);
+        fieldSelectorPanel.setPrefWidth(200);
+        fieldSelectorPanel.setMinWidth(0);
 
         var sortHandler = new ColumnSortHandler(interactionHandler, layoutQueryState);
-        layout.setPostLayoutCallback(() -> installSortHandlers(layout, sortHandler));
+        layout.setPostLayoutCallback(() -> {
+            installSortHandlers(layout, sortHandler);
+            installResizeHandlers(layout);
+        });
 
         // Single context menu handler on the AutoLayout root — avoids
         // VirtualFlow cell recycling issues (audit finding Blocker 2)
         layout.addEventHandler(javafx.scene.input.ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
             SchemaPath hitPath = layout.hitSchemaPath(event.getX(), event.getY());
             if (hitPath != null) {
+                String cellText = layout.hitCellText(event.getX(), event.getY());
                 var contextMenu = isRelationPath(hitPath)
                     ? menuFactory.buildRelationMenu(hitPath)
-                    : menuFactory.buildPrimitiveMenu(hitPath);
+                    : menuFactory.buildPrimitiveMenu(hitPath, cellText);
+                // Append undo/redo items (RDR-031)
+                contextMenu.getItems().add(new javafx.scene.control.SeparatorMenuItem());
+                var undoItem = new javafx.scene.control.MenuItem("Undo");
+                undoItem.setOnAction(e -> { if (!fetchInProgress) interactionHandler.undo(); });
+                undoItem.setDisable(!interactionHandler.canUndo() || fetchInProgress);
+                var redoItem = new javafx.scene.control.MenuItem("Redo");
+                redoItem.setOnAction(e -> { if (!fetchInProgress) interactionHandler.redo(); });
+                redoItem.setDisable(!interactionHandler.canRedo() || fetchInProgress);
+                contextMenu.getItems().addAll(undoItem, redoItem);
                 contextMenu.show(layout, event.getScreenX(), event.getScreenY());
                 event.consume();
+            }
+        });
+
+        // Track last-clicked column header for keyboard sort shortcuts
+        layout.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_CLICKED, event -> {
+            SchemaPath hitPath = layout.hitSchemaPath(event.getX(), event.getY());
+            if (hitPath != null) {
+                lastClickedColumnPath = hitPath;
+            }
+        });
+
+        // Keyboard shortcuts (RDR-029 P5 + RDR-031)
+        layout.addEventHandler(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
+            if (event.isShortcutDown()) {
+                switch (event.getCode()) {
+                    case Z -> {
+                        if (event.isShiftDown()) {
+                            if (!fetchInProgress) interactionHandler.redo();
+                        } else {
+                            if (!fetchInProgress) interactionHandler.undo();
+                        }
+                        event.consume();
+                    }
+                    case UP -> {
+                        // Sort ascending on last-clicked column
+                        if (lastClickedColumnPath != null && !fetchInProgress) {
+                            interactionHandler.apply(
+                                new LayoutInteraction.SortBy(lastClickedColumnPath, false));
+                        }
+                        event.consume();
+                    }
+                    case DOWN -> {
+                        // Sort descending on last-clicked column
+                        if (lastClickedColumnPath != null && !fetchInProgress) {
+                            interactionHandler.apply(
+                                new LayoutInteraction.SortBy(lastClickedColumnPath, true));
+                        }
+                        event.consume();
+                    }
+                    default -> {}
+                }
             }
         });
 
@@ -339,12 +422,73 @@ public class AutoLayoutController {
                 }
                 if (!paths.isEmpty()) {
                     handler.install(th, paths);
+                    handler.updateIndicators(th, paths);
                 }
             }
             if (child instanceof javafx.scene.Parent p) {
                 installSortHandlers(p, handler);
             }
         }
+    }
+
+    private void installResizeHandlers(javafx.scene.Parent root) {
+        for (javafx.scene.Node child : root.getChildrenUnmodifiable()) {
+            if (child instanceof com.chiralbehaviors.layout.table.TableHeader th) {
+                for (javafx.scene.Node col : th.getChildren()) {
+                    if (col.getUserData() instanceof SchemaPath sp) {
+                        installColumnResizeHandler(col, sp);
+                    }
+                }
+            }
+            if (child instanceof javafx.scene.Parent p) {
+                installResizeHandlers(p);
+            }
+        }
+    }
+
+    private static final double GRAB_ZONE = 4.0;
+
+    private void installColumnResizeHandler(javafx.scene.Node columnNode, SchemaPath path) {
+        final double[] dragState = new double[2]; // [0]=startX, [1]=startWidth
+
+        columnNode.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_MOVED, e -> {
+            double rightEdge = columnNode.getBoundsInLocal().getMaxX();
+            if (Math.abs(e.getX() - rightEdge) <= GRAB_ZONE) {
+                columnNode.setCursor(javafx.scene.Cursor.H_RESIZE);
+            } else {
+                columnNode.setCursor(javafx.scene.Cursor.DEFAULT);
+            }
+        });
+
+        columnNode.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_PRESSED, e -> {
+            double rightEdge = columnNode.getBoundsInLocal().getMaxX();
+            if (Math.abs(e.getX() - rightEdge) <= GRAB_ZONE) {
+                dragState[0] = e.getScreenX();
+                dragState[1] = columnNode.getBoundsInLocal().getWidth();
+                e.consume();
+            }
+        });
+
+        columnNode.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_DRAGGED, e -> {
+            if (dragState[1] > 0) {
+                double delta = e.getScreenX() - dragState[0];
+                double newWidth = Math.max(20.0, dragState[1] + delta);
+                columnNode.setStyle("-fx-min-width: " + newWidth + "; -fx-pref-width: " + newWidth
+                    + "; -fx-max-width: " + newWidth + ";");
+                e.consume();
+            }
+        });
+
+        columnNode.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_RELEASED, e -> {
+            if (dragState[1] > 0) {
+                double delta = e.getScreenX() - dragState[0];
+                double newWidth = Math.max(20.0, dragState[1] + delta);
+                columnNode.setStyle("");  // Clear inline style so layout engine prevails
+                layoutQueryState.setColumnWidth(path, newWidth);
+                dragState[1] = 0;
+                e.consume();
+            }
+        });
     }
 
     private boolean isRelationPath(SchemaPath path) {
@@ -381,14 +525,17 @@ public class AutoLayoutController {
         if (queryState.getQuery() == null) {
             return;
         }
+        // Clear undo history on schema change (RDR-031: session-only scope)
+        interactionHandler.clearHistory();
         this.schemaContext = GraphQlUtil.buildContext(queryState.getQuery(),
                                                       queryState.getSelection());
         this.serverCapabilities = SchemaIntrospector.discover(schemaContext);
         this.queryRewriter = new QueryRewriter(serverCapabilities);
         Relation schema = schemaContext.schema();
         schemaView.setRoot(schema);
+        fieldSelectorPanel.setRoot(schema);
         layout.setRoot(schema);
-        layout.measure(data); 
+        layout.measure(data);
         layout.updateItem(data);
     }
 }

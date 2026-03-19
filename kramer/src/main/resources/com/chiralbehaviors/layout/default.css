@@ -24,6 +24,29 @@
     -fx-background-radius: 3, 2, 4, 0;
 }
 
+.sorted-asc {
+    -fx-background-color: derive(-fx-accent, 80%);
+}
+
+.sorted-desc {
+    -fx-background-color: derive(-fx-accent, 80%);
+}
+
+.sort-arrow {
+    -fx-font-size: 10px;
+    -fx-padding: 0 2 0 2;
+    -fx-alignment: center;
+}
+
+.field-hidden {
+    -fx-opacity: 0.4;
+    -fx-strikethrough: true;
+}
+
+.field-selector-panel {
+    -fx-padding: 4;
+}
+
 .crosstab-header { /* inherits from .kramer-container */ }
 .crosstab-header-label { -fx-font-weight: bold; }
 .crosstab-row { /* inherits from .kramer-container */ }

@@ -33,7 +33,8 @@ public sealed interface LayoutInteraction permits
     LayoutInteraction.SetFilter, LayoutInteraction.ClearFilter,
     LayoutInteraction.SetRenderMode, LayoutInteraction.SetFormula,
     LayoutInteraction.ClearFormula, LayoutInteraction.SetAggregate,
-    LayoutInteraction.ClearAggregate, LayoutInteraction.ResetAll {
+    LayoutInteraction.ClearAggregate, LayoutInteraction.SetHideIfEmpty,
+    LayoutInteraction.ResetAll {
 
     SchemaPath path();
 
@@ -66,6 +67,9 @@ public sealed interface LayoutInteraction permits
 
     /** Remove the aggregate expression from the field at {@code path}. */
     record ClearAggregate(SchemaPath path) implements LayoutInteraction {}
+
+    /** Set hide-if-empty on the relation at {@code path}. */
+    record SetHideIfEmpty(SchemaPath path, boolean hideIfEmpty) implements LayoutInteraction {}
 
     /**
      * Reset all overrides in the layout state. The {@code path} is ignored;

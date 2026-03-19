@@ -29,6 +29,7 @@ class RelationConstraintCrosstabTest {
         return new RelationConstraint(
                 new SchemaPath(name),
                 tableWidth,
+                tableWidth,
                 nestedInset,
                 availableOutline,
                 availableTable,
@@ -138,7 +139,7 @@ class RelationConstraintCrosstabTest {
         SchemaPath childPath  = parentPath.child("child");
 
         RelationConstraint child = new RelationConstraint(
-                childPath, 40.0, 0.0, 100.0, Double.MAX_VALUE,
+                childPath, 40.0, 40.0, 0.0, 100.0, Double.MAX_VALUE,
                 List.of(), false, 0.0, false
         );
 
@@ -147,7 +148,7 @@ class RelationConstraintCrosstabTest {
         mutable.add(child);
 
         RelationConstraint parent = new RelationConstraint(
-                parentPath, 100.0, 0.0, 200.0, Double.MAX_VALUE,
+                parentPath, 100.0, 100.0, 0.0, 200.0, Double.MAX_VALUE,
                 mutable, false, 0.0, false
         );
 

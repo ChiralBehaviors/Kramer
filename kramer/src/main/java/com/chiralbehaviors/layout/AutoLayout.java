@@ -449,9 +449,11 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
                 && mr.pivotStats() != null
                 && mr.pivotStats().pivotCount() > 0;
         double crosstabWidth = crosstabEligible ? mr.columnWidth() : 0.0;
+        double readable = rl.readableTableWidth();
         return new RelationConstraint(
                 rl.getSchemaPath(),
                 tableWidth,
+                readable,
                 nestedInset,
                 width,
                 availableWidthAsTable,
@@ -670,6 +672,37 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
             return sp;
         }
 
+        return null;
+    }
+
+    /**
+     * Map a local (x, y) coordinate to the text content of the deepest
+     * text-displaying node at that point. Returns {@code null} if no text
+     * node is found or no layout exists.
+     */
+    public String hitCellText(double x, double y) {
+        if (layout == null || control == null) return null;
+        javafx.geometry.Point2D scenePoint = localToScene(x, y);
+        return hitTextFromScene(control.getNode(), scenePoint);
+    }
+
+    private String hitTextFromScene(javafx.scene.Node node,
+                                     javafx.geometry.Point2D scenePoint) {
+        javafx.geometry.Point2D local = node.sceneToLocal(scenePoint);
+        if (local == null || !node.contains(local)) return null;
+
+        if (node instanceof javafx.scene.Parent parent) {
+            var children = parent.getChildrenUnmodifiable();
+            for (int i = children.size() - 1; i >= 0; i--) {
+                String text = hitTextFromScene(children.get(i), scenePoint);
+                if (text != null) return text;
+            }
+        }
+
+        if (node instanceof javafx.scene.control.Label label
+            && label.getText() != null && !label.getText().isEmpty()) {
+            return label.getText();
+        }
         return null;
     }
 
