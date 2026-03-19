@@ -2,17 +2,21 @@
 title: "Expanded Constraint Solver Modes"
 id: RDR-024
 type: Feature
-status: proposed
-priority: P3
+status: accepted
+priority: P2
 author: Hal Hildebrand
 created: 2026-03-16
+accepted_date: 2026-03-18
+reviewed-by: self
 ---
 
 # RDR-024: Expanded Constraint Solver Modes
 
 ## Metadata
 - **Type**: Feature
-- **Status**: proposed
+- **Status**: accepted
+- **Accepted**: 2026-03-18
+- **Reviewed-by**: self
 - **Priority**: P3
 - **Created**: 2026-03-16
 - **Related**: RDR-012 (constraint solver), RDR-015 (alternative rendering modes — CROSSTAB)
