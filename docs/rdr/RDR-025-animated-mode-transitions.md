@@ -2,17 +2,20 @@
 title: "Animated Mode Transitions"
 id: RDR-025
 type: Feature
-status: proposed
+status: closed
+close_reason: "never — out of scope"
 priority: P4
 author: Hal Hildebrand
 created: 2026-03-16
+closed_date: 2026-03-19
 ---
 
 # RDR-025: Animated Mode Transitions
 
 ## Metadata
 - **Type**: Feature
-- **Status**: proposed
+- **Status**: closed (never — out of scope)
+- **Closed**: 2026-03-19
 - **Priority**: P4
 - **Created**: 2026-03-16
 - **Related**: RDR-012 (constraint solver), RDR-016 (layout stability / incremental update), RDR-023 (partial re-solve), RDR-024 (expanded solver modes — CROSSTAB ternary variable; TABLE/OUTLINE/CROSSTAB transitions are the primary animation trigger)

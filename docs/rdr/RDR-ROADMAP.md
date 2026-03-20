@@ -1,51 +1,59 @@
-# RDR Execution Roadmap (011-019)
+# RDR Execution Roadmap
 
-## Optimal Execution Sequence
+## Completed Waves (RDR-001 through RDR-028)
 
-Phase priorities (P1/P2) reflect strategic importance, not execution order.
-Individual phases within RDRs should be executed based on dependencies and effort.
+Waves 1-4 (RDR-011 through RDR-019) and the SIEUFERD layer integration (RDR-020/021/024/026/027/028) are **all complete**. 24 RDRs closed. See git history for details.
 
-### Wave 1: Zero-Dependency Quick Wins
-| Step | RDR / Phase | Effort | Description |
-|------|------------|--------|-------------|
-| 1 | RDR-016 Phase 1 | Low | Outline scroll preservation fix (OptionalInt) |
-| 2 | RDR-013 Phase 1 | Low | P90 statistical width for variable-length columns |
-| 3 | RDR-014 PR1 | Low | Stable tuple-identifying sort |
-| 4 | RDR-017 Phases 1+3 | Low | Data-level search + search bar UI |
+## Forward Roadmap: Bakke Gap Analysis (2026-03-19)
 
-### Wave 2: Low-Dependency Features
-| Step | RDR / Phase | Effort | Depends On |
-|------|------------|--------|------------|
-| 5 | RDR-014 PR2 | Medium | RDR-014 PR1 |
-| 6 | RDR-015 Phase 1 (bar) | Low | None |
-| 6b | RDR-015 Phase 2 (badge) | Low | None |
-| 7 | RDR-011 Phase 1 | Low | None (RDR-009 already done) |
-| 8 | RDR-016 Phase 2 | Low-Med | None |
+Gap analysis against all 4 Bakke papers identified remaining work. Organized by dependency wave.
 
-### Wave 3: Architectural Integration
-| Step | RDR / Phase | Effort | Depends On |
-|------|------------|--------|------------|
-| 9 | SchemaPath lifecycle fix | Low | Standalone deliverable |
-| 10 | RDR-011 Phase 2 | Medium | Phase 1 + RDR-015 renderMode in LayoutResult |
-| 11 | RDR-018 Phase 1 | Low-Med | RDR-014 + RDR-015 done |
-| 12 | RDR-013 Phase 2 | Low | Phase 1 + cache invalidation contract |
-| 13 | RDR-015 Phase 3 (crosstab) | Medium | Phase 1 + pipeline ordering |
-| 14 | RDR-019 Phase 1-2 | Medium | MeasureResult sub-record pattern + PrimitiveRenderMode.SPARKLINE enum value (from RDR-015 enum, added when RDR-019 accepted) |
+### Wave 6: Interaction Surface (P0 — highest leverage)
 
-### Wave 4: Protocol & Rendering
-| Step | RDR / Phase | Effort | Depends On |
-|------|------------|--------|------------|
-| 15 | RDR-011 Phase 3 (HTML) | Medium | Phase 2 |
-| 16 | RDR-016 Phase 4-5 | Medium | RDR-011 |
-| 17 | RDR-017 Phase 2b (nested) | Med-High | FocusController API + async coordination |
+The complete backend is built; this wave adds the user-facing controls.
 
-### Wave 5: Research / Long-Term
-| Step | RDR / Phase | Effort | Depends On |
-|------|------------|--------|------------|
-| 18+ | RDR-012 Phase 1 | Multi-sprint | RDR-011 Phase 1 |
-| 19+ | RDR-018 Phase 2 | High | Expression language spec |
-| 20+ | RDR-012 Phases 2-4 | Multi-quarter | Phase 1 |
-| 21+ | RDR-018 Phase 3 | High | GraphQlUtil redesign (separate RDR) |
+| Step | Bead | RDR / Phase | Effort | Depends On |
+|------|------|------------|--------|------------|
+| 1 | Kramer-75nz | RDR-029 Phase 1: Column header sort/filter indicators | Medium | None (all backend done) |
+| 2 | Kramer-75nz | RDR-029 Phase 2: Context menu system | Medium | Phase 1 |
+| 3 | Kramer-75nz | RDR-029 Phase 3: Field selector panel | Medium | Phase 1 |
+
+### Wave 7: Query Construction UI (P1)
+
+| Step | Bead | RDR / Phase | Effort | Depends On |
+|------|------|------------|--------|------------|
+| 4 | Kramer-75nz | RDR-029 Phase 4: Formula/filter editor | High | Phase 2 |
+| 5 | Kramer-dsxh | RDR-030 Phase 1: Schema tree panel | Medium | None (LayoutQueryState + InteractionHandler already exist) |
+| 6 | Kramer-dsxh | RDR-030 Phase 2: Field properties inspector | Medium | Phase 5 |
+| 7 | Kramer-xkqj | Undo/Redo for query operations | Medium | Requires new RDR (design excluded by RDR-027) |
+
+### Wave 8: SIEUFERD Property Completion (P2-P3)
+
+| Step | Bead | Description | Effort | Depends On |
+|------|------|-------------|--------|------------|
+| 8 | Kramer-8ic2 | CellFormat property | Medium | RDR-029 Phase 4 (editor) |
+| 9 | Kramer-knh6 | AggregatePosition rendering | Medium | None (display concern, independent of context menus) |
+| 10 | Kramer-iqkr | CollapseDuplicates property | Low-Med | None |
+| 11 | Kramer-t36s | Frozen columns/rows | Medium | None |
+| 12 | Kramer-i1kz | Drag-to-resize columns | Medium | None |
+
+### Wave 9: Algorithm Refinement (P3)
+
+| Step | Bead | Description | Effort | Depends On |
+|------|------|-------------|--------|------------|
+| 13 | Kramer-me5a | DP-optimal column partitioning (F2) | High | None |
+| 14 | Kramer-er73 | DP-optimal height balancing (F3) | High | Step 13 |
+| 15 | Kramer-10vi | Join manipulation UI | High | RDR-030 Phase 2 |
+
+### Wave 10: Exploratory / Long-Term (P4)
+
+| Step | Bead | Description | Effort | Depends On |
+|------|------|-------------|--------|------------|
+| 16 | Kramer-dsxh | RDR-030 Phases 3-4: Schema diagram + introspection | High | Phase 6 |
+| 17 | Kramer-75nz | RDR-029 Phase 5: Keyboard shortcuts | Low | Phase 2 |
+| 18 | — | RDR-025: Animated mode transitions | Medium | None |
+| 19 | Kramer-20w4 | Multi-view linked worksheets (CHI 2011) | Very High | RDR-030 |
+| 20 | Kramer-s9u4 | UNION / set difference query support | High | RDR-029 Phase 4 |
 
 ## Cross-RDR Design Decisions
 

@@ -2,17 +2,20 @@
 title: "LLM Annotation Pipeline"
 id: RDR-022
 type: Feature
-status: proposed
+status: closed
+close_reason: "never — out of scope"
 priority: P3
 author: Hal Hildebrand
 created: 2026-03-16
+closed_date: 2026-03-19
 ---
 
 # RDR-022: LLM Annotation Pipeline
 
 ## Metadata
 - **Type**: Feature
-- **Status**: proposed
+- **Status**: closed (never — out of scope)
+- **Closed**: 2026-03-19
 - **Priority**: P3
 - **Created**: 2026-03-16
 - **Related**: RDR-012 (constraint solver), RDR-009 (LayoutStylesheet), RDR-018 (query-semantic stylesheet)
