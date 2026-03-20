@@ -57,11 +57,18 @@ public class ColumnSet {
     public double compress(int cardinality, double justified,
                            RelationStyle style, double labelWidth) {
         Column firstColumn = columns.get(0);
+        // Minimum column width must accommodate label + insets + minimum
+        // data space. Without this, labelWidth can consume the entire
+        // column leaving zero space for data values.
+        double minDataWidth = 30.0; // minimum space for any visible data
         double minColumnWidth = Math.max(
             firstColumn.maxWidth(labelWidth)
                 + style.getElementHorizontalInset()
                 + style.getColumnHorizontalInset(),
-            style.getOutlineColumnMinWidth());
+            Math.max(style.getOutlineColumnMinWidth(),
+                     labelWidth + minDataWidth
+                     + style.getElementHorizontalInset()
+                     + style.getColumnHorizontalInset()));
         int count = min(firstColumn.getFields()
                                    .size(),
                         max(1,
@@ -69,9 +76,9 @@ public class ColumnSet {
 
         // compression
         double columnWidth = Math.floor(justified / (double) count);
-        double fieldWidth = Style.snap(columnWidth - labelWidth
+        double fieldWidth = Math.max(0.0, Style.snap(columnWidth - labelWidth
                                        - style.getElementHorizontalInset()
-                                       - style.getColumnHorizontalInset());
+                                       - style.getColumnHorizontalInset()));
         firstColumn.setWidth(columnWidth);
         firstColumn.getFields()
                    .forEach(f -> {

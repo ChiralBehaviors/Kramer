@@ -786,9 +786,8 @@ public final class RelationLayout extends SchemaNodeLayout {
     public double layout(double width) {
         clear();
         double lw = measureResult != null ? measureResult.labelWidth() : labelWidth;
-        double available = (width - lw)
-                           - style.getOutlineCellHorizontalInset();
-        assert available > 0;
+        double available = Math.max(1.0, (width - lw)
+                           - style.getOutlineCellHorizontalInset());
         columnWidth = children.stream()
                               .mapToDouble(c -> c.layout(available))
                               .max()
