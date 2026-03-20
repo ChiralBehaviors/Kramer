@@ -1399,7 +1399,7 @@ public final class RelationLayout extends SchemaNodeLayout {
      * needs at least max(effectiveWidth, 2 * labelWidth) — space for the
      * header plus enough room for displayable content.
      */
-    double readableTableWidth() {
+    public double readableTableWidth() {
         return children.stream()
             .mapToDouble(this::readableChildWidth)
             .sum()
