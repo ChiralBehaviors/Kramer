@@ -9,6 +9,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testfx.framework.junit5.ApplicationExtension;
@@ -47,6 +48,18 @@ class OutlineDataVisibilityTest {
         this.testStage = stage;
         stage.setScene(new Scene(new AnchorPane(), 800, 600));
         stage.show();
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        CountDownLatch flush = new CountDownLatch(1);
+        Platform.runLater(() -> {
+            AnchorPane root = (AnchorPane) testStage.getScene().getRoot();
+            root.getChildren().clear();
+            Platform.runLater(() -> Platform.runLater(() ->
+                Platform.runLater(flush::countDown)));
+        });
+        assertTrue(flush.await(10, TimeUnit.SECONDS), "Teardown flush timed out");
     }
 
     private Relation buildNestedSchema() {
