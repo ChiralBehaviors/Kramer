@@ -1,9 +1,32 @@
 # Kramer QL
-___
 
-GraphQL integration for Kramer
-___
+GraphQL integration for the Kramer layout engine.
 
-This is a simple integration of GraphQL into the Kramer auto layout framework.  This is basically a utility classs for generating the _Relation_ structure corresponding to a GraphQL query.  I also included a _JAXRS_ invocation of a GraphQL endpoint.  I use this in the [_AutoLayout Explorer_](../explorer/README.md) and the [_Toy Application_](../toy-app/README.md) single page UI framework.
+## What it does
 
-There's obviously a lot more to do here, as I could use the type information available for the primitives.  I plan to extend Kramer to beyond text nodes and that should hopefully be more straightforward.  But I'll have to provide more of a useful metadata representation of the GraphQL schema to do some of that.  Projects for another day, obviously
+Parses GraphQL query strings into Kramer `Relation` schema trees, so the layout engine can render any GraphQL query result without manual schema construction. Also provides HTTP client utilities for executing queries against GraphQL endpoints.
+
+## Key classes
+
+- `GraphQlUtil` — parses a GraphQL query string into a `Relation` tree. Handles nested selections, fragments, and multi-root queries. Also provides `evaluate()` for executing queries via Jakarta RS.
+- `QueryRoot` — `Relation` subclass for multi-root queries (multiple top-level selections).
+- `SchemaContext` — bundles the parsed schema with query metadata for downstream use.
+- `SchemaIntrospector` — discovers server capabilities (sorting, filtering support) from the GraphQL schema.
+- `QueryRewriter` — rewrites queries to push sort/filter operations to the server when supported.
+
+## Usage
+
+```java
+// Parse a GraphQL query into a schema
+SchemaContext ctx = GraphQlUtil.buildContext(queryString, selectionName);
+Relation schema = ctx.schema();
+
+// Execute against an endpoint
+String result = GraphQlUtil.evaluate(webTarget, queryString);
+```
+
+## Dependencies
+
+- graphql-java (25.0) — query parsing
+- Jersey (3.1.11) — Jakarta RS HTTP client
+- Kramer core

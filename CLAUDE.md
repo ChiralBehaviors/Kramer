@@ -49,14 +49,31 @@ Both `explorer` and `toy-app` produce fat jars via `maven-shade-plugin` (classif
 - `SchemaNode` — sealed abstract base for schema tree nodes, works with Jackson `JsonNode`
 - `Relation` — non-sealed composite node with children (maps to JSON objects/arrays); supports auto-folding
 - `Primitive` — final leaf node (maps to scalar JSON values)
+- `SchemaPath` — immutable path addressing a node in the schema tree, solves field-name uniqueness across nesting levels
 
 ### Layout Engine (`kramer` — root + `style` packages)
 - `AutoLayout` — main JavaFX control (`AnchorPane`). Accepts a `SchemaNode` root and `JsonNode` data, auto-layouts on resize.
-- `SchemaNodeLayout` — sealed hierarchy of computed layouts for a schema node at a measured width
-- `Style` — factory for layout cells; controls CSS stylesheets and creates `PrimitiveLayout`/`RelationLayout`
-- Layout adapts between two rendering modes:
-  - **Outline** (`outline` package) — vertical list with `OutlineColumn`, `OutlineElement`, `Span`
-  - **Nested Table** (`table` package) — `NestedTable`, `NestedRow`, `NestedCell`, `ColumnHeader`
+- `SchemaNodeLayout` — sealed hierarchy: `PrimitiveLayout` (text, badges, bars, sparklines) and `RelationLayout` (table, outline, crosstab)
+- Pipeline: measure → layout → justify → compress → buildControl, fully synchronous within `autoLayout()`
+- `ExhaustiveConstraintSolver` — enumerates render-mode assignments globally; `readableTableWidth()` threshold ensures table mode only when columns can display content readably
+- `justifyColumn()` — two-pass minimum-guarantee width distribution; all children get at least label width before surplus is distributed proportionally
+- Layout adapts between rendering modes:
+  - **Outline** (`outline` package) — vertical list with `OutlineColumn`, `OutlineElement`, `Span`, multicolumn packing
+  - **Nested Table** (`table` package) — `NestedTable`, `NestedRow`, `NestedCell`, `ColumnHeader` with sort indicators
+  - **Crosstab** (`table` package) — pivot-based cross-tabulation when configured
+
+### Query State (`kramer` — `query` package)
+- `LayoutQueryState` — per-field overrides (visibility, sort, filter, formula, aggregate, render mode, etc). Implements `LayoutStylesheet` so the layout engine reads overrides transparently.
+- `FieldState` — immutable record with 14 fields capturing user intent per `SchemaPath`
+- `InteractionHandler` — dispatches sealed `LayoutInteraction` events with undo/redo via JSON snapshots
+- `InteractionMenuFactory` — builds context menus (sort, filter, aggregate, copy, filter-by-value)
+- `ColumnSortHandler` — click-to-sort on column headers; idempotent installation guard
+- `FieldSelectorPanel` — TreeView with visibility checkboxes and hide-if-empty per relation
+- `ExpressionEditor` — inline expression editor with real-time parse validation
+
+### Expression Language (`kramer` — `expression` package)
+- Field references (`$fieldName`), arithmetic, comparison, aggregates (`sum()`, `count()`, `avg()`, `min()`, `max()`)
+- `ExpressionParser` → `Expr` AST → `ExpressionEvaluator` with LRU cache
 
 ### Flowless Virtualization (`kramer` — `flowless` package)
 Custom virtualized `VirtualFlow` for efficient rendering of large lists (forked/adapted from Flowless library).
@@ -67,9 +84,14 @@ Custom virtualized `VirtualFlow` for efficient rendering of large lists (forked/
 ### GraphQL Integration (`kramer-ql`)
 - `GraphQlUtil` — parses GraphQL query strings into `Relation` schema trees; executes queries against endpoints via Jakarta RS
 - `QueryRoot` — special `Relation` subclass for multi-root queries
+- `SchemaIntrospector` — discovers server capabilities for sort/filter push-down
+- `QueryRewriter` — rewrites queries to push operations server-side when supported
 
 ### CSS Styling
 Layout appearance is driven by CSS. Each component has a co-located `.css` file. User stylesheets override `default.css`. See `kramer/src/main/resources/com/chiralbehaviors/layout/default.css` for stylable class names.
+
+### Testing (`kramer` — `test` package)
+E2E test framework: `LayoutTestHarness` runs the full synchronous pipeline, `LayoutTestResult` captures rendered scene graph snapshots, `LayoutFixtures` provides 4 schema/data sets. 964 tests total.
 
 ## Key Dependencies
 

@@ -1,26 +1,87 @@
-# Kramer
-Automatic layout of structured hierarchical data
-___
-This is the core of the Kramer framework.  Simply, the hierarchical query is represented by a tree of [SchemaNodes](src/main/java/com/chiralbehaviors/layout/schema/SchemaNode.java).  There are only two kinds of nodes: [Relation](src/main/java/com/chiralbehaviors/layout/schema/Relation.java) and [Primitive](src/main/java/com/chiralbehaviors/layout/schema/Primitive.java).  The algorithm is largely inspired by the paper [Automatic Layout of Structured Hierarchical Reports](http://people.csail.mit.edu/ebakke/research/reportlayout_infovis2013.pdf) - "inspired" because I really couldn't figure out their actual algorithm from the paper other than the broad outlines of the idea and an excellent description of what is supposed to happen.  The data structures sections hints at things, but it was a difficult time teasing that crap out through iterative coding as UI is not my bailiwick.  So it's been a pretty fun learning experience in a domain I usually avoid.
+# Kramer Core
 
-The current state of the layout algorithm performs the reactive layout, hybridizing between _Outline_ and _Nested Table_ layouts.  The multicolumn extension is now working and is a huge win.  The number of columns is determined dynamically, and there's some filling that is not occurring on nested tables in multiple columns.  But that will eventually show up.
+The core autolayout engine. Takes a schema tree and JSON data, measures content, and produces a JavaFX control tree with adaptive table/outline layout.
 
-The UI implementation is largely able to be separated out now, but I haven't even really tried to do that refactoring and translation.  There's a lot of shared context there that would be weird to put into another place, and the Layout isn't the schema.  I'm ignoring it mostly because I'm currently happy with JavaFX, and if you need this in Swing or some other god forsaken Java UI framework, then you're on your own.
+## Architecture
 
-As I said, I'm not a UI guy and damn if this hasn't a difficult trail for me.  An interesting one to be sure, but a difficult one.  I started long ago with real nested tables.  And while that was fast, that also looked like shit, simply because of the repeated headers.  Trying to take the headers off the table and keep that aligned with the outer, top level headers was - at the time - beyond my ken.
+### Schema (`schema` package)
 
-In any event, the current iteration uses nested list views and the obvious column spanning strategy using horizontal boxes.  I use the constraints on the columns to keep the individually nested "cells" in sync as the table resizes.  One infuriating thing about layout is scroll bars, of course.  They appear by magic, and you're not sure how your layout is going to be resized.  I could do all this statically, but I found it much easier and actually a lot more visually pleasing to let the JavaFX framework do the remaining constraints that make everything look nice.  It does mean that the widths are too conservative (big) than they need to be.
+- `SchemaNode` — sealed abstract base. Two variants:
+  - `Relation` — composite node with children. Maps to JSON objects/arrays. Supports auto-folding of single-child relations.
+  - `Primitive` — leaf node. Maps to scalar JSON values.
+- `SchemaPath` — immutable path addressing a node in the schema tree. Solves field-name uniqueness across nesting levels.
 
-The multi column addition work was incredibly interesting.  As I've repeatedly mentioned, I'm not a UI person and damn if this didn't turn out to be an interesting problem.  It was a bit of dynamic programming that I had to largely cobble together as I coudn't find any examples that did what I needed.  In the end it seems like the algo was pretty simple, but I suppose the heuristics coud use some work.  Taking into account variable length content in the distribution of the vertical whitespace during the columnization process.  Still.  Boatloads of neurons stressed to come up with it.
+### Layout engine
 
-One thing that took a long time was the whole [Layout](src/main/java/com/chiralbehaviors/layout/Layout.java) implementation.  It wasn't obvious how to get this information in the way I needed it and that was hard won.  I expect getting this in JavaScript is likely trivial - or at least not as sucky.  But who knows.  In any event, that's a nice little bit of kit that provides the layout parameters and measurements we need for the layout algorithm.
+The pipeline runs in `SchemaNodeLayout.autoLayout()`:
 
-The top level control is the aptly named [AutoLayoutView](src/main/java/com/chiralbehaviors/layout/AutoLayoutView.java).  You'll note that the system trucks in the [Jackson TreeModel (JsonNode) framework](http://wiki.fasterxml.com/JacksonTreeModel).  This is because all I really care about is JSON or something that Jackson can convert to JSON, which is a lot of things (e.g. YAML).  It's a super convienent framework that takes the place of using Maps, Lists and god only knows how much blood, sweat and sanity points.  So, that's a dependency I could have tried to elide, but again - why?
+1. **Measure** (`PrimitiveLayout.measure()`, `RelationLayout.measure()`) — walks the data, computes P90 content widths via statistical sampling, determines variable-length vs fixed-length classification.
 
-In any event, you create the view by specifying the top level _Relation_ for the view and an optional _LayoutModel_.  The _LayoutModel_ is my way of providing the developer the ability to customize the lists and such - e.g. add menus, hook into mouse actions, etc.  You can see an example of this in the [Toy Application](../toy-app/README.md), single page application module.  The model couples the logic of setting up menus and other behavior such as double click, which the _Toy Application_ uses for navigation.
+2. **Layout** (`RelationLayout.layout()`) — decides table vs outline mode. A constraint solver (`ExhaustiveConstraintSolver`) enumerates render-mode assignments globally, or a greedy per-node check falls back when the solver isn't available. The `readableTableWidth()` threshold ensures table mode is only chosen when columns have enough room for content.
 
-I tried to follow the JavaFX double bindings pattern, but I think it's silly.  I'm a big believer in Redux and such and so that's the way the control was designed to be used (however poorly I may have implemented it, of course).
+3. **Justify** (`RelationLayout.justifyColumn()`) — two-pass minimum-guarantee distribution. All children get at least their label width, then surplus is distributed proportionally based on measured content width above the minimum.
 
-When the control is resized to a different width, it will automatically adjust the layout and reconstruct the control.  Obviously, this can get quite expensive with a lot of nested data.  The JavaFX framework provides some relief here in that JavaFX controls provide some level of caching and optimization.  It's actually not the best at caching, but at least it tries.  The incremental support for at least my test data shows that it isn't too bad.  Basically, my test Star Wars allFilms query is a non trivial dataset and it works pretty fast and doesn't consume too many nodes initially.  However, as you scroll through the dataset, things start piling up.  I've done extensive investigations along the way with the [ScenicView](http://fxexperience.com/scenic-view/) tool.  Right now it's about 4K nodes, and it used to be something like 15K when I was being an idiot.  JavaFX can actually handle quite a huge number of nodes and so it's not been a problem yet.  I think the current model is reasonably optimial, but I could provide some savings by emulating the boxes and other layouts.  But again, why?  It would consume my life and frankly I have a lot of other things to work on at the moment.  Hopefully I'll get to better shedding of nodes as I work with things more.
+4. **Compress** (`ColumnSet.compress()`) — outline mode packs fields into multicolumn layouts. Greedy height-balancing slides fields between columns to minimize total height.
 
-Currently, the Primitives are all treated as Strings.  This is obviously limiting, but since every primitive can be translated to strings, it's an easy generalization that allows me to focus on the extremely difficult (for me at least) process of layout of this shit.  It's tough enough with teh wacky TextArea model that JavaFX has (I mean, who in their right mind makes the essential insets of the god damned TextArea fricking *PRIVATE*?).  Now that I largely have worked this out, I'll try to implement other controls for the primitives so far more richer interaction can be availble through the Kramer framework.
+5. **Build** (`RelationLayout.buildControl()`) — produces the JavaFX control tree. Table mode creates `NestedTable` with `ColumnHeader`, `NestedRow`, `NestedCell`. Outline mode creates `Outline` with `Span`, `OutlineColumn`, `OutlineElement`.
+
+### Layout types
+
+- `SchemaNodeLayout` — sealed base for computed layouts
+  - `PrimitiveLayout` — layout for scalar values. Handles text, badges, bar charts, sparklines.
+  - `RelationLayout` — layout for composite nodes. Chooses table, outline, or crosstab mode.
+
+### AutoLayout control
+
+`AutoLayout` is the top-level JavaFX control (`AnchorPane`). It manages the full pipeline:
+- Accepts a `SchemaNode` root and `JsonNode` data
+- Runs measure → solver → layout → justify → compress → build on resize
+- Caches layout decisions for stable widths
+- Supports incremental re-measure when data changes (P90 bucket comparison)
+
+### Query state (`query` package)
+
+A 7-layer interaction model (SIEUFERD-inspired):
+
+- `LayoutQueryState` — per-field overrides for visibility, sort, filter, formula, aggregate, render mode, and more. Implements `LayoutStylesheet` so the layout engine reads overrides transparently.
+- `FieldState` — immutable snapshot of user intent for one schema path (14 fields).
+- `InteractionHandler` — dispatches `LayoutInteraction` events to query state. Supports undo/redo via JSON snapshots.
+- `LayoutInteraction` — sealed event hierarchy: SortBy, ClearSort, ToggleVisible, SetFilter, ClearFilter, SetRenderMode, SetFormula, ClearFormula, SetAggregate, ClearAggregate, SetHideIfEmpty, ResetAll.
+- `InteractionMenuFactory` — builds context menus from query state.
+- `ColumnSortHandler` — click-to-sort on column headers with visual indicators.
+- `FieldSelectorPanel` — TreeView with visibility checkboxes.
+- `ExpressionEditor` — inline expression editor with real-time parse validation.
+
+### Expression language (`expression` package)
+
+A simple expression language for filter, formula, sort, and aggregate operations:
+- Field references: `$fieldName`
+- Arithmetic: `+`, `-`, `*`, `/`
+- Comparison: `>`, `<`, `>=`, `<=`, `==`, `!=`
+- Aggregates: `sum()`, `count()`, `avg()`, `min()`, `max()`
+- Parsed by `ExpressionParser`, evaluated by `ExpressionEvaluator` with AST caching.
+
+### Virtualization (`flowless` package)
+
+Custom `VirtualFlow` for efficient rendering of large lists. Forked from the Flowless library with modifications for Kramer's cell model (focus traversal, selection, keyboard navigation).
+
+### Styling (`style` package)
+
+- `Style` — factory for layout cells. Creates `PrimitiveStyle`/`RelationStyle` by measuring invisible JavaFX scenes.
+- `PrimitiveStyle` — cell factories for text, badges, bars, sparklines.
+- `RelationStyle` — insets, cardinality limits, outline column parameters.
+- CSS-driven: each component has a co-located `.css` file. User stylesheets override `default.css`.
+
+## Testing
+
+964 tests covering layout algorithm, width distribution, mode selection, data visibility, expression evaluation, query state, and interaction handling.
+
+```bash
+mvn test                              # all tests
+mvn test -Dtest=LayoutModeSelectionTest  # specific test
+```
+
+The E2E test framework (`com.chiralbehaviors.layout.test`) provides:
+- `LayoutTestHarness` — runs the full synchronous pipeline and captures rendered output
+- `LayoutTestResult` — snapshot with query methods for data visibility, field widths, truncation
+- `LayoutFixtures` — 4 schema/data fixtures (flat, nested, deep, wide)

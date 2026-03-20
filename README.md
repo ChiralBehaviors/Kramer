@@ -1,88 +1,82 @@
-# Kramer Umbrella application
+# Kramer
 
-<h2 style="text-align: center;" markdown="1">Automatic layout of structured hierarchical data, graphQL generic single page applications, and a floor wax</h2>
-
-![alt text](media/autolayout.png "Logo Title Text 1")
+Automatic layout of structured hierarchical JSON data in JavaFX.
 
 [![Java CI](https://github.com/ChiralBehaviors/Kramer/actions/workflows/maven.yml/badge.svg)](https://github.com/ChiralBehaviors/Kramer/actions/workflows/maven.yml)
 [![License](https://img.shields.io/github/license/ChiralBehaviors/Kramer)](LICENSE)
-[![GitHub release](https://img.shields.io/github/v/release/ChiralBehaviors/Kramer)](https://github.com/ChiralBehaviors/Kramer/releases)
 
+Kramer implements the algorithm from [Automatic Layout of Structured Hierarchical Reports](http://people.csail.mit.edu/ebakke/research/reportlayout_infovis2013.pdf) (Bakke, InfoVis 2013). Given a schema and JSON data, it produces an adaptive layout that switches between outline and nested table views based on available width. The result is a dense, multicolumn hybrid that handles arbitrary nesting depth.
 
-It's all about levels.
+![Autolayout demo](media/autolayout.png)
 
-### News
+## Building
 
-CSS all the things.  Well, most of them.  Will be publishing some examples on this, but there's some interesting and frankly terrifying semantic driven CSS styling that I can now leverage with Kramer.  See the [default.css](https://github.com/ChiralBehaviors/Kramer/blob/master/kramer/src/main/resources/com/chiralbehaviors/layout/default.css) for stylable details.
+Requires Maven 3.3+ and Java 25+.
 
-It's all boxes, so not that hard ;)
+```bash
+mvn clean install
+```
 
-### Building
-Kramer requires [Maven 3.3+](https://maven.apache.org) and Java 25+.  To build Kramer, cd to the top level directory:
+Individual modules can be built independently (`mvn -pl kramer install`).
 
-    mvn clean install
-    
-Individual modules may be built independently.
+## Modules
 
-### License
-Kramer is licensed under [Apache 2.0 license](LICENSE)
+| Module | Description |
+|--------|------------|
+| [kramer](kramer/) | Core layout engine. Schema-driven layout of JSON into JavaFX controls. |
+| [kramer-ql](kramer-ql/) | GraphQL integration. Parses queries into Kramer schemas, executes via Jakarta RS. |
+| [explorer](explorer/) | Interactive app for exploring GraphQL endpoints with autolayout. |
+| [toy-app](toy-app/) | Declarative single-page app framework using GraphQL + autolayout. |
 
-## What it does
-Watch a [short video of the autolayout in action](https://youtu.be/I8s2Qv7ssQM).
+## How it works
 
-Kramer is based on the system described in the paper [Automatic Layout of Structured Hierarchical Reports](http://people.csail.mit.edu/ebakke/research/reportlayout_infovis2013.pdf).  Kramer uses a schema to automatically layout structured JSON.  The layout is adaptive between outline and nested table views, providing multicolumn hybrids that are dense and is highly usable.  One could call it the Unicorn of reactive layouts for hierarchical data (and who doesn't have that, amirite?).
+The layout pipeline:
 
-Kramer uses JSON, via the excellent [Jackson library](https://github.com/FasterXML/jackson).  Combined with the schema that describes the JSON data, Kramer provides a simple [JavaFX](https://openjfx.io) control that exposes the automatic layout.  Kramer uses the Jackson TreeModel, focusing on the JsonNode as the data model used by the framework.
+1. **Schema** — a tree of `Relation` (composite) and `Primitive` (leaf) nodes describing the JSON structure
+2. **Measure** — statistical content-width measurement (P90) determines natural column widths
+3. **Layout decision** — a constraint solver chooses table or outline mode per relation, maximizing information density while ensuring readability
+4. **Justify** — two-pass width distribution guarantees every column gets at least its label width before distributing surplus proportionally
+5. **Compress** — outline mode packs fields into multicolumn layouts with height balancing
+6. **Build** — JavaFX control tree with virtualized scrolling via a custom VirtualFlow
 
-For more information, see the [Kramer Wiki](https://github.com/ChiralBehaviors/Kramer/wiki)
+The layout is fully reactive — resizing the window re-runs the pipeline and may switch between table and outline modes at different nesting levels.
 
-## Guide to this build
+## Key features
 
-There are currently four modules that compose Kramer:
+- Adaptive table/outline hybrid layout
+- Constraint solver for global render-mode optimization
+- Expression language for per-row filter, formula, sort, and aggregate operations
+- Interactive query state (sort, filter, visibility, render mode) with undo/redo
+- Context menus, field selector panel, keyboard shortcuts
+- Virtualized scrolling for large datasets
+- CSS-driven styling with schema-aware class names
 
- - [Kramer Core](kramer/README.md) - the core autolayout framework
- - [Kramer QL](kramer-ql/README.md) - [GraphQL](http://graphql.org) integration into the Kramer framework
- - [AutoLayout Explorer](explorer/README.md) - A simple application to explore GraphQL endpoints with the Kramer autolayout framework
- - [Toy Single Page UI App Framework](toy-app/README.md) - A sketch of an idea I've had for some time, using Kramer to provide the UI for a declarative single page UI application framework using [GraphQL](http://graphql.org).
+## Running the explorer
 
-## Using Kramer
+```bash
+cd explorer && mvn package
+java -jar target/explorer-0.0.1-SNAPSHOT-phat.jar
+```
 
-From maven, add the GitHub Packages repository:
+Point it at any GraphQL endpoint. The app provides a GraphiQL editor, schema viewer, and autolayout view.
 
-	<repository>
-		<id>github</id>
-		<url>https://maven.pkg.github.com/ChiralBehaviors/Kramer</url>
-	</repository>
+## Using as a library
 
-For [Kramer core](kramer/README.md):
+```xml
+<repository>
+    <id>github</id>
+    <url>https://maven.pkg.github.com/ChiralBehaviors/Kramer</url>
+</repository>
 
-    
-	<dependency>
-		<groupId>com.chiralbehaviors.layout</groupId>
-		<artifactId>kramer</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
-	</dependency>
+<dependency>
+    <groupId>com.chiralbehaviors.layout</groupId>
+    <artifactId>kramer</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+</dependency>
+```
 
-For [Kramer QL](kramer-ql/README.md):
+For GraphQL integration, use `kramer-ql` instead.
 
-	<dependency>
-		<groupId>com.chiralbehaviors.layout</groupId>
-		<artifactId>kramer-ql</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
-	</dependency>
+## License
 
-For [Kramer AutoLayoutExplorer](explorer/README.md):
-
-	<dependency>
-		<groupId>com.chiralbehaviors.layout</groupId>
-		<artifactId>explorer</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
-	</dependency>
-
-For [Kramer Toy Single Page UI Application Framework](toy-app/README.md):
-
-	<dependency>
-		<groupId>com.chiralbehaviors.layout</groupId>
-		<artifactId>toy-app</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
-	</dependency>
+Apache 2.0 — see [LICENSE](LICENSE).
