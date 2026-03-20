@@ -235,6 +235,86 @@ class OutlineDataVisibilityTest {
     }
 
     /**
+     * THE KEY TEST: ONE AutoLayout instance starts wide (table mode), then
+     * resizes narrow (outline mode). Data must survive the transition.
+     * This is the EXACT user scenario: drag window narrower.
+     */
+    @Test
+    void singleInstanceResizePreservesData() throws Exception {
+        var ref = new AtomicReference<List<LabelInfo>>();
+        CountDownLatch latch = new CountDownLatch(1);
+
+        Platform.runLater(() -> {
+            try {
+                Relation schema = buildNestedSchema();
+                Style model = new Style();
+                AutoLayout autoLayout = new AutoLayout(schema, model);
+                AnchorPane.setTopAnchor(autoLayout, 0.0);
+                AnchorPane.setLeftAnchor(autoLayout, 0.0);
+                AnchorPane.setBottomAnchor(autoLayout, 0.0);
+                AnchorPane.setRightAnchor(autoLayout, 0.0);
+
+                AnchorPane root = (AnchorPane) testStage.getScene().getRoot();
+                root.getChildren().setAll(autoLayout);
+
+                // Start WIDE
+                testStage.setWidth(1200);
+                testStage.setHeight(600);
+
+                JsonNode data = buildData();
+                autoLayout.measure(data);
+                autoLayout.updateItem(data);
+                autoLayout.autoLayout();
+
+                // Wait for table mode to fully build, then resize narrow
+                Platform.runLater(() -> Platform.runLater(() -> {
+                    // Resize to narrow — triggers outline mode
+                    testStage.setWidth(500);
+
+                    // Wait for outline to build
+                    Platform.runLater(() -> Platform.runLater(() -> Platform.runLater(() -> {
+                        root.applyCss();
+                        root.layout();
+                        // One more cycle for VirtualFlow cells
+                        Platform.runLater(() -> {
+                            List<LabelInfo> labels = new ArrayList<>();
+                            collectLabels(autoLayout, labels);
+                            ref.set(labels);
+                            latch.countDown();
+                        });
+                    })));
+                }));
+            } catch (Exception e) {
+                ref.set(List.of(new LabelInfo("EXCEPTION: " + e.getMessage(), 0)));
+                latch.countDown();
+            }
+        });
+
+        assertTrue(latch.await(10, TimeUnit.SECONDS), "Timed out");
+        List<LabelInfo> labels = ref.get();
+
+        assertFalse(labels.isEmpty(),
+            "After resize, scene graph must not be empty");
+
+        String[] dataValues = {"Frank", "Frontend", "Web", "frank@"};
+        StringBuilder missing = new StringBuilder();
+        for (String value : dataValues) {
+            boolean found = labels.stream().anyMatch(l -> l.text().contains(value));
+            if (!found) {
+                missing.append("'").append(value).append("' ");
+            }
+        }
+
+        if (!missing.isEmpty()) {
+            StringBuilder dump = new StringBuilder("\nAfter wide→narrow resize, rendered labels:\n");
+            for (LabelInfo l : labels) {
+                dump.append(String.format("  '%s' (w=%.0f)\n", l.text(), l.width()));
+            }
+            fail("Data lost during resize: " + missing + dump);
+        }
+    }
+
+    /**
      * Data labels must have non-zero rendered width. A label with text
      * "Frank Thompson" but width=0 is invisible to the user.
      */
