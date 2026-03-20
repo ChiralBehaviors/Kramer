@@ -149,7 +149,12 @@ class LayoutWidthFairnessTest {
         var harness = new LayoutTestHarness(testStage, f.schema(), f.data(), f.fieldNames());
         LayoutTestResult r = harness.run(1500, 600);
 
-        if (!r.tableMode()) return; // may be outline at this width
+        if (!r.tableMode()) {
+            // Outline mode at this width — still verify data is visible
+            assertFalse(r.getDataTexts().isEmpty(),
+                "Wide schema outline at 1500px must still show data.\n" + r.dump());
+            return;
+        }
 
         Map<String, Double> widths = r.fieldWidths();
         double total = widths.values().stream().mapToDouble(d -> d).sum();

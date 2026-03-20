@@ -1411,7 +1411,9 @@ public final class RelationLayout extends SchemaNodeLayout {
         if (child instanceof RelationLayout rl) {
             return rl.getChildren().stream()
                 .mapToDouble(this::readableChildWidth)
-                .sum();
+                .sum()
+                + rl.getStyle().getRowCellHorizontalInset()
+                + rl.getStyle().getRowHorizontalInset();
         }
         // Each column needs its measured content width plus label-width of
         // headroom. This accommodates values that exceed P90 measurement

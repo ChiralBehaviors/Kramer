@@ -12,6 +12,7 @@ import org.testfx.util.WaitForAsyncUtils;
 
 import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.SchemaNodeLayout;
+import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.LayoutCell;
 import com.chiralbehaviors.layout.cell.control.FocusController;
 import com.chiralbehaviors.layout.schema.Relation;
@@ -53,6 +54,7 @@ public final class LayoutTestHarness {
     private final Set<String> fieldNames;
     private final Style model;
     private final RelationLayout layout;
+    private LayoutCell<? extends Region> currentControl;
 
     /**
      * @param stage      a visible TestFX Stage (for scene attachment)
@@ -73,6 +75,7 @@ public final class LayoutTestHarness {
         Platform.runLater(() -> {
             Style m = new Style();
             RelationLayout l = new RelationLayout(schema, m.style(schema));
+            l.buildPaths(new SchemaPath(schema.getField()), m);
             l.measure(data, n -> n, m);
             modelRef.set(m);
             layoutRef.set(l);
@@ -108,6 +111,12 @@ public final class LayoutTestHarness {
             for (SchemaNodeLayout child : layout.getChildren()) {
                 fieldWidths.put(child.getField(), child.getJustifiedWidth());
             }
+
+            // Dispose previous control to avoid leaked timelines/listeners
+            if (currentControl != null) {
+                currentControl.dispose();
+            }
+            currentControl = control;
 
             // Attach to scene for VirtualFlow cell materialization
             Region node = control.getNode();

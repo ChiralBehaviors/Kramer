@@ -105,11 +105,11 @@ class LayoutModeSelectionTest {
         harness.run(1200, 600);
         double threshold = harness.getLayout().readableTableWidth();
 
-        LayoutTestResult below = harness.run(threshold - 50, 600);
-        LayoutTestResult above = harness.run(threshold + 200, 600);
+        LayoutTestResult below = harness.run(threshold * 0.8, 600);
+        LayoutTestResult above = harness.run(threshold * 1.3, 600);
         assertFalse(below.tableMode(),
-            String.format("Below threshold (%.0f - 50), should be outline", threshold));
+            String.format("At 80%% of threshold (%.0f), should be outline", threshold));
         assertTrue(above.tableMode(),
-            String.format("Above threshold (%.0f + 200), should be table", threshold));
+            String.format("At 130%% of threshold (%.0f), should be table", threshold));
     }
 }

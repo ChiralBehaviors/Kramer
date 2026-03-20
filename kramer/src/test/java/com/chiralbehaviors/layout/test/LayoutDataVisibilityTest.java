@@ -95,7 +95,7 @@ class LayoutDataVisibilityTest {
 
         for (double w : new double[] {500, 1000}) {
             LayoutTestResult r = harness.run(w, 600);
-            // First two employees must be in viewport
+            // Substring matches: "Eva" in "Eva Johansson", "Backend" in "Backend Engineer"
             for (String value : new String[] {"Eva", "Frank", "Backend", "Frontend"}) {
                 assertTrue(r.containsData(value),
                     "'" + value + "' missing at " + w + "px.\n" + r.dump());

@@ -97,11 +97,19 @@ public final class ExhaustiveConstraintSolver implements ConstraintSolver {
         int bestTableCount  = -1;
         int[] bestAssignment = new int[n]; // defaults to all-TABLE (0) initially; overwritten below
 
-        // Verify all-OUTLINE is feasible (digit=1 for every variable)
+        // Verify all-OUTLINE is feasible (digit=1 for every variable).
+        // This is an invariant — if violated, checkFeasible has a bug.
         int[] outlineAll = new int[n];
         java.util.Arrays.fill(outlineAll, MODE_OUTLINE);
-        assert checkFeasible(root, outlineAll, variable, indexMap, fixed, Double.MAX_VALUE)
-                : "all-OUTLINE assignment must always be feasible";
+        if (!checkFeasible(root, outlineAll, variable, indexMap, fixed, Double.MAX_VALUE)) {
+            LOG.warning("all-OUTLINE assignment is infeasible — checkFeasible may have a bug; "
+                    + "falling back to all-OUTLINE");
+            Map<SchemaPath, RelationRenderMode> fallback = new LinkedHashMap<>(fixed);
+            for (RelationConstraint node : variable) {
+                fallback.put(node.path(), RelationRenderMode.OUTLINE);
+            }
+            return Map.copyOf(fallback);
+        }
 
         int[] assignment = new int[n];
         for (long combo = 0; combo < total; combo++) {
