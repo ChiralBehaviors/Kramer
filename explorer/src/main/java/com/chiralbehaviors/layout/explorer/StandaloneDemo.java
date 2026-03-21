@@ -209,21 +209,18 @@ public class StandaloneDemo extends Application {
         Scene scene = new Scene(root, 1200, 800);
         stage.setTitle("Kramer \u2014 Course Catalog Demo");
         stage.setScene(scene);
-        stage.show();
 
-        // Load data once the layout has a real width from the scene graph.
-        // Platform.runLater() alone isn't enough — it can fire before the
-        // first layout pulse assigns widths. The width listener fires
-        // exactly when the BorderPane sizes the AutoLayout.
-        layout.widthProperty().addListener((obs, old, newVal) -> {
-            if (newVal.doubleValue() > 10 && layout.getRoot() == null) {
-                layout.setRoot(schema);
-                fieldSelectorPanel.setRoot(schema);
-                layout.measure(data);
-                layout.updateItem(data);
-                layout.requestFocus();
-            }
+        // Load data after window is fully shown and sized.
+        // WINDOW_SHOWN fires after the first layout pulse completes,
+        // so getWidth() returns the real rendered width.
+        stage.addEventHandler(javafx.stage.WindowEvent.WINDOW_SHOWN, e -> {
+            layout.setRoot(schema);
+            fieldSelectorPanel.setRoot(schema);
+            layout.measure(data);
+            layout.updateItem(data);
+            layout.requestFocus();
         });
+        stage.show();
     }
 
     // -----------------------------------------------------------------------
