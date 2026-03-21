@@ -206,6 +206,34 @@ The Show/Hide Columns feature is "a recursive selection of columns from the refe
 
 RDR-030 Phase 1 does NOT depend on RDR-029 Phase 1 (sort indicators). It only needs `InteractionHandler` + `LayoutQueryState`, both of which exist. Can run in parallel with Wave 6.
 
+### RF-9: Phase 1 Largely Implemented via RDR-029 FieldSelectorPanel
+**Status**: verified
+**Source**: RDR-029 Phase 3 implementation, 2026-03-19
+
+`FieldSelectorPanel` was built as part of RDR-029 (Interaction UI Affordances) and already provides:
+- `TreeView<SchemaNode>` showing full hierarchy (both Relations and Primitives)
+- Per-node visibility checkbox dispatching `ToggleVisible` via `InteractionHandler`
+- Per-Relation hide-if-empty checkbox dispatching `SetHideIfEmpty`
+- `field-hidden` CSS class for dimmed/struck-through hidden nodes
+- Integrated into `AutoLayoutController` as collapsible left sidebar (Cmd+Shift+F toggle)
+
+**Gap remaining for Phase 1**: The `FieldSelectorPanel` does NOT yet provide:
+1. State badges showing sort direction, filter presence, render mode per node (RF-1 gap #3)
+2. Click-to-scroll navigation to field position in the layout
+3. Field type/cardinality display on tree nodes
+4. Bidirectional relationship display (RF-3 design implication)
+
+The existing `SchemaView` (fold toggle, Relations-only) remains separate and is wired to the Schema tab, not the sidebar. `FieldSelectorPanel` replaces what was planned as `SchemaTreePanel` in the Phase 1 implementation plan.
+
+### RF-10: Layout E2E Test Framework Available for Phase Testing
+**Status**: verified
+**Source**: Kramer-4whh implementation, 2026-03-20
+
+The `LayoutTestHarness` + `LayoutFixtures` framework provides infrastructure for testing any new UI panels:
+- Synchronous pipeline runner that can verify data visibility after schema/interaction changes
+- 4 fixture schemas including nested and deep structures
+- Can verify that toggling visibility in FieldSelectorPanel correctly hides/shows fields in the rendered output
+
 ### RF-8: Retained AST Available for Phase 4 (RDR-020)
 **Status**: verified
 **Source**: Codebase analysis, `SchemaContext.fieldIndex()`
