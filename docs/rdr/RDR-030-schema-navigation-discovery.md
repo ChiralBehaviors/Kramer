@@ -2,10 +2,12 @@
 title: "Schema Navigation & Discovery"
 id: RDR-030
 type: Feature
-status: proposed
+status: accepted
 priority: P1
 author: Hal Hildebrand
 created: 2026-03-19
+accepted_date: 2026-03-20
+reviewed-by: self
 related: RDR-026, RDR-027, RDR-020, RDR-029
 ---
 
@@ -13,10 +15,11 @@ related: RDR-026, RDR-027, RDR-020, RDR-029
 
 ## Metadata
 - **Type**: Feature
-- **Status**: proposed
+- **Status**: accepted
 - **Priority**: P1
 - **Created**: 2026-03-19
-- **Reviewed-by**: —
+- **Accepted**: 2026-03-20
+- **Reviewed-by**: self
 - **Related**: RDR-026 (QueryState), RDR-027 (Interaction Model), RDR-020 (GraphQL AST Retention), RDR-029 (Interaction UI Affordances)
 
 ---

@@ -35,5 +35,5 @@ RDRs document technical decisions through iterative research and refinement. Eac
 | RDR-027 | Interaction Model — Layer 7 Gestures | closed | Feature | P2 |
 | RDR-028 | Query Rewriter — Layer 1↔2 Bridge | closed | Architecture | P3 |
 | RDR-029 | Interaction UI Affordances | closed | Feature | P0 |
-| RDR-030 | Schema Navigation & Discovery | proposed | Feature | P1 |
+| RDR-030 | Schema Navigation & Discovery | accepted | Feature | P1 |
 | RDR-031 | Undo/Redo for Query Operations | closed | Feature | P2 |
