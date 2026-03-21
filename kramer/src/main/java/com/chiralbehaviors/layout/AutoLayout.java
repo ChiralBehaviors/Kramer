@@ -543,7 +543,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         if (old != null) {
             old.dispose();
         }
-        node.setMinWidth(width);
+        node.setMinWidth(0);
         node.setPrefWidth(width);
         node.setMaxWidth(width);
         control.updateItem(zeeData);
@@ -595,7 +595,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         if (old != null) {
             old.dispose();
         }
-        node.setMinWidth(width);
+        node.setMinWidth(0);
         node.setPrefWidth(width);
         node.setMaxWidth(width);
         control.updateItem(zeeData);
