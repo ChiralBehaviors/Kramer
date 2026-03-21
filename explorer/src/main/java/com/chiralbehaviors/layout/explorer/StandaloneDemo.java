@@ -210,15 +210,18 @@ public class StandaloneDemo extends Application {
         stage.setScene(scene);
         stage.show();
 
-        // Load data AFTER stage is shown so AutoLayout has its real width.
-        // Without this, getWidth() returns 0 during the initial layout pass
-        // and the layout renders at a default width that doesn't fit the window.
-        Platform.runLater(() -> {
-            layout.setRoot(schema);
-            fieldSelectorPanel.setRoot(schema);
-            layout.measure(data);
-            layout.updateItem(data);
-            layout.requestFocus();
+        // Load data once the layout has a real width from the scene graph.
+        // Platform.runLater() alone isn't enough — it can fire before the
+        // first layout pulse assigns widths. The width listener fires
+        // exactly when the BorderPane sizes the AutoLayout.
+        layout.widthProperty().addListener((obs, old, newVal) -> {
+            if (newVal.doubleValue() > 10 && layout.getRoot() == null) {
+                layout.setRoot(schema);
+                fieldSelectorPanel.setRoot(schema);
+                layout.measure(data);
+                layout.updateItem(data);
+                layout.requestFocus();
+            }
         });
     }
 
