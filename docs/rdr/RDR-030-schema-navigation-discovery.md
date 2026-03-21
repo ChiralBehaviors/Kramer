@@ -2,11 +2,13 @@
 title: "Schema Navigation & Discovery"
 id: RDR-030
 type: Feature
-status: accepted
+status: closed
 priority: P1
 author: Hal Hildebrand
 created: 2026-03-19
 accepted_date: 2026-03-20
+closed_date: 2026-03-21
+close_reason: implemented
 reviewed-by: self
 related: RDR-026, RDR-027, RDR-020, RDR-029
 ---
@@ -15,7 +17,7 @@ related: RDR-026, RDR-027, RDR-020, RDR-029
 
 ## Metadata
 - **Type**: Feature
-- **Status**: accepted
+- **Status**: closed (implemented 2026-03-21)
 - **Priority**: P1
 - **Created**: 2026-03-19
 - **Accepted**: 2026-03-20
@@ -252,12 +254,12 @@ The `LayoutTestHarness` + `LayoutFixtures` framework provides infrastructure for
 
 - [x] Schema tree panel displays the full `SchemaNode` hierarchy with correct nesting _(implemented in RDR-029 FieldSelectorPanel)_
 - [x] Visibility checkboxes in the tree toggle field display and reflect current state _(implemented in RDR-029 FieldSelectorPanel)_
-- [ ] Tree nodes show state badges for sort, filter, and render mode
-- [ ] Click on a tree node scrolls the layout to that field
-- [ ] Field properties inspector shows all `QueryState` properties for the selected field
-- [ ] Inline property editing dispatches correct `LayoutInteraction` events (12 variants)
-- [ ] Schema diagram visualizes relation hierarchy with nesting depth
-- [ ] GraphQL introspection browses available types and fields from the endpoint
-- [ ] Adding a field from the introspection browser modifies the active query via `QueryExpander` and re-layouts
-- [ ] Removing a field from the active query updates both the layout and the schema tree
-- [ ] All panels work with both outline and table rendering modes
+- [x] Tree nodes show state badges for sort, filter, and render mode _(Kramer-ac5w)_
+- [x] Click on a tree node scrolls the layout to that field _(Kramer-b56f)_
+- [x] Field properties inspector shows all `QueryState` properties for the selected field _(Kramer-1797)_
+- [x] Inline property editing dispatches correct `LayoutInteraction` events (12 variants) _(Kramer-1797)_
+- [x] Schema diagram visualizes relation hierarchy with nesting depth _(Kramer-u3io)_
+- [x] GraphQL introspection browses available types and fields from the endpoint _(Kramer-799f, Kramer-b9s2)_
+- [x] Adding a field from the introspection browser modifies the active query via `QueryExpander` and re-layouts _(Kramer-hlxz, Kramer-b9s2)_
+- [x] Removing a field from the active query updates both the layout and the schema tree _(Kramer-hlxz, Kramer-b9s2)_
+- [x] All panels work with both outline and table rendering modes _(integration verified across all phases)_
