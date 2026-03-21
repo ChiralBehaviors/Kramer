@@ -29,7 +29,6 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
 
@@ -164,16 +163,10 @@ public class StandaloneDemo extends Application {
             }
         });
 
-        // Anchor layout to fill center
-        AnchorPane.setTopAnchor(layout, 0.0);
-        AnchorPane.setLeftAnchor(layout, 0.0);
-        AnchorPane.setBottomAnchor(layout, 0.0);
-        AnchorPane.setRightAnchor(layout, 0.0);
-
-        // Assemble the scene
-        var anchor = new AnchorPane(layout);
+        // Assemble the scene — AutoLayout directly as BorderPane center
+        // (AutoLayout extends AnchorPane; BorderPane calls resize() on center child)
         var root = new BorderPane();
-        root.setCenter(anchor);
+        root.setCenter(layout);
 
         // Toggle buttons in bottom bar
         var fieldToggle = new ToggleButton("Fields (\u21E7\u2318F)");
