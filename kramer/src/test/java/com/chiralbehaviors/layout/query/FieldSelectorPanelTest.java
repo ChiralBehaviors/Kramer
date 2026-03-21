@@ -3,6 +3,8 @@ package com.chiralbehaviors.layout.query;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -16,16 +18,21 @@ import com.chiralbehaviors.layout.ConfiguredMeasurementStrategy;
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
+import com.chiralbehaviors.layout.schema.SchemaNode;
 import com.chiralbehaviors.layout.style.Style;
 
 import javafx.application.Platform;
+import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.control.TreeItem;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 /**
- * Tests for FieldSelectorPanel (Kramer-6u5t T3.1).
+ * Tests for FieldSelectorPanel: visibility checkboxes, state badges,
+ * type labels, and selection callback.
  */
 @ExtendWith(ApplicationExtension.class)
 class FieldSelectorPanelTest {
@@ -33,10 +40,12 @@ class FieldSelectorPanelTest {
     private Style style;
     private LayoutQueryState queryState;
     private InteractionHandler handler;
+    private Stage testStage;
 
     @Start
     void start(Stage stage) {
-        stage.setScene(new Scene(new Pane(), 400, 300));
+        this.testStage = stage;
+        stage.setScene(new Scene(new Pane(), 400, 400));
         stage.show();
     }
 
@@ -57,17 +66,53 @@ class FieldSelectorPanelTest {
         return root;
     }
 
+    /**
+     * Attach panel to scene and force layout so TreeView materializes cells.
+     */
+    private FieldSelectorPanel createAndAttach(Relation schema) {
+        var panel = new FieldSelectorPanel(handler, queryState);
+        panel.setRoot(schema);
+        panel.setMinSize(300, 300);
+        panel.setPrefSize(300, 300);
+        Pane root = (Pane) testStage.getScene().getRoot();
+        root.getChildren().setAll(panel);
+        root.applyCss();
+        root.layout();
+        return panel;
+    }
+
+    /**
+     * Collect all Labels with a given CSS class from the panel's scene graph.
+     */
+    private List<Label> findLabelsByClass(Node root, String cssClass) {
+        List<Label> result = new ArrayList<>();
+        findLabelsByClassRec(root, cssClass, result);
+        return result;
+    }
+
+    private void findLabelsByClassRec(Node node, String cssClass, List<Label> out) {
+        if (node instanceof Label label && label.getStyleClass().contains(cssClass)) {
+            out.add(label);
+        }
+        if (node instanceof Parent parent) {
+            for (Node child : parent.getChildrenUnmodifiable()) {
+                findLabelsByClassRec(child, cssClass, out);
+            }
+        }
+    }
+
+    // -------------------------------------------------------------------
+    // Existing tests (tree structure, visibility, hide-if-empty)
+    // -------------------------------------------------------------------
+
     @Test
     void setRootPopulatesTree() {
         var ref = new AtomicReference<Integer>();
         Platform.runLater(() -> {
-            var panel = new FieldSelectorPanel(handler, queryState);
-            panel.setRoot(buildSchema());
-            // Root (records) has 3 children: id, name, details
+            var panel = createAndAttach(buildSchema());
             ref.set(panel.getTreeView().getRoot().getChildren().size());
         });
         WaitForAsyncUtils.waitForFxEvents();
-
         assertEquals(3, ref.get(), "Root should have 3 children");
     }
 
@@ -75,13 +120,11 @@ class FieldSelectorPanelTest {
     void nestedRelationPopulatesRecursively() {
         var ref = new AtomicReference<Integer>();
         Platform.runLater(() -> {
-            var panel = new FieldSelectorPanel(handler, queryState);
-            panel.setRoot(buildSchema());
+            var panel = createAndAttach(buildSchema());
             TreeItem<?> details = panel.getTreeView().getRoot().getChildren().get(2);
             ref.set(details.getChildren().size());
         });
         WaitForAsyncUtils.waitForFxEvents();
-
         assertEquals(1, ref.get(), "'details' Relation should have 1 child (value)");
     }
 
@@ -89,13 +132,11 @@ class FieldSelectorPanelTest {
     void toggleVisibleDispatchesEvent() {
         Platform.runLater(() -> {
             var path = new SchemaPath("records", "name");
-            assertTrue(queryState.getVisibleOrDefault(path), "default visible");
-
+            assertTrue(queryState.getVisibleOrDefault(path));
             handler.apply(new LayoutInteraction.ToggleVisible(path));
-            assertFalse(queryState.getVisibleOrDefault(path), "should be hidden after toggle");
-
+            assertFalse(queryState.getVisibleOrDefault(path));
             handler.apply(new LayoutInteraction.ToggleVisible(path));
-            assertTrue(queryState.getVisibleOrDefault(path), "should be visible after second toggle");
+            assertTrue(queryState.getVisibleOrDefault(path));
         });
         WaitForAsyncUtils.waitForFxEvents();
     }
@@ -104,13 +145,10 @@ class FieldSelectorPanelTest {
     void setHideIfEmptyDispatchesEvent() {
         Platform.runLater(() -> {
             var path = new SchemaPath("records", "details");
-
             handler.apply(new LayoutInteraction.SetHideIfEmpty(path, true));
             assertEquals(Boolean.TRUE, queryState.getFieldState(path).hideIfEmpty());
-
             handler.apply(new LayoutInteraction.SetHideIfEmpty(path, false));
-            assertNull(queryState.getFieldState(path).hideIfEmpty(),
-                       "Setting hideIfEmpty to false should clear it (null)");
+            assertNull(queryState.getFieldState(path).hideIfEmpty());
         });
         WaitForAsyncUtils.waitForFxEvents();
     }
@@ -118,10 +156,8 @@ class FieldSelectorPanelTest {
     @Test
     void setRootWithNullClearsTree() {
         Platform.runLater(() -> {
-            var panel = new FieldSelectorPanel(handler, queryState);
-            panel.setRoot(buildSchema());
+            var panel = createAndAttach(buildSchema());
             assertNotNull(panel.getTreeView().getRoot());
-
             panel.setRoot(null);
             assertNull(panel.getTreeView().getRoot());
         });
@@ -132,11 +168,106 @@ class FieldSelectorPanelTest {
     void panelHasStyleClass() {
         var ref = new AtomicReference<Boolean>();
         Platform.runLater(() -> {
-            var panel = new FieldSelectorPanel(handler, queryState);
+            var panel = createAndAttach(buildSchema());
             ref.set(panel.getStyleClass().contains("field-selector-panel"));
         });
         WaitForAsyncUtils.waitForFxEvents();
+        assertTrue(ref.get());
+    }
 
-        assertTrue(ref.get(), "Panel should have field-selector-panel style class");
+    // -------------------------------------------------------------------
+    // T1A: State badges
+    // -------------------------------------------------------------------
+
+    @Test
+    void sortBadgeAppearsOnSortedField() {
+        var ref = new AtomicReference<List<Label>>();
+        Platform.runLater(() -> {
+            var path = new SchemaPath("records", "name");
+            handler.apply(new LayoutInteraction.SortBy(path, false));
+
+            var panel = createAndAttach(buildSchema());
+            ref.set(findLabelsByClass(panel, "sort-badge"));
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertFalse(ref.get().isEmpty(), "Sort badge should appear on sorted field");
+        assertTrue(ref.get().stream().anyMatch(l -> "▲".equals(l.getText())),
+            "Ascending sort badge should show ▲");
+    }
+
+    @Test
+    void filterBadgeAppearsOnFilteredField() {
+        var ref = new AtomicReference<List<Label>>();
+        Platform.runLater(() -> {
+            var path = new SchemaPath("records", "name");
+            handler.apply(new LayoutInteraction.SetFilter(path, "$name > 'A'"));
+
+            var panel = createAndAttach(buildSchema());
+            ref.set(findLabelsByClass(panel, "filter-badge"));
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertFalse(ref.get().isEmpty(), "Filter badge should appear on filtered field");
+    }
+
+    @Test
+    void typeBadgeAppearsOnRelationNodes() {
+        var ref = new AtomicReference<List<Label>>();
+        Platform.runLater(() -> {
+            var panel = createAndAttach(buildSchema());
+            ref.set(findLabelsByClass(panel, "type-badge"));
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertFalse(ref.get().isEmpty(), "Relation nodes should have type badge");
+    }
+
+    @Test
+    void noBadgesWhenNoStateOverrides() {
+        var ref = new AtomicReference<List<Label>>();
+        Platform.runLater(() -> {
+            // No state changes — no badges expected
+            var panel = createAndAttach(buildSchema());
+            ref.set(findLabelsByClass(panel, "sort-badge"));
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertTrue(ref.get().isEmpty(), "No sort badges when no fields are sorted");
+    }
+
+    // -------------------------------------------------------------------
+    // T1B: Selection callback
+    // -------------------------------------------------------------------
+
+    @Test
+    void selectionCallbackFiresOnTreeSelection() {
+        var ref = new AtomicReference<SchemaPath>();
+        Platform.runLater(() -> {
+            var panel = createAndAttach(buildSchema());
+            panel.setOnFieldSelected(ref::set);
+            // Select "name" (index 2: root=0, id=1, name=2)
+            panel.getTreeView().getSelectionModel().select(2);
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertNotNull(ref.get(), "Selection callback should fire");
+        assertEquals("name", ref.get().leaf(), "Should select 'name' field");
+    }
+
+    @Test
+    void selectionCallbackReceivesCorrectPath() {
+        var ref = new AtomicReference<SchemaPath>();
+        Platform.runLater(() -> {
+            var panel = createAndAttach(buildSchema());
+            panel.setOnFieldSelected(ref::set);
+            // Select "value" inside "details" (deeper path)
+            panel.getTreeView().getSelectionModel().select(4); // root=0,id=1,name=2,details=3,value=4
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertNotNull(ref.get(), "Selection callback should fire for nested field");
+        assertEquals("records/details/value", ref.get().toString(),
+            "Path should be fully qualified");
     }
 }

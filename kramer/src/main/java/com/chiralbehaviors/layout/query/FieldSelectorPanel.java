@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.chiralbehaviors.layout.query;
 
+import java.util.function.Consumer;
+
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.schema.Primitive;
 import com.chiralbehaviors.layout.schema.Relation;
@@ -13,11 +15,13 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 /**
  * A panel displaying a {@link TreeView} of the schema tree with per-field
- * visibility checkboxes and per-Relation hide-if-empty checkboxes.
+ * visibility checkboxes, state badges (sort, filter, type), and per-Relation
+ * hide-if-empty checkboxes.
  * <p>
  * Dispatches {@link LayoutInteraction.ToggleVisible} and
  * {@link LayoutInteraction.SetHideIfEmpty} events via an
@@ -30,6 +34,7 @@ public final class FieldSelectorPanel extends VBox {
     private final TreeView<SchemaNode> treeView;
     private final InteractionHandler handler;
     private final LayoutQueryState queryState;
+    private Consumer<SchemaPath> onFieldSelected;
 
     public FieldSelectorPanel(InteractionHandler handler,
                                LayoutQueryState queryState) {
@@ -40,6 +45,15 @@ public final class FieldSelectorPanel extends VBox {
         treeView.setCellFactory(tv -> new FieldTreeCell());
         VBox.setVgrow(treeView, Priority.ALWAYS);
         getChildren().add(treeView);
+
+        // Selection callback
+        treeView.getSelectionModel().selectedItemProperty().addListener(
+            (obs, old, selected) -> {
+                if (selected != null && selected.getValue() != null
+                        && onFieldSelected != null) {
+                    onFieldSelected.accept(resolvePath(selected));
+                }
+            });
     }
 
     /**
@@ -60,6 +74,16 @@ public final class FieldSelectorPanel extends VBox {
         return treeView;
     }
 
+    /** Set a callback that fires when a field is selected in the tree. */
+    public void setOnFieldSelected(Consumer<SchemaPath> callback) {
+        this.onFieldSelected = callback;
+    }
+
+    /** Force tree cells to re-render (picks up state changes). */
+    public void refresh() {
+        treeView.refresh();
+    }
+
     private TreeItem<SchemaNode> buildTree(SchemaNode node, SchemaPath path) {
         TreeItem<SchemaNode> item = new TreeItem<>(node);
         item.setExpanded(true);
@@ -75,7 +99,7 @@ public final class FieldSelectorPanel extends VBox {
     /**
      * Resolve the SchemaPath for a TreeItem by walking up the tree.
      */
-    private SchemaPath resolvePath(TreeItem<SchemaNode> item) {
+    SchemaPath resolvePath(TreeItem<SchemaNode> item) {
         if (item.getParent() == null) {
             return new SchemaPath(item.getValue().getField());
         }
@@ -83,8 +107,8 @@ public final class FieldSelectorPanel extends VBox {
     }
 
     /**
-     * Custom tree cell with visibility checkbox and optional hide-if-empty
-     * checkbox for Relation nodes.
+     * Custom tree cell with visibility checkbox, state badges, type labels,
+     * and optional hide-if-empty checkbox for Relation nodes.
      */
     private class FieldTreeCell extends TreeCell<SchemaNode> {
 
@@ -99,18 +123,24 @@ public final class FieldSelectorPanel extends VBox {
             }
 
             SchemaPath path = resolvePath(getTreeItem());
+            FieldState fs = queryState.getFieldState(path);
             boolean visible = queryState.getVisibleOrDefault(path);
 
-            var label = new Label(node.getField());
+            var fieldLabel = new Label(node.getField());
             var visCheck = new CheckBox();
             visCheck.setSelected(visible);
             visCheck.setOnAction(e ->
                 handler.apply(new LayoutInteraction.ToggleVisible(path)));
 
-            var box = new HBox(4, visCheck, label);
+            var box = new HBox(4, visCheck, fieldLabel);
+
+            // State badges
+            addSortBadge(box, fs, path);
+            addFilterBadge(box, fs);
+            addTypeBadge(box, node);
 
             if (node instanceof Relation) {
-                Boolean hideIfEmpty = queryState.getFieldState(path).hideIfEmpty();
+                Boolean hideIfEmpty = fs.hideIfEmpty();
                 var hideCheck = new CheckBox("hide if empty");
                 hideCheck.setSelected(Boolean.TRUE.equals(hideIfEmpty));
                 hideCheck.setOnAction(e ->
@@ -130,6 +160,47 @@ public final class FieldSelectorPanel extends VBox {
 
             setText(null);
             setGraphic(box);
+        }
+
+        private void addSortBadge(HBox box, FieldState fs, SchemaPath path) {
+            String sortFields = fs.sortFields();
+            if (sortFields == null || sortFields.isEmpty()) return;
+
+            String fieldName = path.leaf();
+            Label badge = new Label();
+            badge.getStyleClass().add("sort-badge");
+            if (sortFields.equals(fieldName)) {
+                badge.setText("\u25B2"); // ▲
+            } else if (sortFields.equals("-" + fieldName)) {
+                badge.setText("\u25BC"); // ▼
+            } else {
+                return; // sorted by a different field
+            }
+            box.getChildren().add(badge);
+        }
+
+        private void addFilterBadge(HBox box, FieldState fs) {
+            if (fs.filterExpression() == null) return;
+            Label badge = new Label("\u25CF"); // ●
+            badge.getStyleClass().add("filter-badge");
+            box.getChildren().add(badge);
+        }
+
+        private void addTypeBadge(HBox box, SchemaNode node) {
+            Label badge = new Label();
+            badge.getStyleClass().add("type-badge");
+            if (node instanceof Relation r) {
+                int childCount = r.getChildren().size();
+                badge.setText("{" + childCount + "}");
+            } else if (node instanceof Primitive) {
+                badge.setText("a");
+            } else {
+                return;
+            }
+            // Push to right side
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+            box.getChildren().addAll(spacer, badge);
         }
     }
 }
