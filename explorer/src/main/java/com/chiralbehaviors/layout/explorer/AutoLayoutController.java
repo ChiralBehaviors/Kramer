@@ -33,10 +33,12 @@ import org.slf4j.LoggerFactory;
 import com.chiralbehaviors.layout.AutoLayout;
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.graphql.GraphQlUtil;
+import com.chiralbehaviors.layout.graphql.QueryExpander;
 import com.chiralbehaviors.layout.graphql.SchemaContext;
 import com.chiralbehaviors.layout.graphql.SchemaIntrospector;
 import com.chiralbehaviors.layout.graphql.ServerCapabilities;
 import com.chiralbehaviors.layout.graphql.QueryRewriter;
+import com.chiralbehaviors.layout.graphql.TypeIntrospector;
 import com.chiralbehaviors.layout.query.ColumnSortHandler;
 import com.chiralbehaviors.layout.query.FieldInspectorPanel;
 import com.chiralbehaviors.layout.query.FieldSelectorPanel;
@@ -141,8 +143,10 @@ public class AutoLayoutController {
     private InteractionMenuFactory menuFactory;
     private FieldSelectorPanel fieldSelectorPanel;
     private FieldInspectorPanel fieldInspectorPanel;
+    private IntrospectionTreePanel introspectionPanel;
     private javafx.scene.control.ToggleButton fieldSelectorToggle;
     private javafx.scene.control.ToggleButton inspectorToggle;
+    private javafx.scene.control.ToggleButton introspectionToggle;
     private SchemaPath lastClickedColumnPath;
     private volatile QueryRewriter queryRewriter;
     private volatile ServerCapabilities serverCapabilities;
@@ -223,6 +227,23 @@ public class AutoLayoutController {
         });
         buttonBar.getButtons().add(inspectorToggle);
 
+        // Introspection toggle button — shows schema browse panel on right
+        introspectionToggle = new javafx.scene.control.ToggleButton("Browse (\u21E7\u2318B)");
+        introspectionToggle.selectedProperty().addListener((o, prev, selected) -> {
+            if (selected) {
+                // If inspector is showing, replace it; otherwise use right slot
+                inspectorToggle.setSelected(false);
+                if (introspectionPanel != null) {
+                    root.setRight(introspectionPanel);
+                }
+            } else {
+                if (root.getRight() == introspectionPanel) {
+                    root.setRight(null);
+                }
+            }
+        });
+        buttonBar.getButtons().add(introspectionToggle);
+
         // Global keyboard shortcuts
         root.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
             if (event.isShortcutDown() && event.isShiftDown()) {
@@ -233,6 +254,10 @@ public class AutoLayoutController {
                     }
                     case I -> {
                         inspectorToggle.setSelected(!inspectorToggle.isSelected());
+                        event.consume();
+                    }
+                    case B -> {
+                        introspectionToggle.setSelected(!introspectionToggle.isSelected());
                         event.consume();
                     }
                     default -> {}
@@ -575,5 +600,48 @@ public class AutoLayoutController {
         layout.setRoot(schema);
         layout.measure(data);
         layout.updateItem(data);
+
+        // Build introspection panel (graceful degradation if unavailable)
+        buildIntrospectionPanel();
+    }
+
+    /**
+     * Attempt to fetch schema introspection and build the browse panel.
+     * Falls back to a placeholder if the endpoint doesn't support introspection.
+     */
+    private void buildIntrospectionPanel() {
+        if (endpoint == null) {
+            introspectionPanel = IntrospectionTreePanel.placeholder();
+            introspectionPanel.setPrefWidth(250);
+            introspectionPanel.setMinWidth(0);
+            return;
+        }
+        try {
+            String introspectionQuery = TypeIntrospector.introspectionQuery();
+            String result = GraphQlUtil.evaluate(endpoint, introspectionQuery);
+            JsonNode json = new ObjectMapper().readTree(result);
+            TypeIntrospector introspector = TypeIntrospector.parse(json);
+            QueryExpander expander = new QueryExpander(introspector);
+
+            introspectionPanel = new IntrospectionTreePanel(
+                introspector, expander,
+                () -> schemaContext != null ? schemaContext.document() : null,
+                query -> {
+                    if (!fetchInProgress) {
+                        fetchInProgress = true;
+                        activeQuery.fetchAsync(query);
+                    }
+                });
+        } catch (Exception e) {
+            log.warn("Schema introspection unavailable", e);
+            introspectionPanel = IntrospectionTreePanel.placeholder();
+        }
+        introspectionPanel.setPrefWidth(250);
+        introspectionPanel.setMinWidth(0);
+
+        // Update the right panel if browse toggle is active
+        if (introspectionToggle.isSelected()) {
+            root.setRight(introspectionPanel);
+        }
     }
 }
