@@ -8,9 +8,9 @@
     -fx-padding: 3.0 3.0 3.0 3.0;
     -fx-background-insets: 0, 1;
     -fx-background-radius: 3, 2;
-        
+
     -fx-text-fill: #242d35;
-    -fx-font-size: 12.0px; 
+    -fx-font-size: 12.0px;
 }
 
 .primitive:hover {
@@ -40,7 +40,6 @@
 
 .field-hidden {
     -fx-opacity: 0.4;
-    -fx-strikethrough: true;
 }
 
 .field-selector-panel {
@@ -55,6 +54,24 @@
 .inspector-title {
     -fx-font-weight: bold;
     -fx-font-size: 13px;
+}
+
+.sort-badge {
+    -fx-font-size: 9px;
+    -fx-text-fill: #2196F3;
+    -fx-padding: 0 2 0 2;
+}
+
+.filter-badge {
+    -fx-font-size: 8px;
+    -fx-text-fill: #FF9800;
+    -fx-padding: 0 2 0 2;
+}
+
+.type-badge {
+    -fx-font-size: 9px;
+    -fx-text-fill: #999;
+    -fx-padding: 0 4 0 4;
 }
 
 .crosstab-header { /* inherits from .kramer-container */ }
