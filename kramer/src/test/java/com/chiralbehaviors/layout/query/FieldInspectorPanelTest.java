@@ -146,6 +146,47 @@ class FieldInspectorPanelTest {
     }
 
     @Test
+    void showsDescendingSortState() {
+        var ref = new AtomicReference<String>();
+        Platform.runLater(() -> {
+            var path = new SchemaPath("employees", "name");
+            handler.apply(new LayoutInteraction.SortBy(path, true)); // descending
+
+            var panel = new FieldInspectorPanel(handler, queryState);
+            panel.inspect(path);
+            ref.set(panel.getDisplayedSort());
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals("descending", ref.get());
+    }
+
+    @Test
+    void frozenFieldDisablesAllMutationButtons() {
+        var ref = new AtomicReference<boolean[]>();
+        Platform.runLater(() -> {
+            var path = new SchemaPath("employees", "name");
+            queryState.setFrozen(path, true);
+            // Also set sort/filter so clear buttons would normally be enabled
+            queryState.setSortFields(path, "name");
+            queryState.setFilterExpression(path, "$x > 1");
+
+            var panel = new FieldInspectorPanel(handler, queryState);
+            panel.inspect(path);
+            ref.set(new boolean[] {
+                panel.isClearSortDisabled(),
+                panel.isClearFilterDisabled(),
+                panel.isToggleVisibleDisabled()
+            });
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertTrue(ref.get()[0], "Clear sort should be disabled when frozen");
+        assertTrue(ref.get()[1], "Clear filter should be disabled when frozen");
+        assertTrue(ref.get()[2], "Toggle visible should be disabled when frozen");
+    }
+
+    @Test
     void showsFrozenState() {
         var ref = new AtomicReference<String>();
         Platform.runLater(() -> {

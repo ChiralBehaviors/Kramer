@@ -3,7 +3,6 @@ package com.chiralbehaviors.layout.query;
 
 import com.chiralbehaviors.layout.SchemaPath;
 
-import javafx.geometry.Insets;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Separator;
@@ -47,8 +46,6 @@ public final class FieldInspectorPanel extends VBox {
         this.handler = handler;
         this.queryState = queryState;
         getStyleClass().add("field-inspector-panel");
-        setPadding(new Insets(8));
-        setSpacing(8);
 
         var title = new Label("Field Inspector");
         title.getStyleClass().add("inspector-title");
@@ -185,6 +182,10 @@ public final class FieldInspectorPanel extends VBox {
         return !resetBtn.isDisabled();
     }
 
+    public boolean isClearSortDisabled() { return clearSortBtn.isDisabled(); }
+    public boolean isClearFilterDisabled() { return clearFilterBtn.isDisabled(); }
+    public boolean isToggleVisibleDisabled() { return toggleVisibleBtn.isDisabled(); }
+
     /** Clear sort on the currently inspected field. */
     public void clearSort() {
         if (currentPath != null) {
@@ -263,6 +264,5 @@ public final class FieldInspectorPanel extends VBox {
         clearFormulaBtn.setDisable(disabled);
         clearAggregateBtn.setDisable(disabled);
         toggleVisibleBtn.setDisable(disabled);
-        resetBtn.setDisable(disabled);
     }
 }
