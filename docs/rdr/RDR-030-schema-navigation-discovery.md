@@ -6,7 +6,7 @@ status: proposed
 priority: P1
 author: Hal Hildebrand
 created: 2026-03-19
-related: RDR-026, RDR-027, RDR-020
+related: RDR-026, RDR-027, RDR-020, RDR-029
 ---
 
 # RDR-030: Schema Navigation & Discovery
@@ -17,15 +17,13 @@ related: RDR-026, RDR-027, RDR-020
 - **Priority**: P1
 - **Created**: 2026-03-19
 - **Reviewed-by**: —
-- **Related**: RDR-026 (QueryState), RDR-027 (Interaction Model), RDR-020 (GraphQL AST Retention)
+- **Related**: RDR-026 (QueryState), RDR-027 (Interaction Model), RDR-020 (GraphQL AST Retention), RDR-029 (Interaction UI Affordances)
 
 ---
 
 ## Problem Statement
 
-All four Bakke papers emphasize interactive schema browsing as a core capability of schema-independent database UIs. Kramer has no schema navigation. Users must bring a pre-formed GraphQL query — there is no way to explore the schema, discover available fields, or progressively construct a query from within the UI.
-
-This gap prevents Kramer from functioning as a true schema-independent database interface. The user must already know the data model to use the tool, which contradicts the CIDR 2011 vision of a UI that enables exploration of unfamiliar data.
+All four Bakke papers emphasize interactive schema browsing as a core capability of schema-independent database UIs. Kramer has basic field visibility controls (via `FieldSelectorPanel` from RDR-029) but lacks schema navigation, field properties inspection, schema visualization, or progressive query construction. Users must bring a pre-formed GraphQL query — there is no way to explore the schema, discover available fields, or construct a query from within the UI.
 
 ---
 
@@ -35,37 +33,36 @@ This gap prevents Kramer from functioning as a true schema-independent database 
 - **SIGMOD 2016 (SIEUFERD)**: Field selector panel with visibility toggles, sort/filter indicators, and render mode display.
 - **CIDR 2011**: Schema browsing as a first-class UI activity — users should be able to explore the database schema and construct queries interactively.
 - **RDR-020** (GraphQL AST Retention): Retaining the parsed AST enables query modification (adding/removing fields) without re-parsing.
+- **RDR-029** (Interaction UI Affordances): Built `FieldSelectorPanel` with TreeView, visibility checkboxes, and hide-if-empty — the foundation for Phase 1.
 
 ---
 
 ## Dependencies
 
 - **RDR-026** (QueryState): DONE. Field visibility and properties are tracked in `LayoutQueryState`.
-- **RDR-027** (Interaction Model): DONE. `ToggleVisible` and other interactions drive field manipulation.
+- **RDR-027** (Interaction Model): DONE. `ToggleVisible` and other 11 `LayoutInteraction` variants drive field manipulation.
 - **RDR-020** (GraphQL AST Retention): DONE. Retained AST enables programmatic query modification.
+- **RDR-029** (Interaction UI Affordances): DONE. `FieldSelectorPanel` provides the base TreeView with visibility checkboxes.
 
 ---
 
 ## Proposed Solution
 
-### Phase 1: Schema Tree Panel
+### Phase 1: Schema Tree Panel Enhancement (delta on FieldSelectorPanel)
 
-A collapsible panel displaying the `SchemaNode` hierarchy as an interactive tree:
+`FieldSelectorPanel` (from RDR-029) already provides the TreeView with visibility checkboxes and hide-if-empty toggles. Phase 1 adds the remaining schema navigation features:
 
-- Tree nodes mirror the `Relation`/`Primitive` structure of the current schema
-- Each node has a visibility checkbox that dispatches `ToggleVisible` through `InteractionHandler`
-- Click on a node scrolls the layout to that field's position
-- Tree nodes show field type information (scalar type for Primitives, cardinality for Relations)
-- Collapsible sections for nested Relations
-- Panel position: left sidebar (collapsible) or top-level tab
+- State badges on tree nodes showing current sort direction, active filter, and render mode override
+- Click-to-scroll: selecting a tree node scrolls the layout to that field's position
+- Field type/cardinality display on tree nodes (scalar type for Primitives, row count for Relations)
 
 ### Phase 2: Field Properties Inspector
 
 A detail panel that appears when a field is selected in the schema tree or the layout:
 
 - Shows all `QueryState` properties for the selected field: sort direction, filter expression, render mode, formula, aggregate, visibility
-- Inline editing of each property — changes dispatch corresponding `LayoutInteraction` events
-- Displays the field's `SchemaPath` for reference
+- Inline editing of each property — changes dispatch corresponding `LayoutInteraction` events (including `SortBy`/`ClearSort` for sort, per the 11-variant sealed interface)
+- Displays the field's `SchemaPath` and parent relationship context (derivable from `SchemaContext.fieldIndex()`)
 - Shows field data type and cardinality
 - Read-only display of computed properties (justified width, column count)
 
@@ -73,22 +70,22 @@ A detail panel that appears when a field is selected in the schema tree or the l
 
 A visual representation of the relation hierarchy:
 
-- Graph or tree diagram showing `Relation` nesting structure
+- Tree diagram showing `Relation` nesting structure using JavaFX `Pane` with positioned nodes
 - Nesting depth visualization (indentation or concentric containers)
 - Cardinality hints (one-to-many, one-to-one) derived from schema structure
 - Clickable nodes to navigate to the corresponding section in the layout
-- Minimap-style overview for deeply nested schemas
 
 ### Phase 4: GraphQL Schema Introspection
 
 Integration with GraphQL endpoint introspection to enable progressive query construction:
 
-- Browse available types and fields from the connected GraphQL endpoint via introspection query
+- Browse available types and fields from the connected GraphQL endpoint via `__schema` introspection query
 - Display type hierarchy, field types, and descriptions
-- Add fields to the active query by clicking in the schema browser (modifies retained AST from RDR-020)
+- Add fields to the active query by clicking in the schema browser — requires a new `QueryExpander` component (distinct from `QueryRewriter`, which only adds arguments to existing selections; see RF-8 risk note)
 - Remove fields from the active query
 - Discover joinable relations — show related types that can be navigated to
 - Re-execute modified query and re-layout with updated schema
+- When adding a new relation, start with minimal fields visible (id + name-like fields per RF-6 heuristic)
 
 ---
 
@@ -99,38 +96,42 @@ Integration with GraphQL endpoint introspection to enable progressive query cons
 - **Query history/bookmarks**: Useful but orthogonal; deferred.
 - **Schema diff**: Comparing schema versions is out of scope.
 - **Type-ahead query builder**: A full query builder UI (like GraphiQL) is not the goal — the schema browser feeds into the existing autolayout pipeline.
+- **Bidirectional relationship display in Phase 1**: Kramer's `Relation`/`Primitive` tree is strictly hierarchical with no back-references. Showing reverse edges would require schema model changes. The `SchemaPath` breadcrumb on selected nodes (Phase 2 inspector) addresses the parent-context need without model changes.
 
 ---
 
 ## Implementation Plan
 
-### Phase 1: Schema Tree Panel
-- `SchemaTreePanel` JavaFX control wrapping `TreeView<SchemaNode>`
-- `SchemaTreeItem` extending `TreeItem` with lazy children loading for Relations
-- Visibility checkbox binding to `QueryState.getVisibleOrDefault(path)`
-- Checkbox toggle dispatches `ToggleVisible` through `InteractionHandler`
-- Panel integrated into `AutoLayoutController` as a collapsible sidebar
-- Tests: tree structure matches schema; checkbox toggle hides/shows field
+### Phase 1: Schema Tree Panel Enhancement
+- Extend `FieldSelectorPanel` (not replace — it already provides TreeView, checkboxes, hide-if-empty)
+- Add state badge rendering per tree cell: sort arrow icon, filter indicator, render mode label
+- Add click-to-scroll: tree selection → find corresponding VirtualFlow cell → `showAsFirst()`
+- Add field type/cardinality labels on tree nodes
+- Tests: state badges update on sort/filter change; click-to-scroll navigates correctly; type labels display
+- Note: `FieldSelectorPanel` tests (`FieldSelectorPanelTest.java`) cover the existing checkbox functionality; new tests cover only the delta features
 
 ### Phase 2: Field Properties Inspector
 - `FieldInspectorPanel` JavaFX control with property editors
 - Selection binding: tree selection or layout cell selection → inspector update
-- Property editors for each `FieldState` property (sort, filter, render mode, formula, aggregate)
-- Edits dispatch corresponding `LayoutInteraction` events
+- Property editors for each `FieldState` property (sort via `SortBy`/`ClearSort`, filter, render mode, formula, aggregate)
+- Edits dispatch corresponding `LayoutInteraction` events (11 variants per RDR-029)
+- Parent relationship display via `SchemaPath` breadcrumb
 - Tests: select field → inspector shows correct state; edit property → state updates
 
 ### Phase 3: Schema Diagram
-- `SchemaDiagramView` using JavaFX `Canvas` or `Pane` with positioned nodes
-- Layout algorithm for tree/graph visualization (simple top-down tree layout)
+- `SchemaDiagramView` using JavaFX `Pane` with positioned `Label`/`Region` nodes
+- Simple top-down tree layout algorithm (no external library needed for Kramer's typically shallow nesting)
 - Click-to-navigate wiring
 - Tests: diagram nodes correspond to schema structure; click navigates correctly
 
 ### Phase 4: GraphQL Schema Introspection
 - Introspection query execution via `GraphQlUtil` (kramer-ql)
+- `TypeIntrospector` class (not `SchemaIntrospector`, which is taken for argument detection per RF-2)
 - `IntrospectionTreePanel` displaying available types and fields
-- AST modification: add/remove `Field` nodes in retained GraphQL AST (RDR-020)
-- Re-execution pipeline: modify AST → serialize to query string → execute → re-layout
-- Tests: introspection query returns types; adding field modifies AST; re-execution produces updated layout
+- `QueryExpander` class for AST modification (adding/removing `Field` nodes in selection sets) — distinct from `QueryRewriter` which only injects arguments into existing selections. This is a structurally different operation requiring new `Field` node creation with type information from the introspection result.
+- Re-execution pipeline: expand AST → serialize to query string → execute → re-layout
+- Spike/design step recommended before implementation to validate AST round-trip
+- Tests: introspection query returns types; adding field modifies AST; round-trip validation (modify → serialize → parse → compare); re-execution produces updated layout
 
 ---
 
@@ -147,13 +148,7 @@ A `SchemaView` class already exists in the `explorer` module. It builds a `Check
 - Only shows `Relation` nodes (filters `c instanceof Relation`), skips `Primitive` leaves
 - Has a `SchemaViewSkin` (empty shell — default `SkinBase`)
 
-**Gap for Phase 1**: Current `SchemaView` controls fold/unfold, not field visibility. Must be extended or replaced to:
-1. Show `Primitive` nodes (not just Relations)
-2. Dispatch `ToggleVisible` instead of `setFold()`
-3. Show state badges (sort, filter, render mode)
-4. Integrate with `InteractionHandler` + `LayoutQueryState`
-
-The existing `SchemaView` is already wired into `AutoLayoutController` as a tab ("showSchema" radio button, line 177-179). This means the sidebar infrastructure exists — Phase 1 can extend it.
+**Gap for Phase 1**: Current `SchemaView` controls fold/unfold, not field visibility. `FieldSelectorPanel` (RDR-029) supersedes this for visibility control. `SchemaView` remains as a separate fold-toggle tab.
 
 ### RF-2: SchemaIntrospector Exists — But Does Argument Inspection, Not Schema Browsing
 **Status**: verified
@@ -166,7 +161,7 @@ The existing `SchemaView` is already wired into `AutoLayoutController` as a tab 
 2. Parse the result into a browseable type tree
 3. Map type fields to GraphQL `Field` AST nodes for query modification
 
-The name `SchemaIntrospector` is already taken by the argument-detection class. Phase 4 should use a different name (e.g., `EndpointSchemaExplorer` or `TypeIntrospector`).
+The name `SchemaIntrospector` is already taken. Phase 4 should use `TypeIntrospector`.
 
 ### RF-3: Related Worksheets — Show/Hide Columns Tree Design (CHI 2011 §3)
 **Status**: verified
@@ -174,7 +169,7 @@ The name `SchemaIntrospector` is already taken by the argument-detection class. 
 
 The Show/Hide Columns feature is "a recursive selection of columns from the referenced row, configured through the Show/Hide Columns tree of checkboxes, similar to the Schema Navigation pane." The tree shows "forward and reverse references" — both parent→child and child→parent navigation.
 
-**Design implication**: Phase 1 tree should show bidirectional relationships where available. In GraphQL context, this means showing both a Relation's children AND which parent Relations reference it.
+**Design implication**: The bidirectional relationship display from CHI 2011 requires back-references that don't exist in Kramer's hierarchical schema model. Phase 2's `SchemaPath` breadcrumb provides parent context without model changes. Full bidirectional display is deferred as out of scope.
 
 ### RF-4: SIEUFERD — Field Selector Shows Join Conditions (SIGMOD 2016 §3)
 **Status**: verified
@@ -201,10 +196,18 @@ The Show/Hide Columns feature is "a recursive selection of columns from the refe
 **Design implication**: Phase 4 (GraphQL introspection) should show all fields when browsing, but when a user adds a new relation to the query, start with minimal fields visible (id + name-like fields). Use a heuristic or let the user select which fields to include.
 
 ### RF-7: Plan Audit — Phase 1 Independence Confirmed
-**Status**: verified
+**Status**: superseded by RF-9
 **Source**: Plan audit 2026-03-19, Sig-4
 
-RDR-030 Phase 1 does NOT depend on RDR-029 Phase 1 (sort indicators). It only needs `InteractionHandler` + `LayoutQueryState`, both of which exist. Can run in parallel with Wave 6.
+Originally confirmed Phase 1 could run independently of RDR-029 Phase 1. Now superseded: Phase 1 is a delta on `FieldSelectorPanel` which was built in RDR-029 (closed).
+
+### RF-8: Retained AST Available for Phase 4 (RDR-020)
+**Status**: verified
+**Source**: Codebase analysis, `SchemaContext.fieldIndex()`
+
+RDR-020 (GraphQL AST Retention) is closed. `SchemaContext` retains the parsed AST and provides `fieldIndex()` — a `Map<SchemaPath, Field>` mapping every schema path to its GraphQL `Field` node. `QueryRewriter` already modifies this AST (adding arguments).
+
+**Risk**: `QueryRewriter.rewrite()` adds arguments to existing field selections — it does NOT add new `Field` nodes to a `SelectionSet`. Phase 4 requires a distinct operation (`QueryExpander`) that creates new `Field` nodes with type information from the introspection result. This is structurally different from argument injection and may require a spike to validate AST round-trip correctness.
 
 ### RF-9: Phase 1 Largely Implemented via RDR-029 FieldSelectorPanel
 **Status**: verified
@@ -217,30 +220,16 @@ RDR-030 Phase 1 does NOT depend on RDR-029 Phase 1 (sort indicators). It only ne
 - `field-hidden` CSS class for dimmed/struck-through hidden nodes
 - Integrated into `AutoLayoutController` as collapsible left sidebar (Cmd+Shift+F toggle)
 
-**Gap remaining for Phase 1**: The `FieldSelectorPanel` does NOT yet provide:
-1. State badges showing sort direction, filter presence, render mode per node (RF-1 gap #3)
+**Remaining Phase 1 scope** (delta features only):
+1. State badges showing sort direction, filter presence, render mode per node
 2. Click-to-scroll navigation to field position in the layout
 3. Field type/cardinality display on tree nodes
-4. Bidirectional relationship display (RF-3 design implication)
-
-The existing `SchemaView` (fold toggle, Relations-only) remains separate and is wired to the Schema tab, not the sidebar. `FieldSelectorPanel` replaces what was planned as `SchemaTreePanel` in the Phase 1 implementation plan.
 
 ### RF-10: Layout E2E Test Framework Available for Phase Testing
 **Status**: verified
 **Source**: Kramer-4whh implementation, 2026-03-20
 
-The `LayoutTestHarness` + `LayoutFixtures` framework provides infrastructure for testing any new UI panels:
-- Synchronous pipeline runner that can verify data visibility after schema/interaction changes
-- 4 fixture schemas including nested and deep structures
-- Can verify that toggling visibility in FieldSelectorPanel correctly hides/shows fields in the rendered output
-
-### RF-8: Retained AST Available for Phase 4 (RDR-020)
-**Status**: verified
-**Source**: Codebase analysis, `SchemaContext.fieldIndex()`
-
-RDR-020 (GraphQL AST Retention) is closed. `SchemaContext` retains the parsed AST and provides `fieldIndex()` — a `Map<SchemaPath, Field>` mapping every schema path to its GraphQL `Field` node. `QueryRewriter` already modifies this AST (adding arguments). Phase 4 can extend this to add/remove `Field` nodes from selection sets.
-
-**Risk**: AST modification for field addition requires creating new `Field` nodes with correct type information from the introspection result. Round-trip test (modify → serialize → parse → compare) is essential.
+The `LayoutTestHarness` + `LayoutFixtures` framework provides infrastructure for testing pipeline behavior after schema/interaction changes. Testing `FieldSelectorPanel` checkbox interactions requires TestFX (JavaFX test runner), which is already used by the existing `FieldSelectorPanelTest`.
 
 ---
 
@@ -248,22 +237,24 @@ RDR-020 (GraphQL AST Retention) is closed. `SchemaContext` retains the parsed AS
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| Schema tree panel adds UI complexity | Low | Collapsible sidebar; starts hidden |
 | Large schemas produce unwieldy trees | Medium | Lazy loading of tree children; search/filter within tree |
 | GraphQL introspection may be disabled on some endpoints | Medium | Graceful degradation — Phase 4 features disabled when introspection unavailable |
-| AST modification for query construction is fragile | High | Comprehensive tests; round-trip validation (modify → serialize → parse → compare) |
+| AST modification for query construction is fragile | High | Spike before Phase 4; `QueryExpander` separate from `QueryRewriter`; round-trip validation tests |
 | Performance of re-execution on field add/remove | Low | Debounce rapid changes; show loading indicator |
+| Phase 3 diagram layout algorithm complexity | Low | Kramer schemas are typically shallow (2-4 levels); simple top-down tree layout suffices |
 
 ---
 
 ## Success Criteria
 
-- [ ] Schema tree panel displays the full `SchemaNode` hierarchy with correct nesting
-- [ ] Visibility checkboxes in the tree toggle field display and reflect current state
+- [x] Schema tree panel displays the full `SchemaNode` hierarchy with correct nesting _(implemented in RDR-029 FieldSelectorPanel)_
+- [x] Visibility checkboxes in the tree toggle field display and reflect current state _(implemented in RDR-029 FieldSelectorPanel)_
+- [ ] Tree nodes show state badges for sort, filter, and render mode
+- [ ] Click on a tree node scrolls the layout to that field
 - [ ] Field properties inspector shows all `QueryState` properties for the selected field
-- [ ] Inline property editing dispatches correct `LayoutInteraction` events
+- [ ] Inline property editing dispatches correct `LayoutInteraction` events (11 variants)
 - [ ] Schema diagram visualizes relation hierarchy with nesting depth
 - [ ] GraphQL introspection browses available types and fields from the endpoint
-- [ ] Adding a field from the introspection browser modifies the active query and re-layouts
+- [ ] Adding a field from the introspection browser modifies the active query via `QueryExpander` and re-layouts
 - [ ] Removing a field from the active query updates both the layout and the schema tree
 - [ ] All panels work with both outline and table rendering modes
