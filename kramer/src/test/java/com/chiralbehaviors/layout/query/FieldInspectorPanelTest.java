@@ -146,6 +146,35 @@ class FieldInspectorPanelTest {
     }
 
     @Test
+    void showsFrozenState() {
+        var ref = new AtomicReference<String>();
+        Platform.runLater(() -> {
+            var path = new SchemaPath("employees", "name");
+            queryState.setFrozen(path, true);
+
+            var panel = new FieldInspectorPanel(handler, queryState);
+            panel.inspect(path);
+            ref.set(panel.getDisplayedFrozen());
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertEquals("FROZEN", ref.get());
+    }
+
+    @Test
+    void resetAllEnabledWithNoSelection() {
+        var ref = new AtomicReference<Boolean>();
+        Platform.runLater(() -> {
+            var panel = new FieldInspectorPanel(handler, queryState);
+            panel.inspect(null);
+            ref.set(panel.isResetEnabled());
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertTrue(ref.get(), "Reset All should be enabled even with no selection");
+    }
+
+    @Test
     void hasStyleClass() {
         var ref = new AtomicReference<Boolean>();
         Platform.runLater(() -> {

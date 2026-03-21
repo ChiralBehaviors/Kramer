@@ -33,6 +33,7 @@ public final class FieldInspectorPanel extends VBox {
     private final Label visibleLabel = new Label();
     private final Label renderModeLabel = new Label();
     private final Label hideIfEmptyLabel = new Label();
+    private final Label frozenLabel = new Label();
 
     private final Button clearSortBtn = new Button("Clear");
     private final Button clearFilterBtn = new Button("Clear");
@@ -99,6 +100,10 @@ public final class FieldInspectorPanel extends VBox {
         row++;
         grid.add(new Label("Hide empty:"), 0, row);
         grid.add(hideIfEmptyLabel, 1, row);
+
+        row++;
+        grid.add(new Label("Frozen:"), 0, row);
+        grid.add(frozenLabel, 1, row);
 
         row++;
         grid.add(new Separator(), 0, row, 3, 1);
@@ -170,6 +175,16 @@ public final class FieldInspectorPanel extends VBox {
         return filterLabel.getText();
     }
 
+    /** Currently displayed frozen state. */
+    public String getDisplayedFrozen() {
+        return frozenLabel.getText();
+    }
+
+    /** Whether Reset All button is enabled. */
+    public boolean isResetEnabled() {
+        return !resetBtn.isDisabled();
+    }
+
     /** Clear sort on the currently inspected field. */
     public void clearSort() {
         if (currentPath != null) {
@@ -196,7 +211,10 @@ public final class FieldInspectorPanel extends VBox {
             visibleLabel.setText("");
             renderModeLabel.setText("");
             hideIfEmptyLabel.setText("");
+            frozenLabel.setText("");
             setDisableButtons(true);
+            // Reset All is global — always available
+            resetBtn.setDisable(false);
             return;
         }
 
@@ -213,18 +231,30 @@ public final class FieldInspectorPanel extends VBox {
             sortLabel.setText("ascending");
         }
 
-        filterLabel.setText(fs.filterExpression() != null ? fs.filterExpression() : "");
-        formulaLabel.setText(fs.formulaExpression() != null ? fs.formulaExpression() : "");
-        aggregateLabel.setText(fs.aggregateExpression() != null ? fs.aggregateExpression() : "");
-        visibleLabel.setText(queryState.getVisibleOrDefault(currentPath) ? "yes" : "no");
-        renderModeLabel.setText(fs.renderMode() != null ? fs.renderMode() : "auto");
-        hideIfEmptyLabel.setText(Boolean.TRUE.equals(fs.hideIfEmpty()) ? "yes" : "no");
+        // Uniform variable pattern — read each field once
+        String filter = fs.filterExpression();
+        String formula = fs.formulaExpression();
+        String aggregate = fs.aggregateExpression();
+        String renderMode = fs.renderMode();
+        Boolean frozen = fs.frozen();
 
-        setDisableButtons(false);
-        clearSortBtn.setDisable(sortFields == null || sortFields.isEmpty());
-        clearFilterBtn.setDisable(fs.filterExpression() == null);
-        clearFormulaBtn.setDisable(fs.formulaExpression() == null);
-        clearAggregateBtn.setDisable(fs.aggregateExpression() == null);
+        filterLabel.setText(filter != null ? filter : "");
+        formulaLabel.setText(formula != null ? formula : "");
+        aggregateLabel.setText(aggregate != null ? aggregate : "");
+        visibleLabel.setText(queryState.getVisibleOrDefault(currentPath) ? "yes" : "no");
+        renderModeLabel.setText(renderMode != null ? renderMode : "auto");
+        hideIfEmptyLabel.setText(Boolean.TRUE.equals(fs.hideIfEmpty()) ? "yes" : "no");
+        frozenLabel.setText(Boolean.TRUE.equals(frozen) ? "FROZEN" : "no");
+
+        boolean isFrozen = Boolean.TRUE.equals(frozen);
+        setDisableButtons(isFrozen);
+        clearSortBtn.setDisable(isFrozen || sortFields == null || sortFields.isEmpty());
+        clearFilterBtn.setDisable(isFrozen || filter == null);
+        clearFormulaBtn.setDisable(isFrozen || formula == null);
+        clearAggregateBtn.setDisable(isFrozen || aggregate == null);
+        toggleVisibleBtn.setDisable(isFrozen);
+        // Reset All is always available
+        resetBtn.setDisable(false);
     }
 
     private void setDisableButtons(boolean disabled) {

@@ -47,6 +47,16 @@
     -fx-padding: 4;
 }
 
+.field-inspector-panel {
+    -fx-padding: 8;
+    -fx-spacing: 8;
+}
+
+.inspector-title {
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+
 .crosstab-header { /* inherits from .kramer-container */ }
 .crosstab-header-label { -fx-font-weight: bold; }
 .crosstab-row { /* inherits from .kramer-container */ }
