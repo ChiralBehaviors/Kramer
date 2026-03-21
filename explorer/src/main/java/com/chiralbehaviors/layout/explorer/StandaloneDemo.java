@@ -202,8 +202,9 @@ public class StandaloneDemo extends Application {
         // Focus the layout so keyboard shortcuts work immediately
         layout.setFocusTraversable(true);
 
-        // Start with field selector open
-        fieldToggle.setSelected(true);
+        // Field selector starts closed — toggle via ⇧⌘F.
+        // Opening it steals ~200px from the layout, which can push
+        // deeply nested schemas past their readableTableWidth threshold.
 
         Scene scene = new Scene(root, 1200, 800);
         stage.setTitle("Kramer \u2014 Course Catalog Demo");
