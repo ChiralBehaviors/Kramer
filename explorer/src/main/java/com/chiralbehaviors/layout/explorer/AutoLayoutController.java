@@ -38,6 +38,7 @@ import com.chiralbehaviors.layout.graphql.SchemaIntrospector;
 import com.chiralbehaviors.layout.graphql.ServerCapabilities;
 import com.chiralbehaviors.layout.graphql.QueryRewriter;
 import com.chiralbehaviors.layout.query.ColumnSortHandler;
+import com.chiralbehaviors.layout.query.FieldInspectorPanel;
 import com.chiralbehaviors.layout.query.FieldSelectorPanel;
 import com.chiralbehaviors.layout.query.InteractionHandler;
 import com.chiralbehaviors.layout.query.InteractionMenuFactory;
@@ -139,7 +140,9 @@ public class AutoLayoutController {
     private InteractionHandler  interactionHandler;
     private InteractionMenuFactory menuFactory;
     private FieldSelectorPanel fieldSelectorPanel;
+    private FieldInspectorPanel fieldInspectorPanel;
     private javafx.scene.control.ToggleButton fieldSelectorToggle;
+    private javafx.scene.control.ToggleButton inspectorToggle;
     private SchemaPath lastClickedColumnPath;
     private volatile QueryRewriter queryRewriter;
     private volatile ServerCapabilities serverCapabilities;
@@ -209,13 +212,31 @@ public class AutoLayoutController {
         var buttonBar = (javafx.scene.control.ButtonBar) root.getBottom();
         buttonBar.getButtons().add(fieldSelectorToggle);
 
-        // Global keyboard shortcut: Cmd+Shift+F toggles field selector
-        // (Cmd+F is reserved for AutoLayout's search bar)
+        // Inspector toggle button
+        inspectorToggle = new javafx.scene.control.ToggleButton("Inspector (\u21E7\u2318I)");
+        inspectorToggle.selectedProperty().addListener((o, prev, selected) -> {
+            if (selected) {
+                root.setRight(fieldInspectorPanel);
+            } else {
+                root.setRight(null);
+            }
+        });
+        buttonBar.getButtons().add(inspectorToggle);
+
+        // Global keyboard shortcuts
         root.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, event -> {
-            if (event.isShortcutDown() && event.isShiftDown()
-                    && event.getCode() == javafx.scene.input.KeyCode.F) {
-                fieldSelectorToggle.setSelected(!fieldSelectorToggle.isSelected());
-                event.consume();
+            if (event.isShortcutDown() && event.isShiftDown()) {
+                switch (event.getCode()) {
+                    case F -> {
+                        fieldSelectorToggle.setSelected(!fieldSelectorToggle.isSelected());
+                        event.consume();
+                    }
+                    case I -> {
+                        inspectorToggle.setSelected(!inspectorToggle.isSelected());
+                        event.consume();
+                    }
+                    default -> {}
+                }
             }
         });
     }
@@ -330,6 +351,14 @@ public class AutoLayoutController {
         fieldSelectorPanel.setPrefWidth(200);
         fieldSelectorPanel.setMinWidth(0);
 
+        fieldInspectorPanel = new FieldInspectorPanel(interactionHandler, layoutQueryState);
+        fieldInspectorPanel.setPrefWidth(250);
+        fieldInspectorPanel.setMinWidth(0);
+
+        // Tree selection → inspector
+        fieldSelectorPanel.setOnFieldSelected(path ->
+            fieldInspectorPanel.inspect(path));
+
         var sortHandler = new ColumnSortHandler(interactionHandler, layoutQueryState);
         layout.setPostLayoutCallback(() -> {
             installSortHandlers(layout, sortHandler);
@@ -362,11 +391,12 @@ public class AutoLayoutController {
             }
         });
 
-        // Track last-clicked column header for keyboard sort shortcuts
+        // Track last-clicked column header + update inspector
         layout.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_CLICKED, event -> {
             SchemaPath hitPath = layout.hitSchemaPath(event.getX(), event.getY());
             if (hitPath != null) {
                 lastClickedColumnPath = hitPath;
+                fieldInspectorPanel.inspect(hitPath);
             }
         });
 
