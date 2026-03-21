@@ -153,6 +153,16 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         return root.get();
     }
 
+    /** Package-visible for testing: the current layout width. */
+    double getLayoutWidth() {
+        return layoutWidth;
+    }
+
+    /** Package-visible for testing: the internal layout tree. */
+    SchemaNodeLayout getLayoutTree() {
+        return layout;
+    }
+
     @Override
     public String getUserAgentStylesheet() {
         return stylesheet;
