@@ -70,13 +70,15 @@ class StandaloneDemoTest {
     }
 
     private Relation buildSchema() {
+        Relation sections = new Relation("sections");
+        sections.addChild(new Primitive("section"));
+        sections.addChild(new Primitive("enrollment"));
+
         Relation courses = new Relation("courses");
         courses.addChild(new Primitive("number"));
         courses.addChild(new Primitive("title"));
         courses.addChild(new Primitive("credits"));
-        courses.addChild(new Primitive("instructor"));
-        courses.addChild(new Primitive("enrollment"));
-        courses.addChild(new Primitive("schedule"));
+        courses.addChild(sections);
 
         Relation depts = new Relation("departments");
         depts.addChild(new Primitive("name"));
@@ -97,9 +99,12 @@ class StandaloneDemoTest {
         cs101.put("number", "CS101");
         cs101.put("title", "Intro to Programming");
         cs101.put("credits", 3);
-        cs101.put("instructor", "Prof. Turing");
-        cs101.put("enrollment", 125);
-        cs101.put("schedule", "MWF 9-10");
+        ArrayNode secs = MAPPER.createArrayNode();
+        ObjectNode secA = MAPPER.createObjectNode();
+        secA.put("section", "A");
+        secA.put("enrollment", 45);
+        secs.add(secA);
+        cs101.set("sections", secs);
         courses.add(cs101);
         cs.set("courses", courses);
         depts.add(cs);
@@ -112,9 +117,12 @@ class StandaloneDemoTest {
         calc.put("number", "MATH101");
         calc.put("title", "Calculus I");
         calc.put("credits", 4);
-        calc.put("instructor", "Prof. Euler");
-        calc.put("enrollment", 143);
-        calc.put("schedule", "MWF 8-9");
+        ArrayNode calcSecs = MAPPER.createArrayNode();
+        ObjectNode calcA = MAPPER.createObjectNode();
+        calcA.put("section", "A");
+        calcA.put("enrollment", 50);
+        calcSecs.add(calcA);
+        calc.set("sections", calcSecs);
         mathCourses.add(calc);
         math.set("courses", mathCourses);
         depts.add(math);
