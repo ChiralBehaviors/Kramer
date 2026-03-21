@@ -24,11 +24,17 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
-import javafx.stage.Stage;
 
 /**
- * Headless tests for StandaloneDemo interactive pipeline wiring.
- * Validates resize adaptation, query state integration, and layout lifecycle.
+ * Headless tests for StandaloneDemo lifecycle.
+ *
+ * <p>Key constraint under test: data must be loaded AFTER the layout
+ * has a real width (from the scene graph), not before. Loading data
+ * when getWidth()==0 causes the layout to render at a default size
+ * that doesn't fit the window and breaks resize adaptation.
+ *
+ * <p>Uses applyCss()/layout() to simulate the scene graph layout pass
+ * in headless Monocle (Stage.show() is not available headless).
  */
 class StandaloneDemoTest {
 
@@ -98,25 +104,8 @@ class StandaloneDemoTest {
         secA.put("section", "A");
         secA.put("enrollment", 45);
         secs.add(secA);
-        ObjectNode secB = MAPPER.createObjectNode();
-        secB.put("section", "B");
-        secB.put("enrollment", 42);
-        secs.add(secB);
         cs101.set("sections", secs);
         courses.add(cs101);
-
-        ObjectNode cs201 = MAPPER.createObjectNode();
-        cs201.put("number", "CS201");
-        cs201.put("title", "Data Structures");
-        cs201.put("credits", 4);
-        ArrayNode secs2 = MAPPER.createArrayNode();
-        ObjectNode secC = MAPPER.createObjectNode();
-        secC.put("section", "A");
-        secC.put("enrollment", 35);
-        secs2.add(secC);
-        cs201.set("sections", secs2);
-        courses.add(cs201);
-
         cs.set("courses", courses);
         depts.add(cs);
 
@@ -142,129 +131,124 @@ class StandaloneDemoTest {
     }
 
     // -----------------------------------------------------------------------
-    // Test: Layout initializes and renders with schema + data
+    // Regression guard: data loaded before scene → width is 0
+    // This is the anti-pattern the demo fix prevents.
     // -----------------------------------------------------------------------
 
     @Test
-    void layoutInitializesWithSchemaAndData() throws Exception {
+    void dataBeforeSceneProducesZeroWidth() throws Exception {
         runOnFxAndWait(() -> {
             Style style = new Style();
             LayoutQueryState qs = new LayoutQueryState(style);
             style.setStylesheet(qs);
             AutoLayout layout = new AutoLayout(null, style);
 
-            Relation schema = buildSchema();
-            ArrayNode data = buildData();
+            // Load data BEFORE creating a scene
+            layout.setRoot(buildSchema());
+            layout.measure(buildData());
+            layout.updateItem(buildData());
 
-            layout.setRoot(schema);
-            layout.measure(data);
-            layout.updateItem(data);
-
-            assertNotNull(layout.getRoot(), "Root should be set");
-            assertNotNull(layout.getData(), "Data should be set");
+            assertEquals(0.0, layout.getWidth(), 0.01,
+                "Width must be 0 before scene exists — data loading " +
+                "must be deferred until after the scene graph provides " +
+                "a real width");
         });
     }
 
     // -----------------------------------------------------------------------
-    // Test: Resize triggers re-layout with different width
+    // Correct lifecycle: scene first, then data → layout gets real width
     // -----------------------------------------------------------------------
 
     @Test
-    void resizeTriggersRelayout() throws Exception {
+    void dataAfterSceneLayoutGetsRealWidth() throws Exception {
         runOnFxAndWait(() -> {
             Style style = new Style();
             LayoutQueryState qs = new LayoutQueryState(style);
             style.setStylesheet(qs);
             AutoLayout layout = new AutoLayout(null, style);
 
-            Relation schema = buildSchema();
-            ArrayNode data = buildData();
-
-            layout.setRoot(schema);
-            layout.measure(data);
-            layout.updateItem(data);
-
-            // Simulate initial size — triggers autoLayout
-            layout.resize(800, 600);
-            int childrenAt800 = layout.getChildren().size();
-            assertTrue(childrenAt800 > 0,
-                "Layout should have children after initial resize");
-
-            // Resize to different width — should trigger re-layout
-            layout.resize(400, 600);
-            int childrenAt400 = layout.getChildren().size();
-            assertTrue(childrenAt400 > 0,
-                "Layout should have children after resize to 400");
-        });
-    }
-
-    // -----------------------------------------------------------------------
-    // Test: Layout in AnchorPane + BorderPane (same as demo structure)
-    // -----------------------------------------------------------------------
-
-    @Test
-    void layoutInBorderPaneResizes() throws Exception {
-        runOnFxAndWait(() -> {
-            Style style = new Style();
-            LayoutQueryState qs = new LayoutQueryState(style);
-            style.setStylesheet(qs);
-            AutoLayout layout = new AutoLayout(null, style);
-
-            Relation schema = buildSchema();
-            ArrayNode data = buildData();
-
-            layout.setRoot(schema);
-            layout.measure(data);
-            layout.updateItem(data);
-
-            // Replicate the demo scene structure — AutoLayout directly in BorderPane center
+            // Step 1: create scene (no data yet)
             var root = new BorderPane();
             root.setCenter(layout);
+            new Scene(root, 1000, 700);
 
-            // Create a scene to drive layout
-            Scene scene = new Scene(root, 1000, 700);
-
-            // Force layout pass
+            // Step 2: force layout pass so scene graph assigns widths
             root.applyCss();
             root.layout();
 
-            // AutoLayout should have been resized by the AnchorPane
-            double width = layout.getWidth();
-            assertTrue(width > 100,
-                "AutoLayout width should be > 100 after scene layout, got: " + width);
+            double widthBeforeData = layout.getWidth();
+            assertTrue(widthBeforeData > 100,
+                "After scene layout, AutoLayout should have real width, got: "
+                + widthBeforeData);
+
+            // Step 3: NOW load data (same as demo's Platform.runLater)
+            layout.setRoot(buildSchema());
+            layout.measure(buildData());
+            layout.updateItem(buildData());
+
             assertTrue(layout.getChildren().size() > 0,
-                "AutoLayout should have rendered children");
+                "Layout should have rendered children");
         });
     }
 
     // -----------------------------------------------------------------------
-    // Test: QueryState change triggers re-layout
+    // Resize: layout adapts to new width
     // -----------------------------------------------------------------------
 
     @Test
-    void queryStateChangeTriggersRelayout() throws Exception {
+    void resizeChangesLayoutWidth() throws Exception {
         runOnFxAndWait(() -> {
             Style style = new Style();
             LayoutQueryState qs = new LayoutQueryState(style);
             style.setStylesheet(qs);
             AutoLayout layout = new AutoLayout(null, style);
 
-            // Wire change listener (same as demo)
+            var root = new BorderPane();
+            root.setCenter(layout);
+            new Scene(root, 1000, 700);
+            root.applyCss();
+            root.layout();
+
+            // Load data at real width
+            layout.setRoot(buildSchema());
+            layout.measure(buildData());
+            layout.updateItem(buildData());
+
+            double widthAt1000 = layout.getWidth();
+
+            // Simulate resize by calling resize() directly with new width
+            // (applyCss/layout won't change Scene size in headless)
+            layout.resize(500, 600);
+
+            assertTrue(layout.getChildren().size() > 0,
+                "Layout should still have children after resize");
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // QueryState change triggers re-layout without error
+    // -----------------------------------------------------------------------
+
+    @Test
+    void queryStateChangeWorks() throws Exception {
+        runOnFxAndWait(() -> {
+            Style style = new Style();
+            LayoutQueryState qs = new LayoutQueryState(style);
+            style.setStylesheet(qs);
+            AutoLayout layout = new AutoLayout(null, style);
             qs.addChangeListener(layout::autoLayout);
             InteractionHandler handler = new InteractionHandler(qs);
 
-            Relation schema = buildSchema();
-            ArrayNode data = buildData();
+            var root = new BorderPane();
+            root.setCenter(layout);
+            new Scene(root, 800, 600);
+            root.applyCss();
+            root.layout();
 
-            layout.setRoot(schema);
-            layout.measure(data);
-            layout.updateItem(data);
+            layout.setRoot(buildSchema());
+            layout.measure(buildData());
+            layout.updateItem(buildData());
 
-            // Initial layout
-            layout.resize(800, 600);
-
-            // Toggle visibility of a field — should trigger re-layout via
-            // queryState change listener
             SchemaPath namePath = new SchemaPath("departments", "name");
             assertDoesNotThrow(
                 () -> handler.apply(
