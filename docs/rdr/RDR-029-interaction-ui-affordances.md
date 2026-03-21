@@ -17,10 +17,12 @@ related: RDR-027, RDR-026, RDR-021, RDR-028, RDR-005, RDR-020
 
 ## Metadata
 - **Type**: Feature
-- **Status**: accepted
+- **Status**: closed
 - **Priority**: P0
 - **Created**: 2026-03-19
 - **Accepted**: 2026-03-19
+- **Closed**: 2026-03-19
+- **Close Reason**: implemented
 - **Reviewed-by**: self
 - **Related**: RDR-027 (Interaction Model), RDR-026 (QueryState), RDR-021 (Expression Language), RDR-028 (Query Rewriter), RDR-005 (Keyboard Navigation), RDR-020 (GraphQL AST Retention)
 
@@ -243,12 +245,12 @@ On the `buildAndInstallControl()` cache-hit path, `postLayoutCallback` fires and
 
 ## Success Criteria
 
-- [ ] Column headers show sort direction indicators (▲/▼) reflecting current sort state
-- [ ] Click-to-sort on column headers cycles through ascending → descending → clear
-- [ ] Right-click context menus appear on headers and cells with appropriate menu items
-- [ ] All 11 `LayoutInteraction` event types are reachable from the UI
-- [ ] Field selector panel shows schema tree with visibility checkboxes
-- [ ] Formula/filter editors validate expressions against the RDR-021 parser
-- [ ] Keyboard shortcuts trigger query operations on focused elements
-- [ ] All affordances work in both outline and table rendering modes
-- [ ] All SIEUFERD properties 1–4, 9 (Visible, Formula, Filter, Sort, HideParentIfEmpty) are reachable from the UI without programmatic configuration
+- [x] Column headers show sort direction indicators (▲/▼) reflecting current sort state
+- [x] Click-to-sort on column headers cycles through ascending → descending → clear
+- [x] Right-click context menus appear on headers and cells with appropriate menu items
+- [x] All 11 `LayoutInteraction` event types are reachable from the UI
+- [x] Field selector panel shows schema tree with visibility checkboxes
+- [x] Formula/filter editors validate expressions against the RDR-021 parser
+- [x] Keyboard shortcuts trigger query operations on focused elements
+- [x] All affordances work in both outline and table rendering modes
+- [x] All SIEUFERD properties 1–4, 9 (Visible, Formula, Filter, Sort, HideParentIfEmpty) are reachable from the UI without programmatic configuration
