@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.SeparatorMenuItem;
@@ -198,15 +199,8 @@ public class StandaloneDemo extends Application {
             }
         });
 
-        // Load schema and data into the layout
-        layout.setRoot(schema);
-        fieldSelectorPanel.setRoot(schema);
-        layout.measure(data);
-        layout.updateItem(data);
-
         // Focus the layout so keyboard shortcuts work immediately
         layout.setFocusTraversable(true);
-        layout.requestFocus();
 
         // Start with field selector open
         fieldToggle.setSelected(true);
@@ -215,6 +209,17 @@ public class StandaloneDemo extends Application {
         stage.setTitle("Kramer \u2014 Course Catalog Demo");
         stage.setScene(scene);
         stage.show();
+
+        // Load data AFTER stage is shown so AutoLayout has its real width.
+        // Without this, getWidth() returns 0 during the initial layout pass
+        // and the layout renders at a default width that doesn't fit the window.
+        Platform.runLater(() -> {
+            layout.setRoot(schema);
+            fieldSelectorPanel.setRoot(schema);
+            layout.measure(data);
+            layout.updateItem(data);
+            layout.requestFocus();
+        });
     }
 
     // -----------------------------------------------------------------------
