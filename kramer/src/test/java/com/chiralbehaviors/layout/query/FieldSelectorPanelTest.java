@@ -280,4 +280,56 @@ class FieldSelectorPanelTest {
         assertEquals("records/details/value", ref.get().toString(),
             "Path should be fully qualified");
     }
+
+    // -------------------------------------------------------------------
+    // CSS class verification
+    // -------------------------------------------------------------------
+
+    @Test
+    void hiddenFieldGetsDimmedCssClass() {
+        var ref = new AtomicReference<Boolean>();
+        Platform.runLater(() -> {
+            var path = new SchemaPath("records", "name");
+            handler.apply(new LayoutInteraction.ToggleVisible(path)); // hide
+
+            var panel = createAndAttach(buildSchema());
+            // The change listener auto-refreshes; check for field-hidden nodes
+            var cells = findNodesByClass(panel, "field-hidden");
+            ref.set(!cells.isEmpty());
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertTrue(ref.get(), "Hidden field cell should have field-hidden CSS class");
+    }
+
+    @Test
+    void visibleFieldDoesNotHaveDimmedCssClass() {
+        var ref = new AtomicReference<Boolean>();
+        Platform.runLater(() -> {
+            // All fields visible by default
+            var panel = createAndAttach(buildSchema());
+            var cells = findNodesByClass(panel, "field-hidden");
+            ref.set(cells.isEmpty());
+        });
+        WaitForAsyncUtils.waitForFxEvents();
+
+        assertTrue(ref.get(), "Visible fields should not have field-hidden CSS class");
+    }
+
+    private List<Node> findNodesByClass(Node root, String cssClass) {
+        List<Node> result = new java.util.ArrayList<>();
+        findNodesByClassRec(root, cssClass, result);
+        return result;
+    }
+
+    private void findNodesByClassRec(Node node, String cssClass, List<Node> out) {
+        if (node.getStyleClass().contains(cssClass)) {
+            out.add(node);
+        }
+        if (node instanceof Parent parent) {
+            for (Node child : parent.getChildrenUnmodifiable()) {
+                findNodesByClassRec(child, cssClass, out);
+            }
+        }
+    }
 }

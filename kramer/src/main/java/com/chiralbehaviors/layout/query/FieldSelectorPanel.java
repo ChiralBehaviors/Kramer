@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.chiralbehaviors.layout.query;
 
+import java.util.IdentityHashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import com.chiralbehaviors.layout.SchemaPath;
@@ -22,6 +24,9 @@ import javafx.scene.layout.VBox;
  * A panel displaying a {@link TreeView} of the schema tree with per-field
  * visibility checkboxes, state badges (sort, filter, type), and per-Relation
  * hide-if-empty checkboxes.
+ * <p>
+ * Call {@link #dispose()} when the panel is removed from the scene to
+ * unregister the query state change listener and prevent memory leaks.
  *
  * @author hhildebrand
  */
@@ -30,6 +35,8 @@ public final class FieldSelectorPanel extends VBox {
     private final TreeView<SchemaNode> treeView;
     private final InteractionHandler handler;
     private final LayoutQueryState queryState;
+    private final Runnable changeListener;
+    private final Map<TreeItem<SchemaNode>, SchemaPath> pathCache = new IdentityHashMap<>();
     private Consumer<SchemaPath> onFieldSelected;
 
     public FieldSelectorPanel(InteractionHandler handler,
@@ -42,16 +49,21 @@ public final class FieldSelectorPanel extends VBox {
         VBox.setVgrow(treeView, Priority.ALWAYS);
         getChildren().add(treeView);
 
+        // Refresh tree cells when query state changes (sort, filter, visibility)
+        changeListener = treeView::refresh;
+        queryState.addChangeListener(changeListener);
+
         treeView.getSelectionModel().selectedItemProperty().addListener(
             (obs, old, selected) -> {
                 if (selected != null && selected.getValue() != null
                         && onFieldSelected != null) {
-                    onFieldSelected.accept(resolvePath(selected));
+                    onFieldSelected.accept(getCachedPath(selected));
                 }
             });
     }
 
     public void setRoot(SchemaNode root) {
+        pathCache.clear();
         if (root == null) {
             treeView.setRoot(null);
             return;
@@ -73,8 +85,14 @@ public final class FieldSelectorPanel extends VBox {
         treeView.refresh();
     }
 
+    /** Unregister the query state listener. Call when removing the panel. */
+    public void dispose() {
+        queryState.removeChangeListener(changeListener);
+    }
+
     private TreeItem<SchemaNode> buildTree(SchemaNode node, SchemaPath path) {
         TreeItem<SchemaNode> item = new TreeItem<>(node);
+        pathCache.put(item, path);
         item.setExpanded(true);
         if (node instanceof Relation r) {
             for (SchemaNode child : r.getChildren()) {
@@ -83,6 +101,12 @@ public final class FieldSelectorPanel extends VBox {
             }
         }
         return item;
+    }
+
+    /** Get cached SchemaPath from a TreeItem, falling back to recomputation. */
+    private SchemaPath getCachedPath(TreeItem<SchemaNode> item) {
+        SchemaPath cached = pathCache.get(item);
+        return cached != null ? cached : resolvePath(item);
     }
 
     SchemaPath resolvePath(TreeItem<SchemaNode> item) {
@@ -119,13 +143,13 @@ public final class FieldSelectorPanel extends VBox {
             visCheck.setOnAction(e -> {
                 if (getTreeItem() != null) {
                     handler.apply(new LayoutInteraction.ToggleVisible(
-                        resolvePath(getTreeItem())));
+                        getCachedPath(getTreeItem())));
                 }
             });
             hideCheck.setOnAction(e -> {
                 if (getTreeItem() != null) {
                     handler.apply(new LayoutInteraction.SetHideIfEmpty(
-                        resolvePath(getTreeItem()), hideCheck.isSelected()));
+                        getCachedPath(getTreeItem()), hideCheck.isSelected()));
                 }
             });
         }
@@ -140,7 +164,7 @@ public final class FieldSelectorPanel extends VBox {
                 return;
             }
 
-            SchemaPath path = resolvePath(getTreeItem());
+            SchemaPath path = getCachedPath(getTreeItem());
             FieldState fs = queryState.getFieldState(path);
             boolean visible = queryState.getVisibleOrDefault(path);
 
