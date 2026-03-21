@@ -40,7 +40,7 @@ All four Bakke papers emphasize interactive schema browsing as a core capability
 ## Dependencies
 
 - **RDR-026** (QueryState): DONE. Field visibility and properties are tracked in `LayoutQueryState`.
-- **RDR-027** (Interaction Model): DONE. `ToggleVisible` and other 11 `LayoutInteraction` variants drive field manipulation.
+- **RDR-027** (Interaction Model): DONE. `ToggleVisible` and other 12 `LayoutInteraction` variants drive field manipulation.
 - **RDR-020** (GraphQL AST Retention): DONE. Retained AST enables programmatic query modification.
 - **RDR-029** (Interaction UI Affordances): DONE. `FieldSelectorPanel` provides the base TreeView with visibility checkboxes.
 
@@ -252,7 +252,7 @@ The `LayoutTestHarness` + `LayoutFixtures` framework provides infrastructure for
 - [ ] Tree nodes show state badges for sort, filter, and render mode
 - [ ] Click on a tree node scrolls the layout to that field
 - [ ] Field properties inspector shows all `QueryState` properties for the selected field
-- [ ] Inline property editing dispatches correct `LayoutInteraction` events (11 variants)
+- [ ] Inline property editing dispatches correct `LayoutInteraction` events (12 variants)
 - [ ] Schema diagram visualizes relation hierarchy with nesting depth
 - [ ] GraphQL introspection browses available types and fields from the endpoint
 - [ ] Adding a field from the introspection browser modifies the active query via `QueryExpander` and re-layouts
