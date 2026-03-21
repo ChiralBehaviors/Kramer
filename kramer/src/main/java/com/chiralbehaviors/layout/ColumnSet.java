@@ -56,6 +56,13 @@ public class ColumnSet {
 
     public double compress(int cardinality, double justified,
                            RelationStyle style, double labelWidth) {
+        return compress(cardinality, justified, style, labelWidth,
+                        ColumnPartitioner.dpOptimal());
+    }
+
+    double compress(int cardinality, double justified,
+                    RelationStyle style, double labelWidth,
+                    ColumnPartitioner partitioner) {
         Column firstColumn = columns.get(0);
         // Minimum column width must accommodate label + insets + minimum
         // data space. Without this, labelWidth can consume the entire
@@ -84,26 +91,44 @@ public class ColumnSet {
                    .forEach(f -> {
                        f.compress(fieldWidth);
                    });
-        IntStream.range(1, count)
-                 .forEach(i -> columns.add(new Column(columnWidth)));
-        double baseHeight = firstColumn.cellHeight(cardinality, style,
-                                                   fieldWidth);
-        double lastHeight;
-        do {
-            lastHeight = baseHeight;
-            for (int i = 0; i < columns.size() - 1; i++) {
-                while (columns.get(i)
-                              .slideRight(cardinality, columns.get(i + 1),
-                                          style, fieldWidth)) {
-                }
+
+        if (count <= 1) {
+            // Single column — no partitioning needed
+            double finalHeight = Style.snap(
+                firstColumn.cellHeight(cardinality, style, fieldWidth));
+            firstColumn.distributeHeight(finalHeight, style);
+            return Style.snap(finalHeight + style.getColumnVerticalInset());
+        }
+
+        // Compute per-field heights for the partitioner
+        List<SchemaNodeLayout> fields = firstColumn.getFields();
+        double[] fieldHeights = new double[fields.size()];
+        for (int i = 0; i < fields.size(); i++) {
+            fieldHeights[i] = Style.snap(
+                fields.get(i).cellHeight(cardinality, fieldWidth)
+                + style.getElementVerticalInset());
+        }
+
+        // Partition fields into columns
+        int[] sizes = partitioner.partition(fieldHeights, count);
+
+        // Build columns from partition
+        columns.clear();
+        int idx = 0;
+        for (int col = 0; col < count; col++) {
+            Column c = new Column(columnWidth);
+            for (int j = 0; j < sizes[col] && idx < fields.size(); j++) {
+                c.add(fields.get(idx++));
             }
-            baseHeight = columns.stream()
-                                .mapToDouble(c -> c.cellHeight(cardinality,
-                                                               style,
-                                                               fieldWidth))
-                                .max()
-                                .orElse(0d);
-        } while (lastHeight > baseHeight);
+            columns.add(c);
+        }
+
+        double baseHeight = columns.stream()
+                                   .mapToDouble(c -> c.cellHeight(cardinality,
+                                                                  style,
+                                                                  fieldWidth))
+                                   .max()
+                                   .orElse(0d);
         double finalHeight = Style.snap(baseHeight);
         columns.forEach(c -> c.distributeHeight(finalHeight, style));
         return Style.snap(finalHeight + style.getColumnVerticalInset());
