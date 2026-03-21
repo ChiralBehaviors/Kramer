@@ -40,7 +40,6 @@
 
 .field-hidden {
     -fx-opacity: 0.4;
-    -fx-strikethrough: true;
 }
 
 .field-selector-panel {

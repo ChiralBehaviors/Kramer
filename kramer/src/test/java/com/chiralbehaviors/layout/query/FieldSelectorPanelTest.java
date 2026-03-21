@@ -91,7 +91,8 @@ class FieldSelectorPanelTest {
     }
 
     private void findLabelsByClassRec(Node node, String cssClass, List<Label> out) {
-        if (node instanceof Label label && label.getStyleClass().contains(cssClass)) {
+        if (node instanceof Label label && label.getStyleClass().contains(cssClass)
+                && label.isVisible()) {
             out.add(label);
         }
         if (node instanceof Parent parent) {
@@ -220,20 +221,26 @@ class FieldSelectorPanelTest {
         });
         WaitForAsyncUtils.waitForFxEvents();
 
-        assertFalse(ref.get().isEmpty(), "Relation nodes should have type badge");
+        assertFalse(ref.get().isEmpty(), "Type badges should appear");
+        assertTrue(ref.get().stream().anyMatch(l -> l.getText().startsWith("{")),
+            "Relation type badge should show {N} format");
+        assertTrue(ref.get().stream().anyMatch(l -> "a".equals(l.getText())),
+            "Primitive type badge should show 'a'");
     }
 
     @Test
     void noBadgesWhenNoStateOverrides() {
-        var ref = new AtomicReference<List<Label>>();
+        var sortRef = new AtomicReference<List<Label>>();
+        var filterRef = new AtomicReference<List<Label>>();
         Platform.runLater(() -> {
-            // No state changes — no badges expected
             var panel = createAndAttach(buildSchema());
-            ref.set(findLabelsByClass(panel, "sort-badge"));
+            sortRef.set(findLabelsByClass(panel, "sort-badge"));
+            filterRef.set(findLabelsByClass(panel, "filter-badge"));
         });
         WaitForAsyncUtils.waitForFxEvents();
 
-        assertTrue(ref.get().isEmpty(), "No sort badges when no fields are sorted");
+        assertTrue(sortRef.get().isEmpty(), "No sort badges when no fields are sorted");
+        assertTrue(filterRef.get().isEmpty(), "No filter badges when no fields are filtered");
     }
 
     // -------------------------------------------------------------------
@@ -246,8 +253,9 @@ class FieldSelectorPanelTest {
         Platform.runLater(() -> {
             var panel = createAndAttach(buildSchema());
             panel.setOnFieldSelected(ref::set);
-            // Select "name" (index 2: root=0, id=1, name=2)
-            panel.getTreeView().getSelectionModel().select(2);
+            // Select "name" via tree model (not fragile index)
+            TreeItem<SchemaNode> nameItem = panel.getTreeView().getRoot().getChildren().get(1);
+            panel.getTreeView().getSelectionModel().select(nameItem);
         });
         WaitForAsyncUtils.waitForFxEvents();
 
@@ -261,8 +269,10 @@ class FieldSelectorPanelTest {
         Platform.runLater(() -> {
             var panel = createAndAttach(buildSchema());
             panel.setOnFieldSelected(ref::set);
-            // Select "value" inside "details" (deeper path)
-            panel.getTreeView().getSelectionModel().select(4); // root=0,id=1,name=2,details=3,value=4
+            // Select "value" inside "details" via tree model
+            TreeItem<SchemaNode> details = panel.getTreeView().getRoot().getChildren().get(2);
+            TreeItem<SchemaNode> value = details.getChildren().get(0);
+            panel.getTreeView().getSelectionModel().select(value);
         });
         WaitForAsyncUtils.waitForFxEvents();
 
