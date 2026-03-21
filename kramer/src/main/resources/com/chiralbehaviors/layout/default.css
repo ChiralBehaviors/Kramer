@@ -8,9 +8,9 @@
     -fx-padding: 3.0 3.0 3.0 3.0;
     -fx-background-insets: 0, 1;
     -fx-background-radius: 3, 2;
-        
+
     -fx-text-fill: #242d35;
-    -fx-font-size: 12.0px; 
+    -fx-font-size: 12.0px;
 }
 
 .primitive:hover {
@@ -44,6 +44,16 @@
 
 .field-selector-panel {
     -fx-padding: 4;
+}
+
+.field-inspector-panel {
+    -fx-padding: 8;
+    -fx-spacing: 8;
+}
+
+.inspector-title {
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
 }
 
 .sort-badge {
