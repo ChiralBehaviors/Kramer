@@ -6,3 +6,4 @@ export * from './types.js';
 export * from './expression.js';
 export * from './measure.js';
 export * from './layout.js';
+export * from './query-state.js';
