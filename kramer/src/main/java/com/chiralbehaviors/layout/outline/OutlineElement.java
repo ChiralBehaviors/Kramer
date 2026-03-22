@@ -32,6 +32,9 @@ import com.chiralbehaviors.layout.style.RelationStyle;
 import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+
 import javafx.beans.InvalidationListener;
 import javafx.scene.control.Label;
 
@@ -87,11 +90,13 @@ public class OutlineElement extends HorizontalCell<OutlineElement>
             allCells.add(new LabelCell(bullet));
             allCells.add(new LabelCell(label));
             allCells.add(cell);
+            HBox.setHgrow(cell.getNode(), Priority.ALWAYS);
             getChildren().addAll(bullet, label, cell.getNode());
         } else {
             Label label = layout.label(labelWidth, elementHeight);
             allCells.add(new LabelCell(label));
             allCells.add(cell);
+            HBox.setHgrow(cell.getNode(), Priority.ALWAYS);
             getChildren().addAll(label, cell.getNode());
         }
 
