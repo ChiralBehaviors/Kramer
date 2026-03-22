@@ -2,7 +2,8 @@
 
 import { type SchemaNode, type Relation, type Primitive } from './schema.js';
 import { type RenderMode, type LayoutResult } from './types.js';
-import { type RelationMeasureResult, type MeasureResult } from './measure.js';
+import { type MeasureResult } from './types.js';
+import { type RelationMeasureResult } from './measure.js';
 
 /**
  * Layout decision: choose table vs outline mode for each relation.
