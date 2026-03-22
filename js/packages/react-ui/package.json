@@ -3,10 +3,11 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "main": "./src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
     }
   },
   "scripts": {
@@ -17,7 +18,10 @@
     "@kramer/core": "workspace:*"
   },
   "devDependencies": {
-    "react": "^19.0.0", "@types/react": "^19.0.0",
+    "react": "^19.0.0",
+    "@types/react": "^19.0.0",
+    "@testing-library/react": "^16.0.0",
+    "jsdom": "^25.0.0",
     "tsup": "^8.0.0",
     "vitest": "^3.0.0",
     "typescript": "^5.7.0"
