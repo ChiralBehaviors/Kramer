@@ -34,123 +34,178 @@ The question is not whether to port, but whether the architecture allows a clean
 This is a **feasibility spike** — research only, no implementation. The deliverable is this document with findings that answer:
 
 1. **Layer mapping**: for each Kramer architecture layer, what's the JS equivalent and how much translates directly?
-2. **Size estimate**: rough LOC/effort for core, first renderer, and GraphQL integration
-3. **Risks & gaps**: what's hard?
-4. **Proof of concept scope**: minimum slice to validate the approach
+2. **Size estimate**: grounded in actual `wc -l` counts of the Java source
+3. **Risks & gaps**: what's hard, including architectural prerequisites?
+4. **Proof of concept scope**: minimum slice to validate the critical assumptions
 5. **Package structure**: `@kramer/core`, `@kramer/react`, etc.
 6. **Dependency assessment**: build vs buy for JS libraries
 
 ---
 
+## Actual Java Codebase Size
+
+Measured via `wc -l` on Java source files:
+
+| Package | LOC | Notes |
+|---------|-----|-------|
+| kramer core (total) | 19,458 | All packages in kramer module |
+| — schema | 348 | SchemaNode, Relation, Primitive, SchemaPath |
+| — expression | 1,167 | Parser, AST, Evaluator |
+| — query | 1,981 | LayoutQueryState, InteractionHandler, FieldSelectorPanel, FieldInspectorPanel, ExpressionEditor |
+| — style | 1,278 | Style, LabelStyle, PrimitiveStyle, RelationStyle |
+| — cell | 3,041 | LayoutCell hierarchy, focus/selection |
+| — flowless | 2,502 | Custom VirtualFlow (forked Flowless) |
+| — outline + table | 1,490 | Outline, Span, OutlineColumn, OutlineElement, NestedTable, NestedRow, NestedCell, ColumnHeader |
+| — layout engine | 4,823 | RelationLayout (1,580), PrimitiveLayout (708), AutoLayout (1,190), SchemaNodeLayout (359), ColumnSet (155), ColumnPartitioner (170), ExhaustiveConstraintSolver (270), + decision records |
+| — other | 2,828 | DataSnapshot, MeasurementStrategy, search, etc. |
+| kramer-ql | 2,044 | GraphQL integration |
+| explorer | 1,793 | AutoLayoutController, StandaloneDemo, panels |
+| **Grand total** | **23,295** | |
+
+### Key structural fact
+
+`RelationLayout.java` (1,580 LOC) is a monolith that straddles layers 2-6: measure, layout decision, justify, compress, AND buildControl are all in one class. The layout pipeline reads mutable instance fields (`useTable`, `columnSets`, `cellHeight`, `justifiedWidth`, etc.). This tight coupling means the "compute" and "render" phases are NOT cleanly separated — they share mutable state on `RelationLayout`.
+
+---
+
 ## Architecture Layer Mapping
 
-### Layer 1: Schema (SchemaNode, Relation, Primitive, SchemaPath)
+### Layer 1: Schema (348 LOC)
 
 **Java**: sealed abstract `SchemaNode` with `Relation` (composite) and `Primitive` (leaf). `SchemaPath` is an immutable path record. Jackson `JsonNode` for data.
 
 **JS equivalent**: TypeScript discriminated union or class hierarchy. Native JSON objects replace `JsonNode`. `SchemaPath` becomes a simple `string[]` wrapper.
 
-**Portability**: **Direct translation**. Pure data structures, no platform dependency. ~200 LOC Java → ~150 LOC TS.
+**Portability**: **Direct translation**. Pure data structures, no platform dependency.
 
-### Layer 2: Measurement (measure phase)
+### Layer 2: Measurement (spread across PrimitiveLayout 708 + RelationLayout 1,580 + Style 391)
 
-**Java**: `PrimitiveLayout.measure()` computes P90 widths by measuring text via `LabelStyle.width()` → JavaFX `Text.getLayoutBounds()`. `RelationLayout.measure()` aggregates children. `MeasureResult` captures statistics.
+**Java**: `PrimitiveLayout.measure()` computes P90 widths by measuring text via `LabelStyle.width()` → JavaFX `Text.getLayoutBounds()`. `RelationLayout.measure()` aggregates children. `MeasureResult` captures statistics. `Style.textWidth()` (lines 97-105) uses `javafx.scene.text.Text` and `Shape.intersect()` directly. The `Style` constructor (lines 281-344) bootstraps by constructing live JavaFX scene graph nodes, calling `applyCss()` and `layout()` to extract computed insets and heights.
 
-**JS equivalent**: Text measurement via hidden `<span>` + `getBoundingClientRect()` in browser. Server-side: approximate via character-width tables or headless browser.
+**Existing abstraction**: A `MeasurementStrategy` interface already exists (37 LOC) with `ConfiguredMeasurementStrategy` (72 LOC) — but its coverage is incomplete. `Style.textWidth()` still calls JavaFX directly, and style initialization requires a live JavaFX scene for CSS computation.
 
-**Portability**: **Needs platform adapter**. The measurement INTERFACE is portable, but the implementation requires a `MeasurementStrategy` abstraction:
-```typescript
-interface MeasurementStrategy {
-  textWidth(text: string, font: string, fontSize: number): number;
-  lineHeight(font: string, fontSize: number): number;
-}
-```
+**JS equivalent**: Text measurement via `canvas.measureText()` or hidden `<span>` + `getBoundingClientRect()` in browser. Style initialization would inject hidden DOM nodes and read computed styles — more involved than "just use browser CSS."
 
-**Risk**: Browser text measurement is synchronous (good) but requires DOM access. Cannot measure during SSR without approximation. **Medium risk**.
+**Portability**: **Needs platform adapter AND completing the existing abstraction**. The interface exists but JavaFX leaks through.
 
-### Layer 3: Layout Decision (layout phase + constraint solver)
+**Risk**: **Medium-high**. Browser text measurement is synchronous but requires DOM access. Style bootstrap needs rethinking for browser. Cannot measure during SSR without approximation.
 
-**Java**: `RelationLayout.layout()` decides table vs outline. `ExhaustiveConstraintSolver` enumerates render-mode assignments. `readableTableWidth()` threshold. `LayoutResult` and `LayoutDecisionNode` capture decisions.
+### Layer 3: Layout Decision (ExhaustiveConstraintSolver 270 + RelationConstraint 79 + parts of RelationLayout)
 
-**JS equivalent**: Direct port. Pure arithmetic and combinatorial logic. No platform dependency.
+**Java**: `RelationLayout.layout()` decides table vs outline. `ExhaustiveConstraintSolver` enumerates render-mode assignments. `readableTableWidth()` threshold.
 
-**Portability**: **Direct translation**. ~500 LOC Java → ~400 LOC TS. The `LayoutDecisionNode` tree is already a portable data protocol.
+**JS equivalent**: Direct port for the solver and constraint types. The layout decision logic in `RelationLayout.layout()` needs extraction from the monolith.
 
-### Layer 4: Width Distribution (justify phase)
+**Portability**: The solver and constraint types (~350 LOC) are **direct translation**. The decision logic embedded in `RelationLayout` requires decomposition.
+
+### Layer 4: Width Distribution (embedded in RelationLayout)
 
 **Java**: `RelationLayout.justifyColumn()` — two-pass minimum-guarantee distribution. `effectiveChildWidth()`, `minimumChildWidth()`.
 
 **JS equivalent**: Direct port. Pure arithmetic.
 
-**Portability**: **Direct translation**. ~200 LOC.
+**Portability**: **Direct translation** once extracted from `RelationLayout`. ~150 LOC of pure logic.
 
-### Layer 5: Column Packing (compress phase)
+### Layer 5: Column Packing (ColumnSet 155 + ColumnPartitioner 170 + parts of RelationLayout)
 
 **Java**: `ColumnSet.compress()` with `ColumnPartitioner` (DP-optimal painter's partition). `PrimitiveLayout.compress()` sets justified widths.
 
 **JS equivalent**: Direct port. Pure algorithms.
 
-**Portability**: **Direct translation**. ~300 LOC including DP partitioner.
+**Portability**: **Direct translation**. ~325 LOC.
 
-### Layer 6: Rendering (buildControl phase)
+### Layer 6: Rendering (outline 667 + table 823 + cell 3,041 + flowless 2,502 = ~7,033 LOC)
 
-**Java**: `RelationLayout.buildOutline()` → `Outline` (VirtualFlow), `OutlineCell`, `Span`, `OutlineColumn`, `OutlineElement`. `RelationLayout.buildNestedTable()` → `NestedTable`, `NestedRow`, `NestedCell`, `ColumnHeader`. All JavaFX nodes.
+**Java**: `RelationLayout.buildOutline()` → `Outline` (VirtualFlow), `OutlineCell`, `Span`, `OutlineColumn`, `OutlineElement`. `RelationLayout.buildNestedTable()` → `NestedTable`, `NestedRow`, `NestedCell`, `ColumnHeader`. All JavaFX nodes. The `buildControl()` method reads directly from `RelationLayout`'s mutable instance fields — `NestedTable`'s constructor takes `(int childCardinality, RelationLayout layout, ...)`, coupling the renderer to the layout object.
 
-**JS equivalent**: **This is the big rewrite.** Options:
-- **React components**: `<Outline>`, `<NestedTable>`, `<OutlineElement>` → straightforward mapping. Use `react-window` or `@tanstack/virtual` for virtualization.
+**Critical architectural gap**: `LayoutDecisionNode` (from RDR-011) is a **diagnostic snapshot**, not a render protocol. `snapshotDecisionTree()` is called post-hoc for caching and inspection. No renderer consumes it. To enable pluggable renderers, a **render-context record** must be designed that captures everything `buildControl()` reads from `RelationLayout` — this is prerequisite architectural work not currently accounted for.
+
+**JS equivalent**: **Full rewrite required.** Options:
+- **React components**: `<Outline>`, `<NestedTable>`, `<OutlineElement>` → straightforward mapping once render-context exists.
 - **Vanilla DOM**: `document.createElement()` tree. Manual virtualization (harder).
-- **Pluggable**: Core produces `LayoutDecisionNode` tree; renderer is a separate package.
+- **Pluggable**: Core produces render-context record; renderer is a separate package.
 
-**Portability**: **Full rewrite required** for this layer. But it's isolated — the core pipeline is renderer-agnostic. ~1500 LOC Java → ~800-1200 LOC TS per renderer.
+**Risk**: **High**. The compute↔render coupling in `RelationLayout` must be broken before a clean port is possible. The flowless VirtualFlow (2,502 LOC) has no direct JS equivalent — `@tanstack/virtual` handles simple cases but the Kramer pattern of nested VirtualFlows per column set has no off-the-shelf JS solution.
 
-**Risk**: VirtualFlow is complex (custom forked Flowless library, ~2000 LOC). Browser virtualization libraries handle this but with different APIs. **High complexity, medium risk** (well-solved problem in JS ecosystem).
+### Layer 7: Interaction (query package 1,981 LOC)
 
-### Layer 7: Interaction (query state + gestures)
+**Java**: `LayoutQueryState`, `FieldState` (14-field record), `InteractionHandler` (undo/redo), `LayoutInteraction` (12-variant sealed hierarchy), `InteractionMenuFactory`, `ColumnSortHandler`, `FieldSelectorPanel`, `FieldInspectorPanel`, `ExpressionEditor`.
 
-**Java**: `LayoutQueryState`, `FieldState`, `InteractionHandler`, `LayoutInteraction` (12-variant sealed hierarchy), `InteractionMenuFactory`, `ColumnSortHandler`, `FieldSelectorPanel`, `FieldInspectorPanel`.
+**JS equivalent**: Core state logic (~800 LOC: LayoutQueryState, FieldState, InteractionHandler, LayoutInteraction) is framework-agnostic — direct port. UI panels (~1,100 LOC: FieldSelectorPanel, FieldInspectorPanel, ExpressionEditor, InteractionMenuFactory) are JavaFX and need rewrite per framework.
 
-**JS equivalent**: State management is framework-agnostic. `LayoutQueryState` → Zustand/Jotai store or plain class. `LayoutInteraction` → TypeScript discriminated union. Context menus → framework-specific (React context menu lib, etc.).
+**Portability**: Core state is **direct translation**. UI panels are **renderer-specific rewrite**.
 
-**Portability**: Core state logic is **direct translation** (~400 LOC). UI panels (FieldSelectorPanel, etc.) are **renderer-specific** (~500 LOC per framework).
-
-### Layer 8: Expression Language
+### Layer 8: Expression Language (1,167 LOC)
 
 **Java**: `ExpressionParser` → `Expr` AST → `ExpressionEvaluator`. Field references, arithmetic, comparisons, aggregates.
 
-**JS equivalent**: Direct port. Parser combinators work the same way in JS/TS.
+**JS equivalent**: Direct port. Parser combinators work identically in TS.
 
-**Portability**: **Direct translation**. ~400 LOC.
+**Portability**: **Direct translation**.
 
-### Layer 9: GraphQL Integration
+### Layer 9: GraphQL Integration (2,044 LOC)
 
-**Java**: `GraphQlUtil`, `QueryExpander`, `TypeIntrospector`, `QueryRewriter`, `SchemaIntrospector`.
+**Java**: `GraphQlUtil` (434), `QueryExpander` (292), `QueryRewriter` (355), `TypeIntrospector` (136), `SchemaIntrospector` (64), `SchemaContext` (146), `ExprToGraphQL` (221), `DirectiveAwareStylesheet` (88), `RelayConnectionDetector` (42), `QueryBuilder` (130), `QueryRoot` (37), `ServerCapabilities` (39), `DirectiveReader` (60).
 
-**JS equivalent**: `graphql` npm package provides parsing, AST manipulation, and `printAST` — same capabilities as graphql-java. The `QueryExpander` pattern (immutable AST transforms) maps directly.
+**JS equivalent**: `graphql` npm package provides parsing, AST manipulation, `print()`, and visitor utilities. `ExprToGraphQL` (expression → GraphQL filter argument translation) creates a cross-layer dependency between expression language (Layer 8) and query rewriting — both must be ported together. `RelayConnectionDetector` is relevant since Relay pagination conventions are common in JS GraphQL ecosystems.
 
-**Portability**: **Direct translation** with simpler code (graphql-js has good AST visitor/transform utilities). ~500 LOC.
+**Portability**: **Direct translation** with some simplification from graphql-js utilities. All 2,044 LOC need porting.
 
-### Layer 10: CSS Styling
+### Layer 10: CSS Styling (Style 391 + co-located .css files)
 
 **Java**: JavaFX CSS with co-located `.css` files. Custom `-fx-*` properties. `Style` class applies stylesheets.
 
-**JS equivalent**: Native browser CSS. Actually **simpler** — no JavaFX CSS translation needed. CSS-in-JS, CSS modules, or plain stylesheets all work.
+**JS equivalent**: Native browser CSS — but `Style.java` (391 LOC) is deeper than "just use browser CSS." It initializes by constructing JavaFX scene graph nodes, calling `applyCss()` and `layout()` to extract computed insets and heights. The browser equivalent must inject hidden DOM nodes and read `getComputedStyle()`. This is non-trivial and interacts with the measurement risk (Layer 2).
 
-**Portability**: **Simpler than Java**. CSS files need rewriting from JavaFX syntax to standard CSS, but the styling model is native to the browser.
+**Portability**: CSS files are **rewrite** (JavaFX syntax → standard CSS). Style bootstrapping is **redesign** — same concept (measure invisible nodes) but different API.
 
 ---
 
-## Size Estimate
+## Portability Summary
 
-| Package | Java LOC (approx) | TS LOC (estimated) | Effort | Notes |
-|---------|-------------------|-------------------|--------|-------|
-| `@kramer/core` (layers 1-5, 8) | ~3000 | ~2000 | Medium | Pure computation, direct port |
-| `@kramer/graphql` (layer 9) | ~1200 | ~600 | Low | graphql-js simplifies AST work |
-| `@kramer/react` (layer 6 renderer) | ~2500 | ~1200 | High | New code, virtualization integration |
-| `@kramer/react-ui` (layer 7 panels) | ~1500 | ~800 | Medium | Framework-specific UI |
-| `@kramer/dom` (vanilla renderer) | — | ~1000 | High | Alternative to React |
-| **Total (React path)** | **~8200** | **~4600** | | |
+| Category | Java LOC | Portability | TS LOC (est) |
+|----------|----------|-------------|-------------|
+| **Direct port** (schema, expression, solver, partitioner, decision types, query state logic) | ~3,500 | Copy + syntax translation | ~2,500 |
+| **Port with extraction** (justify, compress, layout decision logic embedded in RelationLayout) | ~1,800 | Extract from monolith, then translate | ~1,200 |
+| **Platform adapter** (measurement, style bootstrap) | ~1,700 | Redesign interface + browser impl | ~800 |
+| **Full rewrite** (rendering: cell, outline, table, flowless, UI panels) | ~8,500 | New code for browser/React | ~4,000 |
+| **GraphQL** (cross-layer, framework-neutral) | 2,044 | Direct translation | ~1,500 |
+| **Other** (data snapshot, search, etc.) | ~5,750 | Mixed; evaluate per file | ~2,000 |
+| **Total** | ~23,295 | | ~12,000 |
 
-Rough effort: **4-6 weeks** for a senior TS developer to produce a working React-based port with core + renderer + basic interaction.
+**Direct port candidates: ~25% of codebase** (not 60% as originally claimed). The remaining 75% requires extraction, redesign, or full rewrite.
+
+---
+
+## Architectural Prerequisite: Render-Context Record
+
+Before a pluggable renderer is possible, `RelationLayout.buildControl()` must be decoupled from mutable layout state. Currently the renderer reads ~15 fields directly from `RelationLayout`:
+
+- `useTable`, `useCrosstab`, `columnSets`, `resolvedCardinality`
+- `cellHeight`, `justifiedWidth`, `columnHeaderHeight`, `labelWidth`
+- `tableColumnWidth`, `columnHeaderIndentation`, `columnWidth`
+- `children` (list of SchemaNodeLayout), `style` (RelationStyle)
+- `extractor` (data extraction function), `sortComparator`
+
+A **render-context record** (TypeScript interface or Java record) must capture this state so `buildControl()` can be driven from data rather than from the layout object. This can be designed as a new Java record first (without breaking existing code), then used as the portable protocol for the TS port.
+
+**Effort**: ~1-2 weeks of architectural work, not counted in the previous estimate.
+
+---
+
+## Size Estimate (Revised)
+
+| Package | Source Java LOC | TS LOC (est) | Effort | Notes |
+|---------|----------------|-------------|--------|-------|
+| Architectural prerequisite (render-context record) | — | ~200 | 1-2 weeks | Design + Java refactor, then TS interface |
+| `@kramer/core` (schema, expression, solver, partitioner, justify, compress) | ~5,300 | ~3,700 | 3-4 weeks | Extract from RelationLayout monolith + translate |
+| `@kramer/measurement` (browser measurement strategy) | ~500 | ~300 | 1 week | Style bootstrap redesign |
+| `@kramer/graphql` (full kramer-ql port) | 2,044 | ~1,500 | 2 weeks | Including ExprToGraphQL, RelayConnectionDetector |
+| `@kramer/react` (renderer: table, outline, virtualization) | ~7,033 | ~4,000 | 4-6 weeks | Full rewrite; nested virtualization is hardest part |
+| `@kramer/react-ui` (interaction panels) | ~1,100 | ~800 | 2 weeks | Framework-specific UI |
+| **Total (React path)** | **~16,000** | **~10,500** | **~13-17 weeks** | |
+
+Rough effort: **13-17 weeks** (3-4 months) for a senior TS developer. Previous estimate of 4-6 weeks was based on fabricated LOC counts and did not account for the architectural prerequisite or the RelationLayout decomposition work.
 
 ---
 
@@ -158,41 +213,51 @@ Rough effort: **4-6 weeks** for a senior TS developer to produce a working React
 
 | Risk | Severity | Mitigation |
 |------|----------|------------|
-| Text measurement accuracy varies across browsers/fonts | Medium | Use actual DOM measurement; provide calibration API; test cross-browser |
-| VirtualFlow complexity (Flowless is 2000 LOC custom) | High | Use `@tanstack/virtual` — mature, well-tested, handles both directions |
-| JavaFX CSS → browser CSS translation | Low | Browser CSS is more capable; rewrite styles rather than translate |
-| Expression language parser | Low | Direct port; or use existing JS expression parser library |
-| Server-side rendering (SSR) | Medium | Core can run in Node; measurement needs approximation without DOM |
-| Bundle size for core | Low | Tree-shakeable TS; core is pure computation, small footprint |
+| RelationLayout monolith must be decomposed before clean port | **Critical** | Design render-context record first; refactor Java side as prerequisite |
+| Text measurement + Style bootstrap requires browser DOM | High | MeasurementStrategy exists but is incomplete; complete it in Java first, then port |
+| Nested VirtualFlow pattern (multiple per column set) has no JS equivalent | High | @tanstack/virtual for simple cases; may need custom implementation for nested pattern |
+| Effort estimate uncertainty (±30%) | High | PoC validates critical path; revise estimate after PoC |
+| Expression → GraphQL cross-layer dependency | Medium | Port expression and GraphQL together |
+| Server-side rendering (SSR) | Medium | Core runs in Node; measurement needs approximation without DOM |
+| Browser text measurement varies across platforms | Medium | Accept platform-specific measurements; algorithm adapts by design |
 | Maintaining parity with Java version | High | Shared test fixtures (JSON schema + data + expected decisions) as contract tests |
 
-### Biggest Gap: Measurement
+### Biggest Gap: Compute↔Render Coupling
 
-The measure phase requires text width computation, which needs a rendering context. In JavaFX, this is `Text.getLayoutBounds()`. In browsers, it's `canvas.measureText()` or DOM `offsetWidth`. These can give different results, meaning the same schema+data can produce different layout decisions on different platforms.
-
-**Mitigation**: Accept platform-specific measurements. The layout algorithm adapts to whatever widths it receives — that's its core design. Cross-platform layout PARITY is not a goal; cross-platform layout QUALITY is.
+The `RelationLayout` monolith mixes computation and rendering. `buildControl()` reads mutable fields set during the compute phases. A clean port requires designing a render-context record that captures this state, enabling renderers to work from data rather than from the layout object. This is prerequisite work that benefits both the JS port AND the Java codebase (better separation of concerns).
 
 ---
 
-## Proof of Concept Scope
+## Proof of Concept Scope (Revised)
 
-Minimum slice to validate feasibility:
+Two slices to validate the critical assumptions:
 
-1. **Schema types** in TypeScript (Relation, Primitive, SchemaPath)
-2. **Measure** a flat schema (3 primitives) using DOM text measurement
-3. **Layout + justify + compress** pipeline producing a `LayoutDecisionNode`
-4. **React renderer** that takes the decision node and renders a `<table>` for table mode
-5. **Resize**: re-run pipeline on `window.resize`, verify table ↔ outline switching
+### Slice 1: Flat table (validates measurement + basic rendering)
+1. Schema types in TypeScript (Relation, Primitive, SchemaPath)
+2. Measure a flat schema (3 primitives) using DOM text measurement
+3. Layout + justify pipeline producing render-context data
+4. React component that renders a `<table>` from the render-context
+5. Resize: re-run pipeline on `window.resize`
 
-This covers the critical path through all layers except GraphQL and interaction. Estimated effort: **3-5 days**.
+### Slice 2: Nested outline (validates the hard parts)
+1. Nested schema (2-level relation, ~6 leaf primitives)
+2. Constrained width that forces the solver to choose outline for the outer relation and table for the inner
+3. Compress with DP column partitioner
+4. React renderer producing nested outline + inner table
+5. Verify mode switches at the threshold width
+
+Slice 2 is critical — a flat-3-primitive PoC validates almost nothing about the portability of the complex cases.
+
+**Estimated PoC effort**: **5-8 days** for both slices.
 
 ---
 
 ## Package Structure
 
 ```
-@kramer/core          — schema, measure protocol, layout pipeline, decision tree
-@kramer/graphql       — GraphQL query → schema, QueryExpander, TypeIntrospector
+@kramer/core          — schema, measure protocol, layout pipeline, render-context record
+@kramer/graphql       — GraphQL query → schema, QueryExpander, TypeIntrospector,
+                        ExprToGraphQL, RelayConnectionDetector
 @kramer/react         — React renderer (table, outline, crosstab components)
 @kramer/react-ui      — React interaction panels (field selector, inspector, menus)
 @kramer/dom           — vanilla DOM renderer (no framework)
@@ -207,11 +272,12 @@ Core has zero browser/framework dependencies. Renderers depend on core + their f
 
 | Need | Build vs Buy | Recommendation |
 |------|-------------|----------------|
-| Virtualized lists | Buy | `@tanstack/virtual` — mature, framework-agnostic |
+| Virtualized lists (simple) | Buy | `@tanstack/virtual` — handles non-uniform row heights |
+| Nested virtualization | Build | No off-the-shelf solution for VirtualFlow-per-column-set pattern |
 | GraphQL parsing | Buy | `graphql` (reference implementation) |
 | Expression parsing | Build | Small, custom grammar; no library matches exactly |
 | State management | Build | Simple class with change listeners; no external dependency needed |
-| Text measurement | Build | Thin wrapper around `canvas.measureText()` or DOM measurement |
+| Text measurement | Build | `canvas.measureText()` or DOM measurement; thin wrapper |
 | Context menus | Buy (React) | `@radix-ui/react-context-menu` or similar |
 | CSS | Build | Standard CSS modules or CSS-in-JS |
 
@@ -219,16 +285,19 @@ Core has zero browser/framework dependencies. Renderers depend on core + their f
 
 ## Conclusion
 
-The port is **feasible and well-bounded**. The Kramer architecture already separates computation (layers 1-5) from rendering (layer 6), with `LayoutDecisionNode` as the portable protocol between them. ~60% of the codebase is pure computation that translates directly to TypeScript. The rendering layer is a full rewrite but maps cleanly to React/DOM patterns.
+The port is **feasible but larger than initially estimated**. The Kramer architecture has a clear conceptual separation between computation and rendering, but the implementation couples them through `RelationLayout`'s mutable state. A render-context record must be designed as a prerequisite, which benefits both the JS port and the Java codebase.
 
-**Recommendation**: Proceed with a proof of concept (3-5 days) to validate the measurement + layout + React rendering path before committing to the full port.
+~25% of the codebase (schema, expression language, solver, query state logic) translates directly. ~75% requires extraction from the monolith, platform adapter redesign, or full rewrite. Total estimated effort is **13-17 weeks** for a React-based port, with 1-2 weeks of Java-side architectural work as a prerequisite.
+
+**Recommendation**: Start with the architectural prerequisite (render-context record design) in the Java codebase. Then run the 2-slice PoC (5-8 days) to validate measurement, layout, and nested rendering before committing to the full port.
 
 ---
 
 ## Success Criteria
 
-- [ ] Layer mapping covers all 10 architecture layers
-- [ ] Size estimate with LOC and effort for each package
-- [ ] Risk assessment with severity and mitigation
-- [ ] Proof of concept scope defined
-- [ ] Package structure and dependency assessment complete
+- [x] Layer mapping covers all 10 architecture layers
+- [x] Size estimate grounded in actual `wc -l` counts
+- [x] Risk assessment with severity and mitigation
+- [x] Architectural prerequisite (render-context record) identified
+- [x] Proof of concept scope defined (2 slices: flat + nested)
+- [x] Package structure and dependency assessment complete
