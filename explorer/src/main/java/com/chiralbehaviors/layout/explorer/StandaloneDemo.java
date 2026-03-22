@@ -231,16 +231,13 @@ public class StandaloneDemo extends Application {
      */
     private Relation buildSchema() {
         Relation sections = new Relation("sections");
-        sections.addChild(new Primitive("section"));
-        sections.addChild(new Primitive("enrollment"));
-        sections.addChild(new Primitive("room"));
-        sections.addChild(new Primitive("schedule"));
+        sections.addChild(new Primitive("id"));
+        sections.addChild(new Primitive("enrolled"));
 
         Relation courses = new Relation("courses");
         courses.addChild(new Primitive("number"));
         courses.addChild(new Primitive("title"));
         courses.addChild(new Primitive("credits"));
-        courses.addChild(new Primitive("instructor"));
         courses.addChild(sections);
 
         Relation departments = new Relation("departments");
@@ -259,83 +256,68 @@ public class StandaloneDemo extends Application {
         ArrayNode depts = MAPPER.createArrayNode();
 
         depts.add(dept("Computer Science", "Gates Hall",
-            course("CS101", "Introduction to Programming", 3, "Prof. Turing",
-                section("A", 45, "Room 101", "MWF 9:00-9:50"),
-                section("B", 42, "Room 102", "MWF 10:00-10:50"),
-                section("C", 38, "Room 201", "TTh 1:00-2:15")),
-            course("CS201", "Data Structures", 4, "Prof. Knuth",
-                section("A", 35, "Room 301", "MWF 11:00-11:50"),
-                section("B", 30, "Room 302", "TTh 9:00-10:15")),
-            course("CS301", "Algorithms", 4, "Prof. Dijkstra",
-                section("A", 28, "Room 401", "MWF 1:00-1:50")),
-            course("CS410", "Machine Learning", 3, "Prof. Ng",
-                section("A", 40, "Auditorium", "TTh 3:00-4:15"),
-                section("B", 38, "Room 501", "MWF 2:00-2:50"))));
+            course("CS101", "Intro to Programming", 3,
+                sec("A", 45), sec("B", 42), sec("C", 38)),
+            course("CS201", "Data Structures", 4,
+                sec("A", 35), sec("B", 30)),
+            course("CS301", "Algorithms", 4,
+                sec("A", 28)),
+            course("CS410", "Machine Learning", 3,
+                sec("A", 40), sec("B", 38))));
 
         depts.add(dept("Mathematics", "Hilbert Hall",
-            course("MATH101", "Calculus I", 4, "Prof. Euler",
-                section("A", 50, "Room 110", "MWF 8:00-8:50"),
-                section("B", 48, "Room 111", "MWF 9:00-9:50"),
-                section("C", 45, "Room 112", "TTh 10:30-11:45")),
-            course("MATH201", "Linear Algebra", 3, "Prof. Gauss",
-                section("A", 35, "Room 210", "TTh 1:00-2:15")),
-            course("MATH301", "Real Analysis", 3, "Prof. Cauchy",
-                section("A", 22, "Room 310", "MWF 11:00-11:50"))));
+            course("MATH101", "Calculus I", 4,
+                sec("A", 50), sec("B", 48), sec("C", 45)),
+            course("MATH201", "Linear Algebra", 3,
+                sec("A", 35)),
+            course("MATH301", "Real Analysis", 3,
+                sec("A", 22))));
 
         depts.add(dept("Physics", "Newton Building",
-            course("PHYS101", "Mechanics", 4, "Prof. Feynman",
-                section("A", 55, "Lecture Hall A", "MWF 10:00-10:50"),
-                section("B", 50, "Lecture Hall B", "TTh 9:00-10:15")),
-            course("PHYS201", "Electricity & Magnetism", 4, "Prof. Maxwell",
-                section("A", 40, "Room 220", "MWF 1:00-1:50")),
-            course("PHYS310", "Quantum Mechanics", 3, "Prof. Bohr",
-                section("A", 25, "Room 320", "TTh 3:00-4:15"))));
+            course("PHYS101", "Mechanics", 4,
+                sec("A", 55), sec("B", 50)),
+            course("PHYS201", "E&M", 4,
+                sec("A", 40)),
+            course("PHYS310", "Quantum Mechanics", 3,
+                sec("A", 25))));
 
         depts.add(dept("English", "Austen Hall",
-            course("ENG101", "Composition", 3, "Prof. Strunk",
-                section("A", 25, "Room 105", "MWF 9:00-9:50"),
-                section("B", 25, "Room 106", "MWF 10:00-10:50"),
-                section("C", 24, "Room 107", "TTh 1:00-2:15"),
-                section("D", 22, "Room 108", "TTh 3:00-4:15")),
-            course("ENG201", "American Literature", 3, "Prof. Twain",
-                section("A", 30, "Room 205", "MWF 11:00-11:50")),
-            course("ENG350", "Shakespeare", 3, "Prof. Bloom",
-                section("A", 28, "Room 305", "TTh 10:30-11:45"))));
+            course("ENG101", "Composition", 3,
+                sec("A", 25), sec("B", 25), sec("C", 24), sec("D", 22)),
+            course("ENG201", "American Lit", 3,
+                sec("A", 30)),
+            course("ENG350", "Shakespeare", 3,
+                sec("A", 28))));
 
         depts.add(dept("History", "Herodotus Hall",
-            course("HIST101", "World History I", 3, "Prof. Gibbon",
-                section("A", 60, "Auditorium B", "MWF 10:00-10:50"),
-                section("B", 55, "Auditorium C", "TTh 9:00-10:15")),
-            course("HIST201", "Modern Europe", 3, "Prof. Hobsbawm",
-                section("A", 35, "Room 215", "MWF 1:00-1:50")),
-            course("HIST310", "Ancient Rome", 3, "Prof. Beard",
-                section("A", 30, "Room 315", "TTh 1:00-2:15"))));
+            course("HIST101", "World History I", 3,
+                sec("A", 60), sec("B", 55)),
+            course("HIST201", "Modern Europe", 3,
+                sec("A", 35)),
+            course("HIST310", "Ancient Rome", 3,
+                sec("A", 30))));
 
         depts.add(dept("Chemistry", "Mendeleev Hall",
-            course("CHEM101", "General Chemistry", 4, "Prof. Pauling",
-                section("A", 48, "Lab A", "MWF 9:00-9:50"),
-                section("B", 45, "Lab B", "TTh 10:30-11:45")),
-            course("CHEM201", "Organic Chemistry", 4, "Prof. Woodward",
-                section("A", 32, "Lab C", "MWF 11:00-11:50"),
-                section("B", 30, "Lab D", "TTh 1:00-2:15"))));
+            course("CHEM101", "General Chem", 4,
+                sec("A", 48), sec("B", 45)),
+            course("CHEM201", "Organic Chem", 4,
+                sec("A", 32), sec("B", 30))));
 
         depts.add(dept("Economics", "Smith Hall",
-            course("ECON101", "Microeconomics", 3, "Prof. Samuelson",
-                section("A", 55, "Room 120", "MWF 10:00-10:50"),
-                section("B", 50, "Room 121", "TTh 9:00-10:15")),
-            course("ECON201", "Macroeconomics", 3, "Prof. Keynes",
-                section("A", 45, "Room 220", "MWF 1:00-1:50")),
-            course("ECON350", "Econometrics", 3, "Prof. Heckman",
-                section("A", 25, "Room 320", "TTh 3:00-4:15"))));
+            course("ECON101", "Microeconomics", 3,
+                sec("A", 55), sec("B", 50)),
+            course("ECON201", "Macroeconomics", 3,
+                sec("A", 45)),
+            course("ECON350", "Econometrics", 3,
+                sec("A", 25))));
 
         depts.add(dept("Philosophy", "Plato Hall",
-            course("PHIL101", "Introduction to Philosophy", 3, "Prof. Russell",
-                section("A", 40, "Room 130", "MWF 9:00-9:50"),
-                section("B", 35, "Room 131", "TTh 10:30-11:45")),
-            course("PHIL201", "Ethics", 3, "Prof. Rawls",
-                section("A", 30, "Room 230", "MWF 11:00-11:50")),
-            course("PHIL310", "Logic", 3, "Prof. Gödel",
-                section("A", 20, "Room 330", "TTh 1:00-2:15"))));
+            course("PHIL101", "Intro to Phil", 3,
+                sec("A", 40), sec("B", 35)),
+            course("PHIL201", "Ethics", 3,
+                sec("A", 30)),
+            course("PHIL310", "Logic", 3,
+                sec("A", 20))));
 
         return depts;
     }
@@ -351,25 +333,21 @@ public class StandaloneDemo extends Application {
     }
 
     private ObjectNode course(String number, String title, int credits,
-                               String instructor, ObjectNode... sections) {
+                               ObjectNode... sections) {
         ObjectNode c = MAPPER.createObjectNode();
         c.put("number", number);
         c.put("title", title);
         c.put("credits", credits);
-        c.put("instructor", instructor);
         ArrayNode arr = MAPPER.createArrayNode();
         for (ObjectNode s : sections) arr.add(s);
         c.set("sections", arr);
         return c;
     }
 
-    private ObjectNode section(String name, int enrollment,
-                                String room, String schedule) {
+    private ObjectNode sec(String id, int enrolled) {
         ObjectNode s = MAPPER.createObjectNode();
-        s.put("section", name);
-        s.put("enrollment", enrollment);
-        s.put("room", room);
-        s.put("schedule", schedule);
+        s.put("id", id);
+        s.put("enrolled", enrolled);
         return s;
     }
 
