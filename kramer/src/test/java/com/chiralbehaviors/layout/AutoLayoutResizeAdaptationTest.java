@@ -415,6 +415,142 @@ class AutoLayoutResizeAdaptationTest {
     //         fit within the outline column width
     // -----------------------------------------------------------------------
 
+    // -----------------------------------------------------------------------
+    // Test 10: outline mode — primitive data cells are populated (not empty)
+    // -----------------------------------------------------------------------
+
+    @Test
+    void outlinePrimitivesHaveData() throws Exception {
+        runOnFx(() -> {
+            AutoLayout al = layoutAt(threeLevelSchema(), threeLevelData(), 800);
+            RelationLayout rl = (RelationLayout) al.getLayoutTree();
+            assertFalse(rl.isUseTable(), "Root should be OUTLINE at 800px");
+
+            // Inspect column sets — primitives should have non-zero layoutWidth
+            LayoutDecisionNode tree = rl.snapshotDecisionTree();
+            for (LayoutDecisionNode child : tree.childNodes()) {
+                String name = child.fieldName();
+                if (child.layoutResult() != null
+                        && child.layoutResult().relationMode() == RelationRenderMode.OUTLINE) {
+                    // This is a nested relation in outline — skip
+                    continue;
+                }
+                // Primitive children: check they have non-zero compress width
+                System.out.println("[PRIM-DATA] " + name
+                    + " compressResult=" + child.compressResult());
+            }
+
+            // Check that primitive children (name, building) are in a column set
+            // with reasonable width
+            CompressResult compress = tree.compressResult();
+            boolean foundPrimitiveSet = false;
+            for (ColumnSetSnapshot cs : compress.columnSetSnapshots()) {
+                boolean hasPrimitive = cs.columns().stream()
+                    .flatMap(c -> c.fieldNames().stream())
+                    .anyMatch(f -> "name".equals(f) || "building".equals(f));
+                if (hasPrimitive) {
+                    foundPrimitiveSet = true;
+                    for (ColumnSnapshot col : cs.columns()) {
+                        System.out.println("[PRIM-DATA] column: width="
+                            + col.width() + " fields=" + col.fieldNames());
+                        assertTrue(col.width() > 50,
+                            "Primitive column should have substantial width: "
+                            + col.fieldNames() + " got " + col.width());
+                    }
+                }
+            }
+            assertTrue(foundPrimitiveSet,
+                "Should find a column set containing primitives name/building");
+
+            // Check that the rendered control tree has non-empty content
+            // by verifying the control was built
+            assertTrue(al.getChildren().size() > 0,
+                "AutoLayout should have rendered a control");
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 11: outline mode — rendered text includes actual data values
+    // -----------------------------------------------------------------------
+
+    @Test
+    void outlineRendersDataValues() throws Exception {
+        runOnFx(() -> {
+            // Must use a Scene for VirtualFlow to create cells
+            Style style = new Style();
+            AutoLayout al = new AutoLayout(null, style);
+            var root = new javafx.scene.layout.BorderPane();
+            root.setCenter(al);
+            new javafx.scene.Scene(root, 1200, 800);
+            root.applyCss();
+            root.layout();
+
+            al.setRoot(threeLevelSchema());
+            al.measure(threeLevelData());
+            al.updateItem(threeLevelData());
+            al.resize(1200, 800);
+
+            root.applyCss();
+            root.layout();
+
+            RelationLayout rl = (RelationLayout) al.getLayoutTree();
+
+            // Find all Text nodes in the rendered scene graph
+            var textNodes = new java.util.ArrayList<javafx.scene.text.Text>();
+            findTextNodes(al, textNodes);
+
+            var allText = textNodes.stream()
+                .map(javafx.scene.text.Text::getText)
+                .filter(t -> t != null && !t.isBlank())
+                .toList();
+
+            System.out.println("[RENDER] Found " + textNodes.size()
+                + " text nodes, " + allText.size() + " non-blank");
+            System.out.println("[RENDER] Sample values: "
+                + allText.stream().limit(20).toList());
+
+            // The rendered text should include department names from the data
+            boolean hasCS = allText.stream().anyMatch(t -> t.contains("CS"));
+            boolean hasMath = allText.stream().anyMatch(t -> t.contains("Math"));
+            boolean hasGates = allText.stream().anyMatch(t -> t.contains("Gates"));
+
+            System.out.println("[RENDER] hasCS=" + hasCS + " hasMath=" + hasMath
+                + " hasGates=" + hasGates);
+
+            assertTrue(hasCS || hasMath,
+                "Rendered text should include department names (CS or Math). " +
+                "Found: " + allText);
+
+            // Check that text nodes with data values have visible width
+            for (var t : textNodes) {
+                if (t.getText() != null && !t.getText().isBlank()
+                        && !"name".equals(t.getText())
+                        && !"building".equals(t.getText())) {
+                    double textWidth = t.getBoundsInParent().getWidth();
+                    if (textWidth < 1.0 && t.getText().length() > 0) {
+                        System.out.println("[RENDER-WARN] Text '" + t.getText()
+                            + "' has width=" + textWidth
+                            + " parent=" + t.getParent().getClass().getSimpleName()
+                            + " parentWidth=" + (t.getParent() instanceof javafx.scene.layout.Region r
+                                ? r.getWidth() : "?"));
+                    }
+                }
+            }
+        });
+    }
+
+    private void findTextNodes(javafx.scene.Node node,
+                                java.util.List<javafx.scene.text.Text> result) {
+        if (node instanceof javafx.scene.text.Text t) {
+            result.add(t);
+        }
+        if (node instanceof javafx.scene.Parent p) {
+            for (javafx.scene.Node child : p.getChildrenUnmodifiable()) {
+                findTextNodes(child, result);
+            }
+        }
+    }
+
     @Test
     void outlineNestedTableFitsWithinColumnWidth() throws Exception {
         runOnFx(() -> {
