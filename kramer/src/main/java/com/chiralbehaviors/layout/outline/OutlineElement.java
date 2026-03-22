@@ -159,16 +159,21 @@ public class OutlineElement extends HorizontalCell<OutlineElement>
                                             double elementHeight,
                                             double textWidth,
                                             double textHeight) {
-        Label label = layout.label(textWidth, textHeight);
+        // After -90° rotation, the label's width becomes its vertical extent
+        // and its height becomes its horizontal extent. Create the label with
+        // width = elementHeight (the vertical space available for text) so the
+        // full label text is visible along the rotated axis.
+        double labelW = elementHeight;  // text runs vertically
+        Label label = layout.label(labelW, textHeight);
         label.setRotate(-90);
 
-        double visualWidth = allocatedWidth;
+        double visualWidth = Style.snap(textHeight); // rotated height → horizontal
         double visualHeight = Style.snap(elementHeight);
         Pane wrapper = new Pane(label);
         wrapper.setMinSize(visualWidth, visualHeight);
         wrapper.setPrefSize(visualWidth, visualHeight);
         wrapper.setMaxSize(visualWidth, visualHeight);
-        label.setTranslateX((visualWidth - textWidth) / 2.0);
+        label.setTranslateX((visualWidth - labelW) / 2.0);
         label.setTranslateY((visualHeight - textHeight) / 2.0);
 
         return wrapper;
