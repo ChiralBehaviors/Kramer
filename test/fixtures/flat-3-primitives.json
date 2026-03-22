@@ -1,0 +1,279 @@
+{
+  "schema" : {
+    "kind" : "relation",
+    "field" : "items",
+    "children" : [ {
+      "kind" : "primitive",
+      "field" : "name"
+    }, {
+      "kind" : "primitive",
+      "field" : "price"
+    }, {
+      "kind" : "primitive",
+      "field" : "quantity"
+    } ]
+  },
+  "data" : [ {
+    "name" : "Widget",
+    "price" : 9.99,
+    "quantity" : 100
+  }, {
+    "name" : "Gadget",
+    "price" : 24.5,
+    "quantity" : 42
+  }, {
+    "name" : "Doohickey",
+    "price" : 3.75,
+    "quantity" : 500
+  } ],
+  "width" : 800.0,
+  "expected" : {
+    "path" : {
+      "segments" : [ "items" ]
+    },
+    "fieldName" : "items",
+    "measureResult" : {
+      "labelWidth" : 50.0,
+      "columnWidth" : 115.0,
+      "dataWidth" : 0.0,
+      "maxWidth" : 0.0,
+      "averageCardinality" : 0,
+      "isVariableLength" : false,
+      "averageChildCardinality" : 1,
+      "maxCardinality" : 3,
+      "childResults" : [ {
+        "labelWidth" : 36.0,
+        "columnWidth" : 65.0,
+        "dataWidth" : 65.0,
+        "maxWidth" : 64.564453125,
+        "averageCardinality" : 1,
+        "isVariableLength" : false,
+        "averageChildCardinality" : 0,
+        "maxCardinality" : 0,
+        "childResults" : [ ],
+        "contentStats" : null,
+        "numericStats" : null,
+        "pivotStats" : null,
+        "sparklineStats" : null
+      }, {
+        "labelWidth" : 32.0,
+        "columnWidth" : 36.0,
+        "dataWidth" : 36.0,
+        "maxWidth" : 35.53125,
+        "averageCardinality" : 1,
+        "isVariableLength" : false,
+        "averageChildCardinality" : 0,
+        "maxCardinality" : 0,
+        "childResults" : [ ],
+        "contentStats" : null,
+        "numericStats" : {
+          "numericMin" : 3.75,
+          "numericMax" : 24.5
+        },
+        "pivotStats" : null,
+        "sparklineStats" : null
+      }, {
+        "labelWidth" : 50.0,
+        "columnWidth" : 50.0,
+        "dataWidth" : 33.0,
+        "maxWidth" : 32.173828125,
+        "averageCardinality" : 1,
+        "isVariableLength" : false,
+        "averageChildCardinality" : 0,
+        "maxCardinality" : 0,
+        "childResults" : [ ],
+        "contentStats" : null,
+        "numericStats" : {
+          "numericMin" : 42.0,
+          "numericMax" : 500.0
+        },
+        "pivotStats" : null,
+        "sparklineStats" : null
+      } ],
+      "contentStats" : null,
+      "numericStats" : null,
+      "pivotStats" : null,
+      "sparklineStats" : null
+    },
+    "layoutResult" : {
+      "relationMode" : "TABLE",
+      "primitiveMode" : "TEXT",
+      "useVerticalHeader" : false,
+      "tableColumnWidth" : 33.0,
+      "columnHeaderIndentation" : 3.0,
+      "constrainedColumnWidth" : 800.0,
+      "childResults" : [ {
+        "relationMode" : "OUTLINE",
+        "primitiveMode" : "BADGE",
+        "useVerticalHeader" : false,
+        "tableColumnWidth" : 0.0,
+        "columnHeaderIndentation" : 3.0,
+        "constrainedColumnWidth" : 262.0,
+        "childResults" : [ ]
+      }, {
+        "relationMode" : "OUTLINE",
+        "primitiveMode" : "BADGE",
+        "useVerticalHeader" : false,
+        "tableColumnWidth" : 0.0,
+        "columnHeaderIndentation" : 0.0,
+        "constrainedColumnWidth" : 258.0,
+        "childResults" : [ ]
+      }, {
+        "relationMode" : "OUTLINE",
+        "primitiveMode" : "BADGE",
+        "useVerticalHeader" : false,
+        "tableColumnWidth" : 0.0,
+        "columnHeaderIndentation" : 0.0,
+        "constrainedColumnWidth" : 277.0,
+        "childResults" : [ ]
+      } ]
+    },
+    "compressResult" : {
+      "justifiedWidth" : 797.0,
+      "columnSetSnapshots" : [ ],
+      "cellHeight" : 32.0,
+      "childResults" : [ ]
+    },
+    "heightResult" : {
+      "height" : 139.0,
+      "cellHeight" : 32.0,
+      "resolvedCardinality" : 3,
+      "columnHeaderHeight" : 44.0,
+      "childResults" : [ ]
+    },
+    "columnSetSnapshots" : [ ],
+    "childNodes" : [ {
+      "path" : {
+        "segments" : [ "items", "name" ]
+      },
+      "fieldName" : "name",
+      "measureResult" : {
+        "labelWidth" : 36.0,
+        "columnWidth" : 36.0,
+        "dataWidth" : 11.0,
+        "maxWidth" : 11.0,
+        "averageCardinality" : 1,
+        "isVariableLength" : false,
+        "averageChildCardinality" : 0,
+        "maxCardinality" : 0,
+        "childResults" : [ ],
+        "contentStats" : null,
+        "numericStats" : null,
+        "pivotStats" : null,
+        "sparklineStats" : null
+      },
+      "layoutResult" : {
+        "relationMode" : "OUTLINE",
+        "primitiveMode" : "BADGE",
+        "useVerticalHeader" : false,
+        "tableColumnWidth" : 0.0,
+        "columnHeaderIndentation" : 3.0,
+        "constrainedColumnWidth" : 262.0,
+        "childResults" : [ ]
+      },
+      "compressResult" : {
+        "justifiedWidth" : 262.0,
+        "columnSetSnapshots" : [ ],
+        "cellHeight" : 21.0,
+        "childResults" : [ ]
+      },
+      "heightResult" : {
+        "height" : 32.0,
+        "cellHeight" : 21.0,
+        "resolvedCardinality" : 1,
+        "columnHeaderHeight" : 3.0,
+        "childResults" : [ ]
+      },
+      "columnSetSnapshots" : [ ],
+      "childNodes" : [ ]
+    }, {
+      "path" : {
+        "segments" : [ "items", "price" ]
+      },
+      "fieldName" : "price",
+      "measureResult" : {
+        "labelWidth" : 32.0,
+        "columnWidth" : 32.0,
+        "dataWidth" : 11.0,
+        "maxWidth" : 11.0,
+        "averageCardinality" : 1,
+        "isVariableLength" : false,
+        "averageChildCardinality" : 0,
+        "maxCardinality" : 0,
+        "childResults" : [ ],
+        "contentStats" : null,
+        "numericStats" : null,
+        "pivotStats" : null,
+        "sparklineStats" : null
+      },
+      "layoutResult" : {
+        "relationMode" : "OUTLINE",
+        "primitiveMode" : "BADGE",
+        "useVerticalHeader" : false,
+        "tableColumnWidth" : 0.0,
+        "columnHeaderIndentation" : 0.0,
+        "constrainedColumnWidth" : 258.0,
+        "childResults" : [ ]
+      },
+      "compressResult" : {
+        "justifiedWidth" : 258.0,
+        "columnSetSnapshots" : [ ],
+        "cellHeight" : 21.0,
+        "childResults" : [ ]
+      },
+      "heightResult" : {
+        "height" : 32.0,
+        "cellHeight" : 21.0,
+        "resolvedCardinality" : 1,
+        "columnHeaderHeight" : 0.0,
+        "childResults" : [ ]
+      },
+      "columnSetSnapshots" : [ ],
+      "childNodes" : [ ]
+    }, {
+      "path" : {
+        "segments" : [ "items", "quantity" ]
+      },
+      "fieldName" : "quantity",
+      "measureResult" : {
+        "labelWidth" : 50.0,
+        "columnWidth" : 50.0,
+        "dataWidth" : 11.0,
+        "maxWidth" : 11.0,
+        "averageCardinality" : 1,
+        "isVariableLength" : false,
+        "averageChildCardinality" : 0,
+        "maxCardinality" : 0,
+        "childResults" : [ ],
+        "contentStats" : null,
+        "numericStats" : null,
+        "pivotStats" : null,
+        "sparklineStats" : null
+      },
+      "layoutResult" : {
+        "relationMode" : "OUTLINE",
+        "primitiveMode" : "BADGE",
+        "useVerticalHeader" : false,
+        "tableColumnWidth" : 0.0,
+        "columnHeaderIndentation" : 0.0,
+        "constrainedColumnWidth" : 277.0,
+        "childResults" : [ ]
+      },
+      "compressResult" : {
+        "justifiedWidth" : 277.0,
+        "columnSetSnapshots" : [ ],
+        "cellHeight" : 21.0,
+        "childResults" : [ ]
+      },
+      "heightResult" : {
+        "height" : 32.0,
+        "cellHeight" : 21.0,
+        "resolvedCardinality" : 1,
+        "columnHeaderHeight" : 0.0,
+        "childResults" : [ ]
+      },
+      "columnSetSnapshots" : [ ],
+      "childNodes" : [ ]
+    } ]
+  }
+}

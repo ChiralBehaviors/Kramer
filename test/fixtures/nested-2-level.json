@@ -1,0 +1,561 @@
+{
+  "schema" : {
+    "kind" : "relation",
+    "field" : "departments",
+    "children" : [ {
+      "kind" : "primitive",
+      "field" : "name"
+    }, {
+      "kind" : "primitive",
+      "field" : "building"
+    }, {
+      "kind" : "relation",
+      "field" : "courses",
+      "children" : [ {
+        "kind" : "primitive",
+        "field" : "number"
+      }, {
+        "kind" : "primitive",
+        "field" : "title"
+      }, {
+        "kind" : "primitive",
+        "field" : "credits"
+      } ]
+    } ]
+  },
+  "data" : [ {
+    "name" : "CS",
+    "building" : "Gates",
+    "courses" : [ {
+      "number" : "CS101",
+      "title" : "Intro",
+      "credits" : 3
+    }, {
+      "number" : "CS201",
+      "title" : "Data Structures",
+      "credits" : 4
+    } ]
+  }, {
+    "name" : "Math",
+    "building" : "Hilbert",
+    "courses" : [ {
+      "number" : "MATH101",
+      "title" : "Calculus",
+      "credits" : 4
+    } ]
+  } ],
+  "width" : 600.0,
+  "expected" : {
+    "path" : {
+      "segments" : [ "departments" ]
+    },
+    "fieldName" : "departments",
+    "measureResult" : {
+      "labelWidth" : 49.0,
+      "columnWidth" : 188.0,
+      "dataWidth" : 0.0,
+      "maxWidth" : 0.0,
+      "averageCardinality" : 0,
+      "isVariableLength" : false,
+      "averageChildCardinality" : 2,
+      "maxCardinality" : 2,
+      "childResults" : [ {
+        "labelWidth" : 36.0,
+        "columnWidth" : 37.0,
+        "dataWidth" : 37.0,
+        "maxWidth" : 36.703125,
+        "averageCardinality" : 1,
+        "isVariableLength" : false,
+        "averageChildCardinality" : 0,
+        "maxCardinality" : 0,
+        "childResults" : [ ],
+        "contentStats" : null,
+        "numericStats" : null,
+        "pivotStats" : null,
+        "sparklineStats" : null
+      }, {
+        "labelWidth" : 48.0,
+        "columnWidth" : 48.0,
+        "dataWidth" : 45.0,
+        "maxWidth" : 44.337890625,
+        "averageCardinality" : 1,
+        "isVariableLength" : false,
+        "averageChildCardinality" : 0,
+        "maxCardinality" : 0,
+        "childResults" : [ ],
+        "contentStats" : null,
+        "numericStats" : null,
+        "pivotStats" : null,
+        "sparklineStats" : null
+      }, {
+        "labelWidth" : 47.0,
+        "columnWidth" : 137.0,
+        "dataWidth" : 0.0,
+        "maxWidth" : 0.0,
+        "averageCardinality" : 0,
+        "isVariableLength" : false,
+        "averageChildCardinality" : 1,
+        "maxCardinality" : 3,
+        "childResults" : [ {
+          "labelWidth" : 47.0,
+          "columnWidth" : 61.0,
+          "dataWidth" : 61.0,
+          "maxWidth" : 60.544921875,
+          "averageCardinality" : 1,
+          "isVariableLength" : false,
+          "averageChildCardinality" : 0,
+          "maxCardinality" : 0,
+          "childResults" : [ ],
+          "contentStats" : null,
+          "numericStats" : null,
+          "pivotStats" : null,
+          "sparklineStats" : null
+        }, {
+          "labelWidth" : 26.0,
+          "columnWidth" : 90.0,
+          "dataWidth" : 90.0,
+          "maxWidth" : 89.3203125,
+          "averageCardinality" : 1,
+          "isVariableLength" : false,
+          "averageChildCardinality" : 0,
+          "maxCardinality" : 0,
+          "childResults" : [ ],
+          "contentStats" : null,
+          "numericStats" : null,
+          "pivotStats" : null,
+          "sparklineStats" : null
+        }, {
+          "labelWidth" : 43.0,
+          "columnWidth" : 43.0,
+          "dataWidth" : 19.0,
+          "maxWidth" : 18.3515625,
+          "averageCardinality" : 1,
+          "isVariableLength" : false,
+          "averageChildCardinality" : 0,
+          "maxCardinality" : 0,
+          "childResults" : [ ],
+          "contentStats" : null,
+          "numericStats" : {
+            "numericMin" : 3.0,
+            "numericMax" : 4.0
+          },
+          "pivotStats" : null,
+          "sparklineStats" : null
+        } ],
+        "contentStats" : null,
+        "numericStats" : null,
+        "pivotStats" : null,
+        "sparklineStats" : null
+      } ],
+      "contentStats" : null,
+      "numericStats" : null,
+      "pivotStats" : null,
+      "sparklineStats" : null
+    },
+    "layoutResult" : {
+      "relationMode" : "TABLE",
+      "primitiveMode" : "TEXT",
+      "useVerticalHeader" : false,
+      "tableColumnWidth" : 58.0,
+      "columnHeaderIndentation" : 3.0,
+      "constrainedColumnWidth" : 600.0,
+      "childResults" : [ {
+        "relationMode" : "OUTLINE",
+        "primitiveMode" : "BADGE",
+        "useVerticalHeader" : false,
+        "tableColumnWidth" : 0.0,
+        "columnHeaderIndentation" : 3.0,
+        "constrainedColumnWidth" : 168.0,
+        "childResults" : [ ]
+      }, {
+        "relationMode" : "OUTLINE",
+        "primitiveMode" : "BADGE",
+        "useVerticalHeader" : false,
+        "tableColumnWidth" : 0.0,
+        "columnHeaderIndentation" : 0.0,
+        "constrainedColumnWidth" : 180.0,
+        "childResults" : [ ]
+      }, {
+        "relationMode" : "TABLE",
+        "primitiveMode" : "TEXT",
+        "useVerticalHeader" : false,
+        "tableColumnWidth" : 33.0,
+        "columnHeaderIndentation" : 3.0,
+        "constrainedColumnWidth" : 551.0,
+        "childResults" : [ {
+          "relationMode" : "OUTLINE",
+          "primitiveMode" : "BADGE",
+          "useVerticalHeader" : false,
+          "tableColumnWidth" : 0.0,
+          "columnHeaderIndentation" : 3.0,
+          "constrainedColumnWidth" : 90.0,
+          "childResults" : [ ]
+        }, {
+          "relationMode" : "OUTLINE",
+          "primitiveMode" : "BADGE",
+          "useVerticalHeader" : false,
+          "tableColumnWidth" : 0.0,
+          "columnHeaderIndentation" : 0.0,
+          "constrainedColumnWidth" : 69.0,
+          "childResults" : [ ]
+        }, {
+          "relationMode" : "OUTLINE",
+          "primitiveMode" : "BADGE",
+          "useVerticalHeader" : false,
+          "tableColumnWidth" : 0.0,
+          "columnHeaderIndentation" : 0.0,
+          "constrainedColumnWidth" : 87.0,
+          "childResults" : [ ]
+        } ]
+      } ]
+    },
+    "compressResult" : {
+      "justifiedWidth" : 597.0,
+      "columnSetSnapshots" : [ ],
+      "cellHeight" : 63.0,
+      "childResults" : [ ]
+    },
+    "heightResult" : {
+      "height" : 192.0,
+      "cellHeight" : 63.0,
+      "resolvedCardinality" : 2,
+      "columnHeaderHeight" : 66.0,
+      "childResults" : [ ]
+    },
+    "columnSetSnapshots" : [ ],
+    "childNodes" : [ {
+      "path" : {
+        "segments" : [ "departments", "name" ]
+      },
+      "fieldName" : "name",
+      "measureResult" : {
+        "labelWidth" : 36.0,
+        "columnWidth" : 36.0,
+        "dataWidth" : 11.0,
+        "maxWidth" : 11.0,
+        "averageCardinality" : 1,
+        "isVariableLength" : false,
+        "averageChildCardinality" : 0,
+        "maxCardinality" : 0,
+        "childResults" : [ ],
+        "contentStats" : null,
+        "numericStats" : null,
+        "pivotStats" : null,
+        "sparklineStats" : null
+      },
+      "layoutResult" : {
+        "relationMode" : "OUTLINE",
+        "primitiveMode" : "BADGE",
+        "useVerticalHeader" : false,
+        "tableColumnWidth" : 0.0,
+        "columnHeaderIndentation" : 3.0,
+        "constrainedColumnWidth" : 168.0,
+        "childResults" : [ ]
+      },
+      "compressResult" : {
+        "justifiedWidth" : 168.0,
+        "columnSetSnapshots" : [ ],
+        "cellHeight" : 21.0,
+        "childResults" : [ ]
+      },
+      "heightResult" : {
+        "height" : 63.0,
+        "cellHeight" : 21.0,
+        "resolvedCardinality" : 1,
+        "columnHeaderHeight" : 3.0,
+        "childResults" : [ ]
+      },
+      "columnSetSnapshots" : [ ],
+      "childNodes" : [ ]
+    }, {
+      "path" : {
+        "segments" : [ "departments", "building" ]
+      },
+      "fieldName" : "building",
+      "measureResult" : {
+        "labelWidth" : 48.0,
+        "columnWidth" : 48.0,
+        "dataWidth" : 11.0,
+        "maxWidth" : 11.0,
+        "averageCardinality" : 1,
+        "isVariableLength" : false,
+        "averageChildCardinality" : 0,
+        "maxCardinality" : 0,
+        "childResults" : [ ],
+        "contentStats" : null,
+        "numericStats" : null,
+        "pivotStats" : null,
+        "sparklineStats" : null
+      },
+      "layoutResult" : {
+        "relationMode" : "OUTLINE",
+        "primitiveMode" : "BADGE",
+        "useVerticalHeader" : false,
+        "tableColumnWidth" : 0.0,
+        "columnHeaderIndentation" : 0.0,
+        "constrainedColumnWidth" : 180.0,
+        "childResults" : [ ]
+      },
+      "compressResult" : {
+        "justifiedWidth" : 180.0,
+        "columnSetSnapshots" : [ ],
+        "cellHeight" : 21.0,
+        "childResults" : [ ]
+      },
+      "heightResult" : {
+        "height" : 63.0,
+        "cellHeight" : 21.0,
+        "resolvedCardinality" : 1,
+        "columnHeaderHeight" : 0.0,
+        "childResults" : [ ]
+      },
+      "columnSetSnapshots" : [ ],
+      "childNodes" : [ ]
+    }, {
+      "path" : {
+        "segments" : [ "departments", "courses" ]
+      },
+      "fieldName" : "courses",
+      "measureResult" : {
+        "labelWidth" : 47.0,
+        "columnWidth" : 137.0,
+        "dataWidth" : 0.0,
+        "maxWidth" : 0.0,
+        "averageCardinality" : 0,
+        "isVariableLength" : false,
+        "averageChildCardinality" : 1,
+        "maxCardinality" : 3,
+        "childResults" : [ {
+          "labelWidth" : 47.0,
+          "columnWidth" : 61.0,
+          "dataWidth" : 61.0,
+          "maxWidth" : 60.544921875,
+          "averageCardinality" : 1,
+          "isVariableLength" : false,
+          "averageChildCardinality" : 0,
+          "maxCardinality" : 0,
+          "childResults" : [ ],
+          "contentStats" : null,
+          "numericStats" : null,
+          "pivotStats" : null,
+          "sparklineStats" : null
+        }, {
+          "labelWidth" : 26.0,
+          "columnWidth" : 90.0,
+          "dataWidth" : 90.0,
+          "maxWidth" : 89.3203125,
+          "averageCardinality" : 1,
+          "isVariableLength" : false,
+          "averageChildCardinality" : 0,
+          "maxCardinality" : 0,
+          "childResults" : [ ],
+          "contentStats" : null,
+          "numericStats" : null,
+          "pivotStats" : null,
+          "sparklineStats" : null
+        }, {
+          "labelWidth" : 43.0,
+          "columnWidth" : 43.0,
+          "dataWidth" : 19.0,
+          "maxWidth" : 18.3515625,
+          "averageCardinality" : 1,
+          "isVariableLength" : false,
+          "averageChildCardinality" : 0,
+          "maxCardinality" : 0,
+          "childResults" : [ ],
+          "contentStats" : null,
+          "numericStats" : {
+            "numericMin" : 3.0,
+            "numericMax" : 4.0
+          },
+          "pivotStats" : null,
+          "sparklineStats" : null
+        } ],
+        "contentStats" : null,
+        "numericStats" : null,
+        "pivotStats" : null,
+        "sparklineStats" : null
+      },
+      "layoutResult" : {
+        "relationMode" : "TABLE",
+        "primitiveMode" : "TEXT",
+        "useVerticalHeader" : false,
+        "tableColumnWidth" : 33.0,
+        "columnHeaderIndentation" : 3.0,
+        "constrainedColumnWidth" : 551.0,
+        "childResults" : [ {
+          "relationMode" : "OUTLINE",
+          "primitiveMode" : "BADGE",
+          "useVerticalHeader" : false,
+          "tableColumnWidth" : 0.0,
+          "columnHeaderIndentation" : 3.0,
+          "constrainedColumnWidth" : 90.0,
+          "childResults" : [ ]
+        }, {
+          "relationMode" : "OUTLINE",
+          "primitiveMode" : "BADGE",
+          "useVerticalHeader" : false,
+          "tableColumnWidth" : 0.0,
+          "columnHeaderIndentation" : 0.0,
+          "constrainedColumnWidth" : 69.0,
+          "childResults" : [ ]
+        }, {
+          "relationMode" : "OUTLINE",
+          "primitiveMode" : "BADGE",
+          "useVerticalHeader" : false,
+          "tableColumnWidth" : 0.0,
+          "columnHeaderIndentation" : 0.0,
+          "constrainedColumnWidth" : 87.0,
+          "childResults" : [ ]
+        } ]
+      },
+      "compressResult" : {
+        "justifiedWidth" : 246.0,
+        "columnSetSnapshots" : [ ],
+        "cellHeight" : 32.0,
+        "childResults" : [ ]
+      },
+      "heightResult" : {
+        "height" : 63.0,
+        "cellHeight" : 32.0,
+        "resolvedCardinality" : 2,
+        "columnHeaderHeight" : 44.0,
+        "childResults" : [ ]
+      },
+      "columnSetSnapshots" : [ ],
+      "childNodes" : [ {
+        "path" : {
+          "segments" : [ "departments", "courses", "number" ]
+        },
+        "fieldName" : "number",
+        "measureResult" : {
+          "labelWidth" : 47.0,
+          "columnWidth" : 47.0,
+          "dataWidth" : 11.0,
+          "maxWidth" : 11.0,
+          "averageCardinality" : 1,
+          "isVariableLength" : false,
+          "averageChildCardinality" : 0,
+          "maxCardinality" : 0,
+          "childResults" : [ ],
+          "contentStats" : null,
+          "numericStats" : null,
+          "pivotStats" : null,
+          "sparklineStats" : null
+        },
+        "layoutResult" : {
+          "relationMode" : "OUTLINE",
+          "primitiveMode" : "BADGE",
+          "useVerticalHeader" : false,
+          "tableColumnWidth" : 0.0,
+          "columnHeaderIndentation" : 3.0,
+          "constrainedColumnWidth" : 90.0,
+          "childResults" : [ ]
+        },
+        "compressResult" : {
+          "justifiedWidth" : 90.0,
+          "columnSetSnapshots" : [ ],
+          "cellHeight" : 21.0,
+          "childResults" : [ ]
+        },
+        "heightResult" : {
+          "height" : 32.0,
+          "cellHeight" : 21.0,
+          "resolvedCardinality" : 1,
+          "columnHeaderHeight" : 3.0,
+          "childResults" : [ ]
+        },
+        "columnSetSnapshots" : [ ],
+        "childNodes" : [ ]
+      }, {
+        "path" : {
+          "segments" : [ "departments", "courses", "title" ]
+        },
+        "fieldName" : "title",
+        "measureResult" : {
+          "labelWidth" : 26.0,
+          "columnWidth" : 26.0,
+          "dataWidth" : 11.0,
+          "maxWidth" : 11.0,
+          "averageCardinality" : 1,
+          "isVariableLength" : false,
+          "averageChildCardinality" : 0,
+          "maxCardinality" : 0,
+          "childResults" : [ ],
+          "contentStats" : null,
+          "numericStats" : null,
+          "pivotStats" : null,
+          "sparklineStats" : null
+        },
+        "layoutResult" : {
+          "relationMode" : "OUTLINE",
+          "primitiveMode" : "BADGE",
+          "useVerticalHeader" : false,
+          "tableColumnWidth" : 0.0,
+          "columnHeaderIndentation" : 0.0,
+          "constrainedColumnWidth" : 69.0,
+          "childResults" : [ ]
+        },
+        "compressResult" : {
+          "justifiedWidth" : 69.0,
+          "columnSetSnapshots" : [ ],
+          "cellHeight" : 21.0,
+          "childResults" : [ ]
+        },
+        "heightResult" : {
+          "height" : 32.0,
+          "cellHeight" : 21.0,
+          "resolvedCardinality" : 1,
+          "columnHeaderHeight" : 0.0,
+          "childResults" : [ ]
+        },
+        "columnSetSnapshots" : [ ],
+        "childNodes" : [ ]
+      }, {
+        "path" : {
+          "segments" : [ "departments", "courses", "credits" ]
+        },
+        "fieldName" : "credits",
+        "measureResult" : {
+          "labelWidth" : 43.0,
+          "columnWidth" : 43.0,
+          "dataWidth" : 11.0,
+          "maxWidth" : 11.0,
+          "averageCardinality" : 1,
+          "isVariableLength" : false,
+          "averageChildCardinality" : 0,
+          "maxCardinality" : 0,
+          "childResults" : [ ],
+          "contentStats" : null,
+          "numericStats" : null,
+          "pivotStats" : null,
+          "sparklineStats" : null
+        },
+        "layoutResult" : {
+          "relationMode" : "OUTLINE",
+          "primitiveMode" : "BADGE",
+          "useVerticalHeader" : false,
+          "tableColumnWidth" : 0.0,
+          "columnHeaderIndentation" : 0.0,
+          "constrainedColumnWidth" : 87.0,
+          "childResults" : [ ]
+        },
+        "compressResult" : {
+          "justifiedWidth" : 87.0,
+          "columnSetSnapshots" : [ ],
+          "cellHeight" : 21.0,
+          "childResults" : [ ]
+        },
+        "heightResult" : {
+          "height" : 32.0,
+          "cellHeight" : 21.0,
+          "resolvedCardinality" : 1,
+          "columnHeaderHeight" : 0.0,
+          "childResults" : [ ]
+        },
+        "columnSetSnapshots" : [ ],
+        "childNodes" : [ ]
+      } ]
+    } ]
+  }
+}

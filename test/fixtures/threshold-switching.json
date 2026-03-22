@@ -1,0 +1,51 @@
+{
+  "schema" : {
+    "kind" : "relation",
+    "field" : "departments",
+    "children" : [ {
+      "kind" : "primitive",
+      "field" : "name"
+    }, {
+      "kind" : "primitive",
+      "field" : "building"
+    }, {
+      "kind" : "relation",
+      "field" : "courses",
+      "children" : [ {
+        "kind" : "primitive",
+        "field" : "number"
+      }, {
+        "kind" : "primitive",
+        "field" : "title"
+      }, {
+        "kind" : "primitive",
+        "field" : "credits"
+      } ]
+    } ]
+  },
+  "data" : [ {
+    "name" : "CS",
+    "building" : "Gates",
+    "courses" : [ {
+      "number" : "CS101",
+      "title" : "Intro",
+      "credits" : 3
+    } ]
+  } ],
+  "widthTests" : [ {
+    "width" : 1200.0,
+    "rootMode" : "TABLE"
+  }, {
+    "width" : 800.0,
+    "rootMode" : "TABLE"
+  }, {
+    "width" : 600.0,
+    "rootMode" : "TABLE"
+  }, {
+    "width" : 400.0,
+    "rootMode" : "OUTLINE"
+  }, {
+    "width" : 200.0,
+    "rootMode" : "OUTLINE"
+  } ]
+}
