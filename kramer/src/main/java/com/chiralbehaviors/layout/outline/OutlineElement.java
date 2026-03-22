@@ -80,14 +80,20 @@ public class OutlineElement extends HorizontalCell<OutlineElement>
             .setPrefHeight(elementHeight);
         cell.getNode()
             .setMaxHeight(elementHeight);
-        // Check if the label should rotate vertical to avoid truncation.
-        // Same heuristic as table column headers (verticalHeaderThreshold=1.5):
-        // rotate when label text is wider than allocated width AND there is
-        // enough vertical space to show the rotated text.
+        // Rotate label vertical when there is enough vertical space.
+        // For relation labels (structural), always prefer vertical — they
+        // are less important than data and vertical rendering frees
+        // horizontal space. For primitive labels, only rotate when the
+        // text would truncate (textWidth > labelWidth).
         double textWidth = layout.labelWidth(layout.getLabel());
         double labelH = layout.getLabelHeight();
-        boolean rotateVertical = textWidth > labelWidth
-                                 && elementHeight >= textWidth;
+        boolean isRelation = layout instanceof com.chiralbehaviors.layout.RelationLayout;
+        // Relations: always rotate when room (saves horizontal space).
+        // Primitives: rotate when text nearly fills the label allocation
+        // (>95% consumed — insets/rounding will truncate with "...").
+        boolean wouldTruncate = textWidth > labelWidth * 0.95;
+        boolean rotateVertical = elementHeight >= textWidth
+                                 && (isRelation || wouldTruncate);
 
         String bulletText = style.getBulletText();
         if (!bulletText.isEmpty() && style.getBulletWidth() > 0) {
