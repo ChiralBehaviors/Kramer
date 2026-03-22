@@ -2,11 +2,12 @@
 title: "JavaScript Port Feasibility Spike"
 id: RDR-032
 type: Spike
-status: proposed
+status: accepted
 priority: P2
 author: Hal Hildebrand
 created: 2026-03-22
-reviewed-by: pending
+accepted_date: 2026-03-22
+reviewed-by: self
 related: RDR-011, RDR-030
 ---
 
@@ -14,7 +15,7 @@ related: RDR-011, RDR-030
 
 ## Metadata
 - **Type**: Spike
-- **Status**: proposed
+- **Status**: accepted (2026-03-22)
 - **Priority**: P2
 - **Created**: 2026-03-22
 - **Related**: RDR-011 (Layout Protocol Extraction), RDR-030 (Schema Navigation & Discovery)
