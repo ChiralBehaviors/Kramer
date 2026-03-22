@@ -25,8 +25,9 @@ Individual modules can be built independently (`mvn -pl kramer install`).
 |--------|------------|
 | [kramer](kramer/) | Core layout engine. Schema-driven layout of JSON into JavaFX controls. |
 | [kramer-ql](kramer-ql/) | GraphQL integration. Parses queries into Kramer schemas, executes via Jakarta RS. |
-| [explorer](explorer/) | Interactive app for exploring GraphQL endpoints with autolayout. |
+| [explorer](explorer/) | Interactive app for exploring GraphQL endpoints with autolayout. Includes `StandaloneDemo`. |
 | [toy-app](toy-app/) | Declarative single-page app framework using GraphQL + autolayout. |
+| [poc/kramer-js](poc/kramer-js/) | **TypeScript/React proof of concept** — validates JS port feasibility (RDR-032). |
 
 ## How it works
 
@@ -76,6 +77,18 @@ Point it at any GraphQL endpoint. The app provides a GraphiQL editor, schema vie
 ```
 
 For GraphQL integration, use `kramer-ql` instead.
+
+## JavaScript port
+
+The layout algorithm is being ported to TypeScript/React. The [PoC](poc/kramer-js/) validates feasibility with a 2-slice proof of concept:
+
+```bash
+cd poc/kramer-js && npm install && npm run dev
+```
+
+The core pipeline (schema → measure → layout → justify → compress) is pure TypeScript with zero DOM dependency. The renderer is pluggable — React is the first target, with vanilla DOM and other frameworks possible via the `LayoutView` interface.
+
+See [RDR-032](docs/rdr/RDR-032-javascript-port-feasibility-spike.md) for the full feasibility analysis.
 
 ## License
 
