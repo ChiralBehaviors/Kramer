@@ -174,8 +174,12 @@ public final class PrimitiveLayout extends SchemaNodeLayout {
 
     @Override
     public void compress(double available) {
-        CompressResult result = computeCompress(available);
-        justifiedWidth = result.justifiedWidth();
+        // Use the full available width for rendering. computeCompress() may
+        // cap to maxWidth (for column width calculation), but the rendered
+        // cell should fill its allocated outline column to avoid dead space
+        // and invisible data.
+        double floor = style.getMinValueWidth();
+        justifiedWidth = Style.snap(Math.max(available, floor));
     }
 
     @Override

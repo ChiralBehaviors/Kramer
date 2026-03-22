@@ -236,9 +236,13 @@ class StylesheetPropertyTest {
         // Compress with much larger available width
         layout.compress(500);
 
-        // justifiedWidth should be capped at maxWidth, not stretched to 500
-        assertTrue(layout.getJustifiedWidth() <= Style.snap(maxW),
-                   "Fixed-length compress should cap at maxWidth, not stretch to available");
+        // compress() uses full available width for rendering (fills outline column).
+        // computeCompress() caps to maxWidth for column-width calculation.
+        assertEquals(Style.snap(500), layout.getJustifiedWidth(),
+                     "compress() should use full available width for rendering");
+        CompressResult cr = layout.computeCompress(500);
+        assertTrue(cr.justifiedWidth() <= Style.snap(maxW),
+                   "computeCompress() should cap at maxWidth for column calculation");
     }
 
     /**
@@ -292,10 +296,14 @@ class StylesheetPropertyTest {
         assertFalse(layout.isVariableLength(),
                     "isVariableLength must survive layout()/clear()");
 
-        // compress() should still cap at maxWidth, not stretch to 500
+        // compress() now uses full available width for rendering.
+        // The fixed-length cap is preserved in computeCompress().
         layout.compress(500);
-        assertTrue(layout.getJustifiedWidth() <= Style.snap(70),
-                   "Fixed-length cap must survive full measure→layout→compress pipeline");
+        assertEquals(Style.snap(500), layout.getJustifiedWidth(),
+                     "compress() should use full available width for rendering");
+        CompressResult cr = layout.computeCompress(500);
+        assertTrue(cr.justifiedWidth() <= Style.snap(70),
+                   "computeCompress() cap must survive full measure→layout→compress pipeline");
     }
 
     // ---- Phase 2: Width Guards ----
@@ -615,10 +623,13 @@ class StylesheetPropertyTest {
         // Compress with plenty of available space
         layout.compress(500);
 
-        // Without snap: justifiedWidth = snap(min(500, 35)) = 35
-        // With snap=10: target = ceil(35/10)*10 = 40, justifiedWidth = snap(min(500, 40)) = 40
-        assertEquals(Style.snap(40.0), layout.getJustifiedWidth(),
-                     "Fixed-length field should snap to grid: 35 → 40");
+        // compress() uses full available width for rendering.
+        // computeCompress() applies snap: target = ceil(35/10)*10 = 40
+        assertEquals(Style.snap(500), layout.getJustifiedWidth(),
+                     "compress() should use full available width");
+        CompressResult cr = layout.computeCompress(500);
+        assertEquals(Style.snap(40.0), cr.justifiedWidth(),
+                     "computeCompress() should snap: 35 → 40");
     }
 
     /**
@@ -816,8 +827,12 @@ class StylesheetPropertyTest {
         assertFalse(layout.isVariableLength());
         layout.compress(500);
 
-        // No snap: justifiedWidth = snap(35) = 35
-        assertEquals(Style.snap(35.0), layout.getJustifiedWidth(),
-                     "With snap=0 (disabled), width should be exact maxWidth");
+        // compress() uses full available width for rendering.
+        // computeCompress() caps to maxWidth when snap disabled.
+        assertEquals(Style.snap(500), layout.getJustifiedWidth(),
+                     "compress() should use full available width");
+        CompressResult cr = layout.computeCompress(500);
+        assertEquals(Style.snap(35.0), cr.justifiedWidth(),
+                     "computeCompress() with snap=0 should cap at exact maxWidth");
     }
 }

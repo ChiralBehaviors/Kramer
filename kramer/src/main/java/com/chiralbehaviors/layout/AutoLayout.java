@@ -153,6 +153,16 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         return root.get();
     }
 
+    /** Package-visible for testing: the current layout width. */
+    double getLayoutWidth() {
+        return layoutWidth;
+    }
+
+    /** Package-visible for testing: the internal layout tree. */
+    SchemaNodeLayout getLayoutTree() {
+        return layout;
+    }
+
     @Override
     public String getUserAgentStylesheet() {
         return stylesheet;
@@ -533,7 +543,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         if (old != null) {
             old.dispose();
         }
-        node.setMinWidth(width);
+        node.setMinWidth(0);
         node.setPrefWidth(width);
         node.setMaxWidth(width);
         control.updateItem(zeeData);
@@ -585,7 +595,7 @@ public class AutoLayout extends AnchorPane implements LayoutCell<AutoLayout> {
         if (old != null) {
             old.dispose();
         }
-        node.setMinWidth(width);
+        node.setMinWidth(0);
         node.setPrefWidth(width);
         node.setMaxWidth(width);
         control.updateItem(zeeData);
