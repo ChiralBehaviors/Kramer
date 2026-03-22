@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.chiralbehaviors.layout.ColumnSet;
-import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.LayoutView;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
@@ -50,7 +50,7 @@ public class Span extends HorizontalCell<Span>
     private final MouseHandler                                   mouseModel;
     private final MultipleCellSelection<JsonNode, OutlineColumn> selectionModel;
 
-    public Span(int cardinality, RelationLayout layout, double labelWidth,
+    public Span(int cardinality, LayoutView layout, double labelWidth,
                 ColumnSet columnSet, FocusTraversal<Span> parentTraversal,
                 Style model, RelationStyle style) {
         this(layout.getField(), parentTraversal);

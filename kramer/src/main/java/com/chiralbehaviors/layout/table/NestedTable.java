@@ -19,7 +19,7 @@ package com.chiralbehaviors.layout.table;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.LayoutView;
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.VerticalCell;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
@@ -54,7 +54,7 @@ public class NestedTable extends VerticalCell<NestedTable> {
 
     private final VirtualFlow<NestedCell> rows;
 
-    public NestedTable(int childCardinality, RelationLayout layout,
+    public NestedTable(int childCardinality, LayoutView layout,
                        FocusTraversal<?> parentTraversal, Style model,
                        RelationStyle style, boolean rootLevel) {
         super(STYLE_SHEET);
@@ -113,7 +113,7 @@ public class NestedTable extends VerticalCell<NestedTable> {
         if (rows != null) rows.setFocus();
     }
 
-    private static HBox buildAggregateFooter(RelationLayout layout,
+    private static HBox buildAggregateFooter(LayoutView layout,
                                                 java.util.Map<String, Object> aggResults) {
         HBox footer = new HBox();
         footer.getStyleClass().add("aggregate-footer");
