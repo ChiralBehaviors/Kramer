@@ -18,6 +18,7 @@ package com.chiralbehaviors.layout;
 
 import static com.chiralbehaviors.layout.style.Style.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -61,7 +62,7 @@ import javafx.scene.layout.Region;
  * @author halhildebrand
  *
  */
-public final class RelationLayout extends SchemaNodeLayout {
+public final class RelationLayout extends SchemaNodeLayout implements LayoutView {
 
     public static ArrayNode flatten(Relation fold, JsonNode datum) {
         ArrayNode flattened = JsonNodeFactory.instance.arrayNode();
@@ -636,6 +637,21 @@ public final class RelationLayout extends SchemaNodeLayout {
 
     public boolean isUseTable() {
         return useTable;
+    }
+
+    @Override
+    public double getJustifiedWidth() {
+        return justifiedWidth;
+    }
+
+    @Override
+    public int getResolvedCardinality() {
+        return resolvedCardinality;
+    }
+
+    @Override
+    public Collection<ColumnSet> getColumnSets() {
+        return columnSets;
     }
 
     /**
