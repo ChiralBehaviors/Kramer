@@ -19,8 +19,8 @@ package com.chiralbehaviors.layout.table;
 import java.util.List;
 import java.util.function.Function;
 
+import com.chiralbehaviors.layout.LayoutView;
 import com.chiralbehaviors.layout.PrimitiveLayout;
-import com.chiralbehaviors.layout.RelationLayout;
 import com.chiralbehaviors.layout.style.Style;
 
 import javafx.geometry.Pos;
@@ -96,7 +96,7 @@ public class ColumnHeader extends VBox {
         }
     }
 
-    public ColumnHeader(double width, double height, RelationLayout layout,
+    public ColumnHeader(double width, double height, LayoutView layout,
                         List<Function<Double, ColumnHeader>> nestedHeaders) {
         this();
         setMinHeight(height);

@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.chiralbehaviors.layout.ColumnSet;
-import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.LayoutView;
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.LayoutContainer;
@@ -53,7 +53,7 @@ public class OutlineCell extends VerticalCell<OutlineCell>
     private List<Span>                                  spans                 = new ArrayList<>();
 
     public OutlineCell(Collection<ColumnSet> columnSets, int childCardinality,
-                       RelationLayout layout, FocusTraversal<OutlineCell> pt,
+                       LayoutView layout, FocusTraversal<OutlineCell> pt,
                        Style model, RelationStyle style, double labelWidth) {
         this(layout.getCssClass(), pt);
         columnSets.forEach(cs -> {

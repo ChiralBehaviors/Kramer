@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
-import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.LayoutView;
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.Hit;
 import com.chiralbehaviors.layout.cell.HorizontalCell;
@@ -54,7 +54,7 @@ public class NestedCell extends HorizontalCell<NestedCell> implements
     private final MouseHandler                                                  mouseModel;
     private final MultipleCellSelection<JsonNode, LayoutCell<? extends Region>> selectionModel;
 
-    public NestedCell(RelationLayout layout,
+    public NestedCell(LayoutView layout,
                       FocusTraversal<NestedCell> parentTraversal, Style model) {
         this(layout.getCssClass(), parentTraversal);
         layout.forEach(child -> {

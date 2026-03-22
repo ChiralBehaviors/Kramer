@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.OptionalInt;
 
 import com.chiralbehaviors.layout.ColumnSet;
-import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.LayoutView;
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
@@ -44,7 +44,7 @@ public class Outline extends VirtualFlow<OutlineCell> {
 
     public Outline(double width, double cellHeight,
                    Collection<ColumnSet> columnSets, int averageCardinality,
-                   RelationLayout layout, FocusTraversal<?> parentTraversal,
+                   LayoutView layout, FocusTraversal<?> parentTraversal,
                    Style model, RelationStyle style, double labelWidth) {
         super(STYLE_SHEET, width + style.getOutlineCellHorizontalInset(),
               cellHeight + style.getOutlineCellVerticalInset(),

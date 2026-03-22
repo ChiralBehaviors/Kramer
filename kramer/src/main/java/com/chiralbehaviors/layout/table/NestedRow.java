@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalInt;
 
-import com.chiralbehaviors.layout.RelationLayout;
+import com.chiralbehaviors.layout.LayoutView;
 import com.chiralbehaviors.layout.SchemaPath;
 import com.chiralbehaviors.layout.cell.control.FocusTraversal;
 import com.chiralbehaviors.layout.flowless.VirtualFlow;
@@ -40,14 +40,14 @@ public class NestedRow extends VirtualFlow<NestedCell> {
     private static final String STYLE_SHEET           = "nested-row.css";
     private int                 index;
 
-    public NestedRow(double rendered, RelationLayout layout,
+    public NestedRow(double rendered, LayoutView layout,
                      int childCardinality, FocusTraversal<?> parentTraversal,
                      Style model, RelationStyle style, boolean rootLevel) {
         this(rendered, layout.getCellHeight(), layout, childCardinality,
              parentTraversal, model, style, rootLevel);
     }
 
-    public NestedRow(double rendered, double rowHeight, RelationLayout layout,
+    public NestedRow(double rendered, double rowHeight, LayoutView layout,
                      int childCardinality, FocusTraversal<?> parentTraversal,
                      Style model, RelationStyle style, boolean rootLevel) {
         super(STYLE_SHEET, layout.getJustifiedTableColumnWidth(), rowHeight,
