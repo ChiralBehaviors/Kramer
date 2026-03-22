@@ -527,8 +527,11 @@ public final class RelationLayout extends SchemaNodeLayout {
         int avgChildCard = measureResult != null ? measureResult.averageChildCardinality() : averageChildCardinality;
         for (SchemaNodeLayout child : children) {
             double childWidth = lw + child.layoutWidth();
-            // Paper §3.4: outline-mode relations are excluded from column sets
-            boolean excluded = (child instanceof RelationLayout rl) && !rl.isUseTable();
+            // All nested relations get their own column set (full width).
+            // Without this, TABLE sub-relations share equal-width columns with
+            // primitives and get starved — e.g. a nested table needing 600px
+            // gets 200px when sharing with 2 primitives at 800px available.
+            boolean excluded = child instanceof RelationLayout;
             boolean wideChild = useHalfWidthGuard && childWidth > halfWidth;
             if (excluded || wideChild || current == null) {
                 current = new ColumnSet();

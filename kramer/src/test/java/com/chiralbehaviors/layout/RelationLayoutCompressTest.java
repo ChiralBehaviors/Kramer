@@ -136,7 +136,7 @@ class RelationLayoutCompressTest {
      * column sets with other fields.
      */
     @Test
-    void tableModeRelationCanShareColumnSet() {
+    void tableModeRelationGetsOwnColumnSet() {
         RelationStyle style = mockRelationStyle();
         Relation parent = new Relation("parent");
         RelationLayout layout = new RelationLayout(parent, style);
@@ -152,10 +152,10 @@ class RelationLayoutCompressTest {
 
         layout.compress(500);
 
-        // Both should end up in the same column set since the relation
-        // is in table mode and narrow enough
-        assertEquals(1, layout.columnSets.size(),
-                     "Table-mode relation should share column set with primitive");
+        // Relations always get their own column set (full width) to avoid
+        // being starved by equal-width sharing with primitives.
+        assertEquals(2, layout.columnSets.size(),
+                     "Relation should get its own column set, not share with primitive");
     }
 
     /**

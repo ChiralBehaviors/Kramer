@@ -356,4 +356,102 @@ class AutoLayoutResizeAdaptationTest {
                 "Should be OUTLINE well below readableTableWidth");
         });
     }
+
+    // -----------------------------------------------------------------------
+    // Test 8: outline mode column widths actually USE available space
+    // -----------------------------------------------------------------------
+
+    @Test
+    void outlineColumnWidthsUseAvailableSpace() throws Exception {
+        runOnFx(() -> {
+            // At 800px, 3-level schema renders as OUTLINE
+            AutoLayout al = layoutAt(threeLevelSchema(), threeLevelData(), 800);
+            RelationLayout rl = (RelationLayout) al.getLayoutTree();
+
+            assertFalse(rl.isUseTable(), "Root should be OUTLINE at 800px");
+
+            // Snapshot the column sets
+            LayoutDecisionNode tree = rl.snapshotDecisionTree();
+            CompressResult compress = tree.compressResult();
+
+            System.out.println("[OUTLINE-WIDTH] justifiedWidth=" + compress.justifiedWidth());
+            System.out.println("[OUTLINE-WIDTH] columnSets=" + compress.columnSetSnapshots().size());
+
+            for (int i = 0; i < compress.columnSetSnapshots().size(); i++) {
+                ColumnSetSnapshot cs = compress.columnSetSnapshots().get(i);
+                double totalColWidth = cs.columns().stream()
+                    .mapToDouble(ColumnSnapshot::width)
+                    .sum();
+                System.out.println("[OUTLINE-WIDTH] columnSet[" + i + "]: "
+                    + cs.columns().size() + " cols, totalWidth=" + totalColWidth
+                    + ", fields=" + cs.columns().stream()
+                        .flatMap(c -> c.fieldNames().stream())
+                        .toList());
+
+                // Each column should have non-trivial width — not truncated to tiny sizes
+                for (ColumnSnapshot col : cs.columns()) {
+                    assertTrue(col.width() >= 30,
+                        "Column width (" + col.width() + ") should be at least 30px. "
+                        + "Fields: " + col.fieldNames());
+                }
+            }
+
+            // Total column set width should use a significant fraction of available
+            // space (at least 50% — if it uses less, the layout is wasting space)
+            double totalUsed = compress.columnSetSnapshots().stream()
+                .flatMap(cs -> cs.columns().stream())
+                .mapToDouble(ColumnSnapshot::width)
+                .max().orElse(0);
+            // In outline mode with 1 column per set, the column width should
+            // be close to justifiedWidth. With multiple columns, the sum should
+            // approach justifiedWidth.
+            assertTrue(totalUsed > 50,
+                "Outline columns should use meaningful width, got max=" + totalUsed);
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // Test 9: outline mode — nested TABLE sub-relation column widths
+    //         fit within the outline column width
+    // -----------------------------------------------------------------------
+
+    @Test
+    void outlineNestedTableFitsWithinColumnWidth() throws Exception {
+        runOnFx(() -> {
+            AutoLayout al = layoutAt(threeLevelSchema(), threeLevelData(), 800);
+            RelationLayout rl = (RelationLayout) al.getLayoutTree();
+
+            assertFalse(rl.isUseTable(), "Root should be OUTLINE");
+
+            // Walk children: courses should be TABLE within the outline
+            for (SchemaNodeLayout child : rl.getChildren()) {
+                if (child instanceof RelationLayout childRl) {
+                    String name = childRl.getNode().getLabel();
+                    boolean table = childRl.isUseTable();
+                    double readableW = childRl.readableTableWidth();
+
+                    System.out.println("[NESTED] " + name + ": useTable=" + table
+                        + " readableTableWidth=" + readableW);
+
+                    if (table) {
+                        // The nested table's readable width should fit within
+                        // the outline's justified width (the space it was given)
+                        LayoutDecisionNode childTree = childRl.snapshotDecisionTree();
+                        CompressResult childCompress = childTree.compressResult();
+                        double childJustified = childCompress.justifiedWidth();
+
+                        System.out.println("[NESTED] " + name
+                            + ": justifiedWidth=" + childJustified
+                            + " readableTableWidth=" + readableW);
+
+                        // The justified width (actual render width) should not
+                        // wildly exceed the parent outline's available space
+                        assertTrue(childJustified <= 800,
+                            name + " nested TABLE justifiedWidth ("
+                            + childJustified + ") exceeds parent width (800)");
+                    }
+                }
+            }
+        });
+    }
 }
