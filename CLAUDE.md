@@ -38,7 +38,7 @@ Four Maven modules under parent `kramer.app` (`com.chiralbehaviors.layout`):
 
 - **kramer** — Core autolayout engine. Schema-driven layout of JSON data into JavaFX controls. No external service dependencies.
 - **kramer-ql** — GraphQL integration. Parses GraphQL queries to build Kramer schemas automatically, executes queries via Jakarta RS client. Depends on `kramer`.
-- **explorer** — Interactive JavaFX app for exploring GraphQL endpoints with autolayout. Depends on `kramer-ql`. Entry point: `Launcher` (delegates to `AutoLayoutExplorer`).
+- **explorer** — Interactive JavaFX app for exploring GraphQL endpoints with autolayout. Includes `StandaloneDemo` (self-contained course catalog demo). Depends on `kramer-ql`. Entry point: `Launcher` (delegates to `AutoLayoutExplorer`); standalone: `StandaloneDemo.Main`.
 - **toy-app** — Declarative single-page app framework using GraphQL + autolayout. Depends on `kramer-ql`. Entry point: `Launcher` (delegates to `SinglePageApp`).
 
 Both `explorer` and `toy-app` produce fat jars via `maven-shade-plugin` (classifier: `phat`).
@@ -56,10 +56,11 @@ Both `explorer` and `toy-app` produce fat jars via `maven-shade-plugin` (classif
 - `SchemaNodeLayout` — sealed hierarchy: `PrimitiveLayout` (text, badges, bars, sparklines) and `RelationLayout` (table, outline, crosstab)
 - Pipeline: measure → layout → justify → compress → buildControl, fully synchronous within `autoLayout()`
 - `ExhaustiveConstraintSolver` — enumerates render-mode assignments globally; `readableTableWidth()` threshold ensures table mode only when columns can display content readably
+- `ColumnPartitioner` — DP-optimal column partitioning (painter's partition problem, O(N²K)); replaces greedy slideRight with globally optimal height balancing. Strategy interface with `dpOptimal()` and `greedy()` implementations.
 - `justifyColumn()` — two-pass minimum-guarantee width distribution; all children get at least label width before surplus is distributed proportionally
 - Layout adapts between rendering modes:
-  - **Outline** (`outline` package) — vertical list with `OutlineColumn`, `OutlineElement`, `Span`, multicolumn packing
-  - **Nested Table** (`table` package) — `NestedTable`, `NestedRow`, `NestedCell`, `ColumnHeader` with sort indicators
+  - **Outline** (`outline` package) — vertical list with `OutlineColumn`, `OutlineElement`, `Span`, multicolumn packing. Relations always get their own full-width column set. Labels rotate vertical when width-constrained.
+  - **Nested Table** (`table` package) — `NestedTable`, `NestedRow`, `NestedCell`, `ColumnHeader` with sort indicators and vertical header rotation
   - **Crosstab** (`table` package) — pivot-based cross-tabulation when configured
 
 ### Query State (`kramer` — `query` package)
@@ -68,7 +69,8 @@ Both `explorer` and `toy-app` produce fat jars via `maven-shade-plugin` (classif
 - `InteractionHandler` — dispatches sealed `LayoutInteraction` events with undo/redo via JSON snapshots
 - `InteractionMenuFactory` — builds context menus (sort, filter, aggregate, copy, filter-by-value)
 - `ColumnSortHandler` — click-to-sort on column headers; idempotent installation guard
-- `FieldSelectorPanel` — TreeView with visibility checkboxes and hide-if-empty per relation
+- `FieldSelectorPanel` — TreeView with visibility checkboxes, state badges, hide-if-empty per relation, click-to-scroll
+- `FieldInspectorPanel` — detail panel showing all `FieldState` properties for the selected field with inline editing
 - `ExpressionEditor` — inline expression editor with real-time parse validation
 
 ### Expression Language (`kramer` — `expression` package)
@@ -86,12 +88,20 @@ Custom virtualized `VirtualFlow` for efficient rendering of large lists (forked/
 - `QueryRoot` — special `Relation` subclass for multi-root queries
 - `SchemaIntrospector` — discovers server capabilities for sort/filter push-down
 - `QueryRewriter` — rewrites queries to push operations server-side when supported
+- `TypeIntrospector` — parses GraphQL `__schema` introspection results into a browseable type tree (`IntrospectedType`, `IntrospectedField`, `TypeRef`)
+- `QueryExpander` — adds/removes `Field` nodes in GraphQL Document AST using immutable `transform()` pattern; creates minimal sub-selections for relation fields (RF-6 heuristic)
 
 ### CSS Styling
 Layout appearance is driven by CSS. Each component has a co-located `.css` file. User stylesheets override `default.css`. See `kramer/src/main/resources/com/chiralbehaviors/layout/default.css` for stylable class names.
 
+### Explorer UI (`explorer`)
+- `AutoLayoutController` — full interactive wiring: query state, context menus, field selector/inspector, sort handlers, column resize, undo/redo, keyboard shortcuts, schema introspection panel
+- `IntrospectionTreePanel` — TreeView of types/fields from GraphQL introspection with Add/Remove buttons; wires QueryExpander for AST modification and re-execution
+- `StandaloneDemo` — self-contained course catalog demo (departments → courses → sections, 3-level nesting) with full interactive pipeline; no external services
+- `SchemaDiagramView` — visual representation of the relation hierarchy
+
 ### Testing (`kramer` — `test` package)
-E2E test framework: `LayoutTestHarness` runs the full synchronous pipeline, `LayoutTestResult` captures rendered scene graph snapshots, `LayoutFixtures` provides 4 schema/data sets. 964 tests total.
+E2E test framework: `LayoutTestHarness` runs the full synchronous pipeline, `LayoutTestResult` captures rendered scene graph snapshots, `LayoutFixtures` provides 4 schema/data sets. `AutoLayoutResizeAdaptationTest` verifies resize adaptation, mode switching, column widths, and rendered data presence. 1140 tests total (1014 kramer + 106 kramer-ql + 20 explorer).
 
 ## Key Dependencies
 
