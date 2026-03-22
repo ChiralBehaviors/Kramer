@@ -16,6 +16,7 @@
 		<module>kramer-ql</module>
 		<module>explorer</module>
 		<module>toy-app</module>
+		<module>poc/kramer-js</module>
 	</modules>
 
 
