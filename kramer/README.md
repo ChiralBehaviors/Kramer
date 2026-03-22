@@ -21,9 +21,9 @@ The pipeline runs in `SchemaNodeLayout.autoLayout()`:
 
 3. **Justify** (`RelationLayout.justifyColumn()`) — two-pass minimum-guarantee distribution. All children get at least their label width, then surplus is distributed proportionally based on measured content width above the minimum.
 
-4. **Compress** (`ColumnSet.compress()`) — outline mode packs fields into multicolumn layouts. Greedy height-balancing slides fields between columns to minimize total height.
+4. **Compress** (`ColumnSet.compress()`) — outline mode packs fields into multicolumn layouts. DP-optimal column partitioning via `ColumnPartitioner` (painter's partition problem, O(N²K)) minimizes max column height. Relations always get their own full-width column set.
 
-5. **Build** (`RelationLayout.buildControl()`) — produces the JavaFX control tree. Table mode creates `NestedTable` with `ColumnHeader`, `NestedRow`, `NestedCell`. Outline mode creates `Outline` with `Span`, `OutlineColumn`, `OutlineElement`.
+5. **Build** (`RelationLayout.buildControl()`) — produces the JavaFX control tree. Table mode creates `NestedTable` with `ColumnHeader`, `NestedRow`, `NestedCell`. Outline mode creates `Outline` with `Span`, `OutlineColumn`, `OutlineElement`. Labels rotate vertical when width-constrained.
 
 ### Layout types
 
@@ -49,7 +49,8 @@ A 7-layer interaction model (SIEUFERD-inspired):
 - `LayoutInteraction` — sealed event hierarchy: SortBy, ClearSort, ToggleVisible, SetFilter, ClearFilter, SetRenderMode, SetFormula, ClearFormula, SetAggregate, ClearAggregate, SetHideIfEmpty, ResetAll.
 - `InteractionMenuFactory` — builds context menus from query state.
 - `ColumnSortHandler` — click-to-sort on column headers with visual indicators.
-- `FieldSelectorPanel` — TreeView with visibility checkboxes.
+- `FieldSelectorPanel` — TreeView with visibility checkboxes, state badges, click-to-scroll.
+- `FieldInspectorPanel` — detail panel for all field properties with inline editing.
 - `ExpressionEditor` — inline expression editor with real-time parse validation.
 
 ### Expression language (`expression` package)
@@ -74,7 +75,7 @@ Custom `VirtualFlow` for efficient rendering of large lists. Forked from the Flo
 
 ## Testing
 
-964 tests covering layout algorithm, width distribution, mode selection, data visibility, expression evaluation, query state, and interaction handling.
+1014 tests covering layout algorithm, width distribution, mode selection, resize adaptation, data visibility, expression evaluation, query state, interaction handling, and DP column partitioning.
 
 ```bash
 mvn test                              # all tests

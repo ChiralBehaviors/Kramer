@@ -13,6 +13,8 @@ Parses GraphQL query strings into Kramer `Relation` schema trees, so the layout 
 - `SchemaContext` — bundles the parsed schema with query metadata for downstream use.
 - `SchemaIntrospector` — discovers server capabilities (sorting, filtering support) from the GraphQL schema.
 - `QueryRewriter` — rewrites queries to push sort/filter operations to the server when supported.
+- `TypeIntrospector` — executes `__schema` introspection queries and parses results into a browseable type tree (`IntrospectedType`, `IntrospectedField`, `TypeRef`).
+- `QueryExpander` — adds/removes `Field` nodes in GraphQL Document AST using immutable `transform()` pattern. Creates minimal sub-selections for relation fields (id + name-like fields per RF-6 heuristic). Distinct from `QueryRewriter` which only injects arguments into existing selections.
 
 ## Usage
 
