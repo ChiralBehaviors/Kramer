@@ -476,12 +476,12 @@ class AutoLayoutResizeAdaptationTest {
     @Test
     void outlineRendersDataValues() throws Exception {
         runOnFx(() -> {
-            // Must use a Scene for VirtualFlow to create cells
+            // Test at narrow width matching user's window (~600px)
             Style style = new Style();
             AutoLayout al = new AutoLayout(null, style);
             var root = new javafx.scene.layout.BorderPane();
             root.setCenter(al);
-            new javafx.scene.Scene(root, 1200, 800);
+            new javafx.scene.Scene(root, 600, 800);
             root.applyCss();
             root.layout();
 
@@ -517,10 +517,6 @@ class AutoLayoutResizeAdaptationTest {
             System.out.println("[RENDER] hasCS=" + hasCS + " hasMath=" + hasMath
                 + " hasGates=" + hasGates);
 
-            assertTrue(hasCS || hasMath,
-                "Rendered text should include department names (CS or Math). " +
-                "Found: " + allText);
-
             // Inspect nested table column widths
             LayoutDecisionNode deptTree = rl.snapshotDecisionTree();
             for (LayoutDecisionNode child : deptTree.childNodes()) {
@@ -542,28 +538,72 @@ class AutoLayoutResizeAdaptationTest {
                 }
             }
 
-            // Walk rendered region tree and check widths at each level
-            var regions = new java.util.ArrayList<javafx.scene.layout.Region>();
-            findRegions(al, regions);
-            int tooNarrow = 0;
-            for (var r : regions) {
-                if (r.getWidth() > 0 && r.getWidth() < 20
-                        && r.getChildrenUnmodifiable().stream()
-                            .anyMatch(c -> c instanceof javafx.scene.text.Text)) {
-                    tooNarrow++;
-                    var texts = r.getChildrenUnmodifiable().stream()
-                        .filter(c -> c instanceof javafx.scene.text.Text)
-                        .map(c -> ((javafx.scene.text.Text) c).getText())
-                        .toList();
-                    System.out.println("[NARROW] " + r.getClass().getSimpleName()
-                        + " width=" + r.getWidth()
-                        + " text=" + texts);
+            // Find every Text node and check its PARENT's width.
+            // A data value like "CS" must live in a parent region that's
+            // wide enough to display it. If the parent is < 10px, the
+            // text is invisible.
+            // Check compress-phase column widths
+            LayoutDecisionNode tree = rl.snapshotDecisionTree();
+            for (var cs : tree.compressResult().columnSetSnapshots()) {
+                for (var col : cs.columns()) {
+                    System.out.println("[COMPRESS] col w=" + col.width()
+                        + " fields=" + col.fieldNames());
                 }
             }
-            System.out.println("[RENDER] tooNarrow regions (width<20 with text): "
-                + tooNarrow + " / " + regions.size());
-            assertEquals(0, tooNarrow,
-                "No rendered regions containing text should be narrower than 20px");
+            // Find OutlineElement nodes and check data cell widths
+            var outlineElements = new java.util.ArrayList<javafx.scene.layout.Region>();
+            findByClass(al, "com.chiralbehaviors.layout.outline.OutlineElement",
+                        outlineElements);
+            System.out.println("[OE] count=" + outlineElements.size());
+            for (int i = 0; i < Math.min(6, outlineElements.size()); i++) {
+                var oe = outlineElements.get(i);
+                var sb = new StringBuilder("[OE " + i + "] w=" + oe.getWidth());
+                for (var child : oe.getChildrenUnmodifiable()) {
+                    double w = child instanceof javafx.scene.layout.Region r
+                        ? r.getWidth() : -1;
+                    var ct = new java.util.ArrayList<javafx.scene.text.Text>();
+                    findTextNodes(child, ct);
+                    var t = ct.stream().map(javafx.scene.text.Text::getText)
+                        .filter(s -> s != null && !s.isBlank()).toList();
+                    sb.append(" | ").append(child.getClass().getSimpleName())
+                      .append("(w=").append(w).append(",t=").append(t).append(")");
+                }
+                System.out.println(sb);
+            }
+
+            var dataValues = java.util.Set.of(
+                "CS", "Gates", "Math", "Hilbert",
+                "CS101", "Intro", "MATH101", "Calc");
+            int invisible = 0;
+            for (var t : textNodes) {
+                String txt = t.getText();
+                if (txt == null || !dataValues.contains(txt)) continue;
+
+                // Walk up to find the nearest Region parent
+                javafx.scene.Node parent = t.getParent();
+                while (parent != null && !(parent instanceof javafx.scene.layout.Region)) {
+                    parent = parent.getParent();
+                }
+                double parentWidth = parent instanceof javafx.scene.layout.Region r
+                    ? r.getWidth() : -1;
+
+                System.out.println("[DATA-CELL] '" + txt + "' parentWidth="
+                    + parentWidth + " parent=" +
+                    (parent != null ? parent.getClass().getSimpleName() : "null"));
+
+                if (parentWidth >= 0 && parentWidth < 10) {
+                    invisible++;
+                    System.out.println("[DATA-CELL] *** INVISIBLE: '" + txt
+                        + "' in " + parent.getClass().getSimpleName()
+                        + " width=" + parentWidth);
+                }
+            }
+            // NOW assert data is present
+            assertTrue(hasCS || hasMath,
+                "Rendered text should include department names (CS or Math). " +
+                "Found: " + allText);
+            assertEquals(0, invisible,
+                "All data values must be in regions wide enough to display them");
         });
     }
 
@@ -587,6 +627,19 @@ class AutoLayoutResizeAdaptationTest {
         if (node instanceof javafx.scene.Parent p) {
             for (javafx.scene.Node child : p.getChildrenUnmodifiable()) {
                 findRegions(child, result);
+            }
+        }
+    }
+
+    private void findByClass(javafx.scene.Node node, String className,
+                              java.util.List<javafx.scene.layout.Region> result) {
+        if (node.getClass().getName().equals(className)
+                && node instanceof javafx.scene.layout.Region r) {
+            result.add(r);
+        }
+        if (node instanceof javafx.scene.Parent p) {
+            for (javafx.scene.Node child : p.getChildrenUnmodifiable()) {
+                findByClass(child, className, result);
             }
         }
     }
