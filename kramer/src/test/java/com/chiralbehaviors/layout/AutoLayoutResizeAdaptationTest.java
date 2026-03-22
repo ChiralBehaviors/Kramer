@@ -521,21 +521,49 @@ class AutoLayoutResizeAdaptationTest {
                 "Rendered text should include department names (CS or Math). " +
                 "Found: " + allText);
 
-            // Check that text nodes with data values have visible width
-            for (var t : textNodes) {
-                if (t.getText() != null && !t.getText().isBlank()
-                        && !"name".equals(t.getText())
-                        && !"building".equals(t.getText())) {
-                    double textWidth = t.getBoundsInParent().getWidth();
-                    if (textWidth < 1.0 && t.getText().length() > 0) {
-                        System.out.println("[RENDER-WARN] Text '" + t.getText()
-                            + "' has width=" + textWidth
-                            + " parent=" + t.getParent().getClass().getSimpleName()
-                            + " parentWidth=" + (t.getParent() instanceof javafx.scene.layout.Region r
-                                ? r.getWidth() : "?"));
+            // Inspect nested table column widths
+            LayoutDecisionNode deptTree = rl.snapshotDecisionTree();
+            for (LayoutDecisionNode child : deptTree.childNodes()) {
+                if (child.layoutResult() != null) {
+                    System.out.println("[TABLE-COLS] " + child.fieldName()
+                        + " mode=" + child.layoutResult().relationMode()
+                        + " tcw=" + child.layoutResult().tableColumnWidth()
+                        + " constrainedColW=" + child.layoutResult().constrainedColumnWidth());
+                    for (LayoutDecisionNode grandchild : child.childNodes()) {
+                        if (grandchild.layoutResult() != null) {
+                            System.out.println("[TABLE-COLS]   " + grandchild.fieldName()
+                                + " mode=" + grandchild.layoutResult().relationMode()
+                                + " tcw=" + grandchild.layoutResult().tableColumnWidth());
+                        } else if (grandchild.compressResult() != null) {
+                            System.out.println("[TABLE-COLS]   " + grandchild.fieldName()
+                                + " jw=" + grandchild.compressResult().justifiedWidth());
+                        }
                     }
                 }
             }
+
+            // Walk rendered region tree and check widths at each level
+            var regions = new java.util.ArrayList<javafx.scene.layout.Region>();
+            findRegions(al, regions);
+            int tooNarrow = 0;
+            for (var r : regions) {
+                if (r.getWidth() > 0 && r.getWidth() < 20
+                        && r.getChildrenUnmodifiable().stream()
+                            .anyMatch(c -> c instanceof javafx.scene.text.Text)) {
+                    tooNarrow++;
+                    var texts = r.getChildrenUnmodifiable().stream()
+                        .filter(c -> c instanceof javafx.scene.text.Text)
+                        .map(c -> ((javafx.scene.text.Text) c).getText())
+                        .toList();
+                    System.out.println("[NARROW] " + r.getClass().getSimpleName()
+                        + " width=" + r.getWidth()
+                        + " text=" + texts);
+                }
+            }
+            System.out.println("[RENDER] tooNarrow regions (width<20 with text): "
+                + tooNarrow + " / " + regions.size());
+            assertEquals(0, tooNarrow,
+                "No rendered regions containing text should be narrower than 20px");
         });
     }
 
@@ -547,6 +575,18 @@ class AutoLayoutResizeAdaptationTest {
         if (node instanceof javafx.scene.Parent p) {
             for (javafx.scene.Node child : p.getChildrenUnmodifiable()) {
                 findTextNodes(child, result);
+            }
+        }
+    }
+
+    private void findRegions(javafx.scene.Node node,
+                              java.util.List<javafx.scene.layout.Region> result) {
+        if (node instanceof javafx.scene.layout.Region r) {
+            result.add(r);
+        }
+        if (node instanceof javafx.scene.Parent p) {
+            for (javafx.scene.Node child : p.getChildrenUnmodifiable()) {
+                findRegions(child, result);
             }
         }
     }
