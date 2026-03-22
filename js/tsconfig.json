@@ -1,0 +1,10 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/measurement" },
+    { "path": "./packages/graphql" },
+    { "path": "./packages/react" },
+    { "path": "./packages/react-ui" }
+  ]
+}

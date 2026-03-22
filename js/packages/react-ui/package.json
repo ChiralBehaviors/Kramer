@@ -1,0 +1,25 @@
+{
+  "name": "@kramer/react-ui",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@kramer/core": "workspace:*"
+  },
+  "devDependencies": {
+    "react": "^19.0.0", "@types/react": "^19.0.0",
+    "tsup": "^8.0.0",
+    "vitest": "^3.0.0",
+    "typescript": "^5.7.0"
+  }
+}
