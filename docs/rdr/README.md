@@ -38,3 +38,4 @@ RDRs document technical decisions through iterative research and refinement. Eac
 | RDR-030 | Schema Navigation & Discovery | closed | Feature | P1 |
 | RDR-031 | Undo/Redo for Query Operations | closed | Feature | P2 |
 | RDR-032 | JavaScript Port Feasibility Spike | closed | Spike | P2 |
+| RDR-033 | JavaScript Port Implementation | proposed | Feature | P1 |
