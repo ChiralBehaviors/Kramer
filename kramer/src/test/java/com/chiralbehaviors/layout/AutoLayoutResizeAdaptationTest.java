@@ -476,19 +476,19 @@ class AutoLayoutResizeAdaptationTest {
     @Test
     void outlineRendersDataValues() throws Exception {
         runOnFx(() -> {
-            // Test at narrow width matching user's window (~600px)
+            // Test at narrow width matching user's window (~500px)
             Style style = new Style();
             AutoLayout al = new AutoLayout(null, style);
             var root = new javafx.scene.layout.BorderPane();
             root.setCenter(al);
-            new javafx.scene.Scene(root, 600, 800);
+            new javafx.scene.Scene(root, 500, 1200);
             root.applyCss();
             root.layout();
 
             al.setRoot(threeLevelSchema());
             al.measure(threeLevelData());
             al.updateItem(threeLevelData());
-            al.resize(1200, 800);
+            al.resize(500, 1200);
 
             root.applyCss();
             root.layout();
@@ -598,12 +598,23 @@ class AutoLayoutResizeAdaptationTest {
                         + " width=" + parentWidth);
                 }
             }
-            // NOW assert data is present
+            // Assert data is present
             assertTrue(hasCS || hasMath,
                 "Rendered text should include department names (CS or Math). " +
                 "Found: " + allText);
             assertEquals(0, invisible,
                 "All data values must be in regions wide enough to display them");
+
+            // Bug check: first section item must not be dropped.
+            // The data has section A(45) as first item for CS101.
+            // A VirtualFlow off-by-one would show B,C but skip A.
+            boolean hasA = allText.contains("A");
+            boolean has45 = allText.contains("45");
+            System.out.println("[FIRST-ITEM] hasA=" + hasA + " has45=" + has45);
+            assertTrue(hasA && has45,
+                "First section item (A, 45) must be present. " +
+                "Missing first item indicates VirtualFlow off-by-one. " +
+                "Found: " + allText);
         });
     }
 
