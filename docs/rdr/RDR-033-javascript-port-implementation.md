@@ -39,13 +39,17 @@ RDR-032 validated that porting Kramer's autolayout algorithm to TypeScript/React
 
 ### Repository Structure
 
-The TypeScript packages live in the existing Kramer repo alongside the Java modules. pnpm workspaces manage the JS monorepo. Maven `frontend-maven-plugin` runs JS tests as part of the build.
+The TypeScript packages live in the existing Kramer repo under a self-contained `js/` subtree (RF-1). pnpm workspaces manage the JS monorepo. Maven `frontend-maven-plugin` with corepack runs JS tests as part of the build.
 
 ```
 Kramer/
-  pnpm-workspace.yaml
-  packages/
-    core/                 @kramer/core
+  js/                           Maven module (packaging: pom), pnpm workspace root
+    pnpm-workspace.yaml
+    package.json                packageManager: "pnpm@10.x"
+    pnpm-lock.yaml
+    pom.xml                     frontend-maven-plugin with corepack
+    packages/
+      core/                     @kramer/core
       src/
         schema.ts         SchemaNode, Relation, Primitive, SchemaPath
         measure.ts        MeasurementStrategy protocol + implementations
@@ -215,6 +219,34 @@ Port `kramer/expression` to `@kramer/core`:
 | Font metric differences across browsers | Medium | Algorithm adapts by design; visual parity not required |
 | Bundle size growth across 5 packages | Medium | Tree-shakeable exports; core is pure computation |
 | pnpm + Maven integration complexity | Low | frontend-maven-plugin proven in PoC |
+
+---
+
+## Research Findings
+
+### RF-1: pnpm + Maven Integration
+**Status**: verified
+**Source**: Research agent, Keycloak project analysis
+
+Use **corepack** (not `install-node-and-pnpm` which is unreliable). Pattern: `install-node-and-corepack` → `corepack enable pnpm` → `corepack pnpm install` → `corepack pnpm run -r test`. Self-contained `js/` subtree recommended — pnpm-workspace.yaml and lockfile isolated from Java modules. Requires `packageManager` field in root package.json. Keycloak is the canonical real-world example.
+
+**Design implication**: The `packages/` directory should live under a `js/` Maven module, not at repo root. The PoC's `frontend-maven-plugin` config migrates to corepack goals.
+
+### RF-2: @tanstack/virtual Nested Virtualization
+**Status**: verified
+**Source**: Research agent, TanStack Virtual API analysis
+
+Nested virtualization works via two patterns: (1) non-virtualized inner tables for small datasets (<50 rows) with outer `measureElement` auto-remeasuring via ResizeObserver, (2) fixed-height inner virtualizers for large datasets. The headless API gives full DOM/CSS control — best fit for Kramer. `estimateSize` can use Kramer's structural measurements as initial estimates. react-window is eliminated (requires pre-computed sizes). react-virtuoso is a simpler fallback.
+
+**Design implication**: Phase 2 uses TanStack Virtual with the `measureElement` pattern. Inner tables render non-virtualized initially; add inner virtualization only if performance requires it.
+
+### RF-3: Cross-Language Contract Test Fixtures
+**Status**: verified
+**Source**: Research agent, golden-file testing analysis
+
+JSON fixtures capture: schema definition + input data + width + expected LayoutResult (mode per relation, column widths, cell heights). Generate from Java by extending `AutoLayoutResizeAdaptationTest` to emit JSON after layout pass. `LayoutDecisionNode` already captures all needed state. Fixtures live at `test/fixtures/` (repo root, shared between Java and TS). CI runs both — divergence = failure in both languages.
+
+**Design implication**: Phase 1 starts by generating fixtures from the Java test suite, then building the TS core to pass them.
 
 ---
 
