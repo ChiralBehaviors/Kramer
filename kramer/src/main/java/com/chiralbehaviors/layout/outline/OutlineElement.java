@@ -32,7 +32,9 @@ import com.chiralbehaviors.layout.style.RelationStyle;
 import com.chiralbehaviors.layout.style.Style;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 
 import javafx.beans.InvalidationListener;
@@ -78,26 +80,50 @@ public class OutlineElement extends HorizontalCell<OutlineElement>
             .setPrefHeight(elementHeight);
         cell.getNode()
             .setMaxHeight(elementHeight);
+        // Check if the label should rotate vertical to avoid truncation.
+        // Same heuristic as table column headers (verticalHeaderThreshold=1.5):
+        // rotate when label text is wider than allocated width AND there is
+        // enough vertical space to show the rotated text.
+        double textWidth = layout.labelWidth(layout.getLabel());
+        double labelH = layout.getLabelHeight();
+        boolean rotateVertical = textWidth > labelWidth
+                                 && elementHeight >= textWidth;
+
         String bulletText = style.getBulletText();
         if (!bulletText.isEmpty() && style.getBulletWidth() > 0) {
-            Label label = layout.label(labelWidth - style.getBulletWidth(),
-                                       elementHeight);
+            double effectiveLabelWidth = labelWidth - style.getBulletWidth();
             Label bullet = new Label(bulletText);
             bullet.getStyleClass().add("outline-bullet");
             bullet.setMinSize(style.getBulletWidth(), elementHeight);
             bullet.setPrefSize(style.getBulletWidth(), elementHeight);
             bullet.setMaxSize(style.getBulletWidth(), elementHeight);
+
+            javafx.scene.Node labelNode;
+            if (rotateVertical) {
+                labelNode = buildVerticalLabel(layout, effectiveLabelWidth,
+                                               elementHeight, textWidth, labelH);
+            } else {
+                labelNode = layout.label(effectiveLabelWidth, elementHeight);
+            }
             allCells.add(new LabelCell(bullet));
-            allCells.add(new LabelCell(label));
+            allCells.add(new LabelCell(labelNode instanceof Label l ? l
+                : layout.label(effectiveLabelWidth, elementHeight)));
             allCells.add(cell);
             HBox.setHgrow(cell.getNode(), Priority.ALWAYS);
-            getChildren().addAll(bullet, label, cell.getNode());
+            getChildren().addAll(bullet, labelNode, cell.getNode());
         } else {
-            Label label = layout.label(labelWidth, elementHeight);
-            allCells.add(new LabelCell(label));
+            javafx.scene.Node labelNode;
+            if (rotateVertical) {
+                labelNode = buildVerticalLabel(layout, labelWidth,
+                                               elementHeight, textWidth, labelH);
+            } else {
+                labelNode = layout.label(labelWidth, elementHeight);
+            }
+            allCells.add(new LabelCell(labelNode instanceof Label l ? l
+                : layout.label(labelWidth, elementHeight)));
             allCells.add(cell);
             HBox.setHgrow(cell.getNode(), Priority.ALWAYS);
-            getChildren().addAll(label, cell.getNode());
+            getChildren().addAll(labelNode, cell.getNode());
         }
 
     }
@@ -116,6 +142,30 @@ public class OutlineElement extends HorizontalCell<OutlineElement>
                           Style model, RelationStyle style) {
         this(layout, field, cardinality, labelWidth, layout.getHeight(),
              parentTraversal, model, style);
+    }
+
+    /**
+     * Build a rotated label wrapped in a fixed-size Pane (same technique
+     * as {@link com.chiralbehaviors.layout.table.ColumnHeader}).
+     */
+    private static Pane buildVerticalLabel(SchemaNodeLayout layout,
+                                            double allocatedWidth,
+                                            double elementHeight,
+                                            double textWidth,
+                                            double textHeight) {
+        Label label = layout.label(textWidth, textHeight);
+        label.setRotate(-90);
+
+        double visualWidth = allocatedWidth;
+        double visualHeight = Style.snap(elementHeight);
+        Pane wrapper = new Pane(label);
+        wrapper.setMinSize(visualWidth, visualHeight);
+        wrapper.setPrefSize(visualWidth, visualHeight);
+        wrapper.setMaxSize(visualWidth, visualHeight);
+        label.setTranslateX((visualWidth - textWidth) / 2.0);
+        label.setTranslateY((visualHeight - textHeight) / 2.0);
+
+        return wrapper;
     }
 
     @Override
