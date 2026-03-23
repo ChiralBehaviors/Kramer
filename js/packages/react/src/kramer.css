@@ -1,30 +1,51 @@
 /* SPDX-License-Identifier: Apache-2.0 */
-/* Kramer autolayout default styles — matches Java default.css class names */
+/* Kramer autolayout default styles */
+
+/* ---- Base ---- */
 
 .kramer-auto-layout {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 13px;
-  color: #333;
+  color: #1a1a1a;
+  line-height: 1.4;
 }
 
+/* ---- Tables ---- */
+
 .kramer-table {
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   width: 100%;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  overflow: hidden;
 }
 
 .kramer-table th {
-  background: #f5f5f5;
-  border-bottom: 2px solid #ccc;
-  padding: 4px 8px;
+  background: linear-gradient(to bottom, #f9fafb, #f2f4f7);
+  border-bottom: 1px solid #d0d5dd;
+  padding: 6px 10px;
   text-align: left;
   font-weight: 600;
-  font-size: 0.9em;
+  font-size: 0.85em;
+  color: #475467;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
 }
 
 .kramer-table td {
-  padding: 4px 8px;
+  padding: 6px 10px;
   vertical-align: top;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid #eaecf0;
+}
+
+.kramer-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.kramer-table tbody tr:hover {
+  background: #f9fafb;
 }
 
 .kramer-row-even {
@@ -32,42 +53,114 @@
 }
 
 .kramer-row-odd {
-  background: #fafafa;
+  background: #f9fafb;
+}
+
+/* ---- Nested / Sub Tables ---- */
+
+.kramer-nested-table,
+.kramer-sub-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  border: 1px solid #e4e7ec;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 4px 0;
 }
 
 .kramer-nested-table th,
 .kramer-sub-table th {
-  background: #f0f0f0;
-  font-size: 0.85em;
-  padding: 2px 6px;
+  background: #f2f4f7;
+  font-size: 0.8em;
+  font-weight: 600;
+  color: #667085;
+  padding: 4px 8px;
+  border-bottom: 1px solid #e4e7ec;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .kramer-nested-table td,
 .kramer-sub-table td {
-  padding: 2px 6px;
+  padding: 3px 8px;
+  font-size: 0.92em;
+  border-bottom: 1px solid #f2f4f7;
 }
+
+.kramer-nested-table tbody tr:last-child td,
+.kramer-sub-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ---- Outline ---- */
 
 .kramer-virtual-outline {
   overflow: auto;
 }
 
 .kramer-outline-row {
-  border-bottom: 1px solid #ddd;
-  padding: 6px 0;
+  border: 1px solid #e4e7ec;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  padding: 8px 10px;
+  background: #fff;
+  transition: box-shadow 0.15s ease;
 }
+
+.kramer-outline-row:hover {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ---- Column Headers ---- */
 
 .kramer-column-header {
   user-select: none;
+  transition: background 0.1s ease;
 }
 
 .kramer-column-header:hover {
-  background: #e8e8e8;
+  background: #eaecf0;
 }
 
 .kramer-column-header--vertical {
   writing-mode: vertical-lr;
 }
 
+/* ---- Inner Table ---- */
+
 .kramer-inner-table {
-  margin-top: 4px;
+  margin-top: 6px;
+}
+
+/* ---- Field Selector ---- */
+
+.kramer-field-selector {
+  font-size: 0.9em;
+}
+
+.kramer-field-node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+.kramer-field-node:hover {
+  background: #f2f4f7;
+}
+
+.kramer-field-node input[type="checkbox"] {
+  accent-color: #3b82f6;
+  width: 14px;
+  height: 14px;
+}
+
+/* ---- Field Inspector ---- */
+
+.kramer-field-inspector {
+  font-size: 0.9em;
 }
