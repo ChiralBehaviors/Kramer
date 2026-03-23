@@ -14,11 +14,11 @@ interface AutoLayoutProps {
   schema: Relation;
   data: unknown[];
   measurement?: MeasurementStrategy;
-  height?: number;
+  height?: number | string;
   showModeIndicator?: boolean;
 }
 
-export function AutoLayout({ schema, data, measurement, height = 600, showModeIndicator = false }: AutoLayoutProps) {
+export function AutoLayout({ schema, data, measurement, height = '100%', showModeIndicator = false }: AutoLayoutProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(800);
 
