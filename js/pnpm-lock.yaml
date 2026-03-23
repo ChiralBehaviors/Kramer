@@ -25,10 +25,10 @@ importers:
       '@kramer/core':
         specifier: workspace:*
         version: link:../core
-    devDependencies:
       graphql:
-        specifier: ^16.0.0
+        specifier: ^16.13.0
         version: 16.13.1
+    devDependencies:
       tsup:
         specifier: ^8.0.0
         version: 8.5.1(postcss@8.5.8)(typescript@5.9.3)
