@@ -287,3 +287,47 @@ td[data-type="number"] {
   font-size: 12px;
   text-align: right;
 }
+
+/* ---- Nested Outline (when inner relation switches to outline) ---- */
+
+.kramer-nested-outline {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kramer-nested-outline-item {
+  border: 1px solid var(--kr-border);
+  border-radius: var(--kr-radius);
+  padding: 6px 10px;
+  background: var(--kr-bg);
+}
+
+.kramer-nested-outline-item:hover {
+  background: var(--kr-bg-subtle);
+}
+
+.kramer-nested-outline-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+}
+
+.kramer-nested-outline-field {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.kramer-nested-outline-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--kr-text-muted);
+}
+
+.kramer-mono {
+  font-family: var(--kr-font-mono);
+  font-size: 12px;
+}

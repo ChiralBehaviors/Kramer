@@ -68,7 +68,7 @@ export function AutoLayout({ schema, data, measurement, height = 600, showModeIn
       {rootMode === 'TABLE' ? (
         <Table schema={schema} data={data} columnWidths={columnWidths} />
       ) : (
-        <VirtualOutline schema={schema} data={data} width={width} />
+        <VirtualOutline schema={schema} data={data} width={width} measurement={strategy} />
       )}
     </div>
   );

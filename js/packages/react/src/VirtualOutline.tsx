@@ -2,17 +2,19 @@
 
 import React, { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import type { Relation } from '@kramer/core';
-import { extractField } from '@kramer/core';
+import type { Relation, MeasurementStrategy } from '@kramer/core';
+import { extractField, measureRelation, decideMode } from '@kramer/core';
+import { FixedMeasurement } from '@kramer/measurement';
 
 interface VirtualOutlineProps {
   schema: Relation;
   data: unknown[];
   width: number;
   estimateRowHeight?: number;
+  measurement?: MeasurementStrategy;
 }
 
-export function VirtualOutline({ schema, data, width, estimateRowHeight = 120 }: VirtualOutlineProps) {
+export function VirtualOutline({ schema, data, width, estimateRowHeight = 120, measurement }: VirtualOutlineProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
   const virtualizer = useVirtualizer({
@@ -36,14 +38,12 @@ export function VirtualOutline({ schema, data, width, estimateRowHeight = 120 }:
               data-index={virtualRow.index}
               ref={virtualizer.measureElement}
               style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
+                position: 'absolute', top: 0, left: 0, width: '100%',
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
-              <OutlineRow row={row} primitives={primitives} relations={relations} />
+              <OutlineRow row={row} primitives={primitives} relations={relations}
+                          width={width} measurement={measurement} />
             </div>
           );
         })}
@@ -56,12 +56,17 @@ interface OutlineRowProps {
   row: unknown;
   primitives: { field: string; label: string }[];
   relations: Relation[];
+  width: number;
+  measurement?: MeasurementStrategy;
 }
 
-function OutlineRow({ row, primitives, relations }: OutlineRowProps) {
+function OutlineRow({ row, primitives, relations, width, measurement }: OutlineRowProps) {
+  const strategy = measurement ?? new FixedMeasurement(7);
+  // Available width for nested content (minus card padding/border)
+  const innerWidth = width - 28;
+
   return (
     <div className="kramer-outline-row">
-      {/* Header bar with primitive fields */}
       <div className="kramer-outline-header">
         {primitives.map(child => {
           const values = extractField(row, child.field);
@@ -74,14 +79,14 @@ function OutlineRow({ row, primitives, relations }: OutlineRowProps) {
         })}
       </div>
 
-      {/* Nested relations */}
       {relations.map(rel => {
         const nestedData = extractField(row, rel.field) as unknown[];
         if (!nestedData || nestedData.length === 0) return null;
         return (
           <div key={rel.field} className="kramer-outline-nested">
             <div className="kramer-outline-relation-label">{rel.label}</div>
-            <RecursiveTable schema={rel} data={nestedData} depth={2} />
+            <AdaptiveRelation schema={rel} data={nestedData}
+                              width={innerWidth} depth={2} measurement={strategy} />
           </div>
         );
       })}
@@ -89,8 +94,63 @@ function OutlineRow({ row, primitives, relations }: OutlineRowProps) {
   );
 }
 
-/** Recursively render nested tables — handles arbitrary nesting depth */
-function RecursiveTable({ schema, data, depth }: { schema: Relation; data: unknown[]; depth: number }) {
+/**
+ * Renders a relation as TABLE or OUTLINE based on available width.
+ * Recurses for arbitrary nesting depth.
+ */
+function AdaptiveRelation({ schema, data, width, depth, measurement }: {
+  schema: Relation; data: unknown[]; width: number; depth: number;
+  measurement: MeasurementStrategy;
+}) {
+  const measure = measureRelation(schema, data, measurement);
+  const mode = decideMode(measure.readableTableWidth, width);
+
+  if (mode === 'TABLE') {
+    return <RecursiveTable schema={schema} data={data} depth={depth}
+                           width={width} measurement={measurement} />;
+  }
+
+  // OUTLINE: render each item as a mini-card with primitives + nested relations
+  const primitives = schema.children.filter(c => c.kind === 'primitive');
+  const relations = schema.children.filter(c => c.kind === 'relation') as Relation[];
+
+  return (
+    <div className="kramer-nested-outline">
+      {data.map((item, idx) => (
+        <div key={idx} className="kramer-nested-outline-item">
+          <div className="kramer-nested-outline-fields">
+            {primitives.map(child => {
+              const val = extractField(item, child.field)[0];
+              const isNum = typeof val === 'number';
+              return (
+                <div key={child.field} className="kramer-nested-outline-field">
+                  <span className="kramer-nested-outline-label">{child.label}</span>
+                  <span className={isNum ? 'kramer-mono' : ''}>{String(val ?? '')}</span>
+                </div>
+              );
+            })}
+          </div>
+          {relations.map(rel => {
+            const nested = extractField(item, rel.field) as unknown[];
+            if (!nested || nested.length === 0) return null;
+            return (
+              <div key={rel.field} className="kramer-outline-nested" style={{ marginTop: 4 }}>
+                <div className="kramer-outline-relation-label">{rel.label}</div>
+                <AdaptiveRelation schema={rel} data={nested}
+                                  width={width - 20} depth={depth + 1} measurement={measurement} />
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RecursiveTable({ schema, data, depth, width, measurement }: {
+  schema: Relation; data: unknown[]; depth: number; width: number;
+  measurement: MeasurementStrategy;
+}) {
   const primitiveChildren = schema.children.filter(c => c.kind === 'primitive');
   const relationChildren = schema.children.filter(c => c.kind === 'relation') as Relation[];
 
@@ -98,12 +158,8 @@ function RecursiveTable({ schema, data, depth }: { schema: Relation; data: unkno
     <table className={`kramer-inner-table ${depth >= 3 ? 'kramer-depth-3' : ''}`}>
       <thead>
         <tr>
-          {primitiveChildren.map(child => (
-            <th key={child.field}>{child.label}</th>
-          ))}
-          {relationChildren.map(rel => (
-            <th key={rel.field}>{rel.label}</th>
-          ))}
+          {primitiveChildren.map(child => <th key={child.field}>{child.label}</th>)}
+          {relationChildren.map(rel => <th key={rel.field}>{rel.label}</th>)}
         </tr>
       </thead>
       <tbody>
@@ -113,7 +169,7 @@ function RecursiveTable({ schema, data, depth }: { schema: Relation; data: unkno
               const val = extractField(item, child.field)[0];
               const isNum = typeof val === 'number';
               return (
-                <td key={child.field} data-type={isNum ? 'number' : undefined}
+                <td key={child.field}
                     style={isNum ? { fontFamily: 'var(--kr-font-mono)', textAlign: 'right' } : undefined}>
                   {String(val ?? '')}
                 </td>
@@ -124,7 +180,9 @@ function RecursiveTable({ schema, data, depth }: { schema: Relation; data: unkno
               if (!nested || nested.length === 0) return <td key={rel.field} />;
               return (
                 <td key={rel.field} style={{ padding: '4px 6px' }}>
-                  <RecursiveTable schema={rel} data={nested} depth={depth + 1} />
+                  <AdaptiveRelation schema={rel} data={nested}
+                                    width={width / (primitiveChildren.length + relationChildren.length)}
+                                    depth={depth + 1} measurement={measurement} />
                 </td>
               );
             })}
