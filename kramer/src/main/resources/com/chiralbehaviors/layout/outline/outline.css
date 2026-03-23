@@ -1,4 +1,5 @@
-.outline {   
+.outline {
     -fx-alignment: center-left;
     -fx-focus-traversable: true;
+    -fx-background-color: #f8fafc;
 }

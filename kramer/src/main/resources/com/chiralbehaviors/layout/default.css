@@ -1,80 +1,86 @@
+/* Kramer autolayout — utilitarian data-dense design (matching JS version) */
 
 .kramer-container {
-    -fx-background-color: linear-gradient(to bottom, derive(-fx-text-box-border, -10%), -fx-text-box-border),
-        linear-gradient(from 0px 0px to 0px 5px, derive(-fx-control-inner-background, -9%), -fx-control-inner-background);
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 6;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
 }
 
 .primitive {
-    -fx-padding: 3.0 3.0 3.0 3.0;
-    -fx-background-insets: 0, 1;
-    -fx-background-radius: 3, 2;
-
-    -fx-text-fill: #242d35;
-    -fx-font-size: 12.0px;
+    -fx-padding: 4 6 4 6;
+    -fx-text-fill: #1a1a2e;
+    -fx-font-size: 12.5px;
+    -fx-font-family: "System";
 }
 
 .primitive:hover {
-    -fx-effect: innershadow(one-pass-box, -fx-focus-color, 5, 0.3, 0, 0);
-    -fx-background-color:
-        -fx-focus-color,
-        -fx-control-inner-background,
-        -fx-faint-focus-color,
-        linear-gradient(from 0px 0px to 0px 5px, derive(-fx-control-inner-background, -9%), -fx-control-inner-background);
-    -fx-background-insets: -0.2, 1, -1.4, 3;
-    -fx-background-radius: 3, 2, 4, 0;
+    -fx-background-color: #eff6ff;
+    -fx-background-radius: 3;
 }
 
 .sorted-asc {
-    -fx-background-color: derive(-fx-accent, 80%);
+    -fx-background-color: #dbeafe;
 }
 
 .sorted-desc {
-    -fx-background-color: derive(-fx-accent, 80%);
+    -fx-background-color: #dbeafe;
 }
 
 .sort-arrow {
     -fx-font-size: 10px;
-    -fx-padding: 0 2 0 2;
+    -fx-padding: 0 3 0 3;
     -fx-alignment: center;
+    -fx-text-fill: #3b82f6;
 }
 
 .field-hidden {
-    -fx-opacity: 0.4;
+    -fx-opacity: 0.35;
+    -fx-strikethrough: true;
 }
 
 .field-selector-panel {
-    -fx-padding: 4;
+    -fx-padding: 6;
+    -fx-background-color: #ffffff;
 }
 
 .field-inspector-panel {
-    -fx-padding: 8;
-    -fx-spacing: 8;
+    -fx-padding: 10;
+    -fx-spacing: 6;
+    -fx-background-color: #ffffff;
 }
 
 .inspector-title {
     -fx-font-weight: bold;
     -fx-font-size: 13px;
+    -fx-text-fill: #1a1a2e;
 }
 
 .sort-badge {
     -fx-font-size: 9px;
-    -fx-text-fill: #2196F3;
-    -fx-padding: 0 2 0 2;
+    -fx-text-fill: #3b82f6;
+    -fx-padding: 0 3 0 3;
 }
 
 .filter-badge {
     -fx-font-size: 8px;
-    -fx-text-fill: #FF9800;
-    -fx-padding: 0 2 0 2;
+    -fx-text-fill: #f59e0b;
+    -fx-padding: 0 3 0 3;
 }
 
 .type-badge {
     -fx-font-size: 9px;
-    -fx-text-fill: #999;
+    -fx-text-fill: #9ca3af;
     -fx-padding: 0 4 0 4;
 }
 
-.crosstab-header { /* inherits from .kramer-container */ }
-.crosstab-header-label { -fx-font-weight: bold; }
-.crosstab-row { /* inherits from .kramer-container */ }
-.crosstab-cell { /* inherits from .kramer-container */ }
+.crosstab-header {
+    -fx-background-color: #0f172a;
+    -fx-background-radius: 4 4 0 0;
+}
+.crosstab-header-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #e2e8f0;
+    -fx-font-size: 11px;
+}

@@ -1,4 +1,18 @@
 .nested-row {
     -fx-alignment: center-left;
     -fx-focus-traversable: true;
+    -fx-border-color: transparent transparent #eaecf0 transparent;
+    -fx-border-width: 0 0 1 0;
+}
+
+.nested-row:odd {
+    -fx-background-color: #f9fafb;
+}
+
+.nested-row:even {
+    -fx-background-color: #ffffff;
+}
+
+.nested-row:hover {
+    -fx-background-color: #eff6ff;
 }

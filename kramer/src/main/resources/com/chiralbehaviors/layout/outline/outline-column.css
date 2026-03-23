@@ -1,6 +1,5 @@
-.outline-column { 
-    -fx-padding: 0.0 1.0 0.0 1.0; 
-    
+.outline-column {
+    -fx-padding: 0 0 0 0;
     -fx-alignment: center-left;
     -fx-focus-traversable: true;
 }
