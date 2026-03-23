@@ -1,0 +1,159 @@
+{
+  "schema" : {
+    "kind" : "relation",
+    "field" : "departments",
+    "children" : [ {
+      "kind" : "primitive",
+      "field" : "name"
+    }, {
+      "kind" : "primitive",
+      "field" : "building"
+    }, {
+      "kind" : "relation",
+      "field" : "courses",
+      "children" : [ {
+        "kind" : "primitive",
+        "field" : "number"
+      }, {
+        "kind" : "primitive",
+        "field" : "title"
+      }, {
+        "kind" : "primitive",
+        "field" : "credits"
+      }, {
+        "kind" : "relation",
+        "field" : "sections",
+        "children" : [ {
+          "kind" : "primitive",
+          "field" : "id"
+        }, {
+          "kind" : "primitive",
+          "field" : "enrolled"
+        } ]
+      } ]
+    } ]
+  },
+  "data" : [ {
+    "name" : "CS",
+    "building" : "Gates",
+    "courses" : [ {
+      "number" : "CS101",
+      "title" : "Intro",
+      "credits" : 3,
+      "sections" : [ {
+        "id" : "A",
+        "enrolled" : 45
+      }, {
+        "id" : "B",
+        "enrolled" : 42
+      } ]
+    }, {
+      "number" : "CS201",
+      "title" : "Data Str",
+      "credits" : 4,
+      "sections" : [ {
+        "id" : "A",
+        "enrolled" : 35
+      } ]
+    } ]
+  }, {
+    "name" : "Math",
+    "building" : "Hilbert",
+    "courses" : [ {
+      "number" : "M101",
+      "title" : "Calc",
+      "credits" : 4,
+      "sections" : [ {
+        "id" : "A",
+        "enrolled" : 50
+      } ]
+    } ]
+  } ],
+  "charWidth" : 7.0,
+  "parity" : [ {
+    "width" : 1200.0,
+    "rootMode" : "TABLE",
+    "readableTableWidth" : 760.0,
+    "childDecisions" : [ {
+      "field" : "courses",
+      "mode" : "TABLE",
+      "readableTableWidth" : 535.0,
+      "justifiedWidth" : 849.0,
+      "children" : [ {
+        "field" : "sections",
+        "mode" : "TABLE",
+        "readableTableWidth" : 189.0
+      } ]
+    } ],
+    "labelWidth" : 64.0,
+    "cellHeight" : -1.0
+  }, {
+    "width" : 800.0,
+    "rootMode" : "TABLE",
+    "readableTableWidth" : 760.0,
+    "childDecisions" : [ {
+      "field" : "courses",
+      "mode" : "TABLE",
+      "readableTableWidth" : 535.0,
+      "justifiedWidth" : 549.0,
+      "children" : [ {
+        "field" : "sections",
+        "mode" : "TABLE",
+        "readableTableWidth" : 189.0
+      } ]
+    } ],
+    "labelWidth" : 64.0,
+    "cellHeight" : -1.0
+  }, {
+    "width" : 600.0,
+    "rootMode" : "OUTLINE",
+    "readableTableWidth" : 726.0,
+    "childDecisions" : [ {
+      "field" : "courses",
+      "mode" : "TABLE",
+      "readableTableWidth" : 501.0,
+      "justifiedWidth" : 480.0,
+      "children" : [ {
+        "field" : "sections",
+        "mode" : "TABLE",
+        "readableTableWidth" : 155.0
+      } ]
+    } ],
+    "labelWidth" : 64.0,
+    "cellHeight" : 356.0
+  }, {
+    "width" : 400.0,
+    "rootMode" : "OUTLINE",
+    "readableTableWidth" : 760.0,
+    "childDecisions" : [ {
+      "field" : "courses",
+      "mode" : "OUTLINE",
+      "readableTableWidth" : 535.0,
+      "justifiedWidth" : 280.0,
+      "children" : [ {
+        "field" : "sections",
+        "mode" : "TABLE",
+        "readableTableWidth" : 189.0
+      } ]
+    } ],
+    "labelWidth" : 64.0,
+    "cellHeight" : 676.0
+  }, {
+    "width" : 300.0,
+    "rootMode" : "OUTLINE",
+    "readableTableWidth" : 760.0,
+    "childDecisions" : [ {
+      "field" : "courses",
+      "mode" : "OUTLINE",
+      "readableTableWidth" : 535.0,
+      "justifiedWidth" : 180.0,
+      "children" : [ {
+        "field" : "sections",
+        "mode" : "OUTLINE",
+        "readableTableWidth" : 189.0
+      } ]
+    } ],
+    "labelWidth" : 64.0,
+    "cellHeight" : "Infinity"
+  } ]
+}
