@@ -91,92 +91,58 @@ export default function App() {
 
   return (
     <div style={{
-      height: '100vh',
-      display: 'flex',
-      flexDirection: 'column',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      color: '#1a1a1a',
+      height: '100vh', display: 'flex', flexDirection: 'column',
+      fontFamily: 'var(--kr-font-body)', color: 'var(--kr-text)', background: '#f8fafc',
     }}>
-      {/* Header */}
       <header style={{
-        padding: '10px 20px',
-        borderBottom: '1px solid #e4e7ec',
-        background: 'linear-gradient(to bottom, #fff, #f9fafb)',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        padding: '12px 20px', borderBottom: '1px solid var(--kr-border)',
+        background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         flexShrink: 0,
       }}>
         <div>
-          <h1 style={{ fontSize: 17, margin: 0, fontWeight: 700, color: '#101828' }}>
-            Kramer <span style={{ color: '#3b82f6' }}>JS</span>
+          <h1 style={{ fontSize: 18, margin: 0, fontWeight: 700, letterSpacing: '-0.02em' }}>
+            Kramer <span style={{ color: 'var(--kr-accent)', fontWeight: 800 }}>JS</span>
           </h1>
-          <p style={{ fontSize: 12, margin: '2px 0 0', color: '#667085' }}>
+          <p style={{ fontSize: 12, margin: '2px 0 0', color: 'var(--kr-text-muted)' }}>
             Course Catalog — resize window to see table ↔ outline switching
           </p>
         </div>
         <div style={{ display: 'flex', gap: 6 }}>
-          <ToolbarButton active={showFields} onClick={() => setShowFields(!showFields)} label="Fields" shortcut="⇧⌘F" />
-          <ToolbarButton active={showInspector} onClick={() => setShowInspector(!showInspector)} label="Inspector" shortcut="⇧⌘I" />
+          <ToolbarBtn active={showFields} onClick={() => setShowFields(!showFields)} label="Fields" />
+          <ToolbarBtn active={showInspector} onClick={() => setShowInspector(!showInspector)} label="Inspector" />
         </div>
       </header>
 
-      {/* Main content */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {/* Field selector panel */}
         {showFields && (
           <div style={{
-            width: 220,
-            borderRight: '1px solid #e4e7ec',
-            padding: '12px 10px',
-            overflow: 'auto',
-            background: '#fafbfc',
-            flexShrink: 0,
+            width: 230, borderRight: '1px solid var(--kr-border)',
+            padding: '14px 12px', overflow: 'auto', background: '#fff', flexShrink: 0,
           }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#667085', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-              Schema Fields
-            </div>
-            <FieldSelector
-              schema={schema}
-              queryState={queryState}
-              onFieldSelected={handleFieldSelected}
-            />
+            <SectionLabel>Schema Fields</SectionLabel>
+            <FieldSelector schema={schema} queryState={queryState} onFieldSelected={handleFieldSelected} />
           </div>
         )}
 
-        {/* Layout area */}
-        <div style={{ flex: 1, padding: 12, overflow: 'auto' }}>
-          <AutoLayout schema={schema} data={data} />
+        <div style={{ flex: 1, padding: 14, overflow: 'auto' }}>
+          <AutoLayout schema={schema} data={data} showModeIndicator />
         </div>
 
-        {/* Inspector panel */}
         {showInspector && (
           <div style={{
-            width: 260,
-            borderLeft: '1px solid #e4e7ec',
-            padding: '12px 10px',
-            overflow: 'auto',
-            background: '#fafbfc',
-            flexShrink: 0,
+            width: 260, borderLeft: '1px solid var(--kr-border)',
+            padding: '14px 12px', overflow: 'auto', background: '#fff', flexShrink: 0,
           }}>
-            <div style={{ fontSize: 11, fontWeight: 600, color: '#667085', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-              Field Properties
-            </div>
+            <SectionLabel>Field Properties</SectionLabel>
             <FieldInspector path={selectedPath} queryState={queryState} />
           </div>
         )}
       </div>
 
-      {/* Footer */}
       <footer style={{
-        padding: '6px 20px',
-        borderTop: '1px solid #e4e7ec',
-        background: '#f9fafb',
-        fontSize: 11,
-        color: '#98a2b3',
-        display: 'flex',
-        justifyContent: 'space-between',
-        flexShrink: 0,
+        padding: '6px 20px', borderTop: '1px solid var(--kr-border)', background: '#fff',
+        fontSize: 11, color: 'var(--kr-text-dim)', display: 'flex', justifyContent: 'space-between', flexShrink: 0,
+        fontFamily: 'var(--kr-font-mono)',
       }}>
         <span>Bakke InfoVis 2013 — Adaptive table/outline hybrid layout</span>
         <span>5 departments · 15 courses · 32 sections</span>
@@ -185,38 +151,28 @@ export default function App() {
   );
 }
 
-function ToolbarButton({ active, onClick, label, shortcut }: {
-  active: boolean; onClick: () => void; label: string; shortcut: string;
-}) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '5px 14px',
-        background: active ? '#3b82f6' : '#fff',
-        color: active ? '#fff' : '#344054',
-        border: `1px solid ${active ? '#3b82f6' : '#d0d5dd'}`,
-        borderRadius: 6,
-        cursor: 'pointer',
-        fontSize: 12,
-        fontWeight: 500,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 6,
-        transition: 'all 0.15s ease',
-      }}
-    >
+    <div style={{
+      fontSize: 10, fontWeight: 700, color: 'var(--kr-text-muted)',
+      textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10,
+      paddingBottom: 6, borderBottom: '1px solid var(--kr-border)',
+    }}>
+      {children}
+    </div>
+  );
+}
+
+function ToolbarBtn({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button onClick={onClick} style={{
+      padding: '6px 16px', fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+      background: active ? 'var(--kr-depth-0)' : '#fff',
+      color: active ? '#fff' : 'var(--kr-text)',
+      border: `1px solid ${active ? 'var(--kr-depth-0)' : 'var(--kr-border)'}`,
+      borderRadius: 6, cursor: 'pointer', transition: 'all 0.15s ease',
+    }}>
       {label}
-      <kbd style={{
-        fontSize: 10,
-        padding: '1px 4px',
-        borderRadius: 3,
-        background: active ? 'rgba(255,255,255,0.2)' : '#f2f4f7',
-        border: `1px solid ${active ? 'rgba(255,255,255,0.3)' : '#e4e7ec'}`,
-        fontFamily: 'inherit',
-      }}>
-        {shortcut}
-      </kbd>
     </button>
   );
 }

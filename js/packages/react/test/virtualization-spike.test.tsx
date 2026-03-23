@@ -102,14 +102,14 @@ describe('Spike: Table renders data', () => {
 describe('Spike: AutoLayout mode switching', () => {
   it('renders with mode indicator', () => {
     render(
-      <AutoLayout schema={nestedSchema} data={nestedData} measurement={measurement} />
+      <AutoLayout schema={nestedSchema} data={nestedData} measurement={measurement} showModeIndicator />
     );
-    expect(screen.getByText(/mode/)).toBeDefined();
+    expect(screen.getByText(/TABLE|OUTLINE/)).toBeDefined();
   });
 
   it('renders all data values', () => {
     render(
-      <AutoLayout schema={nestedSchema} data={nestedData} measurement={measurement} />
+      <AutoLayout schema={nestedSchema} data={nestedData} measurement={measurement} showModeIndicator />
     );
     expect(screen.getByText('Computer Science')).toBeDefined();
     expect(screen.getByText('CS101')).toBeDefined();

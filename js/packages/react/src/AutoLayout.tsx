@@ -15,14 +15,10 @@ interface AutoLayoutProps {
   data: unknown[];
   measurement?: MeasurementStrategy;
   height?: number;
+  showModeIndicator?: boolean;
 }
 
-/**
- * Top-level autolayout component. Measures data, decides table vs outline
- * mode based on available width, and renders accordingly.
- * Re-layouts on resize via ResizeObserver.
- */
-export function AutoLayout({ schema, data, measurement, height = 600 }: AutoLayoutProps) {
+export function AutoLayout({ schema, data, measurement, height = 600, showModeIndicator = false }: AutoLayoutProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(800);
 
@@ -62,15 +58,13 @@ export function AutoLayout({ schema, data, measurement, height = 600 }: AutoLayo
   );
 
   return (
-    <div
-      ref={containerRef}
-      className="kramer-auto-layout"
-      style={{ width: '100%', height, overflow: 'hidden' }}
-    >
-      <div style={{ fontSize: '0.8em', color: '#999', marginBottom: 4 }}>
-        {width}px — {rootMode} mode
-        (readable: {Math.round(measure.readableTableWidth)}px)
-      </div>
+    <div ref={containerRef} className="kramer-auto-layout" style={{ width: '100%', height, overflow: 'hidden' }}>
+      {showModeIndicator && (
+        <div className="kramer-mode-badge">
+          <span className="mode-tag">{rootMode}</span>
+          {width}px
+        </div>
+      )}
       {rootMode === 'TABLE' ? (
         <Table schema={schema} data={data} columnWidths={columnWidths} />
       ) : (
