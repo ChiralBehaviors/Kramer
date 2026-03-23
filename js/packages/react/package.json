@@ -3,10 +3,11 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
+  "main": "./src/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
     }
   },
   "scripts": {
@@ -17,6 +18,7 @@
   "dependencies": {
     "@kramer/core": "workspace:*",
     "@kramer/measurement": "workspace:*",
+    "@kramer/react-ui": "workspace:*",
     "@tanstack/react-virtual": "^3.13.0"
   },
   "devDependencies": {
