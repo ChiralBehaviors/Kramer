@@ -34,12 +34,14 @@ cd toy-app && mvn javafx:run
 
 ## Module Structure
 
-Four Maven modules under parent `kramer.app` (`com.chiralbehaviors.layout`):
+Six Maven modules under parent `kramer.app` (`com.chiralbehaviors.layout`):
 
 - **kramer** — Core autolayout engine. Schema-driven layout of JSON data into JavaFX controls. No external service dependencies.
 - **kramer-ql** — GraphQL integration. Parses GraphQL queries to build Kramer schemas automatically, executes queries via Jakarta RS client. Depends on `kramer`.
 - **explorer** — Interactive JavaFX app for exploring GraphQL endpoints with autolayout. Includes `StandaloneDemo` (self-contained course catalog demo). Depends on `kramer-ql`. Entry point: `Launcher` (delegates to `AutoLayoutExplorer`); standalone: `StandaloneDemo.Main`.
 - **toy-app** — Declarative single-page app framework using GraphQL + autolayout. Depends on `kramer-ql`. Entry point: `Launcher` (delegates to `SinglePageApp`).
+- **js** — TypeScript/React port (pnpm workspaces). 5 packages: `@kramer/core`, `@kramer/measurement`, `@kramer/graphql`, `@kramer/react`, `@kramer/react-ui`. Maven integration via `frontend-maven-plugin` with corepack.
+- **poc/kramer-js** — Original proof-of-concept for JS port feasibility (RDR-032).
 
 Both `explorer` and `toy-app` produce fat jars via `maven-shade-plugin` (classifier: `phat`).
 
@@ -101,7 +103,7 @@ Layout appearance is driven by CSS. Each component has a co-located `.css` file.
 - `SchemaDiagramView` — visual representation of the relation hierarchy
 
 ### Testing (`kramer` — `test` package)
-E2E test framework: `LayoutTestHarness` runs the full synchronous pipeline, `LayoutTestResult` captures rendered scene graph snapshots, `LayoutFixtures` provides 4 schema/data sets. `AutoLayoutResizeAdaptationTest` verifies resize adaptation, mode switching, column widths, and rendered data presence. 1140 tests total (1014 kramer + 106 kramer-ql + 20 explorer).
+E2E test framework: `LayoutTestHarness` runs the full synchronous pipeline, `LayoutTestResult` captures rendered scene graph snapshots, `LayoutFixtures` provides 4 schema/data sets. `AutoLayoutResizeAdaptationTest` verifies resize adaptation, mode switching, column widths, and rendered data presence. `ContractFixtureGeneratorTest` emits JSON fixtures for cross-language validation. 1300 tests total (1017 kramer + 106 kramer-ql + 20 explorer + 157 TypeScript).
 
 ## Key Dependencies
 

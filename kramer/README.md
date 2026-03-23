@@ -75,7 +75,7 @@ Custom `VirtualFlow` for efficient rendering of large lists. Forked from the Flo
 
 ## Testing
 
-1014 tests covering layout algorithm, width distribution, mode selection, resize adaptation, data visibility, expression evaluation, query state, interaction handling, and DP column partitioning.
+1017 tests covering layout algorithm, width distribution, mode selection, resize adaptation, data visibility, expression evaluation, query state, interaction handling, DP column partitioning, and contract fixture generation.
 
 ```bash
 mvn test                              # all tests
