@@ -1,207 +1,143 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import React from 'react';
-import type { Relation } from '@kramer/core';
-import { extractField, type JustifiedChild } from '@kramer/core';
+import type { Relation, MeasurementStrategy } from '@kramer/core';
+import { extractField, measureRelation, decideMode, type JustifiedChild } from '@kramer/core';
+import { FixedMeasurement } from '@kramer/measurement';
 
 interface TableProps {
   schema: Relation;
   data: unknown[];
   columnWidths: JustifiedChild[];
+  measurement?: MeasurementStrategy;
 }
 
-/**
- * Flattened table renderer — expands nested relation columns inline
- * rather than nesting tables-in-cells. Produces a single unified
- * table with grouped column headers.
- */
-export function Table({ schema, data, columnWidths }: TableProps) {
-  // Build flat column list, expanding relations into their children
-  const columns = buildColumns(schema);
-  const hasNestedHeaders = columns.some(c => c.parent !== null);
+export function Table({ schema, data, columnWidths, measurement }: TableProps) {
+  const strategy = measurement ?? new FixedMeasurement(7);
 
   return (
     <table className="kramer-table">
       <thead>
-        {/* Group header row (shows relation names spanning their children) */}
-        {hasNestedHeaders && (
-          <tr>
-            {schema.children.map(child => {
-              if (child.kind === 'primitive') {
-                return <th key={child.field} rowSpan={2} style={{ verticalAlign: 'bottom' }}>{child.label}</th>;
-              }
-              const leafCount = child.children.filter(c => c.kind === 'primitive').length;
-              // Count nested relations' leaves too
-              const totalLeaves = countLeaves(child);
-              return (
-                <th key={child.field} colSpan={totalLeaves}
-                    style={{ textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.15)' }}>
-                  {child.label}
-                </th>
-              );
-            })}
-          </tr>
-        )}
-        {/* Leaf column header row */}
-        {hasNestedHeaders && (
-          <tr>
-            {columns.filter(c => c.parent !== null).map(col => (
-              <th key={col.path}>{col.label}</th>
-            ))}
-          </tr>
-        )}
-        {/* Simple header (no nesting) */}
-        {!hasNestedHeaders && (
-          <tr>
-            {columns.map(col => (
-              <th key={col.path}>{col.label}</th>
-            ))}
-          </tr>
-        )}
+        <tr>
+          {schema.children.map((child, i) => (
+            <th key={child.field} style={{ width: columnWidths[i]?.width ?? 'auto' }}>
+              {child.label}
+            </th>
+          ))}
+        </tr>
       </thead>
       <tbody>
         {data.map((row, rowIdx) => (
-          <FlatRow key={rowIdx} row={row} columns={columns} schema={schema} rowIndex={rowIdx} />
+          <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'kramer-row-even' : 'kramer-row-odd'}>
+            {schema.children.map((child, colIdx) => {
+              if (child.kind === 'primitive') {
+                const val = extractField(row, child.field)[0];
+                const isNum = typeof val === 'number';
+                return (
+                  <td key={child.field}
+                      style={isNum ? { fontFamily: 'var(--kr-font-mono)', textAlign: 'right' } : undefined}>
+                    {String(val ?? '')}
+                  </td>
+                );
+              }
+              // Nested relation — render adaptively (table or outline)
+              const nestedData = extractField(row, child.field) as unknown[];
+              const cellWidth = columnWidths[colIdx]?.width ?? 300;
+              return (
+                <td key={child.field} style={{ padding: '4px 6px', verticalAlign: 'top' }}>
+                  <NestedRelation schema={child} data={nestedData}
+                                  width={cellWidth} measurement={strategy} />
+                </td>
+              );
+            })}
+          </tr>
         ))}
       </tbody>
     </table>
   );
 }
 
-interface FlatColumn {
-  field: string;
-  label: string;
-  path: string; // unique key
-  parent: string | null; // parent relation field, null for top-level primitives
-  extractPath: string[]; // path segments to extract value from row
-  isNumeric?: boolean;
-}
-
-function buildColumns(schema: Relation, parentField: string | null = null, pathPrefix: string[] = []): FlatColumn[] {
-  const cols: FlatColumn[] = [];
-  for (const child of schema.children) {
-    const extractPath = [...pathPrefix, child.field];
-    if (child.kind === 'primitive') {
-      cols.push({
-        field: child.field,
-        label: child.label,
-        path: extractPath.join('.'),
-        parent: parentField,
-        extractPath,
-      });
-    } else {
-      // Expand relation children recursively
-      cols.push(...buildColumns(child, child.field, extractPath));
-    }
-  }
-  return cols;
-}
-
-function countLeaves(node: Relation): number {
-  let count = 0;
-  for (const child of node.children) {
-    if (child.kind === 'primitive') count++;
-    else count += countLeaves(child);
-  }
-  return count;
-}
-
-function FlatRow({ row, columns, schema, rowIndex }: {
-  row: unknown; columns: FlatColumn[]; schema: Relation; rowIndex: number;
+function NestedRelation({ schema, data, width, measurement }: {
+  schema: Relation; data: unknown[]; width: number; measurement: MeasurementStrategy;
 }) {
-  // For nested relations, we need to handle multiple rows per parent row
-  // Find the max cardinality of nested relations
-  const maxRows = getMaxNestedRows(row, schema);
+  if (!data || data.length === 0) return null;
 
-  if (maxRows <= 1) {
-    // Simple case: one row
+  const measure = measureRelation(schema, data, measurement);
+  const mode = decideMode(measure.readableTableWidth, width);
+
+  if (mode === 'OUTLINE') {
+    // Compact outline for narrow cells
+    const prims = schema.children.filter(c => c.kind === 'primitive');
+    const rels = schema.children.filter(c => c.kind === 'relation') as Relation[];
     return (
-      <tr className={rowIndex % 2 === 0 ? 'kramer-row-even' : 'kramer-row-odd'}>
-        {columns.map(col => {
-          const val = extractNested(row, col.extractPath, 0);
-          const isNum = typeof val === 'number';
-          return (
-            <td key={col.path}
-                style={isNum ? { fontFamily: 'var(--kr-font-mono)', textAlign: 'right' } : undefined}>
-              {val != null ? String(val) : ''}
-            </td>
-          );
-        })}
-      </tr>
+      <div className="kramer-nested-outline">
+        {data.map((item, idx) => (
+          <div key={idx} className="kramer-nested-outline-item">
+            <div className="kramer-nested-outline-fields">
+              {prims.map(p => {
+                const v = extractField(item, p.field)[0];
+                return (
+                  <div key={p.field} className="kramer-nested-outline-field">
+                    <span className="kramer-nested-outline-label">{p.label}</span>
+                    <span className={typeof v === 'number' ? 'kramer-mono' : ''}>{String(v ?? '')}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {rels.map(rel => {
+              const nested = extractField(item, rel.field) as unknown[];
+              if (!nested?.length) return null;
+              return (
+                <div key={rel.field} style={{ marginTop: 4, marginLeft: 8 }}>
+                  <div className="kramer-outline-relation-label">{rel.label}</div>
+                  <NestedRelation schema={rel} data={nested} width={width - 16} measurement={measurement} />
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
     );
   }
 
-  // Multiple nested rows: first row has rowSpan on parent primitives
+  // TABLE mode
+  const leafChildren = schema.children.filter(c => c.kind === 'primitive');
+  const relChildren = schema.children.filter(c => c.kind === 'relation') as Relation[];
+
   return (
-    <>
-      {Array.from({ length: maxRows }, (_, nestedIdx) => (
-        <tr key={nestedIdx}
-            className={rowIndex % 2 === 0 ? 'kramer-row-even' : 'kramer-row-odd'}
-            style={nestedIdx === maxRows - 1 ? { borderBottom: '2px solid var(--kr-border-strong, #cbd5e1)' } : undefined}>
-          {columns.map(col => {
-            // Top-level primitives: only render on first nested row with rowSpan
-            if (col.parent === null || col.extractPath.length === 1) {
-              if (nestedIdx > 0) return null; // skip — covered by rowSpan
-              const val = extractNested(row, col.extractPath, 0);
-              const isNum = typeof val === 'number';
+    <table className="kramer-nested-table">
+      <thead>
+        <tr>
+          {leafChildren.map(gc => <th key={gc.field}>{gc.label}</th>)}
+          {relChildren.map(rc => <th key={rc.field}>{rc.label}</th>)}
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((item, idx) => (
+          <tr key={idx}>
+            {leafChildren.map(gc => {
+              const v = extractField(item, gc.field)[0];
+              const isN = typeof v === 'number';
               return (
-                <td key={col.path} rowSpan={maxRows}
-                    style={{
-                      verticalAlign: 'top',
-                      ...(isNum ? { fontFamily: 'var(--kr-font-mono)', textAlign: 'right' } : {}),
-                    }}>
-                  {val != null ? String(val) : ''}
+                <td key={gc.field}
+                    style={isN ? { fontFamily: 'var(--kr-font-mono)', textAlign: 'right' } : undefined}>
+                  {String(v ?? '')}
                 </td>
               );
-            }
-            // Nested primitive: extract from the nth nested item
-            const val = extractNested(row, col.extractPath, nestedIdx);
-            const isNum = typeof val === 'number';
-            return (
-              <td key={col.path}
-                  style={isNum ? { fontFamily: 'var(--kr-font-mono)', textAlign: 'right' } : undefined}>
-                {val != null ? String(val) : ''}
-              </td>
-            );
-          })}
-        </tr>
-      ))}
-    </>
+            })}
+            {relChildren.map(rc => {
+              const nested = extractField(item, rc.field) as unknown[];
+              if (!nested?.length) return <td key={rc.field} />;
+              const cellW = width / (leafChildren.length + relChildren.length);
+              return (
+                <td key={rc.field} style={{ padding: '3px 4px', verticalAlign: 'top' }}>
+                  <NestedRelation schema={rc} data={nested} width={cellW} measurement={measurement} />
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
-}
-
-function extractNested(row: unknown, path: string[], nestedIndex: number): unknown {
-  let current: unknown = row;
-  for (let i = 0; i < path.length; i++) {
-    if (current == null) return null;
-    if (Array.isArray(current)) {
-      // We've hit an array — take the nestedIndex item and continue
-      current = current[nestedIndex];
-      if (current == null) return null;
-      // Re-extract the current field
-      current = (current as Record<string, unknown>)[path[i]];
-    } else if (typeof current === 'object') {
-      const next = (current as Record<string, unknown>)[path[i]];
-      if (Array.isArray(next)) {
-        // This is the array level — take nestedIndex and continue
-        current = next[nestedIndex];
-      } else {
-        current = next;
-      }
-    } else {
-      return null;
-    }
-  }
-  return current;
-}
-
-function getMaxNestedRows(row: unknown, schema: Relation): number {
-  let max = 1;
-  for (const child of schema.children) {
-    if (child.kind === 'relation') {
-      const arr = extractField(row, child.field);
-      max = Math.max(max, arr.length);
-    }
-  }
-  return max;
 }
