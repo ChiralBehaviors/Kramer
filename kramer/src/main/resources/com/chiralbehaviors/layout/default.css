@@ -1,86 +1,31 @@
-/* Kramer autolayout — utilitarian data-dense design (matching JS version) */
-
 .kramer-container {
     -fx-background-color: #ffffff;
-    -fx-background-radius: 6;
+    -fx-background-radius: 5;
     -fx-border-color: #e2e8f0;
-    -fx-border-radius: 6;
+    -fx-border-radius: 5;
     -fx-border-width: 1;
 }
 
 .primitive {
-    -fx-padding: 4 6 4 6;
+    -fx-padding: 2 4 2 4;
     -fx-text-fill: #1a1a2e;
-    -fx-font-size: 12.5px;
-    -fx-font-family: "System";
+    -fx-font-size: 12px;
 }
 
 .primitive:hover {
     -fx-background-color: #eff6ff;
-    -fx-background-radius: 3;
+    -fx-background-radius: 2;
 }
 
-.sorted-asc {
-    -fx-background-color: #dbeafe;
-}
-
-.sorted-desc {
-    -fx-background-color: #dbeafe;
-}
-
-.sort-arrow {
-    -fx-font-size: 10px;
-    -fx-padding: 0 3 0 3;
-    -fx-alignment: center;
-    -fx-text-fill: #3b82f6;
-}
-
-.field-hidden {
-    -fx-opacity: 0.35;
-    -fx-strikethrough: true;
-}
-
-.field-selector-panel {
-    -fx-padding: 6;
-    -fx-background-color: #ffffff;
-}
-
-.field-inspector-panel {
-    -fx-padding: 10;
-    -fx-spacing: 6;
-    -fx-background-color: #ffffff;
-}
-
-.inspector-title {
-    -fx-font-weight: bold;
-    -fx-font-size: 13px;
-    -fx-text-fill: #1a1a2e;
-}
-
-.sort-badge {
-    -fx-font-size: 9px;
-    -fx-text-fill: #3b82f6;
-    -fx-padding: 0 3 0 3;
-}
-
-.filter-badge {
-    -fx-font-size: 8px;
-    -fx-text-fill: #f59e0b;
-    -fx-padding: 0 3 0 3;
-}
-
-.type-badge {
-    -fx-font-size: 9px;
-    -fx-text-fill: #9ca3af;
-    -fx-padding: 0 4 0 4;
-}
-
-.crosstab-header {
-    -fx-background-color: #0f172a;
-    -fx-background-radius: 4 4 0 0;
-}
-.crosstab-header-label {
-    -fx-font-weight: bold;
-    -fx-text-fill: #e2e8f0;
-    -fx-font-size: 11px;
-}
+.sorted-asc { -fx-background-color: #dbeafe; }
+.sorted-desc { -fx-background-color: #dbeafe; }
+.sort-arrow { -fx-font-size: 10px; -fx-padding: 0 2 0 2; -fx-alignment: center; -fx-text-fill: #3b82f6; }
+.field-hidden { -fx-opacity: 0.35; }
+.field-selector-panel { -fx-padding: 4; -fx-background-color: #fff; }
+.field-inspector-panel { -fx-padding: 8; -fx-spacing: 6; -fx-background-color: #fff; }
+.inspector-title { -fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #1a1a2e; }
+.sort-badge { -fx-font-size: 9px; -fx-text-fill: #3b82f6; -fx-padding: 0 2 0 2; }
+.filter-badge { -fx-font-size: 8px; -fx-text-fill: #f59e0b; -fx-padding: 0 2 0 2; }
+.type-badge { -fx-font-size: 9px; -fx-text-fill: #9ca3af; -fx-padding: 0 3 0 3; }
+.crosstab-header { -fx-background-color: #0f172a; -fx-background-radius: 4 4 0 0; }
+.crosstab-header-label { -fx-font-weight: bold; -fx-text-fill: #e2e8f0; -fx-font-size: 10px; }

@@ -1,15 +1,7 @@
 .outline-element {
-    -fx-padding: 2 0 2 0;
+    -fx-padding: 1 0 1 0;
     -fx-alignment: center-left;
     -fx-focus-traversable: true;
 }
-
-.outline-element:hover {
-    -fx-background-color: #f1f5f9;
-    -fx-background-radius: 3;
-}
-
-.outline-element:filled:selected {
-    -fx-background-color: #eff6ff;
-    -fx-background-radius: 3;
-}
+.outline-element:hover { -fx-background-color: #f1f5f9; -fx-background-radius: 2; }
+.outline-element:filled:selected { -fx-background-color: #eff6ff; -fx-background-radius: 2; }

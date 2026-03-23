@@ -1,15 +1,9 @@
 .nested-cell {
-    -fx-padding: 4 8 4 8;
+    -fx-padding: 2 5 2 5;
     -fx-alignment: center-left;
     -fx-focus-traversable: true;
     -fx-border-color: transparent #eaecf0 transparent transparent;
     -fx-border-width: 0 1 0 0;
 }
-
-.nested-cell:hover {
-    -fx-background-color: #eff6ff;
-}
-
-.nested-cell:filled:selected {
-    -fx-background-color: #dbeafe;
-}
+.nested-cell:hover { -fx-background-color: #eff6ff; }
+.nested-cell:filled:selected { -fx-background-color: #dbeafe; }

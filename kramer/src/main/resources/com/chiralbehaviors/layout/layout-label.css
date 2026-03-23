@@ -1,13 +1,14 @@
 .layout-label {
-    -fx-padding: 5 8 5 8;
+    -fx-padding: 3 5 3 5;
     -fx-alignment: center-left;
-    -fx-background-color: #0f172a;
-    -fx-background-radius: 0;
-    -fx-text-fill: #94a3b8;
-    -fx-font-size: 11px;
+    -fx-background-color: #1e293b;
+    -fx-background-radius: 3;
+    -fx-text-fill: #cbd5e1;
+    -fx-font-size: 10px;
     -fx-font-weight: bold;
 }
 
 .layout-label:hover {
-    -fx-text-fill: #e2e8f0;
+    -fx-text-fill: #f1f5f9;
+    -fx-background-color: #334155;
 }
